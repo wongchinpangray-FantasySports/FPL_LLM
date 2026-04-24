@@ -1,0 +1,52 @@
+name: FPL daily sync
+
+on:
+  schedule:
+    # 03:00 UTC every day
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: fpl-daily
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Sync players + teams + gameweeks
+        run: python -m data_sync.sync_fpl_players
+
+      - name: Sync fixtures
+        run: python -m data_sync.sync_fpl_fixtures
+
+      - name: Sync player history
+        run: python -m data_sync.sync_fpl_player_history --workers 6
+
+      - name: Sync Understat xG (current season)
+        continue-on-error: true
+        run: |
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%m)
+          # EPL season is "YYYY" == starting year; rolls over in August
+          if [ "$MONTH" -lt "08" ]; then
+            SEASON=$((YEAR - 1))
+          else
+            SEASON=$YEAR
+          fi
+          echo "Scraping Understat season $SEASON"
+          python -m data_sync.sync_understat --season $SEASON

@@ -1,0 +1,31 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Env & secrets (never commit templates’ real keys — .env.example stays allowed)
+.env
+.env.local
+.env.*.local
+web/.env.local
+
+# Node / Next (web app)
+web/node_modules/
+web/.next/
+web/.vercel/
+web/*.tsbuildinfo
+web/next-env.d.ts
+
+# OS & editors
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Cursor / local
+*.local

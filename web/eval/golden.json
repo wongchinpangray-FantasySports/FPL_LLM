@@ -1,0 +1,28 @@
+[
+  {
+    "id": "fixtures-fdr",
+    "prompt": "Which Premier League teams have the kindest fixture difficulty over the next 4 gameweeks? Use data tools and list 3 teams with brief reasoning.",
+    "expectTools": ["get_fdr"]
+  },
+  {
+    "id": "search-player",
+    "prompt": "Find FPL players with web_name containing Salah and report position and price.",
+    "expectTools": ["search_players"]
+  },
+  {
+    "id": "fixtures-window",
+    "prompt": "Show fixtures involving Liverpool in the next 2 gameweeks (who they play and home or away).",
+    "expectTools": ["get_fixtures"]
+  },
+  {
+    "id": "compare-two",
+    "prompt": "Use compare_players to compare Mohamed Salah and Cole Palmer on expected points over the next 5 gameweeks. Summarise in 2 bullets.",
+    "expectTools": ["compare_players"]
+  },
+  {
+    "id": "captain-generic",
+    "prompt": "In one sentence, what stats matter most for picking an FPL captain?",
+    "expectTools": [],
+    "notes": "No tools required; checks that simple questions still complete."
+  }
+]

@@ -1,0 +1,8 @@
+requests>=2.31
+# supabase 2.16+ pulls in pyiceberg which needs MSVC to build on Python 3.14.
+# 2.15.x is the last release that installs cleanly with pure wheels.
+supabase>=2.5,<2.16
+python-dotenv>=1.0
+beautifulsoup4>=4.12
+lxml>=5.0
+rapidfuzz>=3.6

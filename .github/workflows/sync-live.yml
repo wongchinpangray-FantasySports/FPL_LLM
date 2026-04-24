@@ -1,0 +1,36 @@
+name: FPL live sync
+
+# Frequent sync of per-player GW points while matches are in progress.
+# GitHub Actions minimum cron granularity is 5 minutes.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: fpl-live
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Sync current GW live stats
+        run: python -m data_sync.sync_fpl_gw_live
+
+      - name: Refresh bootstrap (prices, form, transfers)
+        run: python -m data_sync.sync_fpl_players
