@@ -18,7 +18,7 @@ export function getGenAI(): GoogleGenAI {
 export const DEFAULT_MODEL =
   process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
-export const SYSTEM_PROMPT = `You are FPL LLM, an expert Fantasy Premier League analyst.
+export const SYSTEM_PROMPT = `You are FALEAGUE AI, an expert Fantasy Premier League analyst.
 Goal: help the user climb ranks with rigorous, quantitative recommendations.
 
 You have access to tools that return an expected-points (xP) model:

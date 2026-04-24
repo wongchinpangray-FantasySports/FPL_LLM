@@ -32,32 +32,64 @@ export async function POST(req: Request) {
     return new Response("messages[] required", { status: 400 });
   }
 
+  try {
   const limiter = getRateLimiter();
   if (limiter) {
-    const ip = getClientIp(req);
-    const { success, reset } = await limiter.limit(ip);
-    if (!success) {
-      return new Response(
-        JSON.stringify({
-          error: "Rate limit exceeded. Try again in a moment.",
-          resetAt: reset,
-        }),
-        { status: 429, headers: { "content-type": "application/json" } },
-      );
+    try {
+      const ip = getClientIp(req);
+      const { success, reset } = await limiter.limit(ip);
+      if (!success) {
+        return new Response(
+          JSON.stringify({
+            error: "Rate limit exceeded. Try again in a moment.",
+            resetAt: reset,
+          }),
+          { status: 429, headers: { "content-type": "application/json" } },
+        );
+      }
+    } catch (err) {
+      console.error("[api/chat] rate limiter error — continuing without limit", err);
     }
   }
 
   const ctx: ToolContext = { entryId: body.entryId ?? null };
-  const ai = getGenAI();
 
-  // Convert chat history into Gemini `Content[]`. Gemini uses "user" /
-  // "model" (not "assistant") and strings are wrapped in a text Part.
-  const contents: Content[] = body.messages.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
+  let ai: ReturnType<typeof getGenAI>;
+  try {
+    ai = getGenAI();
+  } catch (e) {
+    const message =
+      e instanceof Error
+        ? e.message
+        : "AI is not configured. Set GEMINI_API_KEY in the server environment.";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
-  const functionDeclarations = toolsToFunctionDeclarations(ALL_TOOLS);
+  let contents: Content[];
+  let functionDeclarations: ReturnType<typeof toolsToFunctionDeclarations>;
+  try {
+    // Convert chat history into Gemini `Content[]`. Gemini uses "user" /
+    // "model" (not "assistant") and strings are wrapped in a text Part.
+    contents = body.messages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    functionDeclarations = toolsToFunctionDeclarations(ALL_TOOLS);
+  } catch (e) {
+    const message =
+      e instanceof Error
+        ? e.message
+        : "Failed to prepare request for the AI";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -171,4 +203,12 @@ export async function POST(req: Request) {
       connection: "keep-alive",
     },
   });
+  } catch (e) {
+    console.error("[api/chat] unhandled", e);
+    const message = e instanceof Error ? e.message : "Server error";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
 }

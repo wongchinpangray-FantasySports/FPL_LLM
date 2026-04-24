@@ -1,4 +1,4 @@
-# Deploy FPL LLM (share with testers)
+# Deploy FALEAGUE AI (share with testers)
 
 The app is a **Next.js 14** project in this `web/` folder. The simplest host for sharing is **[Vercel](https://vercel.com)** (free tier is enough to start).
 

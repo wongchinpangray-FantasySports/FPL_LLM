@@ -22,7 +22,7 @@ export default function HomePage() {
     <div className="flex flex-col gap-16 md:gap-24">
       <section className="flex max-w-3xl flex-col items-start gap-8">
         <span className="rounded-full border border-brand-accent/25 bg-brand-accent/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-          FPL · AI analyst
+          FALEAGUE AI
         </span>
         <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-6xl md:leading-[1.05]">
           Win your mini-league with an AI that{" "}

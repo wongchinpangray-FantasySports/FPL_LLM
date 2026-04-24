@@ -4,34 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useEntryId } from "./entry-id-context";
 
-const KEY = "fpl_entry_id";
-
-export function useEntryId() {
-  const [entryId, setEntryIdState] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem(KEY);
-      if (v) setEntryIdState(v);
-    } catch {}
-  }, []);
-
-  function setEntryId(v: string | null) {
-    try {
-      if (v) window.localStorage.setItem(KEY, v);
-      else window.localStorage.removeItem(KEY);
-    } catch {}
-    setEntryIdState(v);
-  }
-
-  return { entryId, setEntryId };
-}
+export { useEntryId } from "./entry-id-context";
 
 export function EntryIdForm({
   redirectTo = "/chat",
 }: {
-  redirectTo?: string;
+  /** After save: open this path. Use a function for e.g. `/planner/123` without a query. */
+  redirectTo?: string | ((entryId: string) => string);
 }) {
   const router = useRouter();
   const { entryId, setEntryId } = useEntryId();
@@ -46,7 +27,14 @@ export function EntryIdForm({
     const trimmed = value.trim();
     if (!/^\d+$/.test(trimmed)) return;
     setEntryId(trimmed);
-    router.push(redirectTo);
+    if (typeof redirectTo === "function") {
+      router.push(redirectTo(trimmed));
+    } else {
+      const sep = redirectTo.includes("?") ? "&" : "?";
+      router.push(
+        `${redirectTo}${sep}entry=${encodeURIComponent(trimmed)}`,
+      );
+    }
   }
 
   return (

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useEntryId } from "./entry-id-form";
+import { useEntryId } from "./entry-id-context";
 import { cn } from "@/lib/utils";
 
 type Role = "user" | "assistant";
@@ -66,7 +66,14 @@ export function Chat() {
 
       if (!res.ok || !res.body) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Request failed (${res.status})`);
+        let message = text || `Request failed (${res.status})`;
+        try {
+          const j = JSON.parse(text) as { error?: string };
+          if (j.error) message = j.error;
+        } catch {
+          /* not JSON */
+        }
+        throw new Error(message);
       }
 
       const reader = res.body.getReader();

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEntryId } from "@/components/entry-id-form";
+import { useEntryId } from "@/components/entry-id-context";
 import { cn } from "@/lib/utils";
 
 function NavLink({
@@ -33,8 +33,8 @@ export function SiteNav() {
   const pathname = usePathname();
   const { entryId } = useEntryId();
 
-  const dashboardHref = entryId ? `/dashboard/${entryId}` : null;
-  const plannerHref = entryId ? `/planner/${entryId}` : null;
+  const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
+  const plannerHref = entryId ? `/planner/${entryId}` : "/planner";
 
   return (
     <nav
@@ -47,19 +47,18 @@ export function SiteNav() {
       <NavLink href="/chat" active={pathname === "/chat"}>
         Chat
       </NavLink>
-      {dashboardHref ? (
-        <NavLink
-          href={dashboardHref}
-          active={pathname.startsWith("/dashboard/")}
-        >
-          Dashboard
-        </NavLink>
-      ) : null}
-      {plannerHref ? (
-        <NavLink href={plannerHref} active={pathname.startsWith("/planner/")}>
-          Planner
-        </NavLink>
-      ) : null}
+      <NavLink
+        href={dashboardHref}
+        active={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
+      >
+        Dashboard
+      </NavLink>
+      <NavLink
+        href={plannerHref}
+        active={pathname === "/planner" || pathname.startsWith("/planner/")}
+      >
+        Planner
+      </NavLink>
     </nav>
   );
 }

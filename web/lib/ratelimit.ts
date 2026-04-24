@@ -17,12 +17,17 @@ export function getRateLimiter(): Ratelimit | null {
     _disabled = true;
     return null;
   }
-  _ratelimit = new Ratelimit({
-    redis: new Redis({ url, token }),
-    limiter: Ratelimit.slidingWindow(20, "1 m"),
-    analytics: true,
-    prefix: "fpl-llm/chat",
-  });
+  try {
+    _ratelimit = new Ratelimit({
+      redis: new Redis({ url, token }),
+      limiter: Ratelimit.slidingWindow(20, "1 m"),
+      analytics: true,
+      prefix: "fpl-llm/chat",
+    });
+  } catch {
+    _disabled = true;
+    return null;
+  }
   return _ratelimit;
 }
 

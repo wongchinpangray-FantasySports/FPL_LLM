@@ -1,4 +1,4 @@
-# FPL LLM
+# FALEAGUE AI
 
 An AI analyst for Fantasy Premier League. A Next.js web app powered by an
 LLM (Gemini by default, free tier) that chats about FPL, recommends captains
