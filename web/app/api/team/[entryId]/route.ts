@@ -1,4 +1,4 @@
-import { fetchAndCacheTeam } from "@/lib/tools/team";
+import { fetchTeamForUi, teamPayloadForAssistant } from "@/lib/tools/team";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,8 +16,8 @@ export async function GET(
   }
 
   try {
-    const team = await fetchAndCacheTeam(entryId);
-    return new Response(JSON.stringify(team), {
+    const team = await fetchTeamForUi(entryId);
+    return new Response(JSON.stringify(teamPayloadForAssistant(team)), {
       headers: { "content-type": "application/json" },
     });
   } catch (err) {

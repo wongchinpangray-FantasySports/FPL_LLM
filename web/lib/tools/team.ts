@@ -99,6 +99,27 @@ export function isFreeHitOnPicksGw(
   );
 }
 
+/** Fifteen players for transfers / captain / chip tools: revert squad after FH when loaded, else current `picks`. */
+export function picksForPlanning(team: CachedTeam): FplSquadPick[] {
+  if (team.long_team_picks != null && team.long_team_picks.length > 0) {
+    return team.long_team_picks;
+  }
+  return team.picks;
+}
+
+/** Same shape as get_my_team returns: planning/revert squad in picks when FH snapshot differs. */
+export function teamPayloadForAssistant(team: CachedTeam): Record<string, unknown> {
+  const picks = picksForPlanning(team);
+  const base: Record<string, unknown> = { ...team, picks };
+  if (team.long_team_picks?.length) {
+    base.picks_free_hit_gameweek_snapshot = team.picks;
+    base.transfer_planning_note =
+      team.long_team_note ??
+      `Field picks = GW${team.long_team_gw} revert squad for transfers/planning. picks_free_hit_gameweek_snapshot = temporary FH 15 for GW${team.picks_gw ?? "?"}.`;
+  }
+  return base;
+}
+
 const ELEMENT_TYPE_TO_POS: Record<number, string> = {
   1: "GKP",
   2: "DEF",
@@ -390,7 +411,7 @@ export async function fetchTeamForUi(
 const getMyTeam: ToolHandler = {
   name: "get_my_team",
   description:
-    "Fetch the user's FPL squad: 15 players, captain, vice, bank, team value, free transfers, active chip, recent chips played. Pass force_refresh=true when the user says they just made transfers or activated a chip. If picks_may_be_stale=true, the GW{picks_gw} picks haven't been published by FPL yet so the squad shown is the last confirmed team.",
+    "Fetch the user's FPL squad: 15 players, captain, vice, bank, team value, free transfers, active chip, recent chips played. Pass force_refresh=true when the user says they just made transfers or activated a chip. During a Free Hit gameweek, `picks` is the REVERT/long-term squad used for transfers and planning; `picks_free_hit_gameweek_snapshot` (when present) is the temporary FH 15 only. If picks_may_be_stale=true, the GW{picks_gw} picks haven't been published by FPL yet so the squad shown is the last confirmed team.",
   input_schema: {
     type: "object",
     properties: {
@@ -408,9 +429,8 @@ const getMyTeam: ToolHandler = {
   },
   async run(input, ctx) {
     const entryId = await resolveEntryId(ctx, input.entry_id);
-    return fetchAndCacheTeam(entryId, {
-      forceRefresh: Boolean(input.force_refresh),
-    });
+    const team = await fetchTeamForUi(entryId, Boolean(input.force_refresh));
+    return teamPayloadForAssistant(team);
   },
 };
 
@@ -483,7 +503,7 @@ function summarizeProjection(p: PlayerProjection, maxFixtures = 3) {
 const suggestCaptain: ToolHandler = {
   name: "suggest_captain",
   description:
-    "Rank the user's starting XI for captaincy using the xP model. Supports risk_mode: 'neutral' (pure xP), 'chase' (penalises high ownership — rank-climb differential captain), 'protect' (slight uplift for template picks — protect a strong rank). Returns xP, captain_ev (2× or 3× with TC chip), gap_to_second, opponent history, set-piece flags.",
+    "Rank the user's starting XI for captaincy using the xP model. During a Free Hit week, uses the revert/long-term squad (not the temporary FH 15). Supports risk_mode: 'neutral' (pure xP), 'chase' (penalises high ownership — rank-climb differential captain), 'protect' (slight uplift for template picks — protect a strong rank). Returns xP, captain_ev (2× or 3× with TC chip), gap_to_second, opponent history, set-piece flags.",
   input_schema: {
     type: "object",
     properties: {
@@ -502,13 +522,14 @@ const suggestCaptain: ToolHandler = {
   },
   async run(input, ctx) {
     const entryId = await resolveEntryId(ctx, input.entry_id);
-    const team = await fetchAndCacheTeam(entryId);
+    const team = await fetchTeamForUi(entryId);
+    const squad = picksForPlanning(team);
     const { current, next } = await resolveCurrentGw();
     const targetGw = Number(input.gw ?? 0) || next;
     const riskMode =
       (input.risk_mode as "neutral" | "chase" | "protect") ?? "neutral";
 
-    const starters = team.picks.filter((p) => p.is_starter);
+    const starters = squad.filter((p) => p.is_starter);
     const ids = starters.map((p) => p.fpl_id);
     if (ids.length === 0) {
       return { gw: targetGw, candidates: [] };
@@ -592,7 +613,7 @@ const suggestCaptain: ToolHandler = {
 const suggestTransfers: ToolHandler = {
   name: "suggest_transfers",
   description:
-    "Suggest the best 1 and 2 transfer moves using expected points (xP) over an N-GW horizon. Accounts for current bank, 3-per-club rule, position-matching, availability, and a -4 pt hit cost for 2nd transfer (unless free_transfers = 2). Returns ranked ideas with xP delta and a rationale-ready breakdown.",
+    "Suggest the best 1 and 2 transfer moves using expected points (xP) over an N-GW horizon. Uses the long-term/revert 15 when a Free Hit is active (not the temporary FH 15). Accounts for current bank, 3-per-club rule, position-matching, availability, and a -4 pt hit cost for 2nd transfer (unless free_transfers = 2). Returns ranked ideas with xP delta and a rationale-ready breakdown.",
   input_schema: {
     type: "object",
     properties: {
@@ -625,7 +646,8 @@ const suggestTransfers: ToolHandler = {
   },
   async run(input, ctx) {
     const entryId = await resolveEntryId(ctx, input.entry_id);
-    const team = await fetchAndCacheTeam(entryId);
+    const team = await fetchTeamForUi(entryId);
+    const squad = picksForPlanning(team);
     const { current, next } = await resolveCurrentGw();
     const horizon = Math.min(Math.max(Number(input.horizon ?? 5) || 5, 1), 8);
     const budgetDelta = Number(input.budget_delta ?? 0) || 0;
@@ -638,7 +660,7 @@ const suggestTransfers: ToolHandler = {
     const includeTwo =
       input.include_two_transfer_plan !== false;
 
-    const ownedIds = team.picks.map((p) => p.fpl_id);
+    const ownedIds = squad.map((p) => p.fpl_id);
 
     // Pull a candidate pool: all players with enough minutes & available.
     const supa = getServerSupabase();
@@ -665,7 +687,7 @@ const suggestTransfers: ToolHandler = {
       toGw: next + horizon - 1,
     });
 
-    const owned = team.picks
+    const owned = squad
       .map((p) => projections.get(p.fpl_id))
       .filter((p): p is PlayerProjection => !!p);
 
@@ -872,10 +894,11 @@ const chipStrategy: ToolHandler = {
   },
   async run(input, ctx) {
     const entryId = await resolveEntryId(ctx, input.entry_id);
-    const team = await fetchAndCacheTeam(entryId);
+    const team = await fetchTeamForUi(entryId);
+    const squad = picksForPlanning(team);
     const { current, next } = await resolveCurrentGw();
     const horizon = Math.min(Math.max(Number(input.horizon ?? 8) || 8, 1), 10);
-    const ids = team.picks.map((p) => p.fpl_id);
+    const ids = squad.map((p) => p.fpl_id);
 
     const projections = await projectPlayers(ids, {
       currentGw: current,
@@ -892,7 +915,7 @@ const chipStrategy: ToolHandler = {
     }> = [];
 
     for (let g = next; g < next + horizon; g++) {
-      const scored = team.picks.map((p) => {
+      const scored = squad.map((p) => {
         const proj = projections.get(p.fpl_id);
         const f = proj?.fixtures.find((x) => x.gw === g);
         return {
@@ -967,7 +990,7 @@ const chipStrategy: ToolHandler = {
     // Wildcard: estimate how much you'd gain by replacing the 3 worst XI
     // performers averaged across horizon with top-xp replacements. Approx:
     // count starters projecting < 2.5 xP per game avg.
-    const weakCount = team.picks
+    const weakCount = squad
       .filter((p) => p.is_starter)
       .filter((p) => {
         const proj = projections.get(p.fpl_id);

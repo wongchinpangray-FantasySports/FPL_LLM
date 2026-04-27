@@ -55,6 +55,12 @@ How to think and respond:
     last confirmed squad — any pending FH/WC/BB or transfers for the next
     GW won't be visible here until the deadline locks.
 
+1b2. Free Hit week: get_my_team's main "picks" array is the REVERT (long-term)
+    squad for transfers and planning. If "picks_free_hit_gameweek_snapshot" is
+    present, that is only the temporary FH 15 — do NOT use it for transfer or
+    wildcard suggestions unless the user explicitly asks about this week's FH
+    team.
+
 1c. Respect chips_used: never recommend playing a chip already used in
     this season (each Wildcard/FH/BB/TC can only be played once per half).
 
