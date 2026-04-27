@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useEntryId } from "@/components/entry-id-context";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,7 @@ function NavLink({
 }
 
 export function SiteNav() {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const { entryId } = useEntryId();
 
@@ -39,25 +40,27 @@ export function SiteNav() {
   return (
     <nav
       className="flex flex-wrap items-center gap-1 sm:gap-2"
-      aria-label="Main"
+      aria-label={t("ariaMain")}
     >
       <NavLink href="/" active={pathname === "/"}>
-        Home
+        {t("home")}
       </NavLink>
       <NavLink href="/chat" active={pathname === "/chat"}>
-        Chat
+        {t("chat")}
       </NavLink>
       <NavLink
         href={dashboardHref}
-        active={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
+        active={
+          pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+        }
       >
-        Dashboard
+        {t("dashboard")}
       </NavLink>
       <NavLink
         href={plannerHref}
         active={pathname === "/planner" || pathname.startsWith("/planner/")}
       >
-        Planner
+        {t("planner")}
       </NavLink>
     </nav>
   );

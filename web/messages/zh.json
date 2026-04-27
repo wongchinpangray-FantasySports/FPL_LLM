@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "title": "FALEAGUE AI — 你的 AI 梦幻英超分析师",
+    "description": "结合实时数据的 AI FPL 建议：队长、转会、赛程。"
+  },
+  "nav": {
+    "home": "首页",
+    "chat": "对话",
+    "dashboard": "仪表盘",
+    "planner": "规划",
+    "ariaMain": "主导航"
+  },
+  "footer": {
+    "legal": "非官方 · 与英超联赛或 FPL 无关联。"
+  },
+  "language": {
+    "label": "语言",
+    "en": "English",
+    "zh": "中文"
+  },
+  "home": {
+    "badge": "FALEAGUE AI",
+    "titleLead": "用一个真正读懂数据的 AI，",
+    "titleAccent": "赢得迷你联赛",
+    "subtitle": "实时 FPL 数据 + 你的阵容 —— 队长、转会、以及原因分析。",
+    "entryHint": "Entry ID：在",
+    "openChat": "打开对话",
+    "featuresTitle": "功能",
+    "feature1Title": "实时数据",
+    "feature1Body": "绑定 FPL API —— 状态、赛程、难度、预期进球等。",
+    "feature2Title": "有据建议",
+    "feature2Body": "阵容优化 + 直白易懂的解释。",
+    "feature3Title": "你的阵容",
+    "feature3Body": "输入 Entry ID → 首发、预算、芯片 —— 结合上下文的建议。"
+  },
+  "entryForm": {
+    "label": "Entry ID",
+    "placeholder": "例如 1234567",
+    "continue": "继续",
+    "viewDashboard": "查看仪表盘",
+    "planner": "规划器",
+    "clear": "清除"
+  },
+  "dashboardIndex": {
+    "opening": "正在打开仪表盘…",
+    "eyebrow": "仪表盘",
+    "title": "你的 FPL 仪表盘",
+    "description": "输入 FPL Entry ID，查看阵容与数据概览。"
+  },
+  "chat": {
+    "eyebrow": "对话",
+    "title": "FPL 分析师",
+    "description": "实时 FPL 数据。先在首页绑定 Entry ID，可获得结合你阵容的回答。"
+  },
+  "dashboard": {
+    "eyebrow": "仪表盘",
+    "backHome": "← 返回首页",
+    "errorTitle": "无法加载阵容",
+    "refresh": "刷新",
+    "pts": "分",
+    "overallRank": "总排名",
+    "stats": {
+      "bank": "资金",
+      "teamValue": "阵容价值",
+      "freeTransfers": "免费转会",
+      "activeChip": "生效芯片",
+      "xpXi": "首发 xP · 未来 {horizon} GW",
+      "xpBench": "替补 xP · 未来 {horizon} GW"
+    },
+    "freeHitShowRevert": "显示还原阵容（Free Hit 之后）",
+    "freeHitViewTemp": "查看本周 Free Hit 临时阵容",
+    "staleTitle": "阵容可能过期：",
+    "staleBody": "截止日前可能看不到下一 GW 阵容。FH/野卡/大巴及待定转会要等锁定后才显示。下方为上次确认阵容（GW{gw}）。",
+    "xpHeatmap": "xP 热力 · GW{from}–{to}",
+    "xpLegendNote": "标记：",
+    "squad": "阵容",
+    "startingXI": "首发十一人",
+    "bench": "替补",
+    "fixturesEyebrow": "赛程",
+    "fixturesTitle": "所有球队 · 未来 {horizon} 个 GW",
+    "fixturesHint": "难度：绿色容易 · 红色困难。黄色圈 = 双赛。",
+    "fixtureTableTeam": "球队",
+    "assistantEyebrow": "助手",
+    "assistantTitle": "打开对话",
+    "assistantDesc": "与本页相同的底层数据。"
+  },
+  "planner": {
+    "errorTitle": "无法加载阵容",
+    "backHome": "← 返回首页"
+  },
+  "plannerIndex": {
+    "opening": "正在打开规划器…",
+    "eyebrow": "规划",
+    "title": "阵容规划",
+    "description": "输入 FPL Entry ID，在规划器中使用你的阵容。每个浏览器与每个部署链接会单独保存 —— 若看不到规划器，请在新链接下重新输入。"
+  }
+}

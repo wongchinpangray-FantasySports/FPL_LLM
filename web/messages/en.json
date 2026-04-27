@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "title": "FALEAGUE AI — your AI Fantasy Premier League analyst",
+    "description": "AI FPL help using live data — captains, transfers, fixtures."
+  },
+  "nav": {
+    "home": "Home",
+    "chat": "Chat",
+    "dashboard": "Dashboard",
+    "planner": "Planner",
+    "ariaMain": "Main"
+  },
+  "footer": {
+    "legal": "Unofficial · not affiliated with the Premier League or FPL."
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "zh": "中文"
+  },
+  "home": {
+    "badge": "FALEAGUE AI",
+    "titleLead": "Win your mini-league with an AI that",
+    "titleAccent": "actually reads the data",
+    "subtitle": "Live FPL data + your squad — captaincy, transfers, and why.",
+    "entryHint": "Entry ID: Points page URL on",
+    "openChat": "Open chat",
+    "featuresTitle": "Features",
+    "feature1Title": "Live data",
+    "feature1Body": "Answers tied to the FPL API — form, fixtures, FDR, xG.",
+    "feature2Title": "Picks with reasoning",
+    "feature2Body": "Optimizer on your squad, plus plain-English explanation.",
+    "feature3Title": "Your squad",
+    "feature3Body": "Entry ID → XI, bank, chips — advice in context."
+  },
+  "entryForm": {
+    "label": "Entry ID",
+    "placeholder": "e.g. 1234567",
+    "continue": "Continue",
+    "viewDashboard": "View dashboard",
+    "planner": "Planner",
+    "clear": "Clear"
+  },
+  "dashboardIndex": {
+    "opening": "Opening your dashboard…",
+    "eyebrow": "Dashboard",
+    "title": "Your FPL dashboard",
+    "description": "Enter your FPL Entry ID to see squad stats for your team."
+  },
+  "chat": {
+    "eyebrow": "Chat",
+    "title": "FPL analyst",
+    "description": "Live FPL data. Add your Entry ID on Home for squad-specific answers."
+  },
+  "dashboard": {
+    "eyebrow": "Dashboard",
+    "backHome": "← Home",
+    "errorTitle": "Couldn’t load team",
+    "refresh": "Refresh",
+    "pts": "pts",
+    "overallRank": "OR",
+    "stats": {
+      "bank": "Bank",
+      "teamValue": "Team value",
+      "freeTransfers": "Free transfers",
+      "activeChip": "Active chip",
+      "xpXi": "xP XI · next {horizon}",
+      "xpBench": "xP bench · next {horizon}"
+    },
+    "freeHitShowRevert": "Show revert squad (post-Free Hit)",
+    "freeHitViewTemp": "View temporary Free Hit 15",
+    "staleTitle": "Stale squad:",
+    "staleBody": "next-GW picks can be hidden until the deadline. FH/WC/BB and pending transfers may not show yet. Below = last confirmed (GW{gw}).",
+    "xpHeatmap": "xP heatmap · GW{from}–{to}",
+    "xpLegendNote": "flags:",
+    "squad": "Squad",
+    "startingXI": "Starting XI",
+    "bench": "Bench",
+    "fixturesEyebrow": "Fixtures",
+    "fixturesTitle": "All teams · next {horizon} GWs",
+    "fixturesHint": "FDR: green easy · red hard. Yellow ring = DGW.",
+    "fixtureTableTeam": "Team",
+    "assistantEyebrow": "Assistant",
+    "assistantTitle": "Open chat",
+    "assistantDesc": "Same data as this dashboard."
+  },
+  "planner": {
+    "errorTitle": "Couldn’t load team",
+    "backHome": "← Home"
+  },
+  "plannerIndex": {
+    "opening": "Opening planner…",
+    "eyebrow": "Planner",
+    "title": "Squad planner",
+    "description": "Enter your FPL Entry ID to work with your team in the planner. Each browser and each Vercel URL keeps its own copy — re-enter on a new link if Planner looked missing."
+  }
+}

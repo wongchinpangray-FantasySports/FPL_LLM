@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEntryId } from "./entry-id-context";
@@ -14,6 +15,7 @@ export function EntryIdForm({
   /** After save: open this path. Use a function for e.g. `/planner/123` without a query. */
   redirectTo?: string | ((entryId: string) => string);
 }) {
+  const t = useTranslations("entryForm");
   const router = useRouter();
   const { entryId, setEntryId } = useEntryId();
   const [value, setValue] = useState("");
@@ -42,26 +44,26 @@ export function EntryIdForm({
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <label className="flex min-w-[200px] max-w-xs flex-1 flex-col gap-1.5">
           <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-            Entry ID
+            {t("label")}
           </span>
           <Input
             inputMode="numeric"
             pattern="\d*"
-            placeholder="e.g. 1234567"
+            placeholder={t("placeholder")}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             className="w-full"
           />
         </label>
         <div className="flex flex-wrap gap-2">
-          <Button type="submit">Continue</Button>
+          <Button type="submit">{t("continue")}</Button>
           {entryId && (
             <Button
               type="button"
               variant="secondary"
               onClick={() => router.push(`/dashboard/${entryId}`)}
             >
-              View dashboard
+              {t("viewDashboard")}
             </Button>
           )}
           {entryId && (
@@ -70,7 +72,7 @@ export function EntryIdForm({
               variant="secondary"
               onClick={() => router.push(`/planner/${entryId}`)}
             >
-              Planner
+              {t("planner")}
             </Button>
           )}
           {entryId && (
@@ -82,7 +84,7 @@ export function EntryIdForm({
                 setValue("");
               }}
             >
-              Clear
+              {t("clear")}
             </Button>
           )}
         </div>

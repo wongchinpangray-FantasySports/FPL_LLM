@@ -1,56 +1,50 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 
-const features = [
-  {
-    title: "Live data",
-    body: "Answers tied to the FPL API — form, fixtures, FDR, xG.",
-  },
-  {
-    title: "Picks with reasoning",
-    body: "Optimizer on your squad, plus plain-English explanation.",
-  },
-  {
-    title: "Your squad",
-    body: "Entry ID → XI, bank, chips — advice in context.",
-  },
-];
+export default async function HomePage() {
+  const t = await getTranslations("home");
 
-export default function HomePage() {
+  const features = [
+    { title: t("feature1Title"), body: t("feature1Body") },
+    { title: t("feature2Title"), body: t("feature2Body") },
+    { title: t("feature3Title"), body: t("feature3Body") },
+  ];
+
   return (
     <div className="flex flex-col gap-16 md:gap-24">
       <section className="flex max-w-3xl flex-col items-start gap-8">
         <span className="rounded-full border border-brand-accent/25 bg-brand-accent/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-          FALEAGUE AI
+          {t("badge")}
         </span>
         <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-6xl md:leading-[1.05]">
-          Win your mini-league with an AI that{" "}
+          {t("titleLead")}{" "}
           <span className="bg-gradient-to-r from-brand-accent to-emerald-300 bg-clip-text text-transparent">
-            actually reads the data
+            {t("titleAccent")}
           </span>
           .
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-slate-300">
-          Live FPL data + your squad — captaincy, transfers, and why.
+          {t("subtitle")}
         </p>
         <div className="w-full max-w-xl rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-sm md:p-6">
           <EntryIdForm />
           <p className="mt-3 text-xs text-slate-500">
-            Entry ID: Points page URL on{" "}
+            {t("entryHint")}{" "}
             <span className="text-slate-400">fantasy.premierleague.com</span>.
           </p>
         </div>
         <Link href="/chat" className="inline-flex">
           <Button variant="secondary" size="lg">
-            Open chat
+            {t("openChat")}
           </Button>
         </Link>
       </section>
 
       <section>
         <h2 className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-          Features
+          {t("featuresTitle")}
         </h2>
         <div className="grid gap-4 md:grid-cols-3 md:gap-5">
           {features.map((f) => (

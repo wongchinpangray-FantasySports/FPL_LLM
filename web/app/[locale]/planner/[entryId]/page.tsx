@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
@@ -11,11 +12,16 @@ export default async function PlannerPage({
   params,
   searchParams,
 }: {
-  params: { entryId: string };
+  params: { locale: string; entryId: string };
   searchParams?: { squad?: string; refresh?: string };
 }) {
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
+
+  const pt = await getTranslations({
+    locale: params.locale,
+    namespace: "planner",
+  });
 
   const useFreeHitSquad = searchParams?.squad === "freehit";
   const forceRefresh =
@@ -27,9 +33,7 @@ export default async function PlannerPage({
   } catch (err) {
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
-        <h1 className="text-xl font-semibold text-white">
-          Couldn&apos;t load team
-        </h1>
+        <h1 className="text-xl font-semibold text-white">{pt("errorTitle")}</h1>
         <p className="mt-2 text-sm text-rose-100/90">
           {(err as Error).message}
         </p>
@@ -37,7 +41,7 @@ export default async function PlannerPage({
           href="/"
           className="mt-6 inline-flex rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-accent hover:bg-white/10"
         >
-          ← Home
+          {pt("backHome")}
         </Link>
       </div>
     );

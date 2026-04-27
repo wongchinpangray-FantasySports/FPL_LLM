@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 import {
@@ -28,11 +29,17 @@ export default async function DashboardPage({
   params,
   searchParams,
 }: {
-  params: { entryId: string };
+  params: { locale: string; entryId: string };
   searchParams?: { refresh?: string; squad?: string };
 }) {
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
+
+  const dt = await getTranslations({
+    locale: params.locale,
+    namespace: "dashboard",
+  });
+
   const forceRefresh =
     searchParams?.refresh === "1" || searchParams?.refresh === "true";
   const useFreeHitSquad = searchParams?.squad === "freehit";
@@ -43,9 +50,7 @@ export default async function DashboardPage({
   } catch (err) {
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
-        <h1 className="text-xl font-semibold text-white">
-          Couldn&apos;t load team
-        </h1>
+        <h1 className="text-xl font-semibold text-white">{dt("errorTitle")}</h1>
         <p className="mt-2 text-sm text-rose-100/90">
           {(err as Error).message}
         </p>
@@ -53,7 +58,7 @@ export default async function DashboardPage({
           href="/"
           className="mt-6 inline-flex rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-accent hover:bg-white/10"
         >
-          ← Home
+          {dt("backHome")}
         </Link>
       </div>
     );
@@ -140,7 +145,7 @@ export default async function DashboardPage({
       <section className="flex flex-wrap items-end justify-between gap-8 border-b border-white/[0.06] pb-8">
         <div className="flex max-w-xl flex-col gap-2">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-            Dashboard
+            {dt("eyebrow")}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             {team.entry.name}
@@ -148,9 +153,9 @@ export default async function DashboardPage({
           <p className="text-sm leading-relaxed text-slate-400">
             {team.entry.player_first_name} {team.entry.player_last_name} ·{" "}
             <span className="text-slate-300">
-              {team.entry.summary_overall_points.toLocaleString()} pts
+              {team.entry.summary_overall_points.toLocaleString()} {dt("pts")}
             </span>{" "}
-            · OR{" "}
+            · {dt("overallRank")}{" "}
             <span className="text-slate-300">
               {team.entry.summary_overall_rank.toLocaleString()}
             </span>
@@ -170,21 +175,27 @@ export default async function DashboardPage({
               }
               className="font-medium text-brand-accent hover:underline"
             >
-              Refresh
+              {dt("refresh")}
             </Link>
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:gap-3">
-          <Stat label="Bank" value={`£${team.bank.toFixed(1)}m`} />
-          <Stat label="Team value" value={`£${team.team_value.toFixed(1)}m`} />
-          <Stat label="Free transfers" value={String(team.free_transfers)} />
-          <Stat label="Active chip" value={team.active_chip ?? "—"} />
+          <Stat label={dt("stats.bank")} value={`£${team.bank.toFixed(1)}m`} />
           <Stat
-            label={`xP XI · next ${horizon}`}
+            label={dt("stats.teamValue")}
+            value={`£${team.team_value.toFixed(1)}m`}
+          />
+          <Stat
+            label={dt("stats.freeTransfers")}
+            value={String(team.free_transfers)}
+          />
+          <Stat label={dt("stats.activeChip")} value={team.active_chip ?? "—"} />
+          <Stat
+            label={dt("stats.xpXi", { horizon })}
             value={starterXPTotal.toFixed(1)}
           />
           <Stat
-            label={`xP bench · next ${horizon}`}
+            label={dt("stats.xpBench", { horizon })}
             value={benchXPTotal.toFixed(1)}
           />
         </div>
@@ -203,14 +214,14 @@ export default async function DashboardPage({
                   href={dashboardToggleHref(false)}
                   className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
                 >
-                  Show revert squad (post-Free Hit)
+                  {dt("freeHitShowRevert")}
                 </Link>
               ) : (
                 <Link
                   href={dashboardToggleHref(true)}
                   className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
                 >
-                  View temporary Free Hit 15
+                  {dt("freeHitViewTemp")}
                 </Link>
               )}
             </p>
@@ -220,14 +231,13 @@ export default async function DashboardPage({
 
       {team.picks_may_be_stale && (
         <section className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-          <strong className="font-semibold">Stale squad:</strong> next-GW picks
-          can be hidden until the deadline. FH/WC/BB and pending transfers may
-          not show yet. Below = last confirmed (GW{team.current_gw}).{" "}
+          <strong className="font-semibold">{dt("staleTitle")}</strong>{" "}
+          {dt("staleBody", { gw: team.current_gw ?? "?" })}{" "}
           <Link
             href={`/dashboard/${entryId}?refresh=1`}
             className="underline hover:text-amber-50"
           >
-            Refresh
+            {dt("refresh")}
           </Link>
         </section>
       )}
@@ -237,20 +247,23 @@ export default async function DashboardPage({
           rows={heatmapRows}
           gws={gwHeaders}
           dgwTeamGw={dgwTeamGw}
-          title={`xP heatmap · GW${gwHeaders[0]}–${gwHeaders[gwHeaders.length - 1]}`}
+          title={dt("xpHeatmap", {
+            from: gwHeaders[0],
+            to: gwHeaders[gwHeaders.length - 1],
+          })}
         />
         <div className="flex flex-wrap gap-3 text-[11px] text-slate-400">
-          <Legend />
+          <Legend flagsLabel={dt("xpLegendNote")} />
         </div>
       </section>
 
       <section className="space-y-8">
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-            Squad
+            {dt("squad")}
           </p>
           <h2 className="text-xl font-semibold tracking-tight text-white">
-            Starting XI
+            {dt("startingXI")}
           </h2>
         </div>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -260,7 +273,7 @@ export default async function DashboardPage({
         </div>
         <div className="mt-10">
           <h2 className="mb-3 text-xl font-semibold tracking-tight text-white">
-            Bench
+            {dt("bench")}
           </h2>
         </div>
         <div className="grid gap-3 md:grid-cols-4">
@@ -274,21 +287,19 @@ export default async function DashboardPage({
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-              Fixtures
+              {dt("fixturesEyebrow")}
             </p>
             <h2 className="text-xl font-semibold tracking-tight text-white">
-              All teams · next {horizon} GWs
+              {dt("fixturesTitle", { horizon })}
             </h2>
           </div>
-          <span className="text-xs text-slate-400">
-            FDR: green easy · red hard. Yellow ring = DGW.
-          </span>
+          <span className="text-xs text-slate-400">{dt("fixturesHint")}</span>
         </div>
         <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-400">
-                <th className="px-3 py-2">Team</th>
+                <th className="px-3 py-2">{dt("fixtureTableTeam")}</th>
                 {gwHeaders.map((g) => (
                   <th key={g} className="px-2 py-2 text-center">
                     GW{g}
@@ -343,11 +354,11 @@ export default async function DashboardPage({
         >
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.15em] text-brand-accent">
-              Assistant
+              {dt("assistantEyebrow")}
             </p>
-            <p className="mt-1 font-medium text-white">Open chat</p>
+            <p className="mt-1 font-medium text-white">{dt("assistantTitle")}</p>
             <p className="mt-1 text-sm text-slate-400">
-              Same data as this dashboard.
+              {dt("assistantDesc")}
             </p>
           </div>
           <span className="mt-3 shrink-0 text-brand-accent transition-transform group-hover:translate-x-0.5 md:mt-0 md:text-lg">
@@ -382,7 +393,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Legend() {
+function Legend({ flagsLabel }: { flagsLabel: string }) {
   const buckets: Array<{ label: string; cls: string }> = [
     { label: "0–1", cls: "bg-slate-700/70 text-slate-200" },
     { label: "1–2", cls: "bg-sky-900/70 text-sky-100" },
@@ -405,7 +416,7 @@ function Legend() {
           {b.label}
         </span>
       ))}
-      <span className="ml-2 uppercase tracking-wider">flags:</span>
+      <span className="ml-2 uppercase tracking-wider">{flagsLabel}</span>
       <span className="rounded bg-amber-400/25 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
         PEN
       </span>
