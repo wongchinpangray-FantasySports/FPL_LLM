@@ -42,8 +42,8 @@ export default async function LocaleLayout({ children, params }: Props) {
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleHtmlLang locale={locale} />
       <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-brand-ink/75 backdrop-blur-xl">
-        <div className="container flex flex-wrap items-center justify-between gap-4 py-3.5 md:py-4">
-          <div className="flex flex-wrap items-center gap-4">
+        <div className="container flex flex-wrap items-center justify-between gap-3 py-2.5 sm:gap-4 md:py-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <Link
               href="/"
               className="group flex items-center gap-2.5 font-semibold tracking-tight text-white"
@@ -52,7 +52,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                 className="h-2 w-2 shrink-0 rounded-full bg-brand-accent shadow-[0_0_14px_rgba(0,255,135,0.85)] transition-transform group-hover:scale-110"
                 aria-hidden
               />
-              <span>FALEAGUE AI</span>
+              <span className="text-sm sm:text-base">FALEAGUE AI</span>
             </Link>
             <SiteNav />
           </div>
@@ -63,7 +63,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         {children}
       </main>
       <footer className="border-t border-white/[0.06] bg-brand-ink/40">
-        <div className="container py-10 text-xs text-slate-500">
+        <div className="container py-6 text-xs text-slate-500 sm:py-10">
           <p>{t("legal")}</p>
         </div>
       </footer>

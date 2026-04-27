@@ -101,26 +101,26 @@ export function PlannerPlayerInspectSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="planner-inspect-title"
       onClick={onClose}
     >
       <div
-        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/[0.1] bg-brand-ink p-5 shadow-2xl shadow-black/50"
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/[0.1] bg-brand-ink p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="planner-inspect-title"
-              className="text-lg font-semibold text-white"
+              className="text-base font-semibold text-white sm:text-lg"
             >
               {loading ? t("inspectLoadingTitle") : name}
             </h2>
             {detail ? (
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
                 {detail.profile.team ?? "—"} · {detail.profile.position ?? "—"}{" "}
                 · £{detail.profile.price != null ? detail.profile.price.toFixed(1) : "?"}m
               </p>
@@ -140,8 +140,8 @@ export function PlannerPlayerInspectSheet({
         ) : null}
 
         {detail ? (
-          <div className="flex flex-col gap-5 text-sm">
-            <section className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <div className="flex flex-col gap-4 text-sm sm:gap-5">
+            <section className="rounded-lg border border-white/10 bg-white/[0.03] p-3 sm:rounded-xl">
               <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                 {t("inspectSeasonSection")}
               </p>
@@ -196,7 +196,7 @@ export function PlannerPlayerInspectSheet({
               ) : null}
             </section>
 
-            <section className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <section className="rounded-lg border border-white/10 bg-white/[0.03] p-3 sm:rounded-xl">
               <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                 {t("inspectRollingSection", { gws: detail.rolling.window_gws })}
               </p>
@@ -243,14 +243,14 @@ export function PlannerPlayerInspectSheet({
                   xP ({detail.xp_per_game.toFixed(2)}/{t("inspectPerGwShort")})
                 </span>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-white/10">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto rounded-lg border border-white/10 sm:rounded-xl">
+                <table className="w-full text-[11px] sm:text-xs">
                   <thead>
-                    <tr className="text-left text-[10px] uppercase text-slate-400">
-                      <th className="px-2 py-2">{t("inspectTblGw")}</th>
-                      <th className="px-2 py-2">{t("inspectTblOpp")}</th>
-                      <th className="px-2 py-2">{t("inspectTblFdr")}</th>
-                      <th className="px-2 py-2 text-right">{t("inspectTblXp")}</th>
+                    <tr className="text-left text-[9px] uppercase text-slate-400 sm:text-[10px]">
+                      <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblGw")}</th>
+                      <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblOpp")}</th>
+                      <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblFdr")}</th>
+                      <th className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">{t("inspectTblXp")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -259,19 +259,19 @@ export function PlannerPlayerInspectSheet({
                         key={`${fx.gw}-${fx.opp_short}-${fx.home}`}
                         className="border-t border-white/5"
                       >
-                        <td className="px-2 py-2 text-slate-300">
+                        <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">
                           {fx.gw}
                         </td>
-                        <td className="px-2 py-2 font-medium text-slate-200">
+                        <td className="px-1.5 py-1.5 font-medium text-slate-200 sm:px-2 sm:py-2">
                           {fx.opp_short}
                           <span className="text-slate-500">
                             {fx.home ? " (H)" : " (A)"}
                           </span>
                         </td>
-                        <td className="px-2 py-2 text-slate-400">
+                        <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
                           {fx.fdr ?? "—"}
                         </td>
-                        <td className="px-2 py-2 text-right">
+                        <td className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">
                           <span
                             className={cn(
                               "inline-block rounded px-2 py-0.5 font-semibold tabular-nums",

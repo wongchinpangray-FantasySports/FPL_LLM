@@ -518,15 +518,15 @@ export function PlannerApp({
   const xiXpDelta = xiXpDisplay - baselineXiXp;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
       {baselineBanner ? (
         <div
-          className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100/90"
+          className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-100/90 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
           role="status"
         >
           <p>{baselineBanner}</p>
           {squadToggle ? (
-            <p className="mt-2 flex flex-wrap gap-4 text-xs text-amber-200/80">
+            <p className="mt-2 flex flex-wrap gap-2 text-[11px] text-amber-200/80 sm:gap-4 sm:text-xs">
               {squadToggle.useFreeHit ? (
                 <Link
                   href={squadToggle.pathBase}
@@ -546,15 +546,15 @@ export function PlannerApp({
           ) : null}
         </div>
       ) : null}
-      <section className="flex flex-wrap items-start justify-between gap-6 border-b border-white/[0.06] pb-8">
+      <section className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] pb-5 sm:gap-6 sm:pb-8">
         <div className="max-w-2xl">
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
+          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent sm:mb-2 sm:text-xs">
             {t("eyebrow")}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
             {t("title")}
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-400">
+          <p className="mt-2 text-xs leading-relaxed text-slate-400 sm:mt-3 sm:text-sm">
             <span className="text-slate-300">{entryName}</span>
             {" · "}
             {t("subtitleSuffix")}
@@ -576,7 +576,7 @@ export function PlannerApp({
         </div>
       </section>
 
-      <section className="flex flex-wrap gap-4 items-end">
+      <section className="flex flex-wrap gap-3 items-end sm:gap-4">
         <div>
           <label className="text-[10px] uppercase text-slate-500 block mb-1">
             {t("bank")}
@@ -662,7 +662,7 @@ export function PlannerApp({
       </section>
 
       {issues.length > 0 && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-100 sm:px-4 sm:py-3 sm:text-sm">
           <ul className="list-disc pl-5">
             {issues.map((i) => (
               <li key={i.code}>{formatPlannerIssue(i, t)}</li>
@@ -675,7 +675,7 @@ export function PlannerApp({
         <p className="text-sm text-rose-300">{projError}</p>
       )}
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-2 sm:gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="max-w-xl space-y-1 text-xs text-slate-500">
             <p>
@@ -691,7 +691,7 @@ export function PlannerApp({
             {t("resetFpl")}
           </Button>
         </div>
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           <PitchView
             title={t("pitchYourFpl")}
             caption={t("pitchYourFplCaption")}
@@ -727,7 +727,7 @@ export function PlannerApp({
       </section>
 
       {projMeta && Object.keys(projById).length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm sm:px-4 sm:py-4">
           <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1">
             <span className="text-slate-500">
               {t("gwRange", {
@@ -784,17 +784,17 @@ export function PlannerApp({
         </div>
       )}
 
-      <section className="overflow-x-auto rounded-xl border border-white/10 bg-white/5">
-        <table className="w-full text-sm">
+      <section className="overflow-x-auto rounded-lg border border-white/10 bg-white/5 sm:rounded-xl">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase text-slate-400">
-              <th className="px-3 py-2">{t("tableSlot")}</th>
-              <th className="px-2 py-2">{t("tablePlayer")}</th>
-              <th className="px-2 py-2">{t("tablePos")}</th>
-              <th className="px-2 py-2">{t("tableClub")}</th>
-              <th className="px-2 py-2">{t("tablePrice")}</th>
-              <th className="px-2 py-2 text-right">{t("tableXpHorizon")}</th>
-              <th className="px-2 py-2 text-right">{t("tableAction")}</th>
+            <tr className="text-left text-[10px] uppercase text-slate-400 sm:text-xs">
+              <th className="px-2 py-1.5 sm:px-3 sm:py-2">{t("tableSlot")}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tablePlayer")}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tablePos")}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tableClub")}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tablePrice")}</th>
+              <th className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">{t("tableXpHorizon")}</th>
+              <th className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">{t("tableAction")}</th>
             </tr>
           </thead>
           <tbody>
@@ -819,7 +819,7 @@ export function PlannerApp({
                     xiBenchMode && xiFirst === p.slot && "bg-sky-500/10",
                   )}
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     {p.slot}
                     {!p.is_starter && (
                       <span className="ml-1 text-[10px] text-slate-500">
@@ -827,16 +827,16 @@ export function PlannerApp({
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-2 font-medium">
+                  <td className="px-1.5 py-1.5 font-medium sm:px-2 sm:py-2">
                     {p.web_name ?? `#${p.fpl_id}`}
                     {cap}
                   </td>
-                  <td className="px-2 py-2 text-slate-400">{p.position}</td>
-                  <td className="px-2 py-2 text-slate-300">{p.team}</td>
-                  <td className="px-2 py-2">
+                  <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">{p.position}</td>
+                  <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">{p.team}</td>
+                  <td className="px-1.5 py-1.5 sm:px-2 sm:py-2">
                     {p.base_price != null ? p.base_price.toFixed(1) : "–"}
                   </td>
-                  <td className="px-2 py-2 text-right font-medium">
+                  <td className="px-1.5 py-1.5 text-right font-medium sm:px-2 sm:py-2">
                     {pr ? (
                       <>
                         {pr.xp_total.toFixed(1)}
@@ -853,7 +853,7 @@ export function PlannerApp({
                       "–"
                     )}
                   </td>
-                  <td className="px-2 py-2 text-right">
+                  <td className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">
                     <Button
                       type="button"
                       variant={xiBenchMode ? "primary" : "secondary"}
@@ -882,7 +882,7 @@ export function PlannerApp({
           role="dialog"
           aria-modal="true"
         >
-          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/[0.1] bg-brand-ink p-5 shadow-2xl shadow-black/50">
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/[0.1] bg-brand-ink p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">
                 {t("replaceSlot", { slot: swapSlot })}

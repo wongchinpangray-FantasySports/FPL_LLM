@@ -18,7 +18,7 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "relative rounded-md px-2 py-1.5 text-sm transition-colors",
+        "relative rounded-md px-1.5 py-1 text-xs transition-colors sm:px-2 sm:py-1.5 sm:text-sm",
         active
           ? "text-white after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
           : "text-slate-400 hover:text-white",

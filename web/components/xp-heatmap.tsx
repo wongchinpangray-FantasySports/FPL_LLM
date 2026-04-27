@@ -83,7 +83,7 @@ function Cell({
 }) {
   if (!fixtures || fixtures.length === 0) {
     return (
-      <div className="rounded border border-white/5 bg-slate-900/40 px-1.5 py-1 text-center text-[10px] text-slate-600">
+      <div className="rounded border border-white/5 bg-slate-900/40 px-1 py-0.5 text-center text-[9px] text-slate-600 sm:px-1.5 sm:py-1 sm:text-[10px]">
         —
       </div>
     );
@@ -97,10 +97,10 @@ function Cell({
   return (
     <div
       className={cn(
-        "rounded px-1.5 py-1 text-center text-[11px] leading-tight",
+        "rounded px-1 py-0.5 text-center text-[10px] leading-tight sm:px-1.5 sm:py-1 sm:text-[11px]",
         xpCellClass(total),
         isDgw &&
-          "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]",
+          "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-950 shadow-[0_0_0_1px_rgba(250,204,21,0.35)] sm:ring-offset-2",
       )}
       title={fixtures
         .map(
@@ -175,10 +175,10 @@ export function XpHeatmap({
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5 sm:gap-2">
       {title && (
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-xl font-semibold tracking-tight text-white">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 sm:gap-3">
+          <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
             {title}
           </h2>
           <span className="max-w-xl text-xs leading-relaxed text-slate-400">
@@ -186,19 +186,19 @@ export function XpHeatmap({
           </span>
         </div>
       )}
-      <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl">
+        <table className="w-full text-[11px] sm:text-xs">
           <thead>
-            <tr className="text-left text-[10px] uppercase text-slate-400">
-              <th className="px-3 py-2">{columnHeaders.player}</th>
-              <th className="px-2 py-2">{columnHeaders.team}</th>
-              <th className="px-2 py-2">{columnHeaders.pos}</th>
+            <tr className="text-left text-[9px] uppercase text-slate-400 sm:text-[10px]">
+              <th className="px-2 py-1.5 sm:px-3 sm:py-2">{columnHeaders.player}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{columnHeaders.team}</th>
+              <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{columnHeaders.pos}</th>
               {gws.map((g) => (
-                <th key={g} className="px-2 py-2 text-center">
+                <th key={g} className="px-1 py-1.5 text-center sm:px-2 sm:py-2">
                   GW{g}
                 </th>
               ))}
-              <th className="px-2 py-2 text-right">{columnHeaders.total}</th>
+              <th className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">{columnHeaders.total}</th>
             </tr>
           </thead>
           <tbody>
@@ -213,7 +213,7 @@ export function XpHeatmap({
                     showDivider && "border-t-2 border-white/20",
                   )}
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium">
                         {r.web_name ?? `#${r.fpl_id}`}
@@ -259,12 +259,12 @@ export function XpHeatmap({
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-2 text-slate-300">{r.team ?? "–"}</td>
-                  <td className="px-2 py-2 text-slate-400">
+                  <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">{r.team ?? "–"}</td>
+                  <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
                     {r.position ?? "–"}
                   </td>
                   {gws.map((g) => (
-                    <td key={g} className="px-1 py-1 align-middle">
+                    <td key={g} className="px-0.5 py-0.5 align-middle sm:px-1 sm:py-1">
                       <Cell
                         fixtures={r.byGw.get(g)}
                         gw={g}
@@ -273,7 +273,7 @@ export function XpHeatmap({
                       />
                     </td>
                   ))}
-                  <td className="px-2 py-2 text-right font-semibold">
+                  <td className="px-1.5 py-1.5 text-right font-semibold sm:px-2 sm:py-2">
                     {r.xp_total.toFixed(1)}
                   </td>
                 </tr>
@@ -286,7 +286,7 @@ export function XpHeatmap({
               <td />
               <td />
               {colTotals.map((t, i) => (
-                <td key={gws[i]} className="px-2 py-2 text-center text-xs">
+                <td key={gws[i]} className="px-1 py-1.5 text-center text-[11px] sm:px-2 sm:py-2 sm:text-xs">
                   <span
                     className={cn(
                       "inline-block rounded px-2 py-0.5 font-semibold",
@@ -297,7 +297,7 @@ export function XpHeatmap({
                   </span>
                 </td>
               ))}
-              <td className="px-2 py-2 text-right font-semibold">
+              <td className="px-1.5 py-1.5 text-right font-semibold sm:px-2 sm:py-2">
                 {colTotals.reduce((a, b) => a + b, 0).toFixed(1)}
               </td>
             </tr>

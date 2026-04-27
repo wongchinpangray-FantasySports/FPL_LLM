@@ -11,17 +11,17 @@ export function PageHeader({
   description?: string;
 }) {
   return (
-    <header className="mb-8 max-w-2xl">
+    <header className="mb-6 max-w-2xl md:mb-8">
       {eyebrow ? (
         <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
           {eyebrow}
         </p>
       ) : null}
-      <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+      <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
         {title}
       </h1>
       {description ? (
-        <p className="mt-3 text-base leading-relaxed text-slate-400">
+        <p className="mt-2 text-sm leading-relaxed text-slate-400 md:mt-3 md:text-base">
           {description}
         </p>
       ) : null}

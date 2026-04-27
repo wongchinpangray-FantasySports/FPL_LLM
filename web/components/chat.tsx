@@ -137,15 +137,15 @@ export function Chat() {
   }
 
   return (
-    <div className="flex min-h-[min(520px,calc(100vh-22rem))] flex-col md:min-h-[calc(100vh-20rem)]">
+    <div className="flex min-h-[min(340px,calc(100vh-14rem))] flex-col sm:min-h-[min(520px,calc(100vh-22rem))] md:min-h-[calc(100vh-20rem)]">
       <div
         ref={scrollRef}
-        className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]"
+        className="flex flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl"
       >
         <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
           {messages.length === 0 && (
-            <div className="flex flex-col gap-5 rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-slate-300 md:p-6">
-              <p className="text-sm leading-relaxed">
+            <div className="flex flex-col gap-3 rounded-lg border border-dashed border-white/10 bg-black/20 p-4 text-slate-300 sm:gap-5 sm:rounded-xl sm:p-5 md:p-6">
+              <p className="text-xs leading-relaxed sm:text-sm">
                 {t("emptyLead")}
                 {entryId ? (
                   <>
@@ -191,7 +191,7 @@ export function Chat() {
             e.preventDefault();
             send(input);
           }}
-          className="flex gap-2 border-t border-white/[0.06] bg-black/25 p-3 md:p-4"
+          className="flex gap-1.5 border-t border-white/[0.06] bg-black/25 p-2.5 sm:gap-2 sm:p-3 md:p-4"
         >
           <Input
             placeholder={t("placeholder")}
@@ -224,7 +224,7 @@ function Message({ message }: { message: UiMessage }) {
       )}
       <div
         className={cn(
-          "max-w-[min(85%,560px)] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
+          "max-w-[min(88%,560px)] rounded-xl px-3 py-2.5 text-[13px] leading-relaxed shadow-sm sm:max-w-[min(85%,560px)] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm",
           isUser
             ? "rounded-br-md border border-brand-accent/35 bg-brand-accent/12 text-slate-100"
             : "rounded-bl-md border border-white/[0.08] bg-black/35 text-slate-100",

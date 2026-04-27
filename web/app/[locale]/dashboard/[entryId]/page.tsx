@@ -148,13 +148,13 @@ export default async function DashboardPage({
     .reduce((s, r) => s + r.xp_total, 0);
 
   return (
-    <div className="flex flex-col gap-10 md:gap-12">
-      <section className="flex flex-wrap items-end justify-between gap-8 border-b border-white/[0.06] pb-8">
-        <div className="flex max-w-xl flex-col gap-2">
+    <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
+      <section className="flex flex-col gap-5 border-b border-white/[0.06] pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
+        <div className="flex max-w-xl flex-col gap-1.5 sm:gap-2">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
             {dt("eyebrow")}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
             {team.entry.name}
           </h1>
           <p className="text-sm leading-relaxed text-slate-400">
@@ -191,7 +191,7 @@ export default async function DashboardPage({
             </Link>
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:gap-3">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 lg:flex lg:flex-wrap lg:gap-3">
           <Stat label={dt("stats.bank")} value={`£${team.bank.toFixed(1)}m`} />
           <Stat
             label={dt("stats.teamValue")}
@@ -215,7 +215,7 @@ export default async function DashboardPage({
 
       {baselineBanner && (
         <section
-          className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100/90"
+          className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-sm leading-relaxed text-amber-100/90 sm:rounded-xl sm:px-4 sm:py-3"
           role="status"
         >
           <p>{baselineBanner}</p>
@@ -242,7 +242,7 @@ export default async function DashboardPage({
       )}
 
       {team.picks_may_be_stale && (
-        <section className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+        <section className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs text-amber-100 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm">
           <strong className="font-semibold">{dt("staleTitle")}</strong>{" "}
           {dt("staleBody", { gw: team.current_gw ?? "?" })}{" "}
           <Link
@@ -254,7 +254,7 @@ export default async function DashboardPage({
         </section>
       )}
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-3 md:gap-4">
         <XpHeatmap
           rows={heatmapRows}
           gws={gwHeaders}
@@ -282,16 +282,16 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      <section className="space-y-8">
+      <section className="space-y-5 md:space-y-8">
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
             {dt("squad")}
           </p>
-          <h2 className="text-xl font-semibold tracking-tight text-white">
+          <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
             {dt("startingXI")}
           </h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3">
           {startingXI.map((p) => (
             <PlayerCard
               key={p.fpl_id}
@@ -300,12 +300,12 @@ export default async function DashboardPage({
             />
           ))}
         </div>
-        <div className="mt-10">
-          <h2 className="mb-3 text-xl font-semibold tracking-tight text-white">
+        <div className="mt-6 md:mt-10">
+          <h2 className="mb-2 text-lg font-semibold tracking-tight text-white md:mb-3 md:text-xl">
             {dt("bench")}
           </h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-2 sm:gap-3 md:grid-cols-4">
           {bench.map((p) => (
             <PlayerCard
               key={p.fpl_id}
@@ -384,7 +384,7 @@ export default async function DashboardPage({
       <section>
         <Link
           href="/chat"
-          className="group flex flex-col gap-1 rounded-2xl border border-brand-accent/25 bg-brand-accent/[0.06] p-5 transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/[0.09] md:flex-row md:items-center md:justify-between md:p-6"
+          className="group flex flex-col gap-1 rounded-xl border border-brand-accent/25 bg-brand-accent/[0.06] p-4 transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/[0.09] sm:rounded-2xl sm:p-5 md:flex-row md:items-center md:justify-between md:p-6"
         >
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.15em] text-brand-accent">
@@ -421,11 +421,11 @@ function relTime(
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12]">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+    <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:px-3 sm:py-2.5">
+      <div className="text-[9px] font-medium uppercase leading-tight tracking-wider text-slate-500 sm:text-[10px]">
         {label}
       </div>
-      <div className="mt-0.5 text-base font-semibold tabular-nums text-white">
+      <div className="mt-0.5 text-sm font-semibold tabular-nums text-white sm:text-base">
         {value}
       </div>
     </div>
@@ -502,7 +502,7 @@ function PlayerCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-white/[0.08] bg-white/[0.04] p-3.5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12]",
+        "rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:p-3.5",
         p.is_captain && "ring-1 ring-brand-accent/80",
       )}
     >

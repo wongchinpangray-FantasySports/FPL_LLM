@@ -53,7 +53,7 @@ function PlayerChip({
   );
 
   const cls = cn(
-    "min-w-[72px] max-w-[100px] rounded-lg border px-1.5 py-1.5 text-center shadow-sm transition-colors",
+    "min-w-[58px] max-w-[84px] rounded-md border px-1 py-1 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
     "border-white/20 bg-black/40 backdrop-blur-sm",
     highlight &&
       "ring-2 ring-amber-400 ring-offset-2 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)]",
@@ -93,7 +93,7 @@ function Line({
   if (players.length === 0) return null;
   const sorted = sortBySlot(players);
   return (
-    <div className="flex min-h-[52px] flex-1 items-center justify-center gap-1.5 px-1">
+    <div className="flex min-h-[44px] flex-1 items-center justify-center gap-1 px-0.5 sm:min-h-[52px] sm:gap-1.5 sm:px-1">
       {sorted.map((p) => (
         <PlayerChip
           key={p.slot}
@@ -159,7 +159,7 @@ export function PitchView({
 
       <div className="overflow-hidden rounded-2xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg">
         {/* Decorative centre line */}
-        <div className="relative aspect-[5/3.1] flex flex-col justify-between px-2 py-3">
+        <div className="relative aspect-[5/2.85] flex flex-col justify-between px-1.5 py-2 sm:aspect-[5/3.1] sm:px-2 sm:py-3">
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
 
@@ -203,7 +203,7 @@ export function PitchView({
         </div>
 
         {/* Bench */}
-        <div className="border-t border-white/10 bg-black/25 px-2 py-2">
+        <div className="border-t border-white/10 bg-black/25 px-1.5 py-1.5 sm:px-2 sm:py-2">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">
             {benchLabel}
           </div>
@@ -211,7 +211,7 @@ export function PitchView({
             Four fixed bench slots (FPL always has 4 subs): one column each so GK
             and outfield stay aligned without a gap in the middle.
           */}
-          <div className="grid grid-cols-4 gap-2 items-end justify-items-center">
+          <div className="grid grid-cols-4 gap-1 sm:gap-2 items-end justify-items-center">
             {benchGk.length > 0 ? (
               <div className="flex w-full max-w-[100px] flex-col items-center gap-0.5 justify-self-center">
                 <span className="text-[9px] uppercase tracking-wide text-slate-600">
