@@ -417,6 +417,213 @@ const projectPoints: ToolHandler = {
   },
 };
 
+/** Columns synced from FPL live / element-summary; matches xp rolling loader. */
+const GW_STATS_SELECT = [
+  "gw",
+  "minutes",
+  "goals_scored",
+  "assists",
+  "clean_sheets",
+  "goals_conceded",
+  "saves",
+  "bonus",
+  "bps",
+  "expected_goals",
+  "expected_assists",
+  "expected_goal_involve",
+  "expected_goals_conceded",
+  "total_points",
+  "ict_index",
+  "clearances_blocks_interceptions",
+  "recoveries",
+  "tackles",
+  "defensive_contribution",
+  "starts",
+].join(",");
+
+function num(v: unknown): number {
+  if (typeof v === "number" && !Number.isNaN(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (!Number.isNaN(n)) return n;
+  }
+  return 0;
+}
+
+function summarizeRecentWindow(
+  rows: Array<Record<string, unknown>>,
+): {
+  window_totals: Record<string, number>;
+  per_90: Record<string, number> | null;
+} {
+  const keys = [
+    "minutes",
+    "total_points",
+    "goals_scored",
+    "assists",
+    "clean_sheets",
+    "goals_conceded",
+    "saves",
+    "bonus",
+    "bps",
+    "expected_goals",
+    "expected_assists",
+    "expected_goal_involve",
+    "expected_goals_conceded",
+    "clearances_blocks_interceptions",
+    "recoveries",
+    "tackles",
+    "defensive_contribution",
+    "starts",
+  ] as const;
+  const tot: Record<string, number> = Object.fromEntries(
+    keys.map((k) => [k, 0]),
+  ) as Record<string, number>;
+  for (const r of rows) {
+    for (const k of keys) {
+      tot[k] += num(r[k]);
+    }
+  }
+  const min = tot.minutes;
+  if (min <= 0) {
+    return { window_totals: tot, per_90: null };
+  }
+  const p90: Record<string, number> = {};
+  for (const k of keys) {
+    if (k === "minutes") continue;
+    p90[`${k}_per90`] = Math.round((tot[k]! * 90) / min * 100) / 100;
+  }
+  return { window_totals: tot, per_90: p90 };
+}
+
+const getPlayerRecentGameweeks: ToolHandler = {
+  name: "get_player_recent_gameweeks",
+  description:
+    "Fetch per-gameweek FPL **match data** from the database: goals, assists, clean sheets, goals conceded, saves, bonus, BPS, ICT, expected goals/assists/xGC, and defensive actions (CBI, recoveries, tackles, FPL defensive contribution points) for each recent GW. Includes window totals and per-90 rates. Use for 'upside form', momentum, or any question that needs the **full** FPL picture (not only xG from external models). Pairs with compare_players (which adds projections) — this tool is the raw recent reality.",
+  input_schema: {
+    type: "object",
+    properties: {
+      names_or_ids: {
+        type: "array",
+        items: { type: "string" },
+        description: "One or more player names or FPL IDs (max 4 players).",
+      },
+      num_gameweeks: {
+        type: "integer",
+        description:
+          "How many of the most recent GWs to return per player (default 6, max 10).",
+      },
+    },
+    required: ["names_or_ids"],
+  },
+  async run(input) {
+    const raw = Array.isArray(input.names_or_ids) ? input.names_or_ids : [];
+    const queries = raw
+      .map((v) => String(v).trim())
+      .filter((v) => v.length > 0)
+      .slice(0, 4);
+    if (queries.length === 0) {
+      throw new Error("Provide at least one name_or_id (max 4).");
+    }
+    const nGw = Math.min(
+      Math.max(Number(input.num_gameweeks ?? 6) || 6, 1),
+      10,
+    );
+
+    const supa = getServerSupabase();
+    const resolved = await resolvePlayerIds(queries);
+    const out: Array<{
+      query: string;
+      fpl_id: number | null;
+      web_name: string | null;
+      team: string | null;
+      position: string | null;
+      num_gameweeks: number;
+      gameweeks: Array<Record<string, unknown>>;
+      window_totals: Record<string, number>;
+      per_90: Record<string, number> | null;
+      note: string | null;
+    }> = [];
+
+    for (const r of resolved) {
+      if (r.fpl_id == null) {
+        out.push({
+          query: r.query,
+          fpl_id: null,
+          web_name: null,
+          team: null,
+          position: null,
+          num_gameweeks: nGw,
+          gameweeks: [],
+          window_totals: {},
+          per_90: null,
+          note: "No matching player in database.",
+        });
+        continue;
+      }
+
+      const { data: pRow, error: pErr } = await supa
+        .from("players_static")
+        .select("fpl_id,web_name,team,position")
+        .eq("fpl_id", r.fpl_id)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+
+      const { data: gws, error: gErr } = await supa
+        .from("player_gw_stats")
+        .select(GW_STATS_SELECT)
+        .eq("player_id", r.fpl_id)
+        .order("gw", { ascending: false })
+        .limit(nGw);
+      if (gErr) throw new Error(gErr.message);
+
+      const list = (gws ?? []) as unknown as Array<Record<string, unknown>>;
+      const chronological = [...list].sort(
+        (a, b) => num(a.gw) - num(b.gw),
+      );
+      const { window_totals, per_90 } = summarizeRecentWindow(chronological);
+
+      const roundedGws = chronological.map((row) => {
+        const o: Record<string, unknown> = { gw: row.gw };
+        for (const [k, v] of Object.entries(row)) {
+          if (k === "gw") continue;
+          if (typeof v === "number" && v % 1 !== 0) {
+            o[k] = Math.round(v * 100) / 100;
+          } else o[k] = v;
+        }
+        return o;
+      });
+
+      let note: string | null = null;
+      if (chronological.length === 0) {
+        note =
+          "No player_gw_stats rows yet (run data sync) or player had no minutes in this window.";
+      } else if (chronological.length < nGw) {
+        note = `Only ${chronological.length} gameweek(s) of history in range (DB may be shorter than requested window).`;
+      }
+
+      out.push({
+        query: r.query,
+        fpl_id: r.fpl_id,
+        web_name: (pRow?.web_name as string) ?? null,
+        team: (pRow?.team as string) ?? null,
+        position: (pRow?.position as string) ?? null,
+        num_gameweeks: nGw,
+        gameweeks: roundedGws,
+        window_totals,
+        per_90,
+        note,
+      });
+    }
+
+    return {
+      description:
+        "Recent GWs are from player_gw_stats (FPL official live/summary). defensive_contribution = FPL DC/bonus-relevant actions where synced.",
+      players: out,
+    };
+  },
+};
+
 const getDifferentials: ToolHandler = {
   name: "get_differentials",
   description:
@@ -525,5 +732,6 @@ export const playerTools: ToolHandler[] = [
   getPlayer,
   comparePlayers,
   projectPoints,
+  getPlayerRecentGameweeks,
   getDifferentials,
 ];

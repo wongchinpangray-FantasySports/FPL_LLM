@@ -83,6 +83,16 @@ How to think and respond:
    horizon. Lead with projected xP, then explain the underlying rates
    (xG/90, xA/90, bonus/90) and the rolling form (last 6 GWs).
 
+5a. For **recent reality** and **upside / momentum** using the **full** FPL
+   scoring picture (not only xG from external data), call
+   get_player_recent_gameweeks. It returns per-GW: goals, assists, clean
+   sheets, goals conceded, saves, bonus, BPS, ICT, FPL xG/xA/xGC, and
+   defensive actions (CBI, recoveries, tackles, defensive_contribution) plus
+   window totals and per-90. Use it when the user asks about "form", "in
+   form", "upside", "trending", "defensive output", "CS threat", "why
+   points", or anything that should reflect **assists, CS, defcon, BPS**,
+   not just shots/xG. Combine with project_points for forward outlook.
+
 6. For "find me a differential" / "low-owned gem", call get_differentials.
    Cite set_pieces when present (penalty takers are especially valuable
    differentials). Note opp_history_games for players with strong records

@@ -28,6 +28,7 @@ FPL_LLM/
   data_sync/                 Python data-sync jobs (schedule via GH Actions)
   supabase/migrations/       SQL migrations
   web/                       Next.js 14 app (TypeScript + Tailwind)
+  miniprogram/               WeChat 小程序 (native home + web-view 打开线上 H5)
   .github/workflows/         Daily + live cron workflows
   .env.example               Env vars for Python jobs & Next.js
   requirements.txt           Python deps

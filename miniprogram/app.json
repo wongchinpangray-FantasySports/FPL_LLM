@@ -1,0 +1,12 @@
+{
+  "pages": ["pages/index/index", "pages/webview/webview"],
+  "window": {
+    "navigationBarTitleText": "FALEAGUE AI",
+    "navigationBarBackgroundColor": "#0b0a0f",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0b0a0f"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

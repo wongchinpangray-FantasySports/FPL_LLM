@@ -1,0 +1,6 @@
+<view class="box" wx:if="{{src}}">
+  <web-view src="{{src}}"></web-view>
+</view>
+<view class="err" wx:else>
+  <text>Invalid link. Check config and try again from Home.</text>
+</view>

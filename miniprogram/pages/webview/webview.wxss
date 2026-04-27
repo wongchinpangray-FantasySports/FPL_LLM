@@ -1,0 +1,15 @@
+.box {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: #0b0a0f;
+}
+
+.err {
+  padding: 48rpx;
+  color: #94a3b8;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
