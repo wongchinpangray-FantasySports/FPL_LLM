@@ -29,8 +29,10 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Sync current GW live stats
-        run: python -m data_sync.sync_fpl_gw_live
-
+      # Must run before live GW sync: new FPL element IDs (e.g. mid-season) must
+      # exist in players_static or player_gw_stats insert hits FK errors.
       - name: Refresh bootstrap (prices, form, transfers)
         run: python -m data_sync.sync_fpl_players
+
+      - name: Sync current GW live stats
+        run: python -m data_sync.sync_fpl_gw_live
