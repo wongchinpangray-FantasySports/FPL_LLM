@@ -43,11 +43,20 @@ export function PlannerApp({
   entryName,
   initialBank,
   initialPicks,
+  baselineBanner = null,
+  squadToggle = null,
 }: {
   entryId: number;
   entryName: string;
   initialBank: number;
   initialPicks: PlannerPickPayload[];
+  /** Shown when Free Hit active: explains revert vs temp 15 */
+  baselineBanner?: string | null;
+  /** Links to switch ?squad=freehit vs default */
+  squadToggle?: {
+    useFreeHit: boolean;
+    pathBase: string;
+  } | null;
 }) {
   const sortedInitial = useMemo(
     () => [...initialPicks].sort((a, b) => a.slot - b.slot),
@@ -390,6 +399,33 @@ export function PlannerApp({
 
   return (
     <div className="flex flex-col gap-8">
+      {baselineBanner ? (
+        <div
+          className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100/90"
+          role="status"
+        >
+          <p>{baselineBanner}</p>
+          {squadToggle ? (
+            <p className="mt-2 flex flex-wrap gap-4 text-xs text-amber-200/80">
+              {squadToggle.useFreeHit ? (
+                <Link
+                  href={squadToggle.pathBase}
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
+                >
+                  Plan with revert team (post-Free Hit)
+                </Link>
+              ) : (
+                <Link
+                  href={`${squadToggle.pathBase}?squad=freehit`}
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
+                >
+                  View temporary Free Hit 15
+                </Link>
+              )}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <section className="flex flex-wrap items-start justify-between gap-6 border-b border-white/[0.06] pb-8">
         <div className="max-w-2xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">

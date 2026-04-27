@@ -32,10 +32,13 @@ export interface FplEntry {
 
 export interface FplPick {
   element: number;
+  /** Lineup slot 1–15 */
   position: number;
   multiplier: number;
   is_captain: boolean;
   is_vice_captain: boolean;
+  /** 1 GKP, 2 DEF, 3 MID, 4 FWD — present on live API picks */
+  element_type?: number;
 }
 
 export interface FplPicksResponse {

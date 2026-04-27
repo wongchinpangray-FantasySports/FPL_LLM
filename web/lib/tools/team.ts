@@ -16,12 +16,30 @@ import {
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+/** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
+const TEAM_RAW_VERSION = 3;
+
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
   forceRefresh?: boolean;
 }
 
-interface CachedTeam {
+export type FplSquadPick = {
+  fpl_id: number;
+  name: string | null;
+  web_name: string | null;
+  team: string | null;
+  position: string | null;
+  price: number | null;
+  form: number | null;
+  slot: number;
+  multiplier: number;
+  is_captain: boolean;
+  is_vice_captain: boolean;
+  is_starter: boolean;
+};
+
+export interface CachedTeam {
   entry: Pick<
     FplEntry,
     | "id"
@@ -37,20 +55,19 @@ interface CachedTeam {
   free_transfers: number;
   current_gw: number | null;
   active_chip: string | null;
-  picks: {
-    fpl_id: number;
-    name: string | null;
-    web_name: string | null;
-    team: string | null;
-    position: string | null;
-    price: number | null;
-    form: number | null;
-    slot: number;
-    multiplier: number;
-    is_captain: boolean;
-    is_vice_captain: boolean;
-    is_starter: boolean;
-  }[];
+  picks: FplSquadPick[];
+  /**
+   * When the loaded `picks` are a **Free Hit** 15, this is the squad from
+   * GW (picks_gw − 1) — the team FPL reverts to (close to "your team before
+   * the Free Hit week"). Use for planner baseline.
+   */
+  long_team_picks: FplSquadPick[] | null;
+  /** gameweek id for `long_team_picks`, if set */
+  long_team_gw: number | null;
+  /** short explanation for UI / tools */
+  long_team_note: string | null;
+  /** internal: bump when cache payload semantics change */
+  team_raw_version?: number;
   /** the gameweek the picks snapshot represents (may be current_event + 1 if next-GW picks are already public) */
   picks_gw: number | null;
   /** true when we're showing last confirmed picks and the user may have a pending chip/FH saved */
@@ -58,6 +75,104 @@ interface CachedTeam {
   /** chips the user has already played (from /entry/{id}/history/) */
   chips_used: { name: string; event: number }[];
   fetched_at: string;
+}
+
+function isActiveFreeHit(activeChip: string | null | undefined): boolean {
+  const c = normalizeChipId(activeChip);
+  return c === "freehit" || c === "ff";
+}
+
+function normalizeChipId(name: string | null | undefined): string {
+  return (name ?? "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+/** True when this entry’s loaded picks snapshot is a Free Hit week (from API or chip history). */
+export function isFreeHitOnPicksGw(
+  activeChip: string | null,
+  picksGw: number | null,
+  chipsUsed: { name: string; event: number }[],
+): boolean {
+  if (picksGw == null || picksGw <= 1) return false;
+  if (isActiveFreeHit(activeChip)) return true;
+  return chipsUsed.some(
+    (c) => normalizeChipId(c.name) === "freehit" && c.event === picksGw,
+  );
+}
+
+const ELEMENT_TYPE_TO_POS: Record<number, string> = {
+  1: "GKP",
+  2: "DEF",
+  3: "MID",
+  4: "FWD",
+};
+
+/** If `players_static` enrichment fails, still build a valid 15 from FPL JSON (names missing). */
+function buildMinimalSquadPicks(resp: FplPicksResponse): FplSquadPick[] {
+  return (resp.picks ?? []).map((p) => {
+    const et = p.element_type ?? 3;
+    const position = ELEMENT_TYPE_TO_POS[et] ?? "MID";
+    return {
+      fpl_id: p.element,
+      name: null,
+      web_name: `#${p.element}`,
+      team: null,
+      position,
+      price: null,
+      form: null,
+      slot: p.position,
+      multiplier: p.multiplier,
+      is_captain: p.is_captain,
+      is_vice_captain: p.is_vice_captain,
+      is_starter: p.position <= 11,
+    };
+  });
+}
+
+async function buildPicksForResponse(
+  supa: ReturnType<typeof getServerSupabase>,
+  picksResp: FplPicksResponse,
+): Promise<FplSquadPick[]> {
+  const elementIds = (picksResp.picks ?? []).map((p) => p.element);
+  const players: Record<
+    number,
+    {
+      fpl_id: number;
+      name: string | null;
+      web_name: string | null;
+      team: string | null;
+      position: string | null;
+      base_price: number | null;
+      form: number | null;
+    }
+  > = {};
+
+  if (elementIds.length) {
+    const { data: rows } = await supa
+      .from("players_static")
+      .select("fpl_id,name,web_name,team,position,base_price,form")
+      .in("fpl_id", elementIds);
+    for (const r of rows ?? []) {
+      players[r.fpl_id as number] = r as (typeof players)[number];
+    }
+  }
+
+  return (picksResp.picks ?? []).map((p) => {
+    const player = players[p.element];
+    return {
+      fpl_id: p.element,
+      name: player?.name ?? null,
+      web_name: player?.web_name ?? null,
+      team: player?.team ?? null,
+      position: player?.position ?? null,
+      price: player?.base_price ?? null,
+      form: player?.form ?? null,
+      slot: p.position,
+      multiplier: p.multiplier,
+      is_captain: p.is_captain,
+      is_vice_captain: p.is_vice_captain,
+      is_starter: p.position <= 11,
+    };
+  });
 }
 
 async function resolveEntryId(
@@ -96,7 +211,28 @@ export async function fetchAndCacheTeam(
     if (cached?.raw && cached.fetched_at) {
       const age = Date.now() - new Date(cached.fetched_at).getTime();
       if (age < CACHE_TTL_MS) {
-        return cached.raw as unknown as CachedTeam;
+        const r = cached.raw as unknown as CachedTeam;
+        const merged: CachedTeam = {
+          ...r,
+          long_team_picks: r.long_team_picks ?? null,
+          long_team_gw: r.long_team_gw ?? null,
+          long_team_note: r.long_team_note ?? null,
+        };
+        const versionOk = (merged.team_raw_version ?? 0) >= TEAM_RAW_VERSION;
+        /** Pre-v2 cache or FH without revert squad: refetch so planner can show GW(n-1) baseline. */
+        const fhMissingRevert =
+          merged.picks_gw != null &&
+          merged.picks_gw > 1 &&
+          isFreeHitOnPicksGw(
+            merged.active_chip,
+            merged.picks_gw,
+            merged.chips_used ?? [],
+          ) &&
+          !merged.long_team_picks?.length;
+        if (versionOk && !fhMissingRevert) {
+          return merged;
+        }
+        // fall through to live FPL fetch
       }
     }
   }
@@ -134,52 +270,45 @@ export async function fetchAndCacheTeam(
     }
   }
 
-  const elementIds = (picksResp?.picks ?? []).map((p) => p.element);
-  const players: Record<
-    number,
-    {
-      fpl_id: number;
-      name: string | null;
-      web_name: string | null;
-      team: string | null;
-      position: string | null;
-      base_price: number | null;
-      form: number | null;
-    }
-  > = {};
-
-  if (elementIds.length) {
-    const { data: rows } = await supa
-      .from("players_static")
-      .select("fpl_id,name,web_name,team,position,base_price,form")
-      .in("fpl_id", elementIds);
-    for (const r of rows ?? []) {
-      players[r.fpl_id as number] = r as (typeof players)[number];
-    }
-  }
-
-  const picks = (picksResp?.picks ?? []).map((p) => {
-    const player = players[p.element];
-    return {
-      fpl_id: p.element,
-      name: player?.name ?? null,
-      web_name: player?.web_name ?? null,
-      team: player?.team ?? null,
-      position: player?.position ?? null,
-      price: player?.base_price ?? null,
-      form: player?.form ?? null,
-      slot: p.position,
-      multiplier: p.multiplier,
-      is_captain: p.is_captain,
-      is_vice_captain: p.is_vice_captain,
-      is_starter: p.position <= 11,
-    };
-  });
+  const picks = picksResp
+    ? await buildPicksForResponse(supa, picksResp)
+    : [];
 
   const chipsUsed = (history?.chips ?? []).map((c) => ({
     name: c.name,
     event: c.event,
   }));
+
+  let long_team_picks: FplSquadPick[] | null = null;
+  let long_team_gw: number | null = null;
+  let long_team_note: string | null = null;
+  if (
+    picksResp &&
+    picksGw &&
+    picksGw > 1 &&
+    isFreeHitOnPicksGw(picksResp.active_chip, picksGw, chipsUsed)
+  ) {
+    try {
+      const prev = await fplGet<FplPicksResponse>(
+        `/entry/${entryId}/event/${picksGw - 1}/picks/`,
+      );
+      if (prev?.picks?.length) {
+        let revertFromMinimal = false;
+        try {
+          long_team_picks = await buildPicksForResponse(supa, prev);
+        } catch {
+          long_team_picks = buildMinimalSquadPicks(prev);
+          revertFromMinimal = true;
+        }
+        long_team_gw = picksGw - 1;
+        long_team_note = revertFromMinimal
+          ? `Free Hit is active on GW${picksGw}. Showing your GW${picksGw - 1} revert squad (IDs only — run DB sync if names are wrong).`
+          : `Free Hit is active on GW${picksGw} picks. Your revert squad (GW${picksGw - 1} lock) is available — use it in the planner to plan the next non-FH gameweek.`;
+      }
+    } catch {
+      /* e.g. GW1 has no previous event */
+    }
+  }
   // If we're still showing the confirmed GW's picks (not the next one) and
   // there's a next GW on the horizon, we can't see any pending chip/FH/WC
   // the manager may have saved. Flag it.
@@ -188,6 +317,7 @@ export async function fetchAndCacheTeam(
 
   const fetchedAt = new Date().toISOString();
   const out: CachedTeam = {
+    team_raw_version: TEAM_RAW_VERSION,
     entry: {
       id: entry.id,
       name: entry.name,
@@ -203,6 +333,9 @@ export async function fetchAndCacheTeam(
     current_gw: confirmedGw,
     active_chip: picksResp?.active_chip ?? null,
     picks,
+    long_team_picks,
+    long_team_gw,
+    long_team_note,
     picks_gw: picksGw,
     picks_may_be_stale: picksMayBeStale,
     chips_used: chipsUsed,
