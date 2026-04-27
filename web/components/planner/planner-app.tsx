@@ -3,6 +3,7 @@
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { NextFixtureOpponent } from "@/lib/xp";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
 import type { ValidationIssue } from "@/lib/planner/validate";
 import {
@@ -79,20 +80,14 @@ type ProjRow = {
   web_name: string | null;
   position: string | null;
   team: string | null;
-  upcoming_fixtures?: Array<{ gw: number; opp_short: string; home: boolean }>;
 };
 
-function pitchCardSecondLine(
+function pitchSecondLineFromNext(
   row: PlannerPickPayload,
-  pr: ProjRow | undefined,
+  nextByFplId: Record<number, NextFixtureOpponent | null | undefined>,
 ): string {
-  const fx = pr?.upcoming_fixtures;
-  if (fx && fx.length > 0) {
-    return [...fx]
-      .sort((a, b) => a.gw - b.gw)
-      .map((f) => `${f.opp_short}${f.home ? "(H)" : "(A)"}`)
-      .join(" · ");
-  }
+  const n = nextByFplId[row.fpl_id];
+  if (n) return `${n.opp_short}${n.home ? "(H)" : "(A)"}`;
   return row.team ?? "–";
 }
 
@@ -149,6 +144,11 @@ export function PlannerApp({
   } | null>(null);
   const [projLoading, setProjLoading] = useState(false);
   const [projError, setProjError] = useState<string | null>(null);
+
+  /** Next opponent per player (from /api/planner/next-fixtures); cards default to this line. */
+  const [nextFixtureByFplId, setNextFixtureByFplId] = useState<
+    Record<number, NextFixtureOpponent | null | undefined>
+  >({});
 
   /** Bench ↔ XI two-tap mode (no transfers) */
   const [xiBenchMode, setXiBenchMode] = useState(false);
@@ -216,6 +216,47 @@ export function PlannerApp({
     [picks],
   );
   const valid = issues.length === 0;
+
+  const nextFxFetchKey = useMemo(() => {
+    const u = Array.from(
+      new Set([
+        ...sortedInitial.map((p) => p.fpl_id),
+        ...picks.map((p) => p.fpl_id),
+      ]),
+    ).sort((a, b) => a - b);
+    return u.join(",");
+  }, [sortedInitial, picks]);
+
+  useEffect(() => {
+    if (!valid || nextFxFetchKey === "") return;
+    const ids = nextFxFetchKey.split(",").map(Number).filter((n) => n > 0);
+    if (ids.length === 0) return;
+    const ac = new AbortController();
+    void (async () => {
+      try {
+        const res = await fetch("/api/planner/next-fixtures", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ playerIds: ids }),
+          signal: ac.signal,
+        });
+        const data = (await res.json()) as {
+          nextByFplId?: Record<string, NextFixtureOpponent | null>;
+          error?: string;
+        };
+        if (!res.ok) return;
+        const rec: Record<number, NextFixtureOpponent | null> = {};
+        for (const [k, v] of Object.entries(data.nextByFplId ?? {})) {
+          rec[Number(k)] = v;
+        }
+        setNextFixtureByFplId(rec);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setNextFixtureByFplId({});
+      }
+    })();
+    return () => ac.abort();
+  }, [valid, nextFxFetchKey]);
 
   /** vs loaded FPL: different player and/or different XI vs bench role */
   const changedFromFpl = useMemo(() => {
@@ -537,18 +578,18 @@ export function PlannerApp({
   const baselinePitchSubline = useMemo(() => {
     const m: Record<number, string> = {};
     for (const p of sortedInitial) {
-      m[p.fpl_id] = pitchCardSecondLine(p, projById[String(p.fpl_id)]);
+      m[p.fpl_id] = pitchSecondLineFromNext(p, nextFixtureByFplId);
     }
     return m;
-  }, [sortedInitial, projById]);
+  }, [sortedInitial, nextFixtureByFplId]);
 
   const scenarioPitchSubline = useMemo(() => {
     const m: Record<number, string> = {};
     for (const p of picks) {
-      m[p.fpl_id] = pitchCardSecondLine(p, projById[String(p.fpl_id)]);
+      m[p.fpl_id] = pitchSecondLineFromNext(p, nextFixtureByFplId);
     }
     return m;
-  }, [picks, projById]);
+  }, [picks, nextFixtureByFplId]);
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">

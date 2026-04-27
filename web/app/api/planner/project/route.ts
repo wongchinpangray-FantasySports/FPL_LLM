@@ -54,28 +54,15 @@ export async function POST(req: Request) {
         web_name: string | null;
         position: string | null;
         team: string | null;
-        upcoming_fixtures: Array<{
-          gw: number;
-          opp_short: string;
-          home: boolean;
-        }>;
       }
     > = {};
     for (const [id, p] of projections) {
-      const upcoming_fixtures = [...p.fixtures]
-        .sort((a, b) => a.gw - b.gw || a.fixture_id - b.fixture_id)
-        .map((f) => ({
-          gw: f.gw,
-          opp_short: f.opp_short,
-          home: f.home,
-        }));
       out[String(id)] = {
         xp_total: p.xp_total,
         xp_per_game: p.xp_per_game,
         web_name: p.web_name,
         position: p.position,
         team: p.team,
-        upcoming_fixtures,
       };
     }
 

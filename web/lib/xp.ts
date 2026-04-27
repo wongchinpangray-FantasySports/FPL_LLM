@@ -316,6 +316,74 @@ export async function loadFixturesWindow(
   return (data ?? []) as unknown as Fixture[];
 }
 
+/** Earliest unfinished fixture per player (via club), for pitch card labels. */
+export interface NextFixtureOpponent {
+  gw: number;
+  opp_short: string;
+  home: boolean;
+}
+
+/**
+ * Next upcoming match for each player’s team (unfinished fixtures from current GW onward).
+ */
+export async function nextFixtureForPlayers(
+  playerIds: number[],
+): Promise<Map<number, NextFixtureOpponent | null>> {
+  const out = new Map<number, NextFixtureOpponent | null>();
+  if (playerIds.length === 0) return out;
+
+  const { current } = await resolveCurrentGw();
+  const [teamsMap, players] = await Promise.all([
+    loadTeams(),
+    loadPlayers(playerIds),
+  ]);
+
+  const fromGw = current;
+  const toGw = current + 15;
+  const raw = await loadFixturesWindow(fromGw, toGw);
+  const unfinished = raw.filter((f) => !f.finished);
+
+  const byTeam = new Map<number, Fixture[]>();
+  for (const f of unfinished) {
+    for (const tid of [f.home_team_id, f.away_team_id]) {
+      if (!byTeam.has(tid)) byTeam.set(tid, []);
+      byTeam.get(tid)!.push(f);
+    }
+  }
+
+  const cmpFx = (a: Fixture, b: Fixture): number => {
+    if (a.gw !== b.gw) return a.gw - b.gw;
+    const ta = a.kickoff_time ?? "";
+    const tb = b.kickoff_time ?? "";
+    if (ta !== tb) return ta.localeCompare(tb);
+    return a.id - b.id;
+  };
+
+  for (const pid of playerIds) {
+    const p = players.get(pid);
+    if (!p || p.team_id == null) {
+      out.set(pid, null);
+      continue;
+    }
+    const list = (byTeam.get(p.team_id) ?? []).slice().sort(cmpFx);
+    const first = list[0];
+    if (!first) {
+      out.set(pid, null);
+      continue;
+    }
+    const isHome = first.home_team_id === p.team_id;
+    const oppId = isHome ? first.away_team_id : first.home_team_id;
+    const opp = teamsMap.get(oppId);
+    out.set(pid, {
+      gw: first.gw,
+      opp_short: opp?.short ?? "?",
+      home: isHome,
+    });
+  }
+
+  return out;
+}
+
 /**
  * Keys `${teamId}:${gw}` where that team has 2+ fixtures scheduled in the GW
  * (double / triple gameweek). Uses all fixtures including finished ones so the
