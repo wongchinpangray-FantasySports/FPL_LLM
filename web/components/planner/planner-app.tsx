@@ -79,7 +79,22 @@ type ProjRow = {
   web_name: string | null;
   position: string | null;
   team: string | null;
+  upcoming_fixtures?: Array<{ gw: number; opp_short: string; home: boolean }>;
 };
+
+function pitchCardSecondLine(
+  row: PlannerPickPayload,
+  pr: ProjRow | undefined,
+): string {
+  const fx = pr?.upcoming_fixtures;
+  if (fx && fx.length > 0) {
+    return [...fx]
+      .sort((a, b) => a.gw - b.gw)
+      .map((f) => `${f.opp_short}${f.home ? "(H)" : "(A)"}`)
+      .join(" · ");
+  }
+  return row.team ?? "–";
+}
 
 export function PlannerApp({
   entryId,
@@ -519,6 +534,22 @@ export function PlannerApp({
 
   const xiXpDelta = xiXpDisplay - baselineXiXp;
 
+  const baselinePitchSubline = useMemo(() => {
+    const m: Record<number, string> = {};
+    for (const p of sortedInitial) {
+      m[p.fpl_id] = pitchCardSecondLine(p, projById[String(p.fpl_id)]);
+    }
+    return m;
+  }, [sortedInitial, projById]);
+
+  const scenarioPitchSubline = useMemo(() => {
+    const m: Record<number, string> = {};
+    for (const p of picks) {
+      m[p.fpl_id] = pitchCardSecondLine(p, projById[String(p.fpl_id)]);
+    }
+    return m;
+  }, [picks, projById]);
+
   return (
     <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
       {baselineBanner ? (
@@ -740,6 +771,7 @@ export function PlannerApp({
             picks={sortedInitial}
             captainId={cap0}
             viceId={vice0}
+            cardSublineByFplId={baselinePitchSubline}
             interactive
             onPickSlot={handleBaselineInspect}
           />
@@ -758,6 +790,7 @@ export function PlannerApp({
             picks={picks}
             captainId={captainId}
             viceId={viceId}
+            cardSublineByFplId={scenarioPitchSubline}
             highlightSlots={changedFromFpl}
             reorderSelectedSlot={xiBenchMode ? xiFirst : null}
             interactive

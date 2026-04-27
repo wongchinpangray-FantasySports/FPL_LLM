@@ -14,6 +14,7 @@ function PlayerChip({
   highlight,
   selectedForReorder,
   interactive,
+  cardSubline,
   onClick,
 }: {
   p: PlannerPickPayload;
@@ -23,6 +24,8 @@ function PlayerChip({
   /** First selection in Bench ↔ XI mode */
   selectedForReorder?: boolean;
   interactive?: boolean;
+  /** Second line under name (e.g. upcoming fixtures); falls back to club */
+  cardSubline?: string;
   onClick?: () => void;
 }) {
   const isC = captainId != null && p.fpl_id === captainId;
@@ -33,7 +36,9 @@ function PlayerChip({
       <div className="truncate text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
         {p.web_name ?? `#${p.fpl_id}`}
       </div>
-      <div className="truncate text-[7px] text-slate-400 sm:text-[9px]">{p.team}</div>
+      <div className="truncate text-[7px] text-slate-400 sm:text-[9px]">
+        {cardSubline ?? p.team ?? "–"}
+      </div>
       <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
         <span className="text-[7px] text-slate-500 sm:text-[9px]">
           £{p.base_price != null ? p.base_price.toFixed(1) : "?"}m
@@ -80,6 +85,7 @@ function Line({
   highlightSlots,
   reorderSelectedSlot,
   interactive,
+  cardSublineByFplId,
   onPickSlot,
 }: {
   players: PlannerPickPayload[];
@@ -88,6 +94,7 @@ function Line({
   highlightSlots?: Set<number>;
   reorderSelectedSlot?: number | null;
   interactive?: boolean;
+  cardSublineByFplId?: Record<number, string>;
   onPickSlot?: (slot: number) => void;
 }) {
   if (players.length === 0) return null;
@@ -103,6 +110,7 @@ function Line({
           highlight={highlightSlots?.has(p.slot)}
           selectedForReorder={reorderSelectedSlot === p.slot}
           interactive={interactive}
+          cardSubline={cardSublineByFplId?.[p.fpl_id]}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
         />
       ))}
@@ -122,6 +130,8 @@ export function PitchView({
   onPickSlot,
   benchLabel = "Bench",
   benchGkAbbrev = "GK",
+  /** Second line on each card (fixtures after xP refresh); omit to show club */
+  cardSublineByFplId,
 }: {
   picks: PlannerPickPayload[];
   title: string;
@@ -136,6 +146,7 @@ export function PitchView({
   reorderSelectedSlot?: number | null;
   interactive?: boolean;
   onPickSlot?: (slot: number) => void;
+  cardSublineByFplId?: Record<number, string>;
 }) {
   const starters = picks.filter((p) => p.is_starter);
   const benchAll = sortBySlot(picks.filter((p) => !p.is_starter));
@@ -171,6 +182,7 @@ export function PitchView({
             highlightSlots={highlightSlots}
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
+            cardSublineByFplId={cardSublineByFplId}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -180,6 +192,7 @@ export function PitchView({
             highlightSlots={highlightSlots}
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
+            cardSublineByFplId={cardSublineByFplId}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -189,6 +202,7 @@ export function PitchView({
             highlightSlots={highlightSlots}
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
+            cardSublineByFplId={cardSublineByFplId}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -198,6 +212,7 @@ export function PitchView({
             highlightSlots={highlightSlots}
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
+            cardSublineByFplId={cardSublineByFplId}
             onPickSlot={onPickSlot}
           />
         </div>
@@ -227,6 +242,7 @@ export function PitchView({
                     reorderSelectedSlot === benchGk[0].slot
                   }
                   interactive={interactive}
+                  cardSubline={cardSublineByFplId?.[benchGk[0].fpl_id]}
                   onClick={
                     onPickSlot
                       ? () => onPickSlot(benchGk[0].slot)
@@ -247,6 +263,7 @@ export function PitchView({
                   highlight={highlightSlots?.has(p.slot)}
                   selectedForReorder={reorderSelectedSlot === p.slot}
                   interactive={interactive}
+                  cardSubline={cardSublineByFplId?.[p.fpl_id]}
                   onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
                 />
               </div>
