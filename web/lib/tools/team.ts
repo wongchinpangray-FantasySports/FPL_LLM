@@ -17,7 +17,7 @@ import {
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
-const TEAM_RAW_VERSION = 3;
+const TEAM_RAW_VERSION = 4;
 
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
@@ -362,6 +362,29 @@ export async function fetchAndCacheTeam(
   );
 
   return out;
+}
+
+/** Planner/dashboard loads: bypass stale rows where FH is active but `long_team_picks` never stored. */
+export async function fetchTeamForUi(
+  entryId: number,
+  forceRefreshFromQuery = false,
+): Promise<CachedTeam> {
+  let team = await fetchAndCacheTeam(entryId, {
+    forceRefresh: forceRefreshFromQuery,
+  });
+  if (forceRefreshFromQuery) return team;
+
+  const fhMissingRevert =
+    isFreeHitOnPicksGw(
+      team.active_chip,
+      team.picks_gw,
+      team.chips_used ?? [],
+    ) && !team.long_team_picks?.length;
+
+  if (fhMissingRevert) {
+    team = await fetchAndCacheTeam(entryId, { forceRefresh: true });
+  }
+  return team;
 }
 
 const getMyTeam: ToolHandler = {

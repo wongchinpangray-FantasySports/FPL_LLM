@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchAndCacheTeam } from "@/lib/tools/team";
+import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 import {
   allPremierTeamIds,
   fdrClass,
@@ -29,15 +29,17 @@ export default async function DashboardPage({
   searchParams,
 }: {
   params: { entryId: string };
-  searchParams?: { refresh?: string };
+  searchParams?: { refresh?: string; squad?: string };
 }) {
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
-  const forceRefresh = searchParams?.refresh === "1";
+  const forceRefresh =
+    searchParams?.refresh === "1" || searchParams?.refresh === "true";
+  const useFreeHitSquad = searchParams?.squad === "freehit";
 
   let team;
   try {
-    team = await fetchAndCacheTeam(entryId, { forceRefresh });
+    team = await fetchTeamForUi(entryId, forceRefresh);
   } catch (err) {
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
@@ -57,6 +59,40 @@ export default async function DashboardPage({
     );
   }
 
+  const hasRevert = Boolean(team.long_team_picks?.length);
+  const freeHitContext = isFreeHitOnPicksGw(
+    team.active_chip,
+    team.picks_gw,
+    team.chips_used ?? [],
+  );
+  const displayPicks =
+    useFreeHitSquad || !hasRevert ? team.picks : team.long_team_picks!;
+
+  function dashboardToggleHref(showFreeHit: boolean) {
+    const q = new URLSearchParams();
+    if (forceRefresh) q.set("refresh", "1");
+    if (showFreeHit) q.set("squad", "freehit");
+    const s = q.toString();
+    return s ? `/dashboard/${entryId}?${s}` : `/dashboard/${entryId}`;
+  }
+
+  let baselineBanner: string | null = null;
+  if (freeHitContext) {
+    if (hasRevert) {
+      baselineBanner = useFreeHitSquad
+        ? `Showing your temporary Free Hit 15 (GW${team.picks_gw ?? "?"}). ` +
+          `The dashboard defaults to your revert squad after the chip.`
+        : (team.long_team_note ??
+          `Using your GW${team.long_team_gw} squad (reverts after this Free Hit). ` +
+            `Use the link below to view the temporary Free Hit 15.`);
+    } else {
+      baselineBanner =
+        `Free Hit is active on GW${team.picks_gw ?? "?"}. Below is your temporary 15. ` +
+        `We could not load your revert squad from GW${(team.picks_gw ?? 1) - 1}. ` +
+        `Try ?refresh=1 or after player DB sync.`;
+    }
+  }
+
   const startGw = (team.current_gw ?? 0) + 1;
   const horizon = 5;
   const allTeamIds = await allPremierTeamIds();
@@ -69,13 +105,13 @@ export default async function DashboardPage({
     startGw + horizon - 1,
   );
 
-  const startingXI = team.picks.filter((p) => p.is_starter);
-  const bench = team.picks.filter((p) => !p.is_starter);
+  const startingXI = displayPicks.filter((p) => p.is_starter);
+  const bench = displayPicks.filter((p) => !p.is_starter);
 
   // Project xP for every player in the squad over the horizon.
   const { current } = await resolveCurrentGw();
   const projections = await projectPlayers(
-    team.picks.map((p) => p.fpl_id),
+    displayPicks.map((p) => p.fpl_id),
     { currentGw: current, fromGw: startGw, toGw: startGw + horizon - 1 },
   );
 
@@ -120,10 +156,18 @@ export default async function DashboardPage({
             </span>
           </p>
           <p className="text-[11px] leading-relaxed text-slate-500">
-            GW{team.picks_gw ?? team.current_gw ?? "?"} picks ·{" "}
+            {freeHitContext && hasRevert && !useFreeHitSquad
+              ? `GW${team.long_team_gw} revert squad · FPL snapshot GW${team.picks_gw} · `
+              : freeHitContext && useFreeHitSquad
+                ? `GW${team.picks_gw ?? "?"} Free Hit 15 · `
+                : `GW${team.picks_gw ?? team.current_gw ?? "?"} picks · `}
             {relTime(team.fetched_at)} ·{" "}
             <Link
-              href={`/dashboard/${entryId}?refresh=1`}
+              href={
+                useFreeHitSquad
+                  ? `/dashboard/${entryId}?refresh=1&squad=freehit`
+                  : `/dashboard/${entryId}?refresh=1`
+              }
               className="font-medium text-brand-accent hover:underline"
             >
               Refresh
@@ -145,6 +189,34 @@ export default async function DashboardPage({
           />
         </div>
       </section>
+
+      {baselineBanner && (
+        <section
+          className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100/90"
+          role="status"
+        >
+          <p>{baselineBanner}</p>
+          {freeHitContext && hasRevert ? (
+            <p className="mt-2 flex flex-wrap gap-4 text-xs text-amber-200/85">
+              {useFreeHitSquad ? (
+                <Link
+                  href={dashboardToggleHref(false)}
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
+                >
+                  Show revert squad (post-Free Hit)
+                </Link>
+              ) : (
+                <Link
+                  href={dashboardToggleHref(true)}
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
+                >
+                  View temporary Free Hit 15
+                </Link>
+              )}
+            </p>
+          ) : null}
+        </section>
+      )}
 
       {team.picks_may_be_stale && (
         <section className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">

@@ -2,12 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
-import {
-  fetchAndCacheTeam,
-  isFreeHitOnPicksGw,
-} from "@/lib/tools/team";
+import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function PlannerPage({
   params,
@@ -25,7 +23,7 @@ export default async function PlannerPage({
 
   let team;
   try {
-    team = await fetchAndCacheTeam(entryId, { forceRefresh });
+    team = await fetchTeamForUi(entryId, forceRefresh);
   } catch (err) {
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
