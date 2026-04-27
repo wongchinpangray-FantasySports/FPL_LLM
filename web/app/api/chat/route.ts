@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
 interface ChatBody {
   messages: { role: "user" | "assistant"; content: string }[];
   entryId?: string | null;
+  /** UI locale (e.g. zh) — affects reply language only, not data source */
+  locale?: string | null;
 }
 
 const MAX_TOOL_ITERATIONS = 6;
@@ -105,11 +107,17 @@ export async function POST(req: Request) {
           const modelParts: Part[] = [];
           const functionCalls: FunctionCall[] = [];
 
+          const locale = body.locale?.trim().toLowerCase();
+          const localeReplyHint =
+            locale === "zh"
+              ? `\n\nUI locale: Chinese (中文). Reply in 中文 unless the user clearly writes in English.`
+              : "";
+
           const streamResp = await ai.models.generateContentStream({
             model: DEFAULT_MODEL,
             contents,
             config: {
-              systemInstruction: SYSTEM_PROMPT,
+              systemInstruction: SYSTEM_PROMPT + localeReplyHint,
               tools: [{ functionDeclarations }],
               temperature: 0.4,
             },

@@ -1,14 +1,53 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
+import type { ValidationIssue } from "@/lib/planner/validate";
 import {
   canAfford,
   swapBudget,
   validatePlannerSquad,
   validateXiFormation,
 } from "@/lib/planner/validate";
+
+function formatPlannerIssue(
+  issue: ValidationIssue,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  const v = issue.values;
+  switch (issue.code) {
+    case "size":
+      return t("valSize", { have: Number(v?.have ?? 0) });
+    case "club_cap":
+      return t("valClubCap", {
+        teamId: Number(v?.teamId ?? 0),
+        n: Number(v?.n ?? 0),
+      });
+    case "xi_size":
+      return t("valXiSize", { have: Number(v?.have ?? 0) });
+    case "xi_gk":
+      return t("valXiGk", { gk: Number(v?.gk ?? 0) });
+    case "xi_def":
+      return t("valXiDef", { d: Number(v?.d ?? 0) });
+    case "xi_mid":
+      return t("valXiMid", { m: Number(v?.m ?? 0) });
+    case "xi_fwd":
+      return t("valXiFwd", { f: Number(v?.f ?? 0) });
+    case "xi_sum":
+      return t("valXiSum");
+    default:
+      if (issue.code.startsWith("pos_")) {
+        return t("valPos", {
+          pos: String(v?.pos ?? issue.code.slice(4)),
+          need: Number(v?.need ?? 0),
+          have: Number(v?.have ?? 0),
+        });
+      }
+      return issue.message;
+  }
+}
 import { PitchView } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
@@ -58,6 +97,8 @@ export function PlannerApp({
     pathBase: string;
   } | null;
 }) {
+  const t = useTranslations("plannerApp");
+
   const sortedInitial = useMemo(
     () => [...initialPicks].sort((a, b) => a.slot - b.slot),
     [initialPicks],
@@ -152,7 +193,7 @@ export function PlannerApp({
     const pb = picks.find((x) => x.slot === slotB);
     if (!pa || !pb) return;
     if (pa.is_starter === pb.is_starter) {
-      setProjError("Pick one starter and one bench player.");
+      setProjError(t("errPickOneStarterBench"));
       return;
     }
 
@@ -165,7 +206,7 @@ export function PlannerApp({
     const starters = next.filter((r) => r.is_starter);
     const xiErr = validateXiFormation(starters);
     if (xiErr.length > 0) {
-      setProjError(xiErr[0].message);
+      setProjError(formatPlannerIssue(xiErr[0], t));
       return;
     }
 
@@ -199,7 +240,7 @@ export function PlannerApp({
 
   function applyBestXiByProjection() {
     if (Object.keys(projById).length === 0) {
-      setProjError("Refresh xP first.");
+      setProjError(t("errRefreshXpFirst"));
       return;
     }
     const xpMap: Record<string, number> = {};
@@ -209,7 +250,7 @@ export function PlannerApp({
     }
     const best = findBestXiByXp(picks, xpMap);
     if (!best || best.length !== 11) {
-      setProjError("No valid XI from current xP.");
+      setProjError(t("errNoValidXi"));
       return;
     }
     const setIds = new Set(best);
@@ -263,17 +304,18 @@ export function PlannerApp({
     if (!row) return;
     const taken = new Set(picks.map((x) => x.fpl_id));
     if (taken.has(p.fpl_id) && p.fpl_id !== row.fpl_id) {
-      setProjError("Already in squad.");
+      setProjError(t("errAlreadyInSquad"));
       return;
     }
     const newBank = swapBudget(bank, row.base_price, p.base_price);
     if (!canAfford(newBank)) {
+      const need = (
+        (row.base_price ?? 0) -
+        (p.base_price ?? 0) +
+        bank
+      ).toFixed(1);
       setProjError(
-        `Budget: need £${(
-          (row.base_price ?? 0) -
-          (p.base_price ?? 0) +
-          bank
-        ).toFixed(1)}m · bank £${bank.toFixed(1)}m`,
+        t("errBudget", { need, bank: bank.toFixed(1) }),
       );
       return;
     }
@@ -290,7 +332,7 @@ export function PlannerApp({
     const draft = picks.map((r) => (r.slot === slot ? next : r));
     const vIssues = validatePlannerSquad(draft);
     if (vIssues.length > 0) {
-      setProjError(vIssues[0].message);
+      setProjError(formatPlannerIssue(vIssues[0], t));
       return;
     }
 
@@ -308,7 +350,7 @@ export function PlannerApp({
 
   async function runProject() {
     if (!valid) {
-      setProjError("Fix squad errors before xP.");
+      setProjError(t("errFixSquadXp"));
       return;
     }
     setProjLoading(true);
@@ -333,7 +375,7 @@ export function PlannerApp({
         error?: string;
       };
       if (!res.ok) {
-        setProjError(data.error ?? "Projection failed");
+        setProjError(data.error ?? t("errProjectionFailed"));
         return;
       }
       setProjById(data.projections ?? {});
@@ -343,7 +385,7 @@ export function PlannerApp({
           : null,
       );
     } catch (e) {
-      setProjError(e instanceof Error ? e.message : "Projection failed");
+      setProjError(e instanceof Error ? e.message : t("errProjectionFailed"));
     } finally {
       setProjLoading(false);
     }
@@ -412,14 +454,14 @@ export function PlannerApp({
                   href={squadToggle.pathBase}
                   className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
                 >
-                  Plan with revert team (post-Free Hit)
+                  {t("planWithRevert")}
                 </Link>
               ) : (
                 <Link
                   href={`${squadToggle.pathBase}?squad=freehit`}
                   className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
                 >
-                  View temporary Free Hit 15
+                  {t("viewTempFh")}
                 </Link>
               )}
             </p>
@@ -429,15 +471,15 @@ export function PlannerApp({
       <section className="flex flex-wrap items-start justify-between gap-6 border-b border-white/[0.06] pb-8">
         <div className="max-w-2xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-            Planner
+            {t("eyebrow")}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-            Scenario planner
+            {t("title")}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-400">
             <span className="text-slate-300">{entryName}</span>
             {" · "}
-            Transfers & XI vs budget/FPL rules · xP projection · read-only.
+            {t("subtitleSuffix")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -445,13 +487,13 @@ export function PlannerApp({
             href={`/dashboard/${entryId}`}
             className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-slate-300 transition-colors hover:border-brand-accent/30 hover:text-white"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <Link
             href="/chat"
             className="rounded-lg border border-brand-accent/25 bg-brand-accent/10 px-3 py-2 text-sm font-medium text-brand-accent transition-colors hover:bg-brand-accent/15"
           >
-            Chat
+            {t("chat")}
           </Link>
         </div>
       </section>
@@ -459,7 +501,7 @@ export function PlannerApp({
       <section className="flex flex-wrap gap-4 items-end">
         <div>
           <label className="text-[10px] uppercase text-slate-500 block mb-1">
-            Bank
+            {t("bank")}
           </label>
           <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-lg font-semibold">
             £{bank.toFixed(1)}m
@@ -467,7 +509,7 @@ export function PlannerApp({
         </div>
         <div>
           <label className="text-[10px] uppercase text-slate-500 block mb-1">
-            Horizon (GWs)
+            {t("horizon")}
           </label>
           <Input
             type="number"
@@ -483,7 +525,7 @@ export function PlannerApp({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-slate-500">Captain</label>
+          <label className="text-[10px] uppercase text-slate-500">{t("captain")}</label>
           <select
             className="rounded-md border border-white/10 bg-brand-ink px-2 py-2 text-sm"
             value={captainId ?? ""}
@@ -501,7 +543,7 @@ export function PlannerApp({
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-slate-500">Vice</label>
+          <label className="text-[10px] uppercase text-slate-500">{t("vice")}</label>
           <select
             className="rounded-md border border-white/10 bg-brand-ink px-2 py-2 text-sm"
             value={viceId ?? ""}
@@ -520,24 +562,24 @@ export function PlannerApp({
           </select>
         </div>
         <Button onClick={runProject} disabled={projLoading || !valid}>
-          {projLoading ? "Projecting…" : "Refresh xP"}
+          {projLoading ? t("refreshXpLoading") : t("refreshXp")}
         </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={applyBestXiByProjection}
           disabled={!valid || Object.keys(projById).length === 0}
-          title="XI with max total xP (last Refresh xP)."
+          title={t("bestXiTitle")}
         >
-          Best XI by xP
+          {t("bestXiByXp")}
         </Button>
         <Button
           type="button"
           variant={xiBenchMode ? "primary" : "secondary"}
           onClick={() => setXiBenchMode((v) => !v)}
-          title="Tap starter + bench (pitch or table)."
+          title={t("xiBenchTitle")}
         >
-          {xiBenchMode ? "XI ↔ bench on" : "XI ↔ bench"}
+          {xiBenchMode ? t("xiBenchOn") : t("xiBenchOff")}
         </Button>
       </section>
 
@@ -545,7 +587,7 @@ export function PlannerApp({
         <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
           <ul className="list-disc pl-5">
             {issues.map((i) => (
-              <li key={i.code}>{i.message}</li>
+              <li key={i.code}>{formatPlannerIssue(i, t)}</li>
             ))}
           </ul>
         </div>
@@ -558,28 +600,37 @@ export function PlannerApp({
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-slate-500">
-            Left: FPL · Right: plan (amber = change).{" "}
-            <strong>XI ↔ bench</strong>: two taps. Else:{" "}
-            <strong>transfer</strong>.
+            {t("hintPitchLead")}{" "}
+            <strong>{t("hintBoldXi")}</strong>
+            {t("hintPitchXiSuffix")}{" "}
+            <strong>{t("hintBoldTransfer")}</strong>
+            {t("hintPitchClose")}
           </p>
           <Button type="button" variant="secondary" size="sm" onClick={resetToFplTeam}>
-            Reset to FPL
+            {t("resetFpl")}
           </Button>
         </div>
         <div className="grid gap-8 lg:grid-cols-2">
           <PitchView
-            title="Your FPL team"
-            caption="FPL squad when you opened this page."
+            title={t("pitchYourFpl")}
+            caption={t("pitchYourFplCaption")}
+            benchLabel={t("pitchBench")}
+            benchGkAbbrev={t("pitchBenchGkAbbrev")}
             picks={sortedInitial}
             captainId={cap0}
             viceId={vice0}
           />
           <PitchView
-            title="Planning scenario"
+            title={t("planningScenario")}
+            benchLabel={t("pitchBench")}
+            benchGkAbbrev={t("pitchBenchGkAbbrev")}
             caption={
               changedFromFpl.size > 0
-                ? `${changedFromFpl.size} diff vs FPL · £${bank.toFixed(1)}m`
-                : `Same as FPL · £${bank.toFixed(1)}m`
+                ? t("pitchPlanningCaptionDiff", {
+                    n: changedFromFpl.size,
+                    bank: bank.toFixed(1),
+                  })
+                : t("pitchPlanningCaptionSame", { bank: bank.toFixed(1) })
             }
             picks={picks}
             captainId={captainId}
@@ -596,51 +647,49 @@ export function PlannerApp({
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm">
           <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1">
             <span className="text-slate-500">
-              GW{" "}
-              <span className="font-medium text-slate-300">
-                {projMeta.fromGw}–{projMeta.toGw}
-              </span>
+              {t("gwRange", {
+                from: projMeta.fromGw,
+                to: projMeta.toGw,
+              })}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-white/5 bg-black/20 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                FPL (this page)
+                {t("fplThisPage")}
               </p>
               <p className="mt-1 text-slate-400">
-                XI xP (C×2) ·{" "}
-                <span className="font-semibold text-slate-200">
-                  {baselineXiXp.toFixed(1)}
-                </span>
+                {t("xiXpLine", {
+                  value: baselineXiXp.toFixed(1),
+                })}
               </p>
               <p className="text-slate-400">
-                Bench ·{" "}
-                <span className="font-medium text-slate-300">
-                  {baselineBenchXp.toFixed(1)}
-                </span>
+                {t("benchLine", {
+                  value: baselineBenchXp.toFixed(1),
+                })}
               </p>
             </div>
             <div className="rounded-lg border border-brand-accent/25 bg-brand-accent/5 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-brand-accent">
-                Planning scenario
+                {t("planningScenario")}
               </p>
               <p className="mt-1 text-slate-300">
-                XI xP (C×2) ·{" "}
-                <span className="font-semibold text-brand-accent">
-                  {xiXpDisplay.toFixed(1)}
-                </span>
+                {t("xiXpLine", {
+                  value: xiXpDisplay.toFixed(1),
+                })}
               </p>
               <p className="text-slate-400">
-                Bench ·{" "}
-                <span className="font-medium text-slate-300">
-                  {benchXp.toFixed(1)}
-                </span>
+                {t("benchLine", {
+                  value: benchXp.toFixed(1),
+                })}
               </p>
               <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-slate-500">
-                Δ XI ·{" "}
+                {t("deltaXiLabel")}
                 <span
                   className={
-                    xiXpDelta >= 0 ? "font-semibold text-emerald-400" : "font-semibold text-rose-300"
+                    xiXpDelta >= 0
+                      ? "font-semibold text-emerald-400"
+                      : "font-semibold text-rose-300"
                   }
                 >
                   {xiXpDelta >= 0 ? "+" : ""}
@@ -656,13 +705,13 @@ export function PlannerApp({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs uppercase text-slate-400">
-              <th className="px-3 py-2">Slot</th>
-              <th className="px-2 py-2">Player</th>
-              <th className="px-2 py-2">Pos</th>
-              <th className="px-2 py-2">Club</th>
-              <th className="px-2 py-2">£m</th>
-              <th className="px-2 py-2 text-right">xP (horizon)</th>
-              <th className="px-2 py-2 text-right">Action</th>
+              <th className="px-3 py-2">{t("tableSlot")}</th>
+              <th className="px-2 py-2">{t("tablePlayer")}</th>
+              <th className="px-2 py-2">{t("tablePos")}</th>
+              <th className="px-2 py-2">{t("tableClub")}</th>
+              <th className="px-2 py-2">{t("tablePrice")}</th>
+              <th className="px-2 py-2 text-right">{t("tableXpHorizon")}</th>
+              <th className="px-2 py-2 text-right">{t("tableAction")}</th>
             </tr>
           </thead>
           <tbody>
@@ -670,9 +719,13 @@ export function PlannerApp({
               const pr = projById[String(p.fpl_id)];
               const cap =
                 p.fpl_id === captainId ? (
-                  <span className="ml-1 text-brand-accent text-[10px]">(C)</span>
+                  <span className="ml-1 text-brand-accent text-[10px]">
+                    {t("tableBadgeCaptain")}
+                  </span>
                 ) : p.fpl_id === viceId ? (
-                  <span className="ml-1 text-slate-400 text-[10px]">(V)</span>
+                  <span className="ml-1 text-slate-400 text-[10px]">
+                    {t("tableBadgeVice")}
+                  </span>
                 ) : null;
               return (
                 <tr
@@ -687,7 +740,7 @@ export function PlannerApp({
                     {p.slot}
                     {!p.is_starter && (
                       <span className="ml-1 text-[10px] text-slate-500">
-                        bench
+                        {t("benchTag")}
                       </span>
                     )}
                   </td>
@@ -707,7 +760,9 @@ export function PlannerApp({
                         {p.fpl_id === captainId && (
                           <span className="text-slate-500 text-xs">
                             {" "}
-                            → {(pr.xp_total * 2).toFixed(1)} (C)
+                            {t("captainTag", {
+                              value: (pr.xp_total * 2).toFixed(1),
+                            })}
                           </span>
                         )}
                       </>
@@ -724,11 +779,11 @@ export function PlannerApp({
                     >
                       {xiBenchMode
                         ? xiFirst === p.slot
-                          ? "Clear"
+                          ? t("btnClear")
                           : xiFirst != null
-                            ? "Swap"
-                            : "Pick"
-                        : "Transfer"}
+                            ? t("btnSwap")
+                            : t("btnPick")
+                        : t("btnTransfer")}
                     </Button>
                   </td>
                 </tr>
@@ -747,14 +802,14 @@ export function PlannerApp({
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/[0.1] bg-brand-ink p-5 shadow-2xl shadow-black/50">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">
-                Replace slot {swapSlot}
+                {t("replaceSlot", { slot: swapSlot })}
               </h3>
               <Button variant="ghost" size="sm" onClick={() => setSwapSlot(null)}>
-                Close
+                {t("close")}
               </Button>
             </div>
             <Input
-              placeholder="Search player…"
+              placeholder={t("searchPlaceholder")}
               value={searchQ}
               onChange={(e) => {
                 const v = e.target.value;
@@ -764,11 +819,11 @@ export function PlannerApp({
               autoFocus
             />
             <p className="text-[11px] text-slate-500 mt-2">
-              2+ characters · FPL buy/sell rules.
+              {t("searchHint")}
             </p>
             <ul className="mt-3 flex flex-col gap-1">
               {searching && (
-                <li className="text-sm text-slate-500">Searching…</li>
+                <li className="text-sm text-slate-500">{t("searching")}</li>
               )}
               {!searching &&
                 searchHits.map((h) => (

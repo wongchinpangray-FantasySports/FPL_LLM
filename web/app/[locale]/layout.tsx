@@ -33,7 +33,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  // Explicit locale avoids falling back to defaultLocale (en) when middleware
+  // locale is missing from this RSC request (e.g. on Vercel preview).
+  const messages = await getMessages({ locale });
   const t = await getTranslations({ locale, namespace: "footer" });
 
   return (

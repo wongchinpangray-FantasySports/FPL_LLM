@@ -8,6 +8,8 @@ export interface PickLike {
 export interface ValidationIssue {
   code: string;
   message: string;
+  /** Params for UI translation (optional) */
+  values?: Record<string, string | number>;
 }
 
 const NEED = { GKP: 2, DEF: 5, MID: 5, FWD: 3 } as const;
@@ -36,6 +38,7 @@ export function validatePlannerSquad(picks: PickLike[]): ValidationIssue[] {
     issues.push({
       code: "size",
       message: `Need 15 players (have ${picks.length}).`,
+      values: { have: picks.length },
     });
     return issues;
   }
@@ -46,6 +49,7 @@ export function validatePlannerSquad(picks: PickLike[]): ValidationIssue[] {
       issues.push({
         code: `pos_${pos}`,
         message: `${pos}: need ${NEED[pos]}, have ${byPos[pos]}.`,
+        values: { pos, need: NEED[pos], have: byPos[pos] },
       });
     }
   }
@@ -55,6 +59,7 @@ export function validatePlannerSquad(picks: PickLike[]): ValidationIssue[] {
       issues.push({
         code: "club_cap",
         message: `Max 3 per club (team ${tid}: ${n}).`,
+        values: { teamId: tid, n },
       });
     }
   }
@@ -71,6 +76,7 @@ export function validateXiFormation(starters: PickLike[]): ValidationIssue[] {
     issues.push({
       code: "xi_size",
       message: `XI needs 11 starters (have ${starters.length}).`,
+      values: { have: starters.length },
     });
     return issues;
   }
@@ -84,24 +90,28 @@ export function validateXiFormation(starters: PickLike[]): ValidationIssue[] {
     issues.push({
       code: "xi_gk",
       message: `XI: 1 GK (${gk}).`,
+      values: { gk },
     });
   }
   if (d < 3 || d > 5) {
     issues.push({
       code: "xi_def",
       message: `XI: 3–5 DEF (${d}).`,
+      values: { d },
     });
   }
   if (m < 2 || m > 5) {
     issues.push({
       code: "xi_mid",
       message: `XI: 2–5 MID (${m}).`,
+      values: { m },
     });
   }
   if (f < 1 || f > 3) {
     issues.push({
       code: "xi_fwd",
       message: `XI: 1–3 FWD (${f}).`,
+      values: { f },
     });
   }
   if (gk + d + m + f !== 11) {

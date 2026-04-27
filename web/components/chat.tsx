@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEntryId } from "./entry-id-context";
@@ -14,14 +15,9 @@ interface UiMessage {
   toolUses?: { name: string; input: unknown }[];
 }
 
-const SUGGESTIONS = [
-  "Captain this GW?",
-  "Best midfielder under £8m?",
-  "Saka vs Palmer — next 5 GWs",
-  "Easiest fixtures next 4 GWs?",
-];
-
 export function Chat() {
+  const t = useTranslations("chatUi");
+  const locale = useLocale();
   const { entryId } = useEntryId();
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
@@ -61,6 +57,7 @@ export function Chat() {
         body: JSON.stringify({
           messages: requestMessages,
           entryId,
+          locale,
         }),
       });
 
@@ -110,12 +107,12 @@ export function Chat() {
                   ],
                 };
               } else if (evt.type === "error") {
-                copy[copy.length - 1] = {
-                  ...last,
-                  content:
-                    (last.content ? last.content + "\n\n" : "") +
-                    `_Error: ${evt.message}_`,
-                };
+          copy[copy.length - 1] = {
+            ...last,
+            content:
+              (last.content ? last.content + "\n\n" : "") +
+              `_Error: ${evt.message}_`,
+          };
               }
               return copy;
             });
@@ -129,7 +126,7 @@ export function Chat() {
         if (last && last.role === "assistant") {
           copy[copy.length - 1] = {
             ...last,
-            content: `Sorry — ${(err as Error).message}`,
+            content: t("sorry", { message: (err as Error).message }),
           };
         }
         return copy;
@@ -149,26 +146,27 @@ export function Chat() {
           {messages.length === 0 && (
             <div className="flex flex-col gap-5 rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-slate-300 md:p-6">
               <p className="text-sm leading-relaxed">
-                FPL questions — fixtures, form, captaincy, transfers.
+                {t("emptyLead")}
                 {entryId ? (
                   <>
                     {" "}
-                    Squad linked (
-                    <span className="font-medium text-brand-accent">
-                      {entryId}
-                    </span>
-                    ).
+                    {t("emptySquadLinked", { entryId: String(entryId) })}
                   </>
                 ) : (
-                  <> Add Entry ID on Home for your XI.</>
+                  <> {t("emptyNoEntry")}</>
                 )}
               </p>
               <div>
                 <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                  Examples
+                  {t("examples")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {SUGGESTIONS.map((s) => (
+                  {[
+                    t("suggestion1"),
+                    t("suggestion2"),
+                    t("suggestion3"),
+                    t("suggestion4"),
+                  ].map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -196,14 +194,14 @@ export function Chat() {
           className="flex gap-2 border-t border-white/[0.06] bg-black/25 p-3 md:p-4"
         >
           <Input
-            placeholder="Message…"
+            placeholder={t("placeholder")}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={streaming}
             className="flex-1 border-white/[0.08] bg-black/30"
           />
           <Button type="submit" disabled={streaming || !input.trim()}>
-            {streaming ? "…" : "Send"}
+            {streaming ? t("sending") : t("send")}
           </Button>
         </form>
       </div>
@@ -212,6 +210,7 @@ export function Chat() {
 }
 
 function Message({ message }: { message: UiMessage }) {
+  const tc = useTranslations("chatUi");
   const isUser = message.role === "user";
   return (
     <div className={cn("flex gap-2", isUser ? "justify-end" : "justify-start")}>
@@ -220,7 +219,7 @@ function Message({ message }: { message: UiMessage }) {
           className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-brand-accent/40 bg-brand-accent/15 text-[10px] font-bold text-brand-accent"
           aria-hidden
         >
-          AI
+          {tc("aiLabel")}
         </span>
       )}
       <div
@@ -236,7 +235,7 @@ function Message({ message }: { message: UiMessage }) {
             key={i}
             className="mb-2 border-l-2 border-brand-accent/50 pl-2.5 text-xs text-slate-400"
           >
-            <span className="font-medium text-brand-accent">Tool</span> ·{" "}
+            <span className="font-medium text-brand-accent">{tc("toolLabel")}</span> ·{" "}
             <span className="font-mono text-[11px]">{t.name}</span>
           </div>
         ))}
@@ -249,7 +248,7 @@ function Message({ message }: { message: UiMessage }) {
           className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] font-semibold text-slate-300"
           aria-hidden
         >
-          U
+          {tc("userLabel")}
         </span>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { PlannerApp } from "@/components/planner/planner-app";
@@ -18,9 +18,15 @@ export default async function PlannerPage({
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
 
+  setRequestLocale(params.locale);
+
   const pt = await getTranslations({
     locale: params.locale,
     namespace: "planner",
+  });
+  const fb = await getTranslations({
+    locale: params.locale,
+    namespace: "fhBanner",
   });
 
   const useFreeHitSquad = searchParams?.squad === "freehit";
@@ -85,21 +91,21 @@ export default async function PlannerPage({
       is_vice_captain: p.is_vice_captain,
     }));
 
+  const picksGwStr = String(team.picks_gw ?? "?");
+  const longGwStr = String(team.long_team_gw ?? "?");
+  const prevGwStr = String((team.picks_gw ?? 1) - 1);
+
   let baselineBanner: string | null = null;
   if (freeHitContext) {
     if (hasRevert) {
       baselineBanner = useFreeHitSquad
-        ? `Showing your temporary Free Hit 15 (GW${team.picks_gw ?? "?"}). ` +
-          `To plan with the squad you revert to after the Free Hit, open ` +
-          `planner without ?squad=freehit.`
-        : (team.long_team_note ??
-          `Using your GW${team.long_team_gw} squad (revert team after Free Hit). ` +
-            `Add ?squad=freehit to the URL to see the Free Hit 15.`);
+        ? fb("plannerShowTempFh", { picksGw: picksGwStr })
+        : fb("plannerUsingRevert", { longGw: longGwStr });
     } else {
-      baselineBanner =
-        `Free Hit is active on GW${team.picks_gw ?? "?"}. The pitch below is your temporary 15. ` +
-        `We could not load your revert squad from GW${(team.picks_gw ?? 1) - 1}. ` +
-        `Try again with ?refresh=1 or after the player DB sync job runs.`;
+      baselineBanner = fb("plannerMissingRevert", {
+        picksGw: picksGwStr,
+        prevGw: prevGwStr,
+      });
     }
   }
 

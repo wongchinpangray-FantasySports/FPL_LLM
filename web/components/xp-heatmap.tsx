@@ -143,12 +143,26 @@ export function XpHeatmap({
   gws,
   title,
   dgwTeamGw,
+  legendHint = "Colours = xP/fixture. Yellow ring = 2+ games that GW (DGW).",
+  columnHeaders = {
+    player: "Player",
+    team: "Team",
+    pos: "Pos",
+    total: "Total",
+  },
+  gwTotalLabel = "GW total",
+  benchLabel = "bench",
 }: {
   rows: HeatmapRow[];
   gws: number[];
   title?: string;
   /** `${teamId}:${gw}` for any team with 2+ fixtures that gameweek */
   dgwTeamGw?: Set<string>;
+  /** Shown next to title (right side) */
+  legendHint?: string;
+  columnHeaders?: { player: string; team: string; pos: string; total: string };
+  gwTotalLabel?: string;
+  benchLabel?: string;
 }) {
   if (rows.length === 0) return null;
 
@@ -168,7 +182,7 @@ export function XpHeatmap({
             {title}
           </h2>
           <span className="max-w-xl text-xs leading-relaxed text-slate-400">
-            Colours = xP/fixture. Yellow ring = 2+ games that GW (DGW).
+            {legendHint}
           </span>
         </div>
       )}
@@ -176,15 +190,15 @@ export function XpHeatmap({
         <table className="w-full text-xs">
           <thead>
             <tr className="text-left text-[10px] uppercase text-slate-400">
-              <th className="px-3 py-2">Player</th>
-              <th className="px-2 py-2">Team</th>
-              <th className="px-2 py-2">Pos</th>
+              <th className="px-3 py-2">{columnHeaders.player}</th>
+              <th className="px-2 py-2">{columnHeaders.team}</th>
+              <th className="px-2 py-2">{columnHeaders.pos}</th>
               {gws.map((g) => (
                 <th key={g} className="px-2 py-2 text-center">
                   GW{g}
                 </th>
               ))}
-              <th className="px-2 py-2 text-right">Total</th>
+              <th className="px-2 py-2 text-right">{columnHeaders.total}</th>
             </tr>
           </thead>
           <tbody>
@@ -241,7 +255,7 @@ export function XpHeatmap({
                     </div>
                     {!r.is_starter && (
                       <div className="text-[9px] uppercase text-slate-500">
-                        bench
+                        {benchLabel}
                       </div>
                     )}
                   </td>
@@ -267,7 +281,7 @@ export function XpHeatmap({
             })}
             <tr className="border-t-2 border-white/20 bg-white/5">
               <td className="px-3 py-2 text-xs font-semibold uppercase text-slate-300">
-                GW total
+                {gwTotalLabel}
               </td>
               <td />
               <td />

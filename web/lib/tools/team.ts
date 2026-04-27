@@ -613,7 +613,7 @@ const suggestCaptain: ToolHandler = {
 const suggestTransfers: ToolHandler = {
   name: "suggest_transfers",
   description:
-    "Suggest the best 1 and 2 transfer moves using expected points (xP) over an N-GW horizon. Uses the long-term/revert 15 when a Free Hit is active (not the temporary FH 15). Accounts for current bank, 3-per-club rule, position-matching, availability, and a -4 pt hit cost for 2nd transfer (unless free_transfers = 2). Returns ranked ideas with xP delta and a rationale-ready breakdown.",
+    "Suggest the best 1 and 2 transfer moves using expected points (xP) over an N-GW horizon. Incoming candidates are **only** from the live `players_static` table (current FPL season) — never invent or assume players from memory. Uses the long-term/revert 15 when a Free Hit is active (not the temporary FH 15). Accounts for current bank, 3-per-club rule, position-matching, availability, and a -4 pt hit cost for 2nd transfer (unless free_transfers = 2). Returns ranked ideas with xP delta and a rationale-ready breakdown.",
   input_schema: {
     type: "object",
     properties: {

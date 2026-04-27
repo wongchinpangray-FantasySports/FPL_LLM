@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
@@ -34,6 +34,8 @@ export default async function DashboardPage({
 }) {
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
+
+  setRequestLocale(params.locale);
 
   const dt = await getTranslations({
     locale: params.locale,
@@ -81,20 +83,25 @@ export default async function DashboardPage({
     return s ? `/dashboard/${entryId}?${s}` : `/dashboard/${entryId}`;
   }
 
+  const fb = await getTranslations({
+    locale: params.locale,
+    namespace: "fhBanner",
+  });
+  const picksGwStr = String(team.picks_gw ?? "?");
+  const longGwStr = String(team.long_team_gw ?? "?");
+  const prevGwStr = String((team.picks_gw ?? 1) - 1);
+
   let baselineBanner: string | null = null;
   if (freeHitContext) {
     if (hasRevert) {
       baselineBanner = useFreeHitSquad
-        ? `Showing your temporary Free Hit 15 (GW${team.picks_gw ?? "?"}). ` +
-          `The dashboard defaults to your revert squad after the chip.`
-        : (team.long_team_note ??
-          `Using your GW${team.long_team_gw} squad (reverts after this Free Hit). ` +
-            `Use the link below to view the temporary Free Hit 15.`);
+        ? fb("dashboardShowTempFh", { picksGw: picksGwStr })
+        : fb("dashboardUsingRevert", { longGw: longGwStr });
     } else {
-      baselineBanner =
-        `Free Hit is active on GW${team.picks_gw ?? "?"}. Below is your temporary 15. ` +
-        `We could not load your revert squad from GW${(team.picks_gw ?? 1) - 1}. ` +
-        `Try ?refresh=1 or after player DB sync.`;
+      baselineBanner = fb("dashboardMissingRevert", {
+        picksGw: picksGwStr,
+        prevGw: prevGwStr,
+      });
     }
   }
 
@@ -162,11 +169,16 @@ export default async function DashboardPage({
           </p>
           <p className="text-[11px] leading-relaxed text-slate-500">
             {freeHitContext && hasRevert && !useFreeHitSquad
-              ? `GW${team.long_team_gw} revert squad · FPL snapshot GW${team.picks_gw} · `
+              ? dt("squadSubRevert", {
+                  longGw: team.long_team_gw ?? "?",
+                  picksGw: team.picks_gw ?? "?",
+                })
               : freeHitContext && useFreeHitSquad
-                ? `GW${team.picks_gw ?? "?"} Free Hit 15 · `
-                : `GW${team.picks_gw ?? team.current_gw ?? "?"} picks · `}
-            {relTime(team.fetched_at)} ·{" "}
+                ? dt("squadSubFh", { picksGw: picksGwStr })
+                : dt("squadSubPicks", {
+                    picksGw: team.picks_gw ?? team.current_gw ?? "?",
+                  })}
+            {relTime(team.fetched_at, dt)} ·{" "}
             <Link
               href={
                 useFreeHitSquad
@@ -251,9 +263,22 @@ export default async function DashboardPage({
             from: gwHeaders[0],
             to: gwHeaders[gwHeaders.length - 1],
           })}
+          legendHint={dt("heatmapLegendHint")}
+          columnHeaders={{
+            player: dt("heatmapPlayer"),
+            team: dt("heatmapTeam"),
+            pos: dt("heatmapPos"),
+            total: dt("heatmapTotal"),
+          }}
+          gwTotalLabel={dt("heatmapGwTotal")}
+          benchLabel={dt("heatmapBench")}
         />
         <div className="flex flex-wrap gap-3 text-[11px] text-slate-400">
-          <Legend flagsLabel={dt("xpLegendNote")} />
+          <Legend
+            flagsLabel={dt("xpLegendNote")}
+            xpPerFixturePrefix={dt("xpPerFixturePrefix")}
+            injuryLabel={dt("legendInjury")}
+          />
         </div>
       </section>
 
@@ -268,7 +293,11 @@ export default async function DashboardPage({
         </div>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {startingXI.map((p) => (
-            <PlayerCard key={p.fpl_id} p={p} />
+            <PlayerCard
+              key={p.fpl_id}
+              p={p}
+              formLabel={dt("playerFormLabel")}
+            />
           ))}
         </div>
         <div className="mt-10">
@@ -278,7 +307,12 @@ export default async function DashboardPage({
         </div>
         <div className="grid gap-3 md:grid-cols-4">
           {bench.map((p) => (
-            <PlayerCard key={p.fpl_id} p={p} compact />
+            <PlayerCard
+              key={p.fpl_id}
+              p={p}
+              compact
+              formLabel={dt("playerFormLabel")}
+            />
           ))}
         </div>
       </section>
@@ -370,14 +404,19 @@ export default async function DashboardPage({
   );
 }
 
-function relTime(iso: string): string {
-  const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return "just now";
-  const diff = Date.now() - t;
-  if (diff < 60_000) return "just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
+function relTime(
+  iso: string,
+  dt: Awaited<ReturnType<typeof getTranslations>>,
+): string {
+  const parsed = new Date(iso).getTime();
+  if (!Number.isFinite(parsed)) return dt("relJustNow");
+  const diff = Date.now() - parsed;
+  if (diff < 60_000) return dt("relJustNow");
+  if (diff < 3_600_000)
+    return dt("relMinutesAgo", { n: Math.floor(diff / 60_000) });
+  if (diff < 86_400_000)
+    return dt("relHoursAgo", { n: Math.floor(diff / 3_600_000) });
+  return dt("relDaysAgo", { n: Math.floor(diff / 86_400_000) });
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -393,7 +432,15 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Legend({ flagsLabel }: { flagsLabel: string }) {
+function Legend({
+  flagsLabel,
+  xpPerFixturePrefix = "xP/fixture:",
+  injuryLabel = "injury %",
+}: {
+  flagsLabel: string;
+  xpPerFixturePrefix?: string;
+  injuryLabel?: string;
+}) {
   const buckets: Array<{ label: string; cls: string }> = [
     { label: "0–1", cls: "bg-slate-700/70 text-slate-200" },
     { label: "1–2", cls: "bg-sky-900/70 text-sky-100" },
@@ -404,7 +451,7 @@ function Legend({ flagsLabel }: { flagsLabel: string }) {
   ];
   return (
     <>
-      <span className="uppercase tracking-wider">xP/fixture:</span>
+      <span className="uppercase tracking-wider">{xpPerFixturePrefix}</span>
       {buckets.map((b) => (
         <span
           key={b.label}
@@ -427,7 +474,7 @@ function Legend({ flagsLabel }: { flagsLabel: string }) {
         DGW
       </span>
       <span className="rounded bg-rose-500/25 px-2 py-0.5 text-[10px] font-semibold text-rose-200">
-        injury %
+        {injuryLabel}
       </span>
     </>
   );
@@ -436,7 +483,9 @@ function Legend({ flagsLabel }: { flagsLabel: string }) {
 function PlayerCard({
   p,
   compact,
+  formLabel,
 }: {
+  formLabel: string;
   p: {
     fpl_id: number;
     web_name: string | null;
@@ -477,7 +526,9 @@ function PlayerCard({
             £{p.price !== null ? p.price.toFixed(1) : "?"}m
           </div>
           {!compact && (
-            <div className="text-slate-400">form {p.form ?? "–"}</div>
+            <div className="text-slate-400">
+              {formLabel} {p.form ?? "–"}
+            </div>
           )}
         </div>
       </div>

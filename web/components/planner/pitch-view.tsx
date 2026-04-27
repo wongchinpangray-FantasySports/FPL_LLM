@@ -120,12 +120,17 @@ export function PitchView({
   reorderSelectedSlot,
   interactive,
   onPickSlot,
+  benchLabel = "Bench",
+  benchGkAbbrev = "GK",
 }: {
   picks: PlannerPickPayload[];
   title: string;
   caption?: string;
   captainId: number | null;
   viceId: number | null;
+  benchLabel?: string;
+  /** Label above bench goalkeeper column */
+  benchGkAbbrev?: string;
   highlightSlots?: Set<number>;
   /** Highlight slot during Bench ↔ XI two-tap selection */
   reorderSelectedSlot?: number | null;
@@ -200,7 +205,7 @@ export function PitchView({
         {/* Bench */}
         <div className="border-t border-white/10 bg-black/25 px-2 py-2">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">
-            Bench
+            {benchLabel}
           </div>
           {/*
             Four fixed bench slots (FPL always has 4 subs): one column each so GK
@@ -210,7 +215,7 @@ export function PitchView({
             {benchGk.length > 0 ? (
               <div className="flex w-full max-w-[100px] flex-col items-center gap-0.5 justify-self-center">
                 <span className="text-[9px] uppercase tracking-wide text-slate-600">
-                  GK
+                  {benchGkAbbrev}
                 </span>
                 <PlayerChip
                   key={benchGk[0].slot}
