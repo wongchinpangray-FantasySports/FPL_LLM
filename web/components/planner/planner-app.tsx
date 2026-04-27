@@ -48,6 +48,10 @@ function formatPlannerIssue(
       return issue.message;
   }
 }
+import {
+  PlannerPlayerInspectSheet,
+  type PlannerPlayerInspectDetail,
+} from "@/components/planner/planner-player-inspect";
 import { PitchView } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
@@ -133,6 +137,17 @@ export function PlannerApp({
   const [xiBenchMode, setXiBenchMode] = useState(false);
   const [xiFirst, setXiFirst] = useState<number | null>(null);
 
+  /** Player profile / fixture outlook sheet */
+  const [inspectCtx, setInspectCtx] = useState<{
+    side: "baseline" | "scenario";
+    slot: number;
+    fplId: number;
+  } | null>(null);
+  const [inspectDetail, setInspectDetail] =
+    useState<PlannerPlayerInspectDetail | null>(null);
+  const [inspectLoading, setInspectLoading] = useState(false);
+  const [inspectErr, setInspectErr] = useState<string | null>(null);
+
   useEffect(() => {
     if (viceId != null && captainId != null && viceId === captainId) {
       setViceId(null);
@@ -142,6 +157,42 @@ export function PlannerApp({
   useEffect(() => {
     if (!xiBenchMode) setXiFirst(null);
   }, [xiBenchMode]);
+
+  useEffect(() => {
+    if (!inspectCtx) {
+      setInspectDetail(null);
+      setInspectErr(null);
+      setInspectLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setInspectLoading(true);
+    setInspectErr(null);
+    setInspectDetail(null);
+    void fetch(
+      `/api/planner/player-detail?fplId=${inspectCtx.fplId}&horizon=${horizon}`,
+    )
+      .then(async (res) => {
+        const data = (await res.json()) as PlannerPlayerInspectDetail & {
+          error?: string;
+        };
+        if (!res.ok) {
+          throw new Error(data.error ?? `Request failed (${res.status})`);
+        }
+        if (!cancelled) setInspectDetail(data);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) {
+          setInspectErr(e instanceof Error ? e.message : "Request failed");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setInspectLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inspectCtx, horizon]);
 
   const issues = useMemo(
     () => validatePlannerSquad(picks),
@@ -217,6 +268,16 @@ export function PlannerApp({
     setProjError(null);
   }
 
+  function handleBaselineInspect(slot: number) {
+    const row = sortedInitial.find((x) => x.slot === slot);
+    if (!row) return;
+    setInspectCtx({
+      side: "baseline",
+      slot,
+      fplId: row.fpl_id,
+    });
+  }
+
   function handlePlanningInteraction(slot: number) {
     if (xiBenchMode) {
       if (xiFirst == null) {
@@ -232,6 +293,23 @@ export function PlannerApp({
       setXiFirst(null);
       return;
     }
+    const row = picks.find((x) => x.slot === slot);
+    if (!row) return;
+    setInspectCtx({
+      side: "scenario",
+      slot,
+      fplId: row.fpl_id,
+    });
+  }
+
+  function closeInspect() {
+    setInspectCtx(null);
+  }
+
+  function transferFromInspect() {
+    if (!inspectCtx || inspectCtx.side !== "scenario") return;
+    const slot = inspectCtx.slot;
+    closeInspect();
     setSwapSlot(slot);
     setSearchQ("");
     setSearchHits([]);
@@ -599,13 +677,16 @@ export function PlannerApp({
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-slate-500">
-            {t("hintPitchLead")}{" "}
-            <strong>{t("hintBoldXi")}</strong>
-            {t("hintPitchXiSuffix")}{" "}
-            <strong>{t("hintBoldTransfer")}</strong>
-            {t("hintPitchClose")}
-          </p>
+          <div className="max-w-xl space-y-1 text-xs text-slate-500">
+            <p>
+              {t("hintPitchLead")}{" "}
+              <strong>{t("hintBoldXi")}</strong>
+              {t("hintPitchXiSuffix")}{" "}
+              <strong>{t("hintBoldTransfer")}</strong>
+              {t("hintPitchClose")}
+            </p>
+            <p className="text-[11px] text-slate-600">{t("hintTapProfile")}</p>
+          </div>
           <Button type="button" variant="secondary" size="sm" onClick={resetToFplTeam}>
             {t("resetFpl")}
           </Button>
@@ -619,6 +700,8 @@ export function PlannerApp({
             picks={sortedInitial}
             captainId={cap0}
             viceId={vice0}
+            interactive
+            onPickSlot={handleBaselineInspect}
           />
           <PitchView
             title={t("planningScenario")}
@@ -783,7 +866,7 @@ export function PlannerApp({
                           : xiFirst != null
                             ? t("btnSwap")
                             : t("btnPick")
-                        : t("btnTransfer")}
+                        : t("btnInspect")}
                     </Button>
                   </td>
                 </tr>
@@ -849,6 +932,16 @@ export function PlannerApp({
           </div>
         </div>
       )}
+
+      <PlannerPlayerInspectSheet
+        open={inspectCtx != null}
+        loading={inspectLoading}
+        error={inspectErr}
+        detail={inspectDetail}
+        showTransfer={inspectCtx?.side === "scenario"}
+        onClose={closeInspect}
+        onTransfer={transferFromInspect}
+      />
     </div>
   );
 }
