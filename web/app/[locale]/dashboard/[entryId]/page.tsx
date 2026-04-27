@@ -502,13 +502,13 @@ function PlayerCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:p-3.5",
+        "rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:p-3.5",
         p.is_captain && "ring-1 ring-brand-accent/80",
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate font-semibold">
+          <div className="truncate text-sm font-semibold sm:text-base">
             {p.web_name ?? p.name ?? `#${p.fpl_id}`}
             {p.is_captain && (
               <span className="ml-1 text-brand-accent text-xs">(C)</span>

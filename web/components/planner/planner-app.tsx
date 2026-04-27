@@ -125,6 +125,8 @@ export function PlannerApp({
   const [searching, setSearching] = useState(false);
 
   const [horizon, setHorizon] = useState(5);
+  /** Separate draft so clearing / retyping GW count works on mobile (controlled number would snap back). */
+  const [horizonDraft, setHorizonDraft] = useState("5");
   const [projById, setProjById] = useState<Record<string, ProjRow>>({});
   const [projMeta, setProjMeta] = useState<{
     fromGw: number;
@@ -576,89 +578,127 @@ export function PlannerApp({
         </div>
       </section>
 
-      <section className="flex flex-wrap gap-3 items-end sm:gap-4">
-        <div>
-          <label className="text-[10px] uppercase text-slate-500 block mb-1">
-            {t("bank")}
-          </label>
-          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-lg font-semibold">
-            £{bank.toFixed(1)}m
+      <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:contents sm:flex sm:flex-wrap sm:gap-4">
+          <div className="min-w-0">
+            <label className="mb-1 block text-[10px] uppercase text-slate-500">
+              {t("bank")}
+            </label>
+            <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-base font-semibold tabular-nums sm:px-3 sm:py-2 sm:text-lg">
+              £{bank.toFixed(1)}m
+            </div>
+          </div>
+          <div className="min-w-0">
+            <label className="mb-1 block text-[10px] uppercase text-slate-500">
+              {t("horizon")}
+            </label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              aria-label={t("horizon")}
+              value={horizonDraft}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (next !== "" && !/^\d+$/.test(next)) return;
+                setHorizonDraft(next);
+                if (next === "") return;
+                const n = parseInt(next, 10);
+                if (!Number.isNaN(n)) {
+                  setHorizon(Math.min(8, Math.max(1, n)));
+                }
+              }}
+              onBlur={() => {
+                const raw = horizonDraft.trim();
+                if (raw === "") {
+                  setHorizonDraft(String(horizon));
+                  return;
+                }
+                const n = parseInt(raw, 10);
+                if (Number.isNaN(n)) {
+                  setHorizonDraft(String(horizon));
+                  return;
+                }
+                const clamped = Math.min(8, Math.max(1, n));
+                setHorizon(clamped);
+                setHorizonDraft(String(clamped));
+              }}
+              className="h-9 w-full min-w-0 max-w-[5.5rem] px-2 text-center text-sm tabular-nums sm:h-10 sm:w-20 sm:max-w-none sm:px-3"
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <label className="text-[10px] uppercase text-slate-500">
+              {t("captain")}
+            </label>
+            <select
+              className="h-9 rounded-md border border-white/10 bg-brand-ink px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
+              value={captainId ?? ""}
+              onChange={(e) =>
+                setCaptainId(Number(e.target.value) || null)
+              }
+            >
+              {picks
+                .filter((p) => p.is_starter)
+                .map((p) => (
+                  <option key={p.fpl_id} value={p.fpl_id}>
+                    {p.web_name ?? p.fpl_id} ({p.position})
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <label className="text-[10px] uppercase text-slate-500">
+              {t("vice")}
+            </label>
+            <select
+              className="h-9 rounded-md border border-white/10 bg-brand-ink px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
+              value={viceId ?? ""}
+              onChange={(e) =>
+                setViceId(Number(e.target.value) || null)
+              }
+            >
+              <option value="">—</option>
+              {picks
+                .filter((p) => p.is_starter && p.fpl_id !== captainId)
+                .map((p) => (
+                  <option key={p.fpl_id} value={p.fpl_id}>
+                    {p.web_name ?? p.fpl_id}
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
-        <div>
-          <label className="text-[10px] uppercase text-slate-500 block mb-1">
-            {t("horizon")}
-          </label>
-          <Input
-            type="number"
-            min={1}
-            max={8}
-            value={horizon}
-            onChange={(e) =>
-              setHorizon(
-                Math.min(8, Math.max(1, Number(e.target.value) || 5)),
-              )
-            }
-            className="w-20"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-slate-500">{t("captain")}</label>
-          <select
-            className="rounded-md border border-white/10 bg-brand-ink px-2 py-2 text-sm"
-            value={captainId ?? ""}
-            onChange={(e) =>
-              setCaptainId(Number(e.target.value) || null)
-            }
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            onClick={runProject}
+            disabled={projLoading || !valid}
+            className="flex-1 text-xs sm:flex-none sm:text-sm"
           >
-            {picks
-              .filter((p) => p.is_starter)
-              .map((p) => (
-                <option key={p.fpl_id} value={p.fpl_id}>
-                  {p.web_name ?? p.fpl_id} ({p.position})
-                </option>
-              ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-slate-500">{t("vice")}</label>
-          <select
-            className="rounded-md border border-white/10 bg-brand-ink px-2 py-2 text-sm"
-            value={viceId ?? ""}
-            onChange={(e) =>
-              setViceId(Number(e.target.value) || null)
-            }
+            {projLoading ? t("refreshXpLoading") : t("refreshXp")}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={applyBestXiByProjection}
+            disabled={!valid || Object.keys(projById).length === 0}
+            title={t("bestXiTitle")}
+            className="flex-1 text-xs sm:flex-none sm:text-sm"
           >
-            <option value="">—</option>
-            {picks
-              .filter((p) => p.is_starter && p.fpl_id !== captainId)
-              .map((p) => (
-                <option key={p.fpl_id} value={p.fpl_id}>
-                  {p.web_name ?? p.fpl_id}
-                </option>
-              ))}
-          </select>
+            {t("bestXiByXp")}
+          </Button>
+          <Button
+            type="button"
+            variant={xiBenchMode ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => setXiBenchMode((v) => !v)}
+            title={t("xiBenchTitle")}
+            className="min-w-[42%] flex-1 text-xs sm:min-w-0 sm:flex-none sm:text-sm"
+          >
+            {xiBenchMode ? t("xiBenchOn") : t("xiBenchOff")}
+          </Button>
         </div>
-        <Button onClick={runProject} disabled={projLoading || !valid}>
-          {projLoading ? t("refreshXpLoading") : t("refreshXp")}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={applyBestXiByProjection}
-          disabled={!valid || Object.keys(projById).length === 0}
-          title={t("bestXiTitle")}
-        >
-          {t("bestXiByXp")}
-        </Button>
-        <Button
-          type="button"
-          variant={xiBenchMode ? "primary" : "secondary"}
-          onClick={() => setXiBenchMode((v) => !v)}
-          title={t("xiBenchTitle")}
-        >
-          {xiBenchMode ? t("xiBenchOn") : t("xiBenchOff")}
-        </Button>
       </section>
 
       {issues.length > 0 && (

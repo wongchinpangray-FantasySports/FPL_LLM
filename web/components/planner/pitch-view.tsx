@@ -30,21 +30,21 @@ function PlayerChip({
 
   const inner = (
     <>
-      <div className="truncate text-[10px] font-semibold leading-tight text-white">
+      <div className="truncate text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
         {p.web_name ?? `#${p.fpl_id}`}
       </div>
-      <div className="truncate text-[9px] text-slate-400">{p.team}</div>
-      <div className="mt-0.5 flex items-center justify-center gap-1">
-        <span className="text-[9px] text-slate-500">
+      <div className="truncate text-[7px] text-slate-400 sm:text-[9px]">{p.team}</div>
+      <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
+        <span className="text-[7px] text-slate-500 sm:text-[9px]">
           £{p.base_price != null ? p.base_price.toFixed(1) : "?"}m
         </span>
         {isC && (
-          <span className="rounded bg-brand-accent/25 px-1 text-[8px] font-bold text-brand-accent">
+          <span className="rounded bg-brand-accent/25 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
             C
           </span>
         )}
         {isV && !isC && (
-          <span className="rounded bg-white/15 px-1 text-[8px] text-slate-300">
+          <span className="rounded bg-white/15 px-0.5 text-[7px] text-slate-300 sm:px-1 sm:text-[8px]">
             V
           </span>
         )}
@@ -53,12 +53,12 @@ function PlayerChip({
   );
 
   const cls = cn(
-    "min-w-[58px] max-w-[84px] rounded-md border px-1 py-1 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
+    "min-w-[44px] max-w-[min(22vw,68px)] shrink rounded-md border px-0.5 py-0.5 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
     "border-white/20 bg-black/40 backdrop-blur-sm",
     highlight &&
-      "ring-2 ring-amber-400 ring-offset-2 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)]",
+      "ring-2 ring-amber-400 ring-offset-1 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)] sm:ring-offset-2",
     selectedForReorder &&
-      "ring-2 ring-sky-400 ring-offset-2 ring-offset-emerald-950 z-[1]",
+      "ring-2 ring-sky-400 ring-offset-1 ring-offset-emerald-950 sm:ring-offset-2 z-[1]",
     interactive && "hover:border-brand-accent/50 hover:bg-black/55 cursor-pointer",
   );
 
@@ -93,7 +93,7 @@ function Line({
   if (players.length === 0) return null;
   const sorted = sortBySlot(players);
   return (
-    <div className="flex min-h-[44px] flex-1 items-center justify-center gap-1 px-0.5 sm:min-h-[52px] sm:gap-1.5 sm:px-1">
+    <div className="flex min-h-[36px] flex-1 items-center justify-center gap-0.5 px-0 sm:min-h-[52px] sm:gap-1.5 sm:px-1">
       {sorted.map((p) => (
         <PlayerChip
           key={p.slot}
@@ -151,15 +151,15 @@ export function PitchView({
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <h3 className="text-xs font-semibold text-white sm:text-sm">{title}</h3>
         {caption ? (
-          <p className="text-[11px] text-slate-500">{caption}</p>
+          <p className="text-[10px] text-slate-500 sm:text-[11px]">{caption}</p>
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg">
+      <div className="overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg sm:rounded-2xl">
         {/* Decorative centre line */}
-        <div className="relative aspect-[5/2.85] flex flex-col justify-between px-1.5 py-2 sm:aspect-[5/3.1] sm:px-2 sm:py-3">
+        <div className="relative aspect-[5/2.55] flex flex-col justify-between px-1 py-1.5 sm:aspect-[5/3.1] sm:px-2 sm:py-3">
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
 
@@ -203,18 +203,18 @@ export function PitchView({
         </div>
 
         {/* Bench */}
-        <div className="border-t border-white/10 bg-black/25 px-1.5 py-1.5 sm:px-2 sm:py-2">
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">
+        <div className="border-t border-white/10 bg-black/25 px-1 py-1 sm:px-2 sm:py-2">
+          <div className="mb-0.5 text-[9px] uppercase tracking-wide text-slate-500 sm:mb-1 sm:text-[10px]">
             {benchLabel}
           </div>
           {/*
             Four fixed bench slots (FPL always has 4 subs): one column each so GK
             and outfield stay aligned without a gap in the middle.
           */}
-          <div className="grid grid-cols-4 gap-1 sm:gap-2 items-end justify-items-center">
+          <div className="grid grid-cols-4 gap-0.5 sm:gap-2 items-end justify-items-center">
             {benchGk.length > 0 ? (
-              <div className="flex w-full max-w-[100px] flex-col items-center gap-0.5 justify-self-center">
-                <span className="text-[9px] uppercase tracking-wide text-slate-600">
+              <div className="flex w-full max-w-[min(22vw,68px)] flex-col items-center gap-0.5 justify-self-center sm:max-w-[100px]">
+                <span className="text-[8px] uppercase tracking-wide text-slate-600 sm:text-[9px]">
                   {benchGkAbbrev}
                 </span>
                 <PlayerChip
@@ -238,7 +238,7 @@ export function PitchView({
             {benchOutfield.map((p) => (
               <div
                 key={p.slot}
-                className="flex w-full max-w-[100px] flex-col items-center justify-self-center"
+                className="flex w-full max-w-[min(22vw,68px)] flex-col items-center justify-self-center sm:max-w-[100px]"
               >
                 <PlayerChip
                   p={p}
