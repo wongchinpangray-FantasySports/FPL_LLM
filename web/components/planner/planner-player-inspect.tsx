@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -120,10 +121,24 @@ export function PlannerPlayerInspectSheet({
               {loading ? t("inspectLoadingTitle") : name}
             </h2>
             {detail ? (
-              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-                {detail.profile.team ?? "—"} · {detail.profile.position ?? "—"}{" "}
-                · £{detail.profile.price != null ? detail.profile.price.toFixed(1) : "?"}m
-              </p>
+              <>
+                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+                  {detail.profile.team ?? "—"} ·{" "}
+                  {detail.profile.position ?? "—"} · £
+                  {detail.profile.price != null
+                    ? detail.profile.price.toFixed(1)
+                    : "?"}
+                  m
+                </p>
+                <p className="mt-2">
+                  <Link
+                    href={`/player/${detail.profile.fpl_id}`}
+                    className="text-sm font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-accent/90"
+                  >
+                    {t("inspectFullProfile")}
+                  </Link>
+                </p>
+              </>
             ) : null}
           </div>
           <Button variant="ghost" size="sm" type="button" onClick={onClose}>
