@@ -331,8 +331,6 @@ export function PlannerApp({
 
     setPicks(next);
     fixCaptainViceAfterLineup(next);
-    setProjById({});
-    setProjMeta(null);
     setProjError(null);
   }
 
