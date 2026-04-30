@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 
 const COLS =
-  "fpl_id,web_name,name,team,team_id,position,base_price,status,form,total_points";
+  "fpl_id,web_name,name,team,team_id,position,base_price,status,form,total_points,minutes,selected_by_percent,points_per_game,ict_index,goals_scored,assists,expected_goals,expected_assists";
 
 function sanitizeQuery(q: string): string {
   return q

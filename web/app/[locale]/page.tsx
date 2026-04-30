@@ -35,11 +35,31 @@ export default async function HomePage() {
             <span className="text-slate-400">fantasy.premierleague.com</span>.
           </p>
         </div>
-        <Link href="/chat" className="inline-flex">
-          <Button variant="secondary" size="lg">
-            {t("openChat")}
-          </Button>
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <Link href="/chat" className="inline-flex">
+            <Button variant="secondary" size="lg">
+              {t("openChat")}
+            </Button>
+          </Link>
+          <Link
+            href="/players"
+            className="group block w-full max-w-xl rounded-xl border border-white/[0.1] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] transition-colors hover:border-brand-accent/35 sm:w-auto sm:min-w-[280px]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-brand-accent/90">
+                  {t("playersCardTitle")}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
+                  {t("playersCardBody")}
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-semibold text-brand-accent transition-transform group-hover:translate-x-0.5">
+                {t("playersCardCta")} →
+              </span>
+            </div>
+          </Link>
+        </div>
       </section>
 
       <section>

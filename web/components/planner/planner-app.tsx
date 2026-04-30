@@ -72,6 +72,16 @@ type SearchPlayer = {
   position: string | null;
   base_price: number | null;
   status: string | null;
+  form: number | null;
+  total_points: number | null;
+  minutes: number | null;
+  selected_by_percent: number | null;
+  points_per_game: number | null;
+  ict_index: number | null;
+  goals_scored: number | null;
+  assists: number | null;
+  expected_goals: number | null;
+  expected_assists: number | null;
 };
 
 type ProjRow = {
@@ -1032,9 +1042,23 @@ export function PlannerApp({
                     >
                       <span className="font-medium">{h.web_name ?? h.name}</span>
                       <span className="text-slate-400">
-                        {" "}
-                        · {h.team} · {h.position} · £
-                        {h.base_price?.toFixed(1) ?? "?"}m
+                        {" · "}
+                        {h.team} · {h.position} · £{h.base_price?.toFixed(1) ?? "?"}m
+                        {h.total_points != null && (
+                          <> · {h.total_points} pts</>
+                        )}
+                        {h.form != null && (
+                          <> · form {Number(h.form).toFixed(1)}</>
+                        )}
+                        {h.selected_by_percent != null && (
+                          <>
+                            {" "}
+                            · {Number(h.selected_by_percent).toFixed(0)}% own
+                          </>
+                        )}
+                        {h.ict_index != null && (
+                          <> · ICT {Number(h.ict_index).toFixed(1)}</>
+                        )}
                         {h.status && h.status !== "a" && (
                           <span className="text-amber-300"> · {h.status}</span>
                         )}

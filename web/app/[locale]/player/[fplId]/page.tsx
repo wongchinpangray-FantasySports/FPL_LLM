@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
 import { xpCellClass } from "@/components/xp-heatmap";
-import { loadPlayerHubData } from "@/lib/player-hub";
+import { loadPlayerProfileBundle } from "@/lib/player-hub";
+import { PlayerRadarChart } from "@/components/player/player-radar-chart";
 import { getServerSupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { FixtureProjection } from "@/lib/xp";
@@ -57,23 +58,30 @@ export default async function PlayerHubPage({
     Math.max(1, Number(searchParams?.horizon) || 5),
   );
 
-  const data = await loadPlayerHubData(fplId, horizon);
+  const data = await loadPlayerProfileBundle(fplId, horizon);
   if (!data) notFound();
 
   const t = await getTranslations({ locale, namespace: "playerPage" });
-  const { static: row, projection: p, currentGw, fromGw, toGw } = data;
+  const { static: row, projection: p, currentGw, fromGw, toGw, radar, understat } =
+    data;
 
   const displayName = row.web_name ?? row.name ?? `#${fplId}`;
   const fixtures = [...p.fixtures].sort((a, b) => a.gw - b.gw);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 pb-8">
-      <div>
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-8">
+      <div className="flex flex-wrap gap-4 text-sm">
         <Link
           href="/"
-          className="text-sm text-slate-400 transition-colors hover:text-brand-accent"
+          className="text-slate-400 transition-colors hover:text-brand-accent"
         >
           {t("backHome")}
+        </Link>
+        <Link
+          href="/players"
+          className="text-slate-400 transition-colors hover:text-brand-accent"
+        >
+          {t("backPlayers")}
         </Link>
       </div>
 
@@ -88,6 +96,44 @@ export default async function PlayerHubPage({
           gw2: String(toGw),
         })}
       />
+
+      <section className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5">
+        <h2 className="mb-2 text-sm font-semibold text-white">
+          {t("dataSourcesTitle")}
+        </h2>
+        <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-slate-400">
+          <li>{t("dataSourceFpl")}</li>
+          <li>{t("dataSourceUnderstat")}</li>
+          <li>{t("dataSourceSofa")}</li>
+          <li>{t("dataSourceModel")}</li>
+        </ul>
+      </section>
+
+      <section className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+        <div className="min-w-0 flex-1">
+          <h2 className="mb-1 text-lg font-semibold text-white">{t("radarTitle")}</h2>
+          <p className="text-xs text-slate-500">{t("radarSubtitle")}</p>
+        </div>
+        <PlayerRadarChart
+          values={[
+            radar.form,
+            radar.influence,
+            radar.creativity,
+            radar.threat,
+            radar.xg,
+            radar.xa,
+          ]}
+          labels={[
+            t("radarForm"),
+            t("radarInf"),
+            t("radarCre"),
+            t("radarThr"),
+            t("radarXg"),
+            t("radarXa"),
+          ]}
+          caption={t("radarCaption")}
+        />
+      </section>
 
       <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <div className="flex flex-wrap gap-4 border-b border-white/10 pb-4">
@@ -206,6 +252,32 @@ export default async function PlayerHubPage({
                 : "—"}
             </dd>
           </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+            <dt className="text-slate-500">{t("ictInf")}</dt>
+            <dd className="font-medium text-white">{row.influence ?? "—"}</dd>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+            <dt className="text-slate-500">{t("ictCre")}</dt>
+            <dd className="font-medium text-white">{row.creativity ?? "—"}</dd>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+            <dt className="text-slate-500">{t("ictThr")}</dt>
+            <dd className="font-medium text-white">{row.threat ?? "—"}</dd>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+            <dt className="text-slate-500">{t("seasonXg")}</dt>
+            <dd className="font-medium text-white">
+              {row.expected_goals != null ? row.expected_goals.toFixed(2) : "—"}
+            </dd>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+            <dt className="text-slate-500">{t("seasonXa")}</dt>
+            <dd className="font-medium text-white">
+              {row.expected_assists != null
+                ? row.expected_assists.toFixed(2)
+                : "—"}
+            </dd>
+          </div>
         </dl>
       </section>
 
@@ -237,6 +309,58 @@ export default async function PlayerHubPage({
             <dd className="font-medium text-white">{p.rolling.dc_points}</dd>
           </div>
         </dl>
+      </section>
+
+      {understat ? (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-white">
+            {t("understatTitle", { season: understat.season })}
+          </h2>
+          <p className="mb-3 text-xs text-slate-500">{t("understatNote")}</p>
+          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usMatches")}</dt>
+              <dd className="font-medium text-white">{understat.matches}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usMins")}</dt>
+              <dd className="font-medium text-white">{understat.minutes}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usXg")}</dt>
+              <dd className="font-medium text-white">{understat.xg.toFixed(2)}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usXa")}</dt>
+              <dd className="font-medium text-white">{understat.xa.toFixed(2)}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usShots")}</dt>
+              <dd className="font-medium text-white">{understat.shots}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usKP")}</dt>
+              <dd className="font-medium text-white">{understat.key_passes}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usGoals")}</dt>
+              <dd className="font-medium text-white">{understat.goals}</dd>
+            </div>
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+              <dt className="text-slate-500">{t("usAssists")}</dt>
+              <dd className="font-medium text-white">{understat.assists}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : (
+        <section className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-500">
+          {t("understatEmpty")}
+        </section>
+      )}
+
+      <section className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+        <h2 className="mb-1 text-sm font-semibold text-slate-300">{t("sofaTitle")}</h2>
+        <p className="text-xs leading-relaxed text-slate-500">{t("sofaBody")}</p>
       </section>
 
       <section>
@@ -307,10 +431,10 @@ export default async function PlayerHubPage({
           {t("openDashboard")}
         </Link>
         <Link
-          href="/planner"
+          href="/players"
           className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition-colors hover:border-brand-accent/30 hover:text-white"
         >
-          {t("openPlanner")}
+          {t("openPlayerSearch")}
         </Link>
       </section>
     </div>
