@@ -37,12 +37,17 @@ export default async function PlannerPage({
   try {
     team = await fetchTeamForUi(entryId, forceRefresh);
   } catch (err) {
+    const msg = (err as Error).message;
+    const show403 = /\b403\b/.test(msg);
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
         <h1 className="text-xl font-semibold text-white">{pt("errorTitle")}</h1>
-        <p className="mt-2 text-sm text-rose-100/90">
-          {(err as Error).message}
-        </p>
+        <p className="mt-2 text-sm text-rose-100/90">{msg}</p>
+        {show403 ? (
+          <p className="mt-3 text-xs leading-relaxed text-rose-200/80">
+            {pt("errorFpl403Hint")}
+          </p>
+        ) : null}
         <Link
           href="/"
           className="mt-6 inline-flex rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-accent hover:bg-white/10"

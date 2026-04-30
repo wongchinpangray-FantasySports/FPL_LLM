@@ -68,6 +68,7 @@
     "eyebrow": "仪表盘",
     "backHome": "← 返回首页",
     "errorTitle": "无法加载阵容",
+    "errorFpl403Hint": "官方 FPL 接口对本服务器返回了「禁止访问」(403)。常见于云机房（如 Vercel）。可稍后再试、更换部署区域，或在服务端环境变量 FPL_FETCH_USER_AGENT 中设置为当前桌面版 Chrome 的 User-Agent 字符串。",
     "refresh": "刷新",
     "pts": "分",
     "overallRank": "总排名",
@@ -312,6 +313,7 @@
   },
   "planner": {
     "errorTitle": "无法加载阵容",
+    "errorFpl403Hint": "官方 FPL 接口对本服务器返回了「禁止访问」(403)。常见于云机房（如 Vercel）。可稍后再试、更换部署区域，或在服务端环境变量 FPL_FETCH_USER_AGENT 中设置为当前桌面版 Chrome 的 User-Agent 字符串。",
     "backHome": "← 返回首页"
   },
   "plannerIndex": {

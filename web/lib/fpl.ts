@@ -2,13 +2,32 @@
  * Thin client for calls against the public FPL API.
  * Only used for per-user endpoints that are not worth caching in Supabase
  * (e.g. a specific entry's picks).
+ *
+ * FPL sometimes returns **403** to minimal or datacenter-looking clients.
+ * We send browser-like headers; override with `FPL_FETCH_USER_AGENT` if needed.
  */
 const FPL_BASE = "https://fantasy.premierleague.com/api";
-const UA = "Mozilla/5.0 (compatible; FPL-LLM/0.1)";
+
+const DEFAULT_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+function fplHeaders(): Record<string, string> {
+  const ua =
+    (typeof process !== "undefined" &&
+      process.env.FPL_FETCH_USER_AGENT?.trim()) ||
+    DEFAULT_UA;
+  return {
+    "user-agent": ua,
+    accept: "application/json, text/plain, */*",
+    "accept-language": "en-GB,en;q=0.9",
+    referer: "https://fantasy.premierleague.com/",
+    origin: "https://fantasy.premierleague.com",
+  };
+}
 
 export async function fplGet<T = unknown>(path: string): Promise<T> {
   const res = await fetch(`${FPL_BASE}${path}`, {
-    headers: { "user-agent": UA, accept: "application/json" },
+    headers: fplHeaders(),
     cache: "no-store",
   });
   if (!res.ok) {
