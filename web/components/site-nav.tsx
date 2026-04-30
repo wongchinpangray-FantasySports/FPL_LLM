@@ -57,6 +57,14 @@ export function SiteNav() {
         {t("dashboard")}
       </NavLink>
       <NavLink
+        href={plannerHref}
+        active={
+          pathname === "/planner" || pathname.startsWith("/planner/")
+        }
+      >
+        {t("planner")}
+      </NavLink>
+      <NavLink
         href="/players"
         active={
           pathname === "/players" || pathname.startsWith("/player/")

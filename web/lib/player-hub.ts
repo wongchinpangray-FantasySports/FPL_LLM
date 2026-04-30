@@ -118,19 +118,6 @@ export async function loadPlayerHubData(
   };
 }
 
-/** Season-total Understat match rows matched to this FPL player (sync job). */
-export type UnderstatSeasonAggregate = {
-  season: string;
-  matches: number;
-  minutes: number;
-  xg: number;
-  xa: number;
-  shots: number;
-  key_passes: number;
-  goals: number;
-  assists: number;
-};
-
 /** Six 0–100 scores vs same-position peers (p95 scale). */
 export type PlayerRadarAxes = {
   form: number;
@@ -208,80 +195,8 @@ export function buildPlayerRadarAxes(
   };
 }
 
-export async function loadUnderstatSeasonAggregate(
-  fplId: number,
-): Promise<UnderstatSeasonAggregate | null> {
-  const supa = getServerSupabase();
-  const { data, error } = await supa
-    .from("understat_xg")
-    .select("season,xg,xa,shots,key_passes,minutes,goals,assists")
-    .eq("matched_fpl_id", fplId);
-
-  if (error || !data?.length) return null;
-
-  const bySeason = new Map<
-    string,
-    Array<{
-      season: string;
-      xg: unknown;
-      xa: unknown;
-      shots: unknown;
-      key_passes: unknown;
-      minutes: unknown;
-      goals: unknown;
-      assists: unknown;
-    }>
-  >();
-  for (const row of data) {
-    const s = String(row.season ?? "");
-    if (!bySeason.has(s)) bySeason.set(s, []);
-    bySeason.get(s)!.push(row);
-  }
-
-  let bestSeason = "";
-  let bestCount = 0;
-  for (const [season, rows] of bySeason) {
-    if (rows.length > bestCount) {
-      bestCount = rows.length;
-      bestSeason = season;
-    }
-  }
-  if (!bestSeason) return null;
-
-  const rows = bySeason.get(bestSeason)!;
-  let xg = 0;
-  let xa = 0;
-  let shots = 0;
-  let key_passes = 0;
-  let minutes = 0;
-  let goals = 0;
-  let assists = 0;
-  for (const r of rows) {
-    xg += Number(r.xg) || 0;
-    xa += Number(r.xa) || 0;
-    shots += Number(r.shots) || 0;
-    key_passes += Number(r.key_passes) || 0;
-    minutes += Number(r.minutes) || 0;
-    goals += Number(r.goals) || 0;
-    assists += Number(r.assists) || 0;
-  }
-
-  return {
-    season: bestSeason,
-    matches: rows.length,
-    minutes,
-    xg,
-    xa,
-    shots,
-    key_passes,
-    goals,
-    assists,
-  };
-}
-
 export type PlayerProfileBundle = PlayerHubPayload & {
   radar: PlayerRadarAxes;
-  understat: UnderstatSeasonAggregate | null;
 };
 
 export async function loadPlayerProfileBundle(
@@ -292,14 +207,10 @@ export async function loadPlayerProfileBundle(
   if (!base) return null;
 
   const pos = base.static.position ?? "MID";
-  const [understat, peerP95] = await Promise.all([
-    loadUnderstatSeasonAggregate(fplId),
-    loadPeerP95ForPosition(pos),
-  ]);
+  const peerP95 = await loadPeerP95ForPosition(pos);
 
   return {
     ...base,
     radar: buildPlayerRadarAxes(base.static, peerP95),
-    understat,
   };
 }

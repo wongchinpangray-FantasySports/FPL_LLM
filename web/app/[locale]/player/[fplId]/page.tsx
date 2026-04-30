@@ -62,8 +62,7 @@ export default async function PlayerHubPage({
   if (!data) notFound();
 
   const t = await getTranslations({ locale, namespace: "playerPage" });
-  const { static: row, projection: p, currentGw, fromGw, toGw, radar, understat } =
-    data;
+  const { static: row, projection: p, currentGw, fromGw, toGw, radar } = data;
 
   const displayName = row.web_name ?? row.name ?? `#${fplId}`;
   const fixtures = [...p.fixtures].sort((a, b) => a.gw - b.gw);
@@ -103,8 +102,6 @@ export default async function PlayerHubPage({
         </h2>
         <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-slate-400">
           <li>{t("dataSourceFpl")}</li>
-          <li>{t("dataSourceUnderstat")}</li>
-          <li>{t("dataSourceSofa")}</li>
           <li>{t("dataSourceModel")}</li>
         </ul>
       </section>
@@ -309,58 +306,6 @@ export default async function PlayerHubPage({
             <dd className="font-medium text-white">{p.rolling.dc_points}</dd>
           </div>
         </dl>
-      </section>
-
-      {understat ? (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold text-white">
-            {t("understatTitle", { season: understat.season })}
-          </h2>
-          <p className="mb-3 text-xs text-slate-500">{t("understatNote")}</p>
-          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usMatches")}</dt>
-              <dd className="font-medium text-white">{understat.matches}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usMins")}</dt>
-              <dd className="font-medium text-white">{understat.minutes}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usXg")}</dt>
-              <dd className="font-medium text-white">{understat.xg.toFixed(2)}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usXa")}</dt>
-              <dd className="font-medium text-white">{understat.xa.toFixed(2)}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usShots")}</dt>
-              <dd className="font-medium text-white">{understat.shots}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usKP")}</dt>
-              <dd className="font-medium text-white">{understat.key_passes}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usGoals")}</dt>
-              <dd className="font-medium text-white">{understat.goals}</dd>
-            </div>
-            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
-              <dt className="text-slate-500">{t("usAssists")}</dt>
-              <dd className="font-medium text-white">{understat.assists}</dd>
-            </div>
-          </dl>
-        </section>
-      ) : (
-        <section className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-500">
-          {t("understatEmpty")}
-        </section>
-      )}
-
-      <section className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-        <h2 className="mb-1 text-sm font-semibold text-slate-300">{t("sofaTitle")}</h2>
-        <p className="text-xs leading-relaxed text-slate-500">{t("sofaBody")}</p>
       </section>
 
       <section>
