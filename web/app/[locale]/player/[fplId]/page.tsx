@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { loadPlayerProfileBundle } from "@/lib/player-hub";
-import { PlayerRadarChart } from "@/components/player/player-radar-chart";
+import { PlayerRadarCompareSection } from "@/components/player/player-radar-compare-section";
 import { getServerSupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { FixtureProjection } from "@/lib/xp";
@@ -106,31 +106,11 @@ export default async function PlayerHubPage({
         </ul>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-        <div className="min-w-0 flex-1">
-          <h2 className="mb-1 text-lg font-semibold text-white">{t("radarTitle")}</h2>
-          <p className="text-xs text-slate-500">{t("radarSubtitle")}</p>
-        </div>
-        <PlayerRadarChart
-          values={[
-            radar.form,
-            radar.influence,
-            radar.creativity,
-            radar.threat,
-            radar.xg,
-            radar.xa,
-          ]}
-          labels={[
-            t("radarForm"),
-            t("radarInf"),
-            t("radarCre"),
-            t("radarThr"),
-            t("radarXg"),
-            t("radarXa"),
-          ]}
-          caption={t("radarCaption")}
-        />
-      </section>
+      <PlayerRadarCompareSection
+        baseFplId={fplId}
+        basePosition={row.position}
+        baseRadar={radar}
+      />
 
       <section className="rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <div className="flex flex-wrap gap-4 border-b border-white/10 pb-4">

@@ -1,22 +1,18 @@
 /**
  * Hexagon (radar) chart for six 0–100 scores — server-rendered SVG.
+ * Optional second series overlays a comparison player (same axes).
  */
-export function PlayerRadarChart({
-  values,
-  labels,
-  caption,
-}: {
-  values: [number, number, number, number, number, number];
-  labels: [string, string, string, string, string, string];
-  caption: string;
-}) {
-  const n = 6;
-  const cx = 130;
-  const cy = 130;
-  const rMax = 82;
-  const r50 = rMax * 0.5;
 
-  const verts = values.map((v, i) => {
+type Six = [number, number, number, number, number, number];
+
+function vertsFromValues(
+  values: Six,
+  cx: number,
+  cy: number,
+  rMax: number,
+  n: number,
+) {
+  return values.map((v, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
     const rr = (Math.min(100, Math.max(0, v)) / 100) * rMax;
     return {
@@ -27,8 +23,34 @@ export function PlayerRadarChart({
       ly: cy + (rMax + 26) * Math.sin(angle),
     };
   });
+}
 
+export function PlayerRadarChart({
+  values,
+  labels,
+  caption,
+  compare,
+}: {
+  values: Six;
+  labels: [string, string, string, string, string, string];
+  caption: string;
+  compare?: { values: Six; name: string };
+}) {
+  const n = 6;
+  const cx = 130;
+  const cy = 130;
+  const rMax = 82;
+  const r50 = rMax * 0.5;
+
+  const verts = vertsFromValues(values, cx, cy, rMax, n);
   const poly = verts.map((v) => `${v.x.toFixed(1)},${v.y.toFixed(1)}`).join(" ");
+
+  const compareVerts = compare
+    ? vertsFromValues(compare.values, cx, cy, rMax, n)
+    : null;
+  const comparePoly = compareVerts
+    ? compareVerts.map((v) => `${v.x.toFixed(1)},${v.y.toFixed(1)}`).join(" ")
+    : "";
 
   const ring = (r: number) =>
     Array.from({ length: n }, (_, i) => {
@@ -36,13 +58,18 @@ export function PlayerRadarChart({
       return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
     }).join(" ");
 
+  const aria =
+    compare != null
+      ? `${caption} · ${compare.name}`
+      : caption;
+
   return (
     <figure className="flex flex-col items-center gap-2">
       <svg
         viewBox="0 0 260 260"
         className="h-64 w-full max-w-[280px] text-slate-400"
         role="img"
-        aria-label={caption}
+        aria-label={aria}
       >
         <polygon
           points={ring(rMax)}
@@ -70,6 +97,15 @@ export function PlayerRadarChart({
             strokeWidth={1}
           />
         ))}
+        {compareVerts ? (
+          <polygon
+            points={comparePoly}
+            fill="rgba(56,189,248,0.16)"
+            stroke="rgb(56,189,248)"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+          />
+        ) : null}
         <polygon
           points={poly}
           fill="rgba(0,255,135,0.18)"
@@ -77,6 +113,17 @@ export function PlayerRadarChart({
           strokeWidth={1.5}
           strokeLinejoin="round"
         />
+        {compareVerts
+          ? compareVerts.map((v, i) => (
+              <circle
+                key={`c2-${i}`}
+                cx={v.x}
+                cy={v.y}
+                r={3}
+                fill="rgb(56,189,248)"
+              />
+            ))
+          : null}
         {verts.map((v, i) => (
           <circle
             key={`d-${i}`}

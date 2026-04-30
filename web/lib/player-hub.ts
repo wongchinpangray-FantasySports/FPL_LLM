@@ -214,3 +214,38 @@ export async function loadPlayerProfileBundle(
     radar: buildPlayerRadarAxes(base.static, peerP95),
   };
 }
+
+/** Static row + radar only (no xP) — for compare overlay API. */
+export async function loadPlayerRadarSnapshot(fplId: number): Promise<{
+  fpl_id: number;
+  label: string;
+  team: string | null;
+  position: string | null;
+  radar: PlayerRadarAxes;
+} | null> {
+  if (!Number.isFinite(fplId) || fplId <= 0) return null;
+
+  const supa = getServerSupabase();
+  const { data: row, error } = await supa
+    .from("players_static")
+    .select(PLAYER_HUB_STATIC_COLS)
+    .eq("fpl_id", fplId)
+    .maybeSingle();
+
+  if (error || !row) return null;
+
+  const staticRow = row as unknown as PlayerHubStatic;
+  const pos = staticRow.position ?? "MID";
+  const peerP95 = await loadPeerP95ForPosition(pos);
+  const radar = buildPlayerRadarAxes(staticRow, peerP95);
+  const label =
+    staticRow.web_name ?? staticRow.name ?? `#${staticRow.fpl_id}`;
+
+  return {
+    fpl_id: staticRow.fpl_id,
+    label,
+    team: staticRow.team,
+    position: staticRow.position,
+    radar,
+  };
+}
