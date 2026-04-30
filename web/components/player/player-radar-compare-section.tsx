@@ -16,7 +16,14 @@ type SearchHit = {
 type Six = [number, number, number, number, number, number];
 
 function axesToTuple(r: PlayerRadarAxes): Six {
-  return [r.form, r.influence, r.creativity, r.threat, r.xg, r.xa];
+  return [
+    r.form,
+    r.goals_per_90,
+    r.assists_per_90,
+    r.defcon_per_90,
+    r.xg_per_90,
+    r.xa_per_90,
+  ];
 }
 
 export function PlayerRadarCompareSection({
@@ -104,11 +111,11 @@ export function PlayerRadarCompareSection({
 
   const labels: [string, string, string, string, string, string] = [
     t("radarForm"),
-    t("radarInf"),
-    t("radarCre"),
-    t("radarThr"),
-    t("radarXg"),
-    t("radarXa"),
+    t("radarGoalsP90"),
+    t("radarAssistsP90"),
+    t("radarDefconP90"),
+    t("radarXgP90"),
+    t("radarXaP90"),
   ];
 
   return (
@@ -167,7 +174,7 @@ export function PlayerRadarCompareSection({
           ) : null}
 
           {compare ? (
-            <div className="rounded-lg border border-sky-500/25 bg-sky-500/5 px-3 py-2.5 text-sm">
+            <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-slate-200">
                   <span className="text-slate-500">{t("radarCompareVs")} </span>
@@ -200,14 +207,14 @@ export function PlayerRadarCompareSection({
             {compare ? (
               <span className="inline-flex items-center gap-1.5">
                 <span
-                  className="h-2 w-2 rounded-full bg-sky-400"
+                  className="h-2 w-2 rounded-full bg-amber-400"
                   aria-hidden
                 />
                 {compare.label}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 opacity-50">
-                <span className="h-2 w-2 rounded-full bg-sky-400" aria-hidden />
+                <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
                 {t("radarLegendCompare")}
               </span>
             )}

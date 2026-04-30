@@ -35,6 +35,8 @@ const PLAYER_HUB_STATIC_COLS = [
   "threat",
   "expected_goals",
   "expected_assists",
+  "defensive_contribution",
+  "defensive_contribution_per_90",
 ].join(",");
 
 export type PlayerHubStatic = {
@@ -66,6 +68,8 @@ export type PlayerHubStatic = {
   threat: number | null;
   expected_goals: number | null;
   expected_assists: number | null;
+  defensive_contribution: number | null;
+  defensive_contribution_per_90: number | null;
 };
 
 export type PlayerHubPayload = {
@@ -121,21 +125,57 @@ export async function loadPlayerHubData(
 /** Six 0–100 scores vs same-position peers (p95 scale). */
 export type PlayerRadarAxes = {
   form: number;
-  influence: number;
-  creativity: number;
-  threat: number;
-  xg: number;
-  xa: number;
+  goals_per_90: number;
+  assists_per_90: number;
+  defcon_per_90: number;
+  xg_per_90: number;
+  xa_per_90: number;
 };
 
 const RADAR_KEYS = [
   "form",
-  "influence",
-  "creativity",
-  "threat",
-  "expected_goals",
-  "expected_assists",
+  "goals_per_90",
+  "assists_per_90",
+  "defcon_per_90",
+  "xg_per_90",
+  "xa_per_90",
 ] as const;
+
+type RadarMetricKey = (typeof RADAR_KEYS)[number];
+
+const PEER_RADAR_SELECT =
+  "form,goals_scored,assists,minutes,expected_goals,expected_assists,defensive_contribution,defensive_contribution_per_90";
+
+function per90Count(
+  n: number | null | undefined,
+  mins: number | null | undefined,
+): number {
+  const m = Math.max(1, Math.floor(Number(mins)) || 0);
+  const v = Math.max(0, Number(n) || 0);
+  return (v / m) * 90;
+}
+
+function defconPer90(row: {
+  defensive_contribution_per_90: number | null;
+  defensive_contribution: number | null;
+  minutes: number | null;
+}): number {
+  const direct = Number(row.defensive_contribution_per_90);
+  if (Number.isFinite(direct) && direct >= 0) return direct;
+  return per90Count(row.defensive_contribution, row.minutes);
+}
+
+/** Raw radar metrics before p95 scaling (same keys as `PlayerRadarAxes`). */
+export function radarRawMetrics(row: PlayerHubStatic): Record<RadarMetricKey, number> {
+  return {
+    form: Math.max(0, Number(row.form) || 0),
+    goals_per_90: per90Count(row.goals_scored, row.minutes),
+    assists_per_90: per90Count(row.assists, row.minutes),
+    defcon_per_90: defconPer90(row),
+    xg_per_90: per90Count(row.expected_goals, row.minutes),
+    xa_per_90: per90Count(row.expected_assists, row.minutes),
+  };
+}
 
 function p95FromSorted(sorted: number[]): number {
   if (sorted.length === 0) return 1;
@@ -145,30 +185,28 @@ function p95FromSorted(sorted: number[]): number {
 
 export async function loadPeerP95ForPosition(
   position: string,
-): Promise<Record<(typeof RADAR_KEYS)[number], number>> {
+): Promise<Record<RadarMetricKey, number>> {
   const pos = ["GKP", "DEF", "MID", "FWD"].includes(position) ? position : "MID";
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("players_static")
-    .select(
-      "form,influence,creativity,threat,expected_goals,expected_assists,minutes",
-    )
+    .select(PEER_RADAR_SELECT)
     .eq("position", pos)
     .gt("minutes", 0);
 
-  const out: Record<(typeof RADAR_KEYS)[number], number> = {
+  const out: Record<RadarMetricKey, number> = {
     form: 1,
-    influence: 1,
-    creativity: 1,
-    threat: 1,
-    expected_goals: 1,
-    expected_assists: 1,
+    goals_per_90: 1,
+    assists_per_90: 1,
+    defcon_per_90: 1,
+    xg_per_90: 1,
+    xa_per_90: 1,
   };
   if (error || !data?.length) return out;
 
   for (const key of RADAR_KEYS) {
     const vals = data
-      .map((r) => Number((r as Record<string, unknown>)[key]) || 0)
+      .map((r) => radarRawMetrics(r as unknown as PlayerHubStatic)[key])
       .filter((n) => Number.isFinite(n) && n >= 0)
       .sort((a, b) => a - b);
     out[key] = p95FromSorted(vals);
@@ -178,20 +216,20 @@ export async function loadPeerP95ForPosition(
 
 export function buildPlayerRadarAxes(
   row: PlayerHubStatic,
-  peerP95: Record<(typeof RADAR_KEYS)[number], number>,
+  peerP95: Record<RadarMetricKey, number>,
 ): PlayerRadarAxes {
-  const pct = (v: number | null | undefined, key: (typeof RADAR_KEYS)[number]) => {
-    const raw = Math.max(0, Number(v) || 0);
+  const raw = radarRawMetrics(row);
+  const pct = (v: number, key: RadarMetricKey) => {
     const cap = peerP95[key] ?? 1;
-    return Math.min(100, Math.round((raw / cap) * 100));
+    return Math.min(100, Math.round((v / cap) * 100));
   };
   return {
-    form: pct(row.form, "form"),
-    influence: pct(row.influence, "influence"),
-    creativity: pct(row.creativity, "creativity"),
-    threat: pct(row.threat, "threat"),
-    xg: pct(row.expected_goals, "expected_goals"),
-    xa: pct(row.expected_assists, "expected_assists"),
+    form: pct(raw.form, "form"),
+    goals_per_90: pct(raw.goals_per_90, "goals_per_90"),
+    assists_per_90: pct(raw.assists_per_90, "assists_per_90"),
+    defcon_per_90: pct(raw.defcon_per_90, "defcon_per_90"),
+    xg_per_90: pct(raw.xg_per_90, "xg_per_90"),
+    xa_per_90: pct(raw.xa_per_90, "xa_per_90"),
   };
 }
 

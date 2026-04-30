@@ -100,8 +100,8 @@ export function PlayerRadarChart({
         {compareVerts ? (
           <polygon
             points={comparePoly}
-            fill="rgba(56,189,248,0.16)"
-            stroke="rgb(56,189,248)"
+            fill="rgba(250, 204, 21, 0.22)"
+            stroke="rgb(234, 179, 8)"
             strokeWidth={1.5}
             strokeLinejoin="round"
           />
@@ -120,7 +120,7 @@ export function PlayerRadarChart({
                 cx={v.x}
                 cy={v.y}
                 r={3}
-                fill="rgb(56,189,248)"
+                fill="rgb(234, 179, 8)"
               />
             ))
           : null}
