@@ -51,15 +51,20 @@ export async function POST(req: Request) {
       {
         xp_total: number;
         xp_per_game: number;
+        xp_next_gw: number;
         web_name: string | null;
         position: string | null;
         team: string | null;
       }
     > = {};
     for (const [id, p] of projections) {
+      const nextGwXp = p.fixtures
+        .filter((f) => f.gw === fromGw)
+        .reduce((s, f) => s + f.xp_total, 0);
       out[String(id)] = {
         xp_total: p.xp_total,
         xp_per_game: p.xp_per_game,
+        xp_next_gw: Math.round(nextGwXp * 100) / 100,
         web_name: p.web_name,
         position: p.position,
         team: p.team,

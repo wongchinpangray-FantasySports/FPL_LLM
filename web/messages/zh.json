@@ -178,6 +178,8 @@
     "pitchPlanningCaptionDiff": "相对 FPL {n} 处变动 · £{bank}m",
     "pitchBench": "替补席",
     "pitchBenchGkAbbrev": "门将",
+    "pitchCardNextGwXpTitle":
+      "GW{gw} 模型 xP（展望期首场；首发队长在卡片上为×2）。",
     "tableBadgeCaptain": "（队长）",
     "tableBadgeVice": "（副队）",
     "valSize": "需要 15 名球员（当前 {have} 名）。",

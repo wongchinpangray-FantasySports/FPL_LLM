@@ -178,6 +178,8 @@
     "pitchPlanningCaptionDiff": "{n} diff vs FPL · £{bank}m",
     "pitchBench": "Bench",
     "pitchBenchGkAbbrev": "GK",
+    "pitchCardNextGwXpTitle":
+      "Model xP for GW{gw} (first GW in your horizon). Starter captain ×2 on the chip.",
     "tableBadgeCaptain": "(C)",
     "tableBadgeVice": "(V)",
     "valSize": "Need 15 players (have {have}).",

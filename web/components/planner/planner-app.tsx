@@ -87,6 +87,7 @@ type SearchPlayer = {
 type ProjRow = {
   xp_total: number;
   xp_per_game: number;
+  xp_next_gw?: number;
   web_name: string | null;
   position: string | null;
   team: string | null;
@@ -599,6 +600,43 @@ export function PlannerApp({
     return m;
   }, [picks, nextFixtureByFplId]);
 
+  /** Next GW (first GW in projection window) xP per card; captain starter ×2 */
+  const baselineNextGwXpByFplId = useMemo(() => {
+    if (!projMeta) return undefined;
+    const out: Record<number, number> = {};
+    for (const row of sortedInitial) {
+      const pr = projById[String(row.fpl_id)];
+      const base = pr?.xp_next_gw;
+      if (base == null || !Number.isFinite(base)) continue;
+      const mult =
+        row.is_starter && cap0 != null && row.fpl_id === cap0 ? 2 : 1;
+      out[row.fpl_id] = Math.round(base * mult * 10) / 10;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }, [sortedInitial, projById, projMeta, cap0]);
+
+  const scenarioNextGwXpByFplId = useMemo(() => {
+    if (!projMeta) return undefined;
+    const out: Record<number, number> = {};
+    for (const row of picks) {
+      const pr = projById[String(row.fpl_id)];
+      const base = pr?.xp_next_gw;
+      if (base == null || !Number.isFinite(base)) continue;
+      const mult =
+        row.is_starter &&
+        captainId != null &&
+        row.fpl_id === captainId
+          ? 2
+          : 1;
+      out[row.fpl_id] = Math.round(base * mult * 10) / 10;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }, [picks, projById, projMeta, captainId]);
+
+  const pitchCardXpTitle = t("pitchCardNextGwXpTitle", {
+    gw: projMeta?.fromGw ?? "–",
+  });
+
   return (
     <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
       {baselineBanner ? (
@@ -821,6 +859,8 @@ export function PlannerApp({
             captainId={cap0}
             viceId={vice0}
             cardSublineByFplId={baselinePitchSubline}
+            nextGwXpByFplId={baselineNextGwXpByFplId}
+            nextGwXpTitle={pitchCardXpTitle}
             interactive
             onPickSlot={handleBaselineInspect}
           />
@@ -840,6 +880,8 @@ export function PlannerApp({
             captainId={captainId}
             viceId={viceId}
             cardSublineByFplId={scenarioPitchSubline}
+            nextGwXpByFplId={scenarioNextGwXpByFplId}
+            nextGwXpTitle={pitchCardXpTitle}
             highlightSlots={changedFromFpl}
             reorderSelectedSlot={xiBenchMode ? xiFirst : null}
             interactive

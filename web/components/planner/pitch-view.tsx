@@ -15,6 +15,8 @@ function PlayerChip({
   selectedForReorder,
   interactive,
   cardSubline,
+  nextGwXpByFplId,
+  nextGwXpTitle,
   onClick,
 }: {
   p: PlannerPickPayload;
@@ -26,10 +28,20 @@ function PlayerChip({
   interactive?: boolean;
   /** Second line under name (e.g. upcoming fixtures); falls back to club */
   cardSubline?: string;
+  /** When set, show next-GW xP (values may include captain ×2) instead of £ when known */
+  nextGwXpByFplId?: Record<number, number>;
+  nextGwXpTitle?: string;
   onClick?: () => void;
 }) {
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
+
+  const nextXp =
+    nextGwXpByFplId != null ? nextGwXpByFplId[p.fpl_id] : undefined;
+  const showNextXp =
+    nextGwXpByFplId != null &&
+    nextXp !== undefined &&
+    Number.isFinite(nextXp);
 
   const inner = (
     <>
@@ -40,8 +52,18 @@ function PlayerChip({
         {cardSubline ?? p.team ?? "–"}
       </div>
       <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
-        <span className="text-[7px] text-slate-500 sm:text-[9px]">
-          £{p.base_price != null ? p.base_price.toFixed(1) : "?"}m
+        <span
+          className={cn(
+            "text-[7px] tabular-nums sm:text-[9px]",
+            showNextXp
+              ? "font-semibold text-brand-accent/95"
+              : "text-slate-500",
+          )}
+          title={showNextXp ? nextGwXpTitle : undefined}
+        >
+          {showNextXp
+            ? nextXp!.toFixed(1)
+            : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
         </span>
         {isC && (
           <span className="rounded bg-brand-accent/25 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
@@ -86,6 +108,8 @@ function Line({
   reorderSelectedSlot,
   interactive,
   cardSublineByFplId,
+  nextGwXpByFplId,
+  nextGwXpTitle,
   onPickSlot,
 }: {
   players: PlannerPickPayload[];
@@ -95,6 +119,8 @@ function Line({
   reorderSelectedSlot?: number | null;
   interactive?: boolean;
   cardSublineByFplId?: Record<number, string>;
+  nextGwXpByFplId?: Record<number, number>;
+  nextGwXpTitle?: string;
   onPickSlot?: (slot: number) => void;
 }) {
   if (players.length === 0) return null;
@@ -111,6 +137,8 @@ function Line({
           selectedForReorder={reorderSelectedSlot === p.slot}
           interactive={interactive}
           cardSubline={cardSublineByFplId?.[p.fpl_id]}
+          nextGwXpByFplId={nextGwXpByFplId}
+          nextGwXpTitle={nextGwXpTitle}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
         />
       ))}
@@ -132,6 +160,9 @@ export function PitchView({
   benchGkAbbrev = "GK",
   /** Second line on each card (fixtures after xP refresh); omit to show club */
   cardSublineByFplId,
+  /** After Refresh xP: show model xP for first GW in horizon (captain ×2 on card) */
+  nextGwXpByFplId,
+  nextGwXpTitle,
 }: {
   picks: PlannerPickPayload[];
   title: string;
@@ -147,6 +178,8 @@ export function PitchView({
   interactive?: boolean;
   onPickSlot?: (slot: number) => void;
   cardSublineByFplId?: Record<number, string>;
+  nextGwXpByFplId?: Record<number, number>;
+  nextGwXpTitle?: string;
 }) {
   const starters = picks.filter((p) => p.is_starter);
   const benchAll = sortBySlot(picks.filter((p) => !p.is_starter));
@@ -183,6 +216,8 @@ export function PitchView({
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
             cardSublineByFplId={cardSublineByFplId}
+            nextGwXpByFplId={nextGwXpByFplId}
+            nextGwXpTitle={nextGwXpTitle}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -193,6 +228,8 @@ export function PitchView({
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
             cardSublineByFplId={cardSublineByFplId}
+            nextGwXpByFplId={nextGwXpByFplId}
+            nextGwXpTitle={nextGwXpTitle}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -203,6 +240,8 @@ export function PitchView({
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
             cardSublineByFplId={cardSublineByFplId}
+            nextGwXpByFplId={nextGwXpByFplId}
+            nextGwXpTitle={nextGwXpTitle}
             onPickSlot={onPickSlot}
           />
           <Line
@@ -213,6 +252,8 @@ export function PitchView({
             reorderSelectedSlot={reorderSelectedSlot}
             interactive={interactive}
             cardSublineByFplId={cardSublineByFplId}
+            nextGwXpByFplId={nextGwXpByFplId}
+            nextGwXpTitle={nextGwXpTitle}
             onPickSlot={onPickSlot}
           />
         </div>
@@ -243,6 +284,8 @@ export function PitchView({
                   }
                   interactive={interactive}
                   cardSubline={cardSublineByFplId?.[benchGk[0].fpl_id]}
+                  nextGwXpByFplId={nextGwXpByFplId}
+                  nextGwXpTitle={nextGwXpTitle}
                   onClick={
                     onPickSlot
                       ? () => onPickSlot(benchGk[0].slot)
@@ -264,6 +307,8 @@ export function PitchView({
                   selectedForReorder={reorderSelectedSlot === p.slot}
                   interactive={interactive}
                   cardSubline={cardSublineByFplId?.[p.fpl_id]}
+                  nextGwXpByFplId={nextGwXpByFplId}
+                  nextGwXpTitle={nextGwXpTitle}
                   onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
                 />
               </div>
