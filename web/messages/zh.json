@@ -228,7 +228,8 @@
     "topsPos_GKP": "门将",
     "topsPos_DEF": "后卫",
     "topsPos_MID": "中场",
-    "topsPos_FWD": "前锋"
+    "topsPos_FWD": "前锋",
+    "topsInspectAria": "打开 {name} 的球员资料"
   },
   "playerPage": {
     "eyebrow": "球员",

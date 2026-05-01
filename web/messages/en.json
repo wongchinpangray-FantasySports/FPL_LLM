@@ -228,7 +228,8 @@
     "topsPos_GKP": "Goalkeepers",
     "topsPos_DEF": "Defenders",
     "topsPos_MID": "Midfielders",
-    "topsPos_FWD": "Forwards"
+    "topsPos_FWD": "Forwards",
+    "topsInspectAria": "Open profile for {name}"
   },
   "playerPage": {
     "eyebrow": "Player",

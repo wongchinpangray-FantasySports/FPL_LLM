@@ -393,6 +393,23 @@ export function PlannerApp({
     });
   }
 
+  function inspectPlayerFromLeagueTops(fplId: number) {
+    const inScenario = picks.find((p) => p.fpl_id === fplId);
+    if (inScenario) {
+      setInspectCtx({
+        side: "scenario",
+        slot: inScenario.slot,
+        fplId,
+      });
+      return;
+    }
+    setInspectCtx({
+      side: "baseline",
+      slot: 1,
+      fplId,
+    });
+  }
+
   function closeInspect() {
     setInspectCtx(null);
   }
@@ -1123,6 +1140,7 @@ export function PlannerApp({
           fromGw={topsFromGw}
           toGw={topsToGw}
           horizon={topsHorizon}
+          onInspectPlayer={inspectPlayerFromLeagueTops}
         />
       </div>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import type {
   PlannerTopPosition,
   TopXpPlayerRow,
@@ -35,6 +34,7 @@ export function PlannerTopXpSidebar({
   fromGw,
   toGw,
   horizon,
+  onInspectPlayer,
 }: {
   loading: boolean;
   error: string | null;
@@ -42,6 +42,8 @@ export function PlannerTopXpSidebar({
   fromGw: number | null;
   toGw: number | null;
   horizon: number | null;
+  /** Opens in-planner profile sheet instead of navigating away */
+  onInspectPlayer: (fplId: number) => void;
 }) {
   const t = useTranslations("plannerApp");
 
@@ -90,9 +92,13 @@ export function PlannerTopXpSidebar({
                 ) : (
                   tops[pos].map((row, i) => (
                     <li key={row.fpl_id}>
-                      <Link
-                        href={`/player/${row.fpl_id}`}
-                        className="group flex items-baseline justify-between gap-2 rounded-md border border-transparent px-1 py-0.5 text-left transition-colors hover:border-white/10 hover:bg-white/[0.04]"
+                      <button
+                        type="button"
+                        onClick={() => onInspectPlayer(row.fpl_id)}
+                        className="group flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border border-transparent px-1 py-0.5 text-left transition-colors hover:border-white/10 hover:bg-white/[0.04]"
+                        aria-label={t("topsInspectAria", {
+                          name: row.web_name ?? `#${row.fpl_id}`,
+                        })}
                       >
                         <span className="min-w-0 flex-1">
                           <span
@@ -113,7 +119,7 @@ export function PlannerTopXpSidebar({
                         <span className="shrink-0 text-[11px] font-semibold tabular-nums text-brand-accent/95">
                           {row.xp_total.toFixed(1)}
                         </span>
-                      </Link>
+                      </button>
                     </li>
                   ))
                 )}
