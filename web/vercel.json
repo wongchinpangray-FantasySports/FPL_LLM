@@ -6,6 +6,9 @@
     },
     "app/api/team/[entryId]/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/planner/top-xp-by-position/route.ts": {
+      "maxDuration": 60
     }
   }
 }

@@ -218,7 +218,17 @@
     "inspectTransfer": "Replace player…",
     "inspectDone": "Done",
     "inspectFullProfile": "Full profile page",
-    "hintTapProfile": "Tap any player card for profile & fixture outlook."
+    "hintTapProfile": "Tap any player card for profile & fixture outlook.",
+    "topsTitle": "League top xP (horizon)",
+    "topsHint": "Top 3 by total projected xP per position for the same window as Refresh xP. Refreshes with that button.",
+    "topsGwRange": "GW {from}–{to} · {horizon} GW horizon",
+    "topsLoading": "Loading league tops…",
+    "topsEmpty": "Refresh xP to load league top xP by position for this horizon.",
+    "topsLoadFailed": "Could not load league tops",
+    "topsPos_GKP": "Goalkeepers",
+    "topsPos_DEF": "Defenders",
+    "topsPos_MID": "Midfielders",
+    "topsPos_FWD": "Forwards"
   },
   "playerPage": {
     "eyebrow": "Player",

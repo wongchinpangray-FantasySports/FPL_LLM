@@ -218,7 +218,17 @@
     "inspectTransfer": "替换球员…",
     "inspectDone": "完成",
     "inspectFullProfile": "完整资料页",
-    "hintTapProfile": "点击球员卡片查看资料与赛程表现。"
+    "hintTapProfile": "点击球员卡片查看资料与赛程表现。",
+    "topsTitle": "全联赛 xP 前列（展望期）",
+    "topsHint": "各位置总预估 xP 前三名，与「刷新 xP」同一窗口；随该按钮更新。",
+    "topsGwRange": "GW {from}–{to} · 展望 {horizon} 轮",
+    "topsLoading": "载入联赛排名…",
+    "topsEmpty": "请先「刷新 xP」以按当前展望期加载各位置 xP 前三。",
+    "topsLoadFailed": "无法加载联赛排名",
+    "topsPos_GKP": "门将",
+    "topsPos_DEF": "后卫",
+    "topsPos_MID": "中场",
+    "topsPos_FWD": "前锋"
   },
   "playerPage": {
     "eyebrow": "球员",

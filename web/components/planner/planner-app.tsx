@@ -6,6 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NextFixtureOpponent } from "@/lib/xp";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
 import type { ValidationIssue } from "@/lib/planner/validate";
+import type {
+  PlannerTopPosition,
+  TopXpPlayerRow,
+} from "@/lib/planner/top-xp-by-position";
+import { PlannerTopXpSidebar } from "@/components/planner/planner-top-xp-sidebar";
 import {
   canAfford,
   swapBudget,
@@ -156,6 +161,16 @@ export function PlannerApp({
   const [projLoading, setProjLoading] = useState(false);
   const [projError, setProjError] = useState<string | null>(null);
 
+  const [topsByPos, setTopsByPos] = useState<Record<
+    PlannerTopPosition,
+    TopXpPlayerRow[]
+  > | null>(null);
+  const [topsFromGw, setTopsFromGw] = useState<number | null>(null);
+  const [topsToGw, setTopsToGw] = useState<number | null>(null);
+  const [topsHorizon, setTopsHorizon] = useState<number | null>(null);
+  const [topsLoading, setTopsLoading] = useState(false);
+  const [topsError, setTopsError] = useState<string | null>(null);
+
   /** Next opponent per player (from /api/planner/next-fixtures); cards default to this line. */
   const [nextFixtureByFplId, setNextFixtureByFplId] = useState<
     Record<number, NextFixtureOpponent | null | undefined>
@@ -181,6 +196,15 @@ export function PlannerApp({
       setViceId(null);
     }
   }, [captainId, viceId]);
+
+  useEffect(() => {
+    setTopsByPos(null);
+    setTopsFromGw(null);
+    setTopsToGw(null);
+    setTopsHorizon(null);
+    setTopsError(null);
+    setTopsLoading(false);
+  }, [horizon]);
 
   useEffect(() => {
     if (!xiBenchMode) setXiFirst(null);
@@ -521,6 +545,12 @@ export function PlannerApp({
       };
       if (!res.ok) {
         setProjError(data.error ?? t("errProjectionFailed"));
+        setTopsByPos(null);
+        setTopsFromGw(null);
+        setTopsToGw(null);
+        setTopsHorizon(null);
+        setTopsError(null);
+        setTopsLoading(false);
         return;
       }
       setProjById(data.projections ?? {});
@@ -529,8 +559,51 @@ export function PlannerApp({
           ? { fromGw: data.fromGw, toGw: data.toGw }
           : null,
       );
+
+      setTopsLoading(true);
+      setTopsError(null);
+      try {
+        const topRes = await fetch("/api/planner/top-xp-by-position", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ horizon }),
+        });
+        const topData = (await topRes.json()) as {
+          tops?: Record<PlannerTopPosition, TopXpPlayerRow[]>;
+          fromGw?: number;
+          toGw?: number;
+          horizon?: number;
+          error?: string;
+        };
+        if (!topRes.ok) {
+          setTopsError(topData.error ?? t("topsLoadFailed"));
+          setTopsByPos(null);
+          setTopsFromGw(null);
+          setTopsToGw(null);
+          setTopsHorizon(null);
+        } else {
+          setTopsByPos(topData.tops ?? null);
+          setTopsFromGw(topData.fromGw ?? null);
+          setTopsToGw(topData.toGw ?? null);
+          setTopsHorizon(topData.horizon ?? null);
+        }
+      } catch {
+        setTopsError(t("topsLoadFailed"));
+        setTopsByPos(null);
+        setTopsFromGw(null);
+        setTopsToGw(null);
+        setTopsHorizon(null);
+      } finally {
+        setTopsLoading(false);
+      }
     } catch (e) {
       setProjError(e instanceof Error ? e.message : t("errProjectionFailed"));
+      setTopsByPos(null);
+      setTopsFromGw(null);
+      setTopsToGw(null);
+      setTopsHorizon(null);
+      setTopsError(null);
+      setTopsLoading(false);
     } finally {
       setProjLoading(false);
     }
@@ -833,7 +906,9 @@ export function PlannerApp({
         <p className="text-sm text-rose-300">{projError}</p>
       )}
 
-      <section className="flex flex-col gap-2 sm:gap-3">
+      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_17rem] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="min-w-0 flex flex-col gap-5 sm:gap-6">
+          <section className="flex flex-col gap-2 sm:gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="max-w-xl space-y-1 text-xs text-slate-500">
             <p>
@@ -1039,6 +1114,17 @@ export function PlannerApp({
           </tbody>
         </table>
       </section>
+        </div>
+
+        <PlannerTopXpSidebar
+          loading={topsLoading}
+          error={topsError}
+          tops={topsByPos}
+          fromGw={topsFromGw}
+          toGw={topsToGw}
+          horizon={topsHorizon}
+        />
+      </div>
 
       {swapSlot != null && (
         <div
