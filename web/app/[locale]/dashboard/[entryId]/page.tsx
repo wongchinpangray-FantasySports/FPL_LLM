@@ -5,6 +5,7 @@ import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 import {
   allPremierTeamIds,
   fdrClass,
+  FPL_LAST_SEASON_GW,
   teamsFixtureGrid,
 } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
@@ -110,8 +111,13 @@ export default async function DashboardPage({
     }
   }
 
-  const startGw = (team.current_gw ?? 0) + 1;
-  const horizon = 5;
+  /** FPL regular season is 38 gameweeks; never show GW39+ in the heatmap. */
+  const rawStartGw = (team.current_gw ?? 0) + 1;
+  const horizon = Math.max(
+    0,
+    Math.min(5, FPL_LAST_SEASON_GW - rawStartGw + 1),
+  );
+  const startGw = rawStartGw;
   const allTeamIds = await allPremierTeamIds();
   const grid = await teamsFixtureGrid(allTeamIds, startGw, horizon);
   const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
@@ -119,7 +125,7 @@ export default async function DashboardPage({
   const dgwTeamGw = await loadDoubleGameweekKeys(
     allTeamIds,
     startGw,
-    startGw + horizon - 1,
+    horizon > 0 ? startGw + horizon - 1 : startGw,
   );
 
   const startingXI = displayPicks.filter((p) => p.is_starter);
@@ -127,10 +133,14 @@ export default async function DashboardPage({
 
   // Project xP for every player in the squad over the horizon.
   const { current } = await resolveCurrentGw();
-  const projections = await projectPlayers(
-    displayPicks.map((p) => p.fpl_id),
-    { currentGw: current, fromGw: startGw, toGw: startGw + horizon - 1 },
-  );
+  const projections =
+    horizon > 0
+      ? await projectPlayers(displayPicks.map((p) => p.fpl_id), {
+          currentGw: current,
+          fromGw: startGw,
+          toGw: startGw + horizon - 1,
+        })
+      : new Map();
 
   const orderedPicks = [...startingXI, ...bench];
   const heatmapRows = orderedPicks
@@ -264,10 +274,14 @@ export default async function DashboardPage({
           rows={heatmapRows}
           gws={gwHeaders}
           dgwTeamGw={dgwTeamGw}
-          title={dt("xpHeatmap", {
-            from: gwHeaders[0],
-            to: gwHeaders[gwHeaders.length - 1],
-          })}
+          title={
+            gwHeaders.length > 0
+              ? dt("xpHeatmap", {
+                  from: gwHeaders[0],
+                  to: gwHeaders[gwHeaders.length - 1],
+                })
+              : undefined
+          }
           legendHint={dt("heatmapLegendHint")}
           columnHeaders={{
             player: dt("heatmapPlayer"),
@@ -297,13 +311,25 @@ export default async function DashboardPage({
           </h2>
         </div>
         <div className="grid gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {startingXI.map((p) => (
-            <PlayerCard
-              key={p.fpl_id}
-              p={p}
-              formLabel={dt("playerFormLabel")}
-            />
-          ))}
+          {startingXI.map((p) => {
+            const dgwGws = upcomingDgwGwsForTeam(
+              p.team_id,
+              dgwTeamGw,
+              gwHeaders,
+            );
+            return (
+              <PlayerCard
+                key={p.fpl_id}
+                p={p}
+                formLabel={dt("playerFormLabel")}
+                dgwLine={
+                  dgwGws.length
+                    ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
+                    : undefined
+                }
+              />
+            );
+          })}
         </div>
         <div className="mt-6 md:mt-10">
           <h2 className="mb-2 text-lg font-semibold tracking-tight text-white md:mb-3 md:text-xl">
@@ -311,14 +337,26 @@ export default async function DashboardPage({
           </h2>
         </div>
         <div className="grid gap-2 sm:gap-3 md:grid-cols-4">
-          {bench.map((p) => (
-            <PlayerCard
-              key={p.fpl_id}
-              p={p}
-              compact
-              formLabel={dt("playerFormLabel")}
-            />
-          ))}
+          {bench.map((p) => {
+            const dgwGws = upcomingDgwGwsForTeam(
+              p.team_id,
+              dgwTeamGw,
+              gwHeaders,
+            );
+            return (
+              <PlayerCard
+                key={p.fpl_id}
+                p={p}
+                compact
+                formLabel={dt("playerFormLabel")}
+                dgwLine={
+                  dgwGws.length
+                    ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
+                    : undefined
+                }
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -351,25 +389,41 @@ export default async function DashboardPage({
                 <tr key={t.team_id} className="border-t border-white/5">
                   <td className="px-3 py-2 font-medium">{t.short}</td>
                   {gwHeaders.map((g) => {
-                    const f = t.fixtures.find((x) => x.gw === g);
+                    const fs = t.fixtures.filter((x) => x.gw === g);
+                    const calendarDgw = dgwTeamGw.has(`${t.team_id}:${g}`);
+                    const isDgw = fs.length >= 2 || (calendarDgw && fs.length > 0);
                     return (
-                      <td key={g} className="px-1.5 py-1.5">
-                        {f ? (
+                      <td key={g} className="px-1.5 py-1.5 align-top">
+                        {fs.length > 0 ? (
                           <div
                             className={cn(
-                              "rounded-md border px-2 py-1 text-center text-xs",
-                              fdrClass(f.fdr),
-                              dgwTeamGw.has(`${t.team_id}:${g}`) &&
+                              "flex min-h-[2.75rem] flex-col gap-1 rounded-md border border-white/10 px-1.5 py-1 text-center text-xs",
+                              isDgw &&
                                 "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]",
                             )}
                           >
-                            <div className="font-semibold">
-                              {f.opp}
-                              {!f.home ? " (A)" : ""}
-                            </div>
-                            <div className="text-[10px] text-slate-200/70">
-                              FDR {f.fdr ?? "–"}
-                            </div>
+                            {fs.map((f, idx) => (
+                              <div
+                                key={`${f.opp}-${f.home}-${idx}`}
+                                className={cn(
+                                  "rounded-md border px-1.5 py-0.5",
+                                  fdrClass(f.fdr),
+                                )}
+                              >
+                                <div className="font-semibold">
+                                  {f.opp}
+                                  {!f.home ? " (A)" : ""}
+                                </div>
+                                <div className="text-[10px] text-slate-200/70">
+                                  FDR {f.fdr ?? "–"}
+                                </div>
+                              </div>
+                            ))}
+                            {isDgw && fs.length >= 2 ? (
+                              <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-yellow-200/95">
+                                DGW
+                              </div>
+                            ) : null}
                           </div>
                         ) : (
                           <div className="rounded-md border border-white/5 bg-white/5 px-2 py-1 text-center text-xs text-slate-500">
@@ -407,6 +461,15 @@ export default async function DashboardPage({
       </section>
     </div>
   );
+}
+
+function upcomingDgwGwsForTeam(
+  teamId: number | null | undefined,
+  dgwKeys: Set<string>,
+  gwHeaders: number[],
+): number[] {
+  if (teamId == null) return [];
+  return gwHeaders.filter((g) => dgwKeys.has(`${teamId}:${g}`));
 }
 
 function relTime(
@@ -489,8 +552,10 @@ function PlayerCard({
   p,
   compact,
   formLabel,
+  dgwLine,
 }: {
   formLabel: string;
+  dgwLine?: string;
   p: {
     fpl_id: number;
     web_name: string | null;
@@ -525,6 +590,16 @@ function PlayerCard({
           <div className="text-xs text-slate-400">
             {p.team ?? "?"} <SlotLabel pos={p.position} />
           </div>
+          {dgwLine ? (
+            <p
+              className="mt-1.5 text-[10px] font-medium leading-snug text-yellow-200/95"
+              title={dgwLine}
+            >
+              <span className="rounded bg-yellow-400/15 px-1.5 py-0.5 ring-1 ring-yellow-400/35">
+                {dgwLine}
+              </span>
+            </p>
+          ) : null}
         </div>
         <div className="text-right text-xs">
           <div className="text-slate-300">

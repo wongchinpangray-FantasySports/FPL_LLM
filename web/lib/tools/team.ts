@@ -29,6 +29,8 @@ export type FplSquadPick = {
   name: string | null;
   web_name: string | null;
   team: string | null;
+  /** FPL team id — used for fixture/DGW UI (may be absent on old cached squads). */
+  team_id?: number | null;
   position: string | null;
   price: number | null;
   form: number | null;
@@ -137,6 +139,7 @@ function buildMinimalSquadPicks(resp: FplPicksResponse): FplSquadPick[] {
       name: null,
       web_name: `#${p.element}`,
       team: null,
+      team_id: null,
       position,
       price: null,
       form: null,
@@ -161,6 +164,7 @@ async function buildPicksForResponse(
       name: string | null;
       web_name: string | null;
       team: string | null;
+      team_id: number | null;
       position: string | null;
       base_price: number | null;
       form: number | null;
@@ -170,7 +174,7 @@ async function buildPicksForResponse(
   if (elementIds.length) {
     const { data: rows } = await supa
       .from("players_static")
-      .select("fpl_id,name,web_name,team,position,base_price,form")
+      .select("fpl_id,name,web_name,team,team_id,position,base_price,form")
       .in("fpl_id", elementIds);
     for (const r of rows ?? []) {
       players[r.fpl_id as number] = r as (typeof players)[number];
@@ -184,6 +188,7 @@ async function buildPicksForResponse(
       name: player?.name ?? null,
       web_name: player?.web_name ?? null,
       team: player?.team ?? null,
+      team_id: player?.team_id ?? null,
       position: player?.position ?? null,
       price: player?.base_price ?? null,
       form: player?.form ?? null,

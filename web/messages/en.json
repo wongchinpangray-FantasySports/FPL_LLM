@@ -112,7 +112,8 @@
     "heatmapBench": "bench",
     "xpPerFixturePrefix": "xP/fixture:",
     "legendInjury": "injury %",
-    "playerFormLabel": "form"
+    "playerFormLabel": "form",
+    "playerDgwLine": "DGW · GW{gws}"
   },
   "plannerApp": {
     "planWithRevert": "Plan with revert team (post-Free Hit)",

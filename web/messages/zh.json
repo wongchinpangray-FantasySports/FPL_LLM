@@ -112,7 +112,8 @@
     "heatmapBench": "替补",
     "xpPerFixturePrefix": "单场 xP：",
     "legendInjury": "伤病概率",
-    "playerFormLabel": "状态"
+    "playerFormLabel": "状态",
+    "playerDgwLine": "双赛 · GW{gws}"
   },
   "plannerApp": {
     "planWithRevert": "用还原阵容规划（Free Hit 之后）",

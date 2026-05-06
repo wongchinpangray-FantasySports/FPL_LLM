@@ -24,9 +24,12 @@ export async function allPremierTeamIds(): Promise<number[]> {
   return (data ?? []).map((r) => r.id as number);
 }
 
+export const FPL_LAST_SEASON_GW = 38;
+
 /**
  * Per-team fixture rundown for the given teams, over the next `horizon` GWs.
  * Dashboard ticker uses {@link allPremierTeamIds}; heatmap uses squad teams only.
+ * Never includes gameweeks after {@link FPL_LAST_SEASON_GW}.
  */
 export async function teamsFixtureGrid(
   teamIds: number[],
@@ -37,6 +40,10 @@ export async function teamsFixtureGrid(
   const supa = getServerSupabase();
 
   const uniq = Array.from(new Set(teamIds));
+  const endExclusive = Math.min(
+    startGw + Math.max(horizon, 0),
+    FPL_LAST_SEASON_GW + 1,
+  );
   const { data: teams } = await supa
     .from("teams")
     .select("id,name,short_name")
@@ -48,7 +55,7 @@ export async function teamsFixtureGrid(
       "gw,home_team_id,away_team_id,home_fdr,away_fdr,home_team_score,away_team_score,finished",
     )
     .gte("gw", startGw)
-    .lt("gw", startGw + horizon)
+    .lt("gw", endExclusive)
     .or(
       uniq
         .flatMap((id) => [`home_team_id.eq.${id}`, `away_team_id.eq.${id}`])
