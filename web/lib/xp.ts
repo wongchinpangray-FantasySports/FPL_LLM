@@ -15,6 +15,8 @@
  *     CS: GKP/DEF 4, MID 1; GC: -1 per 2 conceded for GKP/DEF; saves: 1 per
  *     3 for GKP; assists: 3 for all).
  *  5. Availability gating via status / chance_of_playing.
+ *  6. Opponent H2H: if ≥3 games vs this club, PPG vs that opponent vs season
+ *     PPG scales xG/xA (amplified deviation, clamped ~0.62–1.42).
  *
  * All tools (captain, transfers, differentials, chip strategy) go through
  * this single projection so recommendations are internally consistent.
@@ -211,6 +213,16 @@ const POSITION_XP_CALIBRATION: Record<string, number> = {
   MID: 1.0,
   FWD: 0.988,
 };
+
+/**
+ * Head-to-head PPG (vs this opponent) vs season PPG: stretch deviation from 1.0
+ * so H2H record moves attacking xP more than a flat ratio.
+ */
+const OPP_HISTORY_AMPLIFY = 1.45;
+
+/** After amplification, clamp so premiums/duds vs specific rivals stay bounded. */
+const OPP_HISTORY_MULT_MIN = 0.62;
+const OPP_HISTORY_MULT_MAX = 1.42;
 
 /**
  * Bonus correlates with different signals by role: MID/FWD bonus tracks
@@ -732,9 +744,9 @@ export function projectPlayerForFixture(args: {
   const xgPer90 = 0.7 * xgPer90Recent + 0.3 * xgPer90Season;
   const xaPer90 = 0.7 * xaPer90Recent + 0.3 * xaPer90Season;
 
-  // Opponent-specific history adjustment (small, capped ±20%).
-  // If the player has ≥3 games vs this opponent and his PPG there differs
-  // meaningfully from his season PPG, nudge xG/xA accordingly.
+  // Opponent-specific history: H2H PPG vs season PPG, amplified then clamped.
+  // If the player has ≥3 games vs this opponent and his PPG there differs from
+  // his season PPG, nudge xG/xA more strongly than a flat ratio (see constants).
   let oppMult = 1;
   if (
     oppHistory &&
@@ -744,7 +756,8 @@ export function projectPlayerForFixture(args: {
     seasonPpg > 0
   ) {
     const raw = oppHistory.ppg / seasonPpg;
-    oppMult = clamp(raw, 0.8, 1.2);
+    const amplified = 1 + (raw - 1) * OPP_HISTORY_AMPLIFY;
+    oppMult = clamp(amplified, OPP_HISTORY_MULT_MIN, OPP_HISTORY_MULT_MAX);
   }
 
   // Set-piece uplift. Penalty taker → up to +8% xG (pen xG partly in base xG
@@ -1021,7 +1034,7 @@ export async function resolveCurrentGw(): Promise<{
 }
 
 export const XP_SCORING_NOTE =
-  "xP = attacking (Poisson team xG + rolling per-90 xG/xA; fixture attack context capped) + appearance + clean-sheet + goals conceded + saves + defensive-contribution (Poisson vs FPL DC thresholds; λ boosted slightly for DEF/GK) + bonus per 90. Bonus for DEF/GK uses CS probability + concession profile, not team xGF alone (aligns BPS with defensive fixtures). Light position calibration (DEF/GKP slightly up, FWD slightly down) for realistic starter bands. Rolling 6-GW 70/30 season blend. Opponent history ±20% on xG/xA. Set-piece / availability as before.";
+  "xP = attacking (Poisson team xG + rolling per-90 xG/xA; fixture attack context capped) + appearance + clean-sheet + goals conceded + saves + defensive-contribution (Poisson vs FPL DC thresholds; λ boosted slightly for DEF/GK) + bonus per 90. Bonus for DEF/GK uses CS probability + concession profile, not team xGF alone (aligns BPS with defensive fixtures). Light position calibration (DEF/GKP slightly up, FWD slightly down) for realistic starter bands. Rolling 6-GW 70/30 season blend. Opponent H2H PPG vs season PPG: amplified multiplier on xG/xA (clamp ~0.62–1.42 when ≥3 meetings). Set-piece / availability as before.";
 
 // --- EO / ownership-aware captain ranking ----------------------------------
 
