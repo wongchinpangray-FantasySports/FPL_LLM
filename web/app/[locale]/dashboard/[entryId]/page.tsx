@@ -173,10 +173,19 @@ export default async function DashboardPage({
       dt("stats.chipRemainingWildcards", { n: chipRm.wildcardsRemaining }),
     );
   }
-  if (chipRm.freeHitRemaining) chipSegments.push(dt("stats.chipRemainingFh"));
-  if (chipRm.benchBoostRemaining) chipSegments.push(dt("stats.chipRemainingBb"));
-  if (chipRm.tripleCaptainRemaining)
-    chipSegments.push(dt("stats.chipRemainingTc"));
+  if (chipRm.freeHitsRemaining > 0) {
+    chipSegments.push(dt("stats.chipRemainingFh", { n: chipRm.freeHitsRemaining }));
+  }
+  if (chipRm.benchBoostsRemaining > 0) {
+    chipSegments.push(
+      dt("stats.chipRemainingBb", { n: chipRm.benchBoostsRemaining }),
+    );
+  }
+  if (chipRm.tripleCaptainsRemaining > 0) {
+    chipSegments.push(
+      dt("stats.chipRemainingTc", { n: chipRm.tripleCaptainsRemaining }),
+    );
+  }
   const chipsDisplay =
     chipSegments.length > 0
       ? chipSegments.join(" · ")

@@ -117,37 +117,72 @@ function classifyUsedChip(
 
 export interface ChipsRemainingState {
   wildcardsRemaining: number;
-  freeHitRemaining: boolean;
-  benchBoostRemaining: boolean;
-  tripleCaptainRemaining: boolean;
+  /** 0–2: two Free Hit windows per season (GW2–19 and GW20–38). */
+  freeHitsRemaining: number;
+  /** 0–2: two Bench Boost windows (GW1–19 and GW20–38). */
+  benchBoostsRemaining: number;
+  /** 0–2: two Triple Captain windows (GW1–19 and GW20–38). */
+  tripleCaptainsRemaining: number;
 }
 
 /**
- * Remaining chip plays this season (max **5**: 2× Wildcard, 1× Free Hit,
- * 1× Bench Boost, 1× Triple Captain). Uses `/entry/{id}/history/` chip names.
+ * Which half-season window a chip play belongs to (matches `bootstrap-static` `chips[]`).
+ * Wildcard / Free Hit: GW2–19 vs GW20–38 (not GW1). Bench Boost / TC: GW1–19 vs GW20–38.
+ */
+function chipPhase(
+  kind: "wildcard" | "freehit" | "bboost" | "3xc",
+  event: number,
+): 1 | 2 | null {
+  if (!Number.isFinite(event) || event < 1 || event > 38) return null;
+  if (kind === "wildcard" || kind === "freehit") {
+    if (event >= 2 && event <= 19) return 1;
+    if (event >= 20 && event <= 38) return 2;
+    return null;
+  }
+  if (event >= 1 && event <= 19) return 1;
+  if (event >= 20 && event <= 38) return 2;
+  return null;
+}
+
+/**
+ * Remaining chip plays this season. **2025/26+ rules** (from FPL `bootstrap-static`):
+ * 2× Wildcard, 2× Free Hit, 2× Bench Boost, 2× Triple Captain — each split across
+ * GW windows; history rows must include `event` to attribute correctly.
  */
 export function computeChipsRemaining(
-  chipsUsed: { name: string }[],
+  chipsUsed: { name: string; event?: number }[],
 ): ChipsRemainingState {
-  let wildcardsRemaining = 2;
-  let freeHitRemaining = true;
-  let benchBoostRemaining = true;
-  let tripleCaptainRemaining = true;
+  let wc1 = false;
+  let wc2 = false;
+  let fh1 = false;
+  let fh2 = false;
+  let bb1 = false;
+  let bb2 = false;
+  let tc1 = false;
+  let tc2 = false;
 
   for (const c of chipsUsed) {
     const kind = classifyUsedChip(c.name);
+    if (!kind) continue;
+    const phase = chipPhase(kind, c.event ?? NaN);
+    if (phase === null) continue;
+    const slot1 = phase === 1;
     switch (kind) {
       case "wildcard":
-        if (wildcardsRemaining > 0) wildcardsRemaining--;
+        if (slot1) wc1 = true;
+        else wc2 = true;
         break;
       case "freehit":
-        freeHitRemaining = false;
+        if (slot1) fh1 = true;
+        else fh2 = true;
         break;
       case "bboost":
-        benchBoostRemaining = false;
+        if (slot1) bb1 = true;
+        else bb2 = true;
         break;
       case "3xc":
-        tripleCaptainRemaining = false;
+        if (slot1) tc1 = true;
+        else tc2 = true;
         break;
       default:
         break;
@@ -155,10 +190,10 @@ export function computeChipsRemaining(
   }
 
   return {
-    wildcardsRemaining,
-    freeHitRemaining,
-    benchBoostRemaining,
-    tripleCaptainRemaining,
+    wildcardsRemaining: (wc1 ? 0 : 1) + (wc2 ? 0 : 1),
+    freeHitsRemaining: (fh1 ? 0 : 1) + (fh2 ? 0 : 1),
+    benchBoostsRemaining: (bb1 ? 0 : 1) + (bb2 ? 0 : 1),
+    tripleCaptainsRemaining: (tc1 ? 0 : 1) + (tc2 ? 0 : 1),
   };
 }
 
@@ -171,7 +206,7 @@ export function isFreeHitOnPicksGw(
   if (picksGw == null || picksGw <= 1) return false;
   if (isActiveFreeHit(activeChip)) return true;
   return chipsUsed.some(
-    (c) => normalizeChipId(c.name) === "freehit" && c.event === picksGw,
+    (c) => classifyUsedChip(c.name) === "freehit" && c.event === picksGw,
   );
 }
 

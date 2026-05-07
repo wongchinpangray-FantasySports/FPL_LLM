@@ -79,9 +79,9 @@
       "activeChip": "Active chip",
       "chipsRemaining": "Available chips",
       "chipRemainingWildcards": "WC ×{n}",
-      "chipRemainingFh": "Free Hit",
-      "chipRemainingBb": "Bench Boost",
-      "chipRemainingTc": "Triple Captain",
+      "chipRemainingFh": "Free Hit ×{n}",
+      "chipRemainingBb": "Bench Boost ×{n}",
+      "chipRemainingTc": "Triple Captain ×{n}",
       "chipsRemainingNone": "None",
       "xpXi": "xP XI · next {horizon}",
       "xpBench": "xP bench · next {horizon}"
