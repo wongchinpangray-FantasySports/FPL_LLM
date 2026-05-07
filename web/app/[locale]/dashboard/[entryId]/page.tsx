@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
+import { chipsRemainingCount, fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 import {
   allPremierTeamIds,
   fdrClass,
@@ -162,6 +162,8 @@ export default async function DashboardPage({
     .filter((r) => !r.is_starter)
     .reduce((s, r) => s + r.xp_total, 0);
 
+  const chipsLeft = chipsRemainingCount(team.chips_used ?? []);
+
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
       <section className="flex flex-col gap-5 border-b border-white/[0.06] pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
@@ -217,6 +219,10 @@ export default async function DashboardPage({
             value={String(team.free_transfers)}
           />
           <Stat label={dt("stats.activeChip")} value={team.active_chip ?? "—"} />
+          <Stat
+            label={dt("stats.chipsRemaining")}
+            value={String(chipsLeft)}
+          />
           <Stat
             label={dt("stats.xpXi", { horizon })}
             value={starterXPTotal.toFixed(1)}
@@ -322,6 +328,9 @@ export default async function DashboardPage({
                 key={p.fpl_id}
                 p={p}
                 formLabel={dt("playerFormLabel")}
+                profileAriaLabel={dt("playerCardOpenProfile", {
+                  name: p.web_name ?? p.name ?? `#${p.fpl_id}`,
+                })}
                 dgwLine={
                   dgwGws.length
                     ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
@@ -349,6 +358,9 @@ export default async function DashboardPage({
                 p={p}
                 compact
                 formLabel={dt("playerFormLabel")}
+                profileAriaLabel={dt("playerCardOpenProfile", {
+                  name: p.web_name ?? p.name ?? `#${p.fpl_id}`,
+                })}
                 dgwLine={
                   dgwGws.length
                     ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
@@ -553,8 +565,10 @@ function PlayerCard({
   compact,
   formLabel,
   dgwLine,
+  profileAriaLabel,
 }: {
   formLabel: string;
+  profileAriaLabel: string;
   dgwLine?: string;
   p: {
     fpl_id: number;
@@ -570,9 +584,11 @@ function PlayerCard({
   compact?: boolean;
 }) {
   return (
-    <div
+    <Link
+      href={`/player/${p.fpl_id}`}
+      aria-label={profileAriaLabel}
       className={cn(
-        "rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:p-3.5",
+        "block rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-brand-accent/35 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-ink sm:rounded-xl sm:p-3.5",
         p.is_captain && "ring-1 ring-brand-accent/80",
       )}
     >
@@ -612,6 +628,6 @@ function PlayerCard({
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

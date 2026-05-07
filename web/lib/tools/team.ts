@@ -88,6 +88,41 @@ function normalizeChipId(name: string | null | undefined): string {
   return (name ?? "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
+/**
+ * How many chip plays are left this season (max **5**: 2× Wildcard, 1× Free Hit,
+ * 1× Bench Boost, 1× Triple Captain). Uses `/entry/{id}/history/` chip names.
+ */
+export function chipsRemainingCount(
+  chipsUsed: { name: string }[],
+): number {
+  let wildcardsLeft = 2;
+  let freeHitLeft = 1;
+  let benchBoostLeft = 1;
+  let tripleCaptainLeft = 1;
+
+  for (const c of chipsUsed) {
+    const id = normalizeChipId(c.name);
+    if (id === "wildcard") {
+      if (wildcardsLeft > 0) wildcardsLeft--;
+      continue;
+    }
+    if (id === "freehit" || id === "ff") {
+      freeHitLeft = 0;
+      continue;
+    }
+    if (id === "bboost" || id === "benchboost") {
+      benchBoostLeft = 0;
+      continue;
+    }
+    if (id === "3xc") {
+      tripleCaptainLeft = 0;
+      continue;
+    }
+  }
+
+  return wildcardsLeft + freeHitLeft + benchBoostLeft + tripleCaptainLeft;
+}
+
 /** True when this entry’s loaded picks snapshot is a Free Hit week (from API or chip history). */
 export function isFreeHitOnPicksGw(
   activeChip: string | null,

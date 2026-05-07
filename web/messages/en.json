@@ -77,6 +77,7 @@
       "teamValue": "Team value",
       "freeTransfers": "Free transfers",
       "activeChip": "Active chip",
+      "chipsRemaining": "Chips remaining",
       "xpXi": "xP XI · next {horizon}",
       "xpBench": "xP bench · next {horizon}"
     },
@@ -113,7 +114,8 @@
     "xpPerFixturePrefix": "xP/fixture:",
     "legendInjury": "injury %",
     "playerFormLabel": "form",
-    "playerDgwLine": "DGW · GW{gws}"
+    "playerDgwLine": "DGW · GW{gws}",
+    "playerCardOpenProfile": "Open player profile: {name}"
   },
   "plannerApp": {
     "planWithRevert": "Plan with revert team (post-Free Hit)",

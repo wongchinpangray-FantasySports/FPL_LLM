@@ -77,6 +77,7 @@
       "teamValue": "阵容价值",
       "freeTransfers": "免费转会",
       "activeChip": "生效芯片",
+      "chipsRemaining": "剩余芯片次数",
       "xpXi": "首发 xP · 未来 {horizon} GW",
       "xpBench": "替补 xP · 未来 {horizon} GW"
     },
@@ -113,7 +114,8 @@
     "xpPerFixturePrefix": "单场 xP：",
     "legendInjury": "伤病概率",
     "playerFormLabel": "状态",
-    "playerDgwLine": "双赛 · GW{gws}"
+    "playerDgwLine": "双赛 · GW{gws}",
+    "playerCardOpenProfile": "打开球员资料：{name}"
   },
   "plannerApp": {
     "planWithRevert": "用还原阵容规划（Free Hit 之后）",
