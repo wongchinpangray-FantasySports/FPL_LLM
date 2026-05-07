@@ -17,28 +17,35 @@ function scaleY(
   return y0 + ((max - v) / (max - min)) * (y1 - y0);
 }
 
-function buildPolyline(
-  xs: number[],
-  ys: number[],
-  w: number,
-  h: number,
-  pad: { l: number; r: number; t: number; b: number },
-): string {
-  const innerW = w - pad.l - pad.r;
-  const innerH = h - pad.t - pad.b;
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const padY = Math.max((maxY - minY) * 0.08, 1);
-  const lo = minY - padY;
-  const hi = maxY + padY;
-  const pts: string[] = [];
-  for (let i = 0; i < xs.length; i++) {
-    const x = pad.l + (xs.length <= 1 ? innerW / 2 : (i / (xs.length - 1)) * innerW);
-    const y = scaleY(ys[i]!, lo, hi, pad.t, pad.t + innerH);
-    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+/** Linear tick positions between lo and hi (inclusive). */
+function linearYTicks(lo: number, hi: number, count: number): number[] {
+  if (count < 2) return [lo];
+  const ticks: number[] = [];
+  for (let i = 0; i < count; i++) {
+    ticks.push(lo + ((hi - lo) * i) / (count - 1));
   }
-  return pts.join(" ");
+  return ticks;
 }
+
+function formatRankAxis(v: number): string {
+  const r = Math.round(v);
+  if (r >= 1_000_000) return `${(r / 1_000_000).toFixed(1)}M`;
+  if (r >= 10_000) return `${Math.round(r / 1000)}k`;
+  if (r >= 1000) return `${(r / 1000).toFixed(1)}k`;
+  return String(r);
+}
+
+function formatPointsAxis(v: number): string {
+  const r = Math.round(v * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+}
+
+const AXIS = {
+  stroke: "rgb(71 85 105)",
+  grid: "rgba(148, 163, 184, 0.12)",
+  tick: "rgb(100 116 139)",
+  label: "rgb(148 163 184)",
+};
 
 export function ManagerOrTrendChart({
   rows,
@@ -57,26 +64,49 @@ export function ManagerOrTrendChart({
     const pad = Math.max((max - min) * 0.05, 50);
     const lo = Math.max(1, min - pad);
     const hi = max + pad;
-    const padRect = { l: 44, r: 16, t: 16, b: 36 };
-    const innerW = 640 - padRect.l - padRect.r;
-    const innerH = 220 - padRect.t - padRect.b;
+
+    const padRect = { l: 58, r: 18, t: 26, b: 52 };
+    const W = 640;
+    const H = 260;
+    const innerW = W - padRect.l - padRect.r;
+    const innerH = H - padRect.t - padRect.b;
+
     const pts: string[] = [];
     const dots: { cx: number; cy: number }[] = [];
     for (let i = 0; i < rows.length; i++) {
       const x =
         padRect.l +
-        (rows.length <= 1
-          ? innerW / 2
-          : (i / (rows.length - 1)) * innerW);
+        (rows.length <= 1 ? innerW / 2 : (i / (rows.length - 1)) * innerW);
       const y = scaleY(ys[i]!, lo, hi, padRect.t, padRect.t + innerH);
       pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
       dots.push({ cx: x, cy: y });
     }
+
+    const yTicks = linearYTicks(lo, hi, 5);
+
+    const n = rows.length;
+    const xIndices: number[] = [];
+    if (n <= 12) {
+      for (let i = 0; i < n; i++) xIndices.push(i);
+    } else {
+      const step = Math.ceil(n / 10);
+      for (let i = 0; i < n; i += step) xIndices.push(i);
+      if (xIndices[xIndices.length - 1] !== n - 1) xIndices.push(n - 1);
+    }
+
     return {
       poly: pts.join(" "),
       dots,
       lo,
       hi,
+      padRect,
+      W,
+      H,
+      innerW,
+      innerH,
+      yTicks,
+      xIndices,
+      events: rows.map((r) => r.event),
     };
   }, [rows]);
 
@@ -86,18 +116,127 @@ export function ManagerOrTrendChart({
     );
   }
 
+  const {
+    padRect,
+    W,
+    H,
+    innerW,
+    innerH,
+    yTicks,
+    xIndices,
+    events,
+  } = layout;
+  const x0 = padRect.l;
+  const yBottom = padRect.t + innerH;
+
   return (
     <div className={cn("w-full", className)}>
       <svg
-        viewBox="0 0 640 220"
-        className="h-auto w-full max-h-[280px]"
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full max-h-[320px]"
         role="img"
         aria-label={t("chartOrAria")}
       >
-        <rect width="640" height="220" fill="transparent" />
-        <text x={44} y={14} fontSize={10} fill="rgb(148 163 184)">
+        <rect width={W} height={H} fill="transparent" />
+        <text x={padRect.l} y={16} fontSize={10} fill={AXIS.label}>
           {t("chartOrHint")}
         </text>
+
+        {/* Horizontal grid + Y ticks */}
+        {yTicks.map((tick) => {
+          const y = scaleY(tick, layout.lo, layout.hi, padRect.t, yBottom);
+          return (
+            <g key={`gy-${tick}`}>
+              <line
+                x1={x0}
+                x2={x0 + innerW}
+                y1={y}
+                y2={y}
+                stroke={AXIS.grid}
+                strokeWidth={1}
+              />
+              <line
+                x1={x0 - 5}
+                x2={x0}
+                y1={y}
+                y2={y}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x0 - 8}
+                y={y}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="end"
+                dominantBaseline="middle"
+              >
+                {formatRankAxis(tick)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Y axis */}
+        <line
+          x1={x0}
+          y1={padRect.t}
+          x2={x0}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+
+        {/* X axis */}
+        <line
+          x1={x0}
+          y1={yBottom}
+          x2={x0 + innerW}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+
+        {/* X ticks + GW labels */}
+        {xIndices.map((i) => {
+          const x =
+            x0 +
+            (events.length <= 1
+              ? innerW / 2
+              : (i / (events.length - 1)) * innerW);
+          return (
+            <g key={`gx-${events[i]}-${i}`}>
+              <line
+                x1={x}
+                x2={x}
+                y1={yBottom}
+                y2={yBottom + 5}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x}
+                y={yBottom + 18}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="middle"
+              >
+                {t("chartAxisGwTick", { gw: events[i] })}
+              </text>
+            </g>
+          );
+        })}
+
+        <text
+          x={x0 + innerW / 2}
+          y={H - 4}
+          fontSize={10}
+          fill={AXIS.label}
+          textAnchor="middle"
+        >
+          {t("chartAxisGw")}
+        </text>
+
         <polyline
           fill="none"
           stroke="rgb(34 197 94)"
@@ -109,11 +248,18 @@ export function ManagerOrTrendChart({
         {layout.dots.map((d, i) => (
           <circle key={rows[i]!.event} cx={d.cx} cy={d.cy} r={3} fill="rgb(34 197 94)" />
         ))}
+
+        <text
+          x={12}
+          y={padRect.t + innerH / 2}
+          fontSize={10}
+          fill={AXIS.label}
+          transform={`rotate(-90 12 ${padRect.t + innerH / 2})`}
+          textAnchor="middle"
+        >
+          {t("chartAxisOr")}
+        </text>
       </svg>
-      <div className="mt-1 flex flex-wrap justify-between gap-1 px-1 text-[10px] tabular-nums text-slate-500">
-        <span>{t("chartScaleMin", { r: Math.round(layout.lo) })}</span>
-        <span>{t("chartScaleMax", { r: Math.round(layout.hi) })}</span>
-      </div>
     </div>
   );
 }
@@ -127,32 +273,183 @@ export function ManagerPercentileChart({
 }) {
   const t = useTranslations("managerPage");
 
-  const points = useMemo(() => {
+  const layout = useMemo(() => {
+    if (!rows.length) return null;
     const ys = rows.map((r) => r.percentile_rank);
-    return buildPolyline(
-      rows.map((_, i) => i),
-      ys,
-      640,
-      160,
-      { l: 36, r: 12, t: 14, b: 28 },
-    );
+    const min = Math.min(...ys);
+    const max = Math.max(...ys);
+    const padY = Math.max((max - min) * 0.1, 3);
+    const lo = Math.max(0, min - padY);
+    const hi = Math.min(100, max + padY);
+
+    const padRect = { l: 44, r: 14, t: 24, b: 46 };
+    const W = 640;
+    const H = 210;
+    const innerW = W - padRect.l - padRect.r;
+    const innerH = H - padRect.t - padRect.b;
+
+    const pts: string[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const x =
+        padRect.l +
+        (rows.length <= 1 ? innerW / 2 : (i / (rows.length - 1)) * innerW);
+      const y = scaleY(ys[i]!, lo, hi, padRect.t, padRect.t + innerH);
+      pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+
+    const yTicks = linearYTicks(lo, hi, 5);
+
+    const n = rows.length;
+    const xIndices: number[] = [];
+    if (n <= 12) {
+      for (let i = 0; i < n; i++) xIndices.push(i);
+    } else {
+      const step = Math.ceil(n / 10);
+      for (let i = 0; i < n; i += step) xIndices.push(i);
+      if (xIndices[xIndices.length - 1] !== n - 1) xIndices.push(n - 1);
+    }
+
+    return {
+      poly: pts.join(" "),
+      lo,
+      hi,
+      padRect,
+      W,
+      H,
+      innerW,
+      innerH,
+      yTicks,
+      xIndices,
+      events: rows.map((r) => r.event),
+    };
   }, [rows]);
 
-  if (!rows.length) return null;
+  if (!rows.length || !layout) return null;
+
+  const { padRect, W, H, innerW, innerH, yTicks, xIndices, events } = layout;
+  const x0 = padRect.l;
+  const yBottom = padRect.t + innerH;
 
   return (
     <div className={cn("w-full", className)}>
-      <svg viewBox="0 0 640 160" className="h-auto w-full max-h-[200px]" role="img">
-        <text x={36} y={12} fontSize={10} fill="rgb(148 163 184)">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full max-h-[240px]"
+        role="img"
+      >
+        <rect width={W} height={H} fill="transparent" />
+        <text x={padRect.l} y={14} fontSize={10} fill={AXIS.label}>
           {t("chartPctHint")}
         </text>
+
+        {yTicks.map((tick) => {
+          const y = scaleY(tick, layout.lo, layout.hi, padRect.t, yBottom);
+          return (
+            <g key={`py-${tick}`}>
+              <line
+                x1={x0}
+                x2={x0 + innerW}
+                y1={y}
+                y2={y}
+                stroke={AXIS.grid}
+                strokeWidth={1}
+              />
+              <line
+                x1={x0 - 5}
+                x2={x0}
+                y1={y}
+                y2={y}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x0 - 8}
+                y={y}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="end"
+                dominantBaseline="middle"
+              >
+                {Math.round(tick)}
+              </text>
+            </g>
+          );
+        })}
+
+        <line
+          x1={x0}
+          y1={padRect.t}
+          x2={x0}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+        <line
+          x1={x0}
+          y1={yBottom}
+          x2={x0 + innerW}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+
+        {xIndices.map((i) => {
+          const x =
+            x0 +
+            (events.length <= 1
+              ? innerW / 2
+              : (i / (events.length - 1)) * innerW);
+          return (
+            <g key={`px-${events[i]}-${i}`}>
+              <line
+                x1={x}
+                x2={x}
+                y1={yBottom}
+                y2={yBottom + 5}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x}
+                y={yBottom + 18}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="middle"
+              >
+                {t("chartAxisGwTick", { gw: events[i] })}
+              </text>
+            </g>
+          );
+        })}
+
+        <text
+          x={x0 + innerW / 2}
+          y={H - 4}
+          fontSize={10}
+          fill={AXIS.label}
+          textAnchor="middle"
+        >
+          {t("chartAxisGw")}
+        </text>
+
         <polyline
           fill="none"
           stroke="rgb(56 189 248)"
           strokeWidth={2}
           strokeLinejoin="round"
-          points={points}
+          points={layout.poly}
         />
+
+        <text
+          x={10}
+          y={padRect.t + innerH / 2}
+          fontSize={10}
+          fill={AXIS.label}
+          transform={`rotate(-90 10 ${padRect.t + innerH / 2})`}
+          textAnchor="middle"
+        >
+          {t("chartAxisPct")}
+        </text>
       </svg>
     </div>
   );
@@ -167,12 +464,15 @@ export function ManagerPointsCompareChart({
 }) {
   const t = useTranslations("managerPage");
 
-  const polylines = useMemo(() => {
+  const layout = useMemo(() => {
     const n = rows.length;
-    if (!n) return [];
-    const innerW = 640 - 48 - 12;
-    const innerH = 200 - 20 - 32;
-    const pad = { l: 48, r: 12, t: 20, b: 32 };
+    if (!n) return null;
+
+    const padRect = { l: 52, r: 16, t: 30, b: 50 };
+    const W = 640;
+    const H = 240;
+    const innerW = W - padRect.l - padRect.r;
+    const innerH = H - padRect.t - padRect.b;
 
     const defs = [
       { key: "you" as const, color: "rgb(34 197 94)", vals: rows.map((r) => r.pointsYou) },
@@ -199,7 +499,8 @@ export function ManagerPointsCompareChart({
         if (typeof v === "number" && Number.isFinite(v)) allVals.push(v);
       }
     }
-    if (!allVals.length) return [];
+    if (!allVals.length) return null;
+
     let minY = Math.min(...allVals);
     let maxY = Math.max(...allVals);
     minY = Math.min(minY, 0);
@@ -208,18 +509,43 @@ export function ManagerPointsCompareChart({
     const lo = minY - padY;
     const hi = maxY + padY;
 
-    return defs.map((s) => {
+    const polylines = defs.map((s) => {
       const pts: string[] = [];
       for (let i = 0; i < n; i++) {
         const v = s.vals[i];
         if (v == null || !Number.isFinite(v)) continue;
         const x =
-          pad.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
-        const y = scaleY(v, lo, hi, pad.t, pad.t + innerH);
+          padRect.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+        const y = scaleY(v, lo, hi, padRect.t, padRect.t + innerH);
         pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
       }
       return { ...s, d: pts.join(" ") };
     });
+
+    const yTicks = linearYTicks(lo, hi, 5);
+
+    const xIndices: number[] = [];
+    if (n <= 12) {
+      for (let i = 0; i < n; i++) xIndices.push(i);
+    } else {
+      const step = Math.ceil(n / 10);
+      for (let i = 0; i < n; i += step) xIndices.push(i);
+      if (xIndices[xIndices.length - 1] !== n - 1) xIndices.push(n - 1);
+    }
+
+    return {
+      polylines,
+      lo,
+      hi,
+      padRect,
+      W,
+      H,
+      innerW,
+      innerH,
+      yTicks,
+      xIndices,
+      events: rows.map((r) => r.event),
+    };
   }, [rows]);
 
   const legend = [
@@ -229,23 +555,130 @@ export function ManagerPointsCompareChart({
     { key: "t100", label: t("legend100k"), color: "rgb(167 139 250)" },
   ];
 
-  if (!rows.length) {
+  if (!rows.length || !layout) {
     return (
       <p className="text-xs text-slate-500">{t("chartPtsEmpty")}</p>
     );
   }
 
+  const {
+    padRect,
+    W,
+    H,
+    innerW,
+    innerH,
+    yTicks,
+    xIndices,
+    events,
+    polylines,
+    lo,
+    hi,
+  } = layout;
+  const x0 = padRect.l;
+  const yBottom = padRect.t + innerH;
+
   return (
     <div className={cn("w-full", className)}>
       <svg
-        viewBox="0 0 640 200"
-        className="h-auto w-full max-h-[260px]"
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full max-h-[300px]"
         role="img"
         aria-label={t("chartPtsAria")}
       >
-        <text x={48} y={14} fontSize={10} fill="rgb(148 163 184)">
+        <text x={padRect.l} y={18} fontSize={10} fill={AXIS.label}>
           {t("chartPtsHint")}
         </text>
+
+        {yTicks.map((tick) => {
+          const y = scaleY(tick, lo, hi, padRect.t, yBottom);
+          return (
+            <g key={`qy-${tick}`}>
+              <line
+                x1={x0}
+                x2={x0 + innerW}
+                y1={y}
+                y2={y}
+                stroke={AXIS.grid}
+                strokeWidth={1}
+              />
+              <line
+                x1={x0 - 5}
+                x2={x0}
+                y1={y}
+                y2={y}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x0 - 8}
+                y={y}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="end"
+                dominantBaseline="middle"
+              >
+                {formatPointsAxis(tick)}
+              </text>
+            </g>
+          );
+        })}
+
+        <line
+          x1={x0}
+          y1={padRect.t}
+          x2={x0}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+        <line
+          x1={x0}
+          y1={yBottom}
+          x2={x0 + innerW}
+          y2={yBottom}
+          stroke={AXIS.stroke}
+          strokeWidth={1}
+        />
+
+        {xIndices.map((i) => {
+          const x =
+            x0 +
+            (events.length <= 1
+              ? innerW / 2
+              : (i / (events.length - 1)) * innerW);
+          return (
+            <g key={`qx-${events[i]}-${i}`}>
+              <line
+                x1={x}
+                x2={x}
+                y1={yBottom}
+                y2={yBottom + 5}
+                stroke={AXIS.tick}
+                strokeWidth={1}
+              />
+              <text
+                x={x}
+                y={yBottom + 18}
+                fontSize={9}
+                fill={AXIS.label}
+                textAnchor="middle"
+              >
+                {t("chartAxisGwTick", { gw: events[i] })}
+              </text>
+            </g>
+          );
+        })}
+
+        <text
+          x={x0 + innerW / 2}
+          y={H - 4}
+          fontSize={10}
+          fill={AXIS.label}
+          textAnchor="middle"
+        >
+          {t("chartAxisGw")}
+        </text>
+
         {polylines.map((pl) =>
           pl.d ? (
             <polyline
@@ -259,6 +692,17 @@ export function ManagerPointsCompareChart({
             />
           ) : null,
         )}
+
+        <text
+          x={11}
+          y={padRect.t + innerH / 2}
+          fontSize={10}
+          fill={AXIS.label}
+          transform={`rotate(-90 11 ${padRect.t + innerH / 2})`}
+          textAnchor="middle"
+        >
+          {t("chartAxisPts")}
+        </text>
       </svg>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px]">
         {legend.map((s) => (
