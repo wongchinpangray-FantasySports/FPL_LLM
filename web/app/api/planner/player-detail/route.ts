@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { loadPlayerGwHistory } from "@/lib/player-gw-history";
 import type { FixtureProjection } from "@/lib/xp";
 import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
 import { getServerSupabase } from "@/lib/supabase";
@@ -56,13 +57,16 @@ export async function GET(req: Request) {
     }
 
     const supa = getServerSupabase();
-    const { data: extra } = await supa
-      .from("players_static")
-      .select(
-        "news,transfers_in_event,transfers_out_event,ict_index,total_points,minutes,goals_scored,assists",
-      )
-      .eq("fpl_id", fplId)
-      .maybeSingle();
+    const [{ data: extra }, recentGameweeks] = await Promise.all([
+      supa
+        .from("players_static")
+        .select(
+          "news,transfers_in_event,transfers_out_event,ict_index,total_points,minutes,goals_scored,assists",
+        )
+        .eq("fpl_id", fplId)
+        .maybeSingle(),
+      loadPlayerGwHistory(fplId, 10),
+    ]);
 
     return NextResponse.json({
       currentGw: current,
@@ -96,6 +100,7 @@ export async function GET(req: Request) {
       xp_total: p.xp_total,
       xp_per_game: p.xp_per_game,
       value_per_million: p.value_per_million,
+      recentGameweeks,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to load player";

@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { Button } from "@/components/ui/button";
+import type { PlayerGwHistoryRow } from "@/lib/player-gw-history";
 import { cn } from "@/lib/utils";
 
 export interface PlannerPlayerInspectDetail {
@@ -65,6 +67,7 @@ export interface PlannerPlayerInspectDetail {
   xp_total: number;
   xp_per_game: number;
   value_per_million: number | null;
+  recentGameweeks: PlayerGwHistoryRow[];
 }
 
 export function PlannerPlayerInspectSheet({
@@ -247,6 +250,8 @@ export function PlannerPlayerInspectSheet({
                 </div>
               </dl>
             </section>
+
+            <PlayerGwBarChart rows={detail.recentGameweeks ?? []} />
 
             <section>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">

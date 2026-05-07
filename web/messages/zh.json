@@ -305,6 +305,31 @@
     "openPlanner": "规划器",
     "openPlayerSearch": "球员搜索"
   },
+  "playerGwChart": {
+    "sectionTitle": "近期场次（FPL）",
+    "metricLabel": "指标",
+    "windowLabel": "统计窗口",
+    "range5": "近 5 轮",
+    "range10": "近 10 轮",
+    "yMax": "纵轴上限：{v}",
+    "empty": "数据库中还没有该球员的按周数据，请先运行 FPL 同步任务。",
+    "footnote": "数据为同步后的各轮表现。「近 3 轮均分」为当轮及之前两轮 FPL 得分的平均（在下方柱形范围内计算）。",
+    "metrics": {
+      "total_points": "总得分",
+      "formRolling": "近 3 轮均分",
+      "minutes": "分钟",
+      "expected_goals": "xG",
+      "expected_assists": "xA",
+      "goals_scored": "进球",
+      "assists": "助攻",
+      "bonus": "Bonus",
+      "bps": "BPS",
+      "ict_index": "ICT 指数",
+      "clean_sheets": "零封",
+      "saves": "扑救",
+      "defensive_contribution": "防守贡献分"
+    }
+  },
   "playersIndex": {
     "eyebrow": "球员",
     "title": "球员资料",

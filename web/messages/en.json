@@ -306,6 +306,31 @@
     "openPlanner": "Planner",
     "openPlayerSearch": "Player search"
   },
+  "playerGwChart": {
+    "sectionTitle": "Recent gameweeks (FPL)",
+    "metricLabel": "Metric",
+    "windowLabel": "Chart window",
+    "range5": "5 GW",
+    "range10": "10 GW",
+    "yMax": "Scale max: {v}",
+    "empty": "No recent gameweek rows in the database yet — run the FPL sync job.",
+    "footnote": "Per gameweek from the synced live feed. “Form (3GW Ø pts)” is the average FPL points over that GW and the two before it (within the bars shown).",
+    "metrics": {
+      "total_points": "Total points",
+      "formRolling": "Form (3GW Ø pts)",
+      "minutes": "Minutes",
+      "expected_goals": "xG",
+      "expected_assists": "xA",
+      "goals_scored": "Goals",
+      "assists": "Assists",
+      "bonus": "Bonus",
+      "bps": "BPS",
+      "ict_index": "ICT index",
+      "clean_sheets": "Clean sheets",
+      "saves": "Saves",
+      "defensive_contribution": "DC points"
+    }
+  },
   "playersIndex": {
     "eyebrow": "Players",
     "title": "Player profiles",

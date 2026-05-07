@@ -5,6 +5,8 @@ import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { loadPlayerProfileBundle } from "@/lib/player-hub";
+import { loadPlayerGwHistory } from "@/lib/player-gw-history";
+import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import { PlayerRadarCompareSection } from "@/components/player/player-radar-compare-section";
 import { getServerSupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -58,7 +60,10 @@ export default async function PlayerHubPage({
     Math.max(1, Number(searchParams?.horizon) || 5),
   );
 
-  const data = await loadPlayerProfileBundle(fplId, horizon);
+  const [data, gwHistory] = await Promise.all([
+    loadPlayerProfileBundle(fplId, horizon),
+    loadPlayerGwHistory(fplId, 10),
+  ]);
   if (!data) notFound();
 
   const t = await getTranslations({ locale, namespace: "playerPage" });
@@ -287,6 +292,8 @@ export default async function PlayerHubPage({
           </div>
         </dl>
       </section>
+
+      <PlayerGwBarChart rows={gwHistory} className="p-4 sm:p-5" />
 
       <section>
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
