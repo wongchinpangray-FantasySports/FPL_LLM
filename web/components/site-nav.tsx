@@ -36,6 +36,7 @@ export function SiteNav() {
 
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
   const plannerHref = entryId ? `/planner/${entryId}` : "/planner";
+  const managerHref = entryId ? `/manager/${entryId}` : "/manager";
 
   return (
     <nav
@@ -55,6 +56,14 @@ export function SiteNav() {
         }
       >
         {t("dashboard")}
+      </NavLink>
+      <NavLink
+        href={managerHref}
+        active={
+          pathname === "/manager" || pathname.startsWith("/manager/")
+        }
+      >
+        {t("manager")}
       </NavLink>
       <NavLink
         href={plannerHref}

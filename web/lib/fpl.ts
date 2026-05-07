@@ -81,8 +81,31 @@ export interface FplChipPlay {
   event: number;
 }
 
+/** Per-GW row from `/entry/{id}/history/` `current` array (live game fields). */
+export interface FplHistoryCurrentRow {
+  event: number;
+  points: number;
+  total_points: number;
+  rank: number;
+  rank_sort?: number;
+  overall_rank: number;
+  percentile_rank: number;
+  bank?: number;
+  value?: number;
+  event_transfers?: number;
+  event_transfers_cost?: number;
+  points_on_bench?: number;
+}
+
+/** Prior seasons summary in `/entry/{id}/history/` `past` array. */
+export interface FplHistoryPastSeason {
+  season_name: string;
+  total_points: number;
+  rank: number;
+}
+
 export interface FplHistoryResponse {
-  current: Array<{ event: number; points: number; total_points: number }>;
-  past: unknown[];
+  current: FplHistoryCurrentRow[];
+  past: FplHistoryPastSeason[];
   chips: FplChipPlay[];
 }
