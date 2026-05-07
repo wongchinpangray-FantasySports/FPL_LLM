@@ -88,39 +88,78 @@ function normalizeChipId(name: string | null | undefined): string {
   return (name ?? "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
+/** Normalize FPL history chip names for matching (API uses `bboost`, sometimes `bench_boost`, etc.). */
+function chipNameKey(name: string | null | undefined): string {
+  return normalizeChipId(name).replace(/_/g, "").replace(/-/g, "");
+}
+
 /**
- * How many chip plays are left this season (max **5**: 2× Wildcard, 1× Free Hit,
+ * Map a `/entry/{id}/history/` chip name to a canonical bucket.
+ */
+function classifyUsedChip(
+  name: string,
+): "wildcard" | "freehit" | "bboost" | "3xc" | null {
+  const id = chipNameKey(name);
+  if (id === "wildcard" || id === "wc") return "wildcard";
+  if (id === "freehit" || id === "ff") return "freehit";
+  if (
+    id === "bboost" ||
+    id === "benchboost" ||
+    (id.includes("bench") && id.includes("boost"))
+  ) {
+    return "bboost";
+  }
+  if (id === "3xc" || id === "triplecaptain" || id.includes("triplecaptain")) {
+    return "3xc";
+  }
+  return null;
+}
+
+export interface ChipsRemainingState {
+  wildcardsRemaining: number;
+  freeHitRemaining: boolean;
+  benchBoostRemaining: boolean;
+  tripleCaptainRemaining: boolean;
+}
+
+/**
+ * Remaining chip plays this season (max **5**: 2× Wildcard, 1× Free Hit,
  * 1× Bench Boost, 1× Triple Captain). Uses `/entry/{id}/history/` chip names.
  */
-export function chipsRemainingCount(
+export function computeChipsRemaining(
   chipsUsed: { name: string }[],
-): number {
-  let wildcardsLeft = 2;
-  let freeHitLeft = 1;
-  let benchBoostLeft = 1;
-  let tripleCaptainLeft = 1;
+): ChipsRemainingState {
+  let wildcardsRemaining = 2;
+  let freeHitRemaining = true;
+  let benchBoostRemaining = true;
+  let tripleCaptainRemaining = true;
 
   for (const c of chipsUsed) {
-    const id = normalizeChipId(c.name);
-    if (id === "wildcard") {
-      if (wildcardsLeft > 0) wildcardsLeft--;
-      continue;
-    }
-    if (id === "freehit" || id === "ff") {
-      freeHitLeft = 0;
-      continue;
-    }
-    if (id === "bboost" || id === "benchboost") {
-      benchBoostLeft = 0;
-      continue;
-    }
-    if (id === "3xc") {
-      tripleCaptainLeft = 0;
-      continue;
+    const kind = classifyUsedChip(c.name);
+    switch (kind) {
+      case "wildcard":
+        if (wildcardsRemaining > 0) wildcardsRemaining--;
+        break;
+      case "freehit":
+        freeHitRemaining = false;
+        break;
+      case "bboost":
+        benchBoostRemaining = false;
+        break;
+      case "3xc":
+        tripleCaptainRemaining = false;
+        break;
+      default:
+        break;
     }
   }
 
-  return wildcardsLeft + freeHitLeft + benchBoostLeft + tripleCaptainLeft;
+  return {
+    wildcardsRemaining,
+    freeHitRemaining,
+    benchBoostRemaining,
+    tripleCaptainRemaining,
+  };
 }
 
 /** True when this entry’s loaded picks snapshot is a Free Hit week (from API or chip history). */

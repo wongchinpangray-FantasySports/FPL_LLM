@@ -1,7 +1,11 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { chipsRemainingCount, fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
+import {
+  computeChipsRemaining,
+  fetchTeamForUi,
+  isFreeHitOnPicksGw,
+} from "@/lib/tools/team";
 import {
   allPremierTeamIds,
   fdrClass,
@@ -162,7 +166,21 @@ export default async function DashboardPage({
     .filter((r) => !r.is_starter)
     .reduce((s, r) => s + r.xp_total, 0);
 
-  const chipsLeft = chipsRemainingCount(team.chips_used ?? []);
+  const chipRm = computeChipsRemaining(team.chips_used ?? []);
+  const chipSegments: string[] = [];
+  if (chipRm.wildcardsRemaining > 0) {
+    chipSegments.push(
+      dt("stats.chipRemainingWildcards", { n: chipRm.wildcardsRemaining }),
+    );
+  }
+  if (chipRm.freeHitRemaining) chipSegments.push(dt("stats.chipRemainingFh"));
+  if (chipRm.benchBoostRemaining) chipSegments.push(dt("stats.chipRemainingBb"));
+  if (chipRm.tripleCaptainRemaining)
+    chipSegments.push(dt("stats.chipRemainingTc"));
+  const chipsDisplay =
+    chipSegments.length > 0
+      ? chipSegments.join(" · ")
+      : dt("stats.chipsRemainingNone");
 
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
@@ -221,7 +239,8 @@ export default async function DashboardPage({
           <Stat label={dt("stats.activeChip")} value={team.active_chip ?? "—"} />
           <Stat
             label={dt("stats.chipsRemaining")}
-            value={String(chipsLeft)}
+            value={chipsDisplay}
+            valueClassName="break-words font-normal leading-snug"
           />
           <Stat
             label={dt("stats.xpXi", { horizon })}
@@ -499,13 +518,26 @@ function relTime(
   return dt("relDaysAgo", { n: Math.floor(diff / 86_400_000) });
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
     <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:px-3 sm:py-2.5">
       <div className="text-[9px] font-medium uppercase leading-tight tracking-wider text-slate-500 sm:text-[10px]">
         {label}
       </div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums text-white sm:text-base">
+      <div
+        className={cn(
+          "mt-0.5 text-sm font-semibold text-white sm:text-base",
+          valueClassName ?? "tabular-nums",
+        )}
+      >
         {value}
       </div>
     </div>

@@ -77,7 +77,12 @@
       "teamValue": "Team value",
       "freeTransfers": "Free transfers",
       "activeChip": "Active chip",
-      "chipsRemaining": "Chips remaining",
+      "chipsRemaining": "Available chips",
+      "chipRemainingWildcards": "WC ×{n}",
+      "chipRemainingFh": "Free Hit",
+      "chipRemainingBb": "Bench Boost",
+      "chipRemainingTc": "Triple Captain",
+      "chipsRemainingNone": "None",
       "xpXi": "xP XI · next {horizon}",
       "xpBench": "xP bench · next {horizon}"
     },

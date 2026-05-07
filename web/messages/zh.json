@@ -77,7 +77,12 @@
       "teamValue": "阵容价值",
       "freeTransfers": "免费转会",
       "activeChip": "生效芯片",
-      "chipsRemaining": "剩余芯片次数",
+      "chipsRemaining": "可用芯片",
+      "chipRemainingWildcards": "野卡 ×{n}",
+      "chipRemainingFh": "Free Hit",
+      "chipRemainingBb": "替补加分",
+      "chipRemainingTc": "三倍队长",
+      "chipsRemainingNone": "无",
       "xpXi": "首发 xP · 未来 {horizon} GW",
       "xpBench": "替补 xP · 未来 {horizon} GW"
     },
