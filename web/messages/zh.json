@@ -186,6 +186,7 @@
     "valSize": "需要 15 名球员（当前 {have} 名）。",
     "valPos": "{pos}：需要 {need} 名，当前 {have} 名。",
     "valClubCap": "同一俱乐部至多 3 人（球队 {teamId}：{n} 人）。",
+    "swapClubCap": "无法加入该球员：加入后将超过同一俱乐部的 3 人上限（{club}）。",
     "valXiSize": "首发需要 11 人（当前 {have} 人）。",
     "valXiGk": "首发：门将必须 1 人（当前 {gk}）。",
     "valXiDef": "首发：后卫 3–5 人（当前 {d}）。",

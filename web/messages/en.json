@@ -186,6 +186,8 @@
     "valSize": "Need 15 players (have {have}).",
     "valPos": "{pos}: need {need}, have {have}.",
     "valClubCap": "Max 3 per club (team {teamId}: {n}).",
+    "swapClubCap":
+      "Can't add this player: your squad would have more than 3 players from {club}.",
     "valXiSize": "XI needs 11 starters (have {have}).",
     "valXiGk": "XI: exactly 1 goalkeeper ({gk} selected).",
     "valXiDef": "XI: 3–5 defenders ({d} selected).",

@@ -149,6 +149,8 @@ export function PlannerApp({
   const [searchQ, setSearchQ] = useState("");
   const [searchHits, setSearchHits] = useState<SearchPlayer[]>([]);
   const [searching, setSearching] = useState(false);
+  /** Shown inside the replace-player modal when a pick would break FPL squad rules */
+  const [swapNotice, setSwapNotice] = useState<string | null>(null);
 
   const [horizon, setHorizon] = useState(5);
   /** Separate draft so clearing / retyping GW count works on mobile (controlled number would snap back). */
@@ -209,6 +211,10 @@ export function PlannerApp({
   useEffect(() => {
     if (!xiBenchMode) setXiFirst(null);
   }, [xiBenchMode]);
+
+  useEffect(() => {
+    if (swapSlot == null) setSwapNotice(null);
+  }, [swapSlot]);
 
   useEffect(() => {
     if (!inspectCtx) {
@@ -422,6 +428,7 @@ export function PlannerApp({
     setSearchQ("");
     setSearchHits([]);
     setProjError(null);
+    setSwapNotice(null);
   }
 
   function applyBestXiByProjection() {
@@ -490,7 +497,7 @@ export function PlannerApp({
     if (!row) return;
     const taken = new Set(picks.map((x) => x.fpl_id));
     if (taken.has(p.fpl_id) && p.fpl_id !== row.fpl_id) {
-      setProjError(t("errAlreadyInSquad"));
+      setSwapNotice(t("errAlreadyInSquad"));
       return;
     }
     const newBank = swapBudget(bank, row.base_price, p.base_price);
@@ -500,9 +507,7 @@ export function PlannerApp({
         (p.base_price ?? 0) +
         bank
       ).toFixed(1);
-      setProjError(
-        t("errBudget", { need, bank: bank.toFixed(1) }),
-      );
+      setSwapNotice(t("errBudget", { need, bank: bank.toFixed(1) }));
       return;
     }
 
@@ -518,13 +523,19 @@ export function PlannerApp({
     const draft = picks.map((r) => (r.slot === slot ? next : r));
     const vIssues = validatePlannerSquad(draft);
     if (vIssues.length > 0) {
-      setProjError(formatPlannerIssue(vIssues[0], t));
+      const first = vIssues[0];
+      if (first.code === "club_cap" && p.team) {
+        setSwapNotice(t("swapClubCap", { club: p.team }));
+      } else {
+        setSwapNotice(formatPlannerIssue(first, t));
+      }
       return;
     }
 
     setPicks(draft);
     setBank(newBank);
     setProjError(null);
+    setSwapNotice(null);
     if (captainId === row.fpl_id) setCaptainId(p.fpl_id);
     if (viceId === row.fpl_id) setViceId(p.fpl_id);
     setSwapSlot(null);
@@ -1165,6 +1176,7 @@ export function PlannerApp({
               onChange={(e) => {
                 const v = e.target.value;
                 setSearchQ(v);
+                setSwapNotice(null);
                 void searchPlayers(v);
               }}
               autoFocus
@@ -1172,6 +1184,15 @@ export function PlannerApp({
             <p className="text-[11px] text-slate-500 mt-2">
               {t("searchHint")}
             </p>
+            {swapNotice ? (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mt-3 rounded-lg border border-rose-500/45 bg-rose-500/10 px-3 py-2.5 text-sm leading-snug text-rose-100/95"
+              >
+                {swapNotice}
+              </div>
+            ) : null}
             <ul className="mt-3 flex flex-col gap-1">
               {searching && (
                 <li className="text-sm text-slate-500">{t("searching")}</li>
