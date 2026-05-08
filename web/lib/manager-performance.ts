@@ -5,6 +5,7 @@ import type {
   FplHistoryPastSeason,
   FplHistoryResponse,
 } from "@/lib/fpl";
+import { getCachedBootstrapEventAverages } from "@/lib/fpl-bootstrap";
 
 const OVERALL_LEAGUE_ID = 314;
 /** Overall standings pages whose midpoint ~ overall rank 10k / 100k (50 managers per page). */
@@ -19,13 +20,6 @@ interface StandingsApi {
       total: number;
     }>;
   };
-}
-
-interface BootstrapStatic {
-  events?: Array<{
-    id: number;
-    average_entry_score?: number;
-  }>;
 }
 
 function pointsByEvent(current: FplHistoryCurrentRow[]): Map<number, number> {
@@ -91,7 +85,7 @@ export async function loadManagerPerformance(
   ] = await Promise.all([
     fplGet<FplEntry>(`/entry/${entryId}/`),
     fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`),
-    fplGet<BootstrapStatic>(`/bootstrap-static/`),
+    getCachedBootstrapEventAverages(),
     fplGet<StandingsApi>(
       `/leagues-classic/${OVERALL_LEAGUE_ID}/standings/?page_standings=${STANDINGS_PAGE_10K_BAND}`,
     ).catch(() => ({}) as StandingsApi),

@@ -124,7 +124,9 @@ function Cell({
               1,
             )} gc ${f.xp_gc.toFixed(1)} saves ${f.xp_saves.toFixed(
               1,
-            )} dc ${f.xp_dc.toFixed(1)} bonus ${f.xp_bonus.toFixed(1)}`,
+            )} dc ${f.xp_dc.toFixed(1)} bonus ${f.xp_bonus.toFixed(
+              1,
+            )} cards ${f.xp_cards.toFixed(1)}`,
         )
         .join("\n\n")}
     >

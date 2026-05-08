@@ -17,6 +17,11 @@
  *  5. Availability gating via status / chance_of_playing.
  *  6. Opponent H2H: if ≥3 games vs this club, PPG vs that opponent vs season
  *     PPG scales xG/xA (amplified deviation, clamped ~0.62–1.42).
+ *  7. Understat (matched_fpl_id): rolling-window xG/xA blended into FPL rates
+ *     when sample minutes are sufficient.
+ *  8. Cards: negative EV from rolling yellow/red per minute (-1 / -3 pts).
+ *  9. Bonus: ICT index per 90 (rolling) scales bonus expectation on top of
+ *     role-aware fixture context.
  *
  * All tools (captain, transfers, differentials, chip strategy) go through
  * this single projection so recommendations are internally consistent.
@@ -125,6 +130,10 @@ export interface PlayerRolling {
   recoveries: number;
   dc_points: number;
   dc_games: number; // games where DC was actually earned
+  yellow_cards: number;
+  red_cards: number;
+  /** Sum of per-GW ICT index over the rolling window */
+  ict: number;
 }
 
 export interface FixtureProjection {
@@ -156,6 +165,8 @@ export interface FixtureProjection {
   xp_saves: number;
   xp_dc: number;
   xp_bonus: number;
+  /** Expected points from cards (-1 yellow, -3 red, linear rate model). */
+  xp_cards: number;
   xp_total: number;
 }
 
@@ -208,10 +219,10 @@ const ATK_CONTEXT_CAP = 2.0;
  * structural model (data-driven; tweak if league meta shifts).
  */
 const POSITION_XP_CALIBRATION: Record<string, number> = {
-  GKP: 1.03,
-  DEF: 1.045,
-  MID: 1.0,
-  FWD: 0.988,
+  GKP: 1.018,
+  DEF: 1.032,
+  MID: 1.012,
+  FWD: 1.032,
 };
 
 /**
@@ -223,6 +234,31 @@ const OPP_HISTORY_AMPLIFY = 1.45;
 /** After amplification, clamp so premiums/duds vs specific rivals stay bounded. */
 const OPP_HISTORY_MULT_MIN = 0.62;
 const OPP_HISTORY_MULT_MAX = 1.42;
+
+/**
+ * Position-targeted output scale on all line items (keeps decomposition consistent).
+ * Replaces a flat global multiplier: MID/FWD get more uplift (attack variance / bonus
+ * tails); DEF/GKP less (clean-sheet structure already rewards defence). Tune vs
+ * multi-GW backtests — not only GW35.
+ */
+function positionOutputScale(position: string): number {
+  const m: Record<string, number> = {
+    GKP: 1.032,
+    DEF: 1.048,
+    MID: 1.158,
+    FWD: 1.238,
+  };
+  return m[position] ?? 1.09;
+}
+
+/** Blend Understat xG/xA into FPL-derived per-90 rates when sample is big enough. */
+const UNDERSTAT_BLEND_WEIGHT = 0.22;
+/** Minimum aggregated Understat minutes in the rolling window to trust blend. */
+const UNDERSTAT_MIN_MINUTES = 120;
+
+/** ICT index per 90 (rolling) nudges bonus expectation — ties upside to chance creation. */
+const ICT_BONUS_CENTER = 3.2;
+const ICT_BONUS_SCALE = 14;
 
 /**
  * Bonus correlates with different signals by role: MID/FWD bonus tracks
@@ -245,6 +281,15 @@ function bonusContextMultiplier(
     1.52,
   );
   return clamp(0.22 * atk + 0.78 * defensiveFixture, 0.6, 1.58);
+}
+
+/** Rolling ICT index per 90 → multiplier on bonus expectation (weak tail uplift). */
+function bonusIctMultiplier(ictPer90: number): number {
+  return clamp(
+    1 + 0.2 * ((ictPer90 - ICT_BONUS_CENTER) / ICT_BONUS_SCALE),
+    0.86,
+    1.38,
+  );
 }
 
 function positionCalibration(position: string): number {
@@ -326,6 +371,76 @@ export async function loadFixturesWindow(
     .lte("gw", toGw)
     .order("gw", { ascending: true });
   return (data ?? []) as unknown as Fixture[];
+}
+
+/** Rolling-window aggregates from Understat (matched rows only). */
+export async function loadUnderstatRollingForWindow(
+  playerIds: number[],
+  fromGw: number,
+  toGw: number,
+): Promise<Map<number, { xg: number; xa: number; minutes: number }>> {
+  const out = new Map<number, { xg: number; xa: number; minutes: number }>();
+  if (playerIds.length === 0 || fromGw > toGw) return out;
+
+  const supa = getServerSupabase();
+  const { data: fxDates } = await supa
+    .from("fixtures")
+    .select("kickoff_time")
+    .gte("gw", fromGw)
+    .lte("gw", toGw)
+    .not("kickoff_time", "is", null);
+
+  const dates = fxDates ?? [];
+  if (dates.length === 0) return out;
+
+  let minTs = Infinity;
+  let maxTs = -Infinity;
+  for (const r of dates) {
+    const t = new Date(String(r.kickoff_time)).getTime();
+    if (!Number.isFinite(t)) continue;
+    minTs = Math.min(minTs, t);
+    maxTs = Math.max(maxTs, t);
+  }
+  if (!Number.isFinite(minTs) || !Number.isFinite(maxTs)) return out;
+
+  const minDate = new Date(minTs).toISOString().slice(0, 10);
+  const maxDate = new Date(maxTs).toISOString().slice(0, 10);
+
+  const season =
+    process.env.FPL_UNDERSTAT_SEASON ??
+    (await resolveUnderstatSeasonFallback());
+
+  const { data: usRows } = await supa
+    .from("understat_xg")
+    .select("matched_fpl_id,xg,xa,minutes")
+    .in("matched_fpl_id", playerIds)
+    .eq("season", season)
+    .gte("match_date", minDate)
+    .lte("match_date", maxDate)
+    .not("matched_fpl_id", "is", null);
+
+  for (const r of usRows ?? []) {
+    const pid = r.matched_fpl_id as number;
+    const cur = out.get(pid) ?? { xg: 0, xa: 0, minutes: 0 };
+    cur.xg += num(r.xg);
+    cur.xa += num(r.xa);
+    cur.minutes += num(r.minutes);
+    out.set(pid, cur);
+  }
+  return out;
+}
+
+async function resolveUnderstatSeasonFallback(): Promise<string> {
+  const supa = getServerSupabase();
+  const { data } = await supa
+    .from("understat_xg")
+    .select("season")
+    .not("matched_fpl_id", "is", null)
+    .limit(800);
+  const seasons = [
+    ...new Set((data ?? []).map((r) => String(r.season))),
+  ].sort((a, b) => Number(b) - Number(a));
+  return seasons[0] ?? "2025";
 }
 
 /** Earliest unfinished fixture per player (via club), for pitch card labels. */
@@ -538,7 +653,7 @@ export async function loadRollingStats(
   // Try the full defensive-enhanced column set first; fall back to the
   // legacy set if migration 0003 hasn't landed yet.
   const FULL_COLS =
-    "player_id,gw,minutes,goals_scored,assists,clean_sheets,goals_conceded,saves,bonus,bps,expected_goals,expected_assists,expected_goal_involve,expected_goals_conceded,total_points,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,starts";
+    "player_id,gw,minutes,goals_scored,assists,clean_sheets,goals_conceded,saves,bonus,bps,expected_goals,expected_assists,expected_goal_involve,expected_goals_conceded,total_points,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,starts,yellow_cards,red_cards,ict_index";
   const LEGACY_COLS =
     "player_id,gw,minutes,goals_scored,assists,clean_sheets,goals_conceded,saves,bonus,bps,expected_goals,expected_assists,expected_goal_involve,expected_goals_conceded,total_points";
   const first = await supa
@@ -594,6 +709,9 @@ export async function loadRollingStats(
     const dc = num(r.defensive_contribution);
     agg.dc_points += dc;
     if (dc > 0) agg.dc_games += 1;
+    agg.yellow_cards += num(r.yellow_cards);
+    agg.red_cards += num(r.red_cards);
+    agg.ict += num(r.ict_index);
   }
 
   return out;
@@ -622,6 +740,9 @@ export function emptyRolling(windowGws: number): PlayerRolling {
     recoveries: 0,
     dc_points: 0,
     dc_games: 0,
+    yellow_cards: 0,
+    red_cards: 0,
+    ict: 0,
   };
 }
 
@@ -657,7 +778,24 @@ function expectedMinutes(roll: PlayerRolling, avail: number): number {
   const minsPerApp = roll.minutes / apps;
   // probability they feature at all = apps / window_gws
   const pFeature = clamp(apps / roll.window_gws, 0, 1);
-  return minsPerApp * pFeature * avail;
+  const base = minsPerApp * pFeature * avail;
+  return Math.min(90, base * minutesProjectionBoost(roll));
+}
+
+/**
+ * When rolling profile shows reliable playing time, raw E[minutes] understates
+ * effective involvement slightly vs realized weekly points (especially starters).
+ * Sparse appearances stay near neutral to avoid inflating bench lottery tickets.
+ */
+function minutesProjectionBoost(roll: PlayerRolling): number {
+  if (roll.window_gws <= 0 || roll.apps <= 0) return 1;
+  const appRate = roll.apps / roll.window_gws;
+  const minsPerApp = roll.minutes / roll.apps;
+  if (appRate >= 0.85 && minsPerApp >= 78) return 1.042;
+  if (appRate >= 0.7 && minsPerApp >= 62) return 1.028;
+  if (appRate >= 0.55 && minsPerApp >= 52) return 1.018;
+  if (appRate < 0.38) return 1;
+  return 1.01;
 }
 
 // --- team-level xG engine --------------------------------------------------
@@ -695,6 +833,8 @@ export function projectPlayerForFixture(args: {
   setPieces?: SetPieceFlags;
   oppHistory?: OpponentHistory | null;
   seasonPpg?: number | null;
+  /** Same-window Understat totals (matched_fpl_id); optional blend into xG/xA. */
+  understat?: { xg: number; xa: number; minutes: number } | null;
 }): FixtureProjection {
   const {
     player,
@@ -706,12 +846,24 @@ export function projectPlayerForFixture(args: {
     setPieces,
     oppHistory,
     seasonPpg,
+    understat,
   } = args;
   const isHome = fixture.home_team_id === myTeam.id;
   const position = player.position ?? "MID";
 
-  // expected playing time
-  const expMins = expectedMinutes(roll, availability);
+  // expected playing time (+ modest MID/FWD lift when involvement rate is credible)
+  let expMins = expectedMinutes(roll, availability);
+  if (
+    (position === "FWD" || position === "MID") &&
+    roll.window_gws > 0 &&
+    roll.apps > 0
+  ) {
+    const ar = roll.apps / roll.window_gws;
+    if (ar >= 0.42) {
+      const lift = position === "FWD" ? 1.032 : 1.018;
+      expMins = Math.min(90, expMins * lift);
+    }
+  }
   const pAppear = expMins > 0 ? clamp(roll.apps / roll.window_gws, 0, 1) * availability : 0;
   const p60 = expMins >= 60 ? clamp(roll.starts / Math.max(roll.window_gws, 1), 0, 1) * availability : 0;
   const minutesFactor = expMins / 90;
@@ -741,8 +893,20 @@ export function projectPlayerForFixture(args: {
 
   // weight: give recent form 70%, season 30% (season anchors low-sample
   // players, recent captures form shifts).
-  const xgPer90 = 0.7 * xgPer90Recent + 0.3 * xgPer90Season;
-  const xaPer90 = 0.7 * xaPer90Recent + 0.3 * xaPer90Season;
+  let xgPer90 = 0.7 * xgPer90Recent + 0.3 * xgPer90Season;
+  let xaPer90 = 0.7 * xaPer90Recent + 0.3 * xaPer90Season;
+
+  if (
+    understat &&
+    understat.minutes >= UNDERSTAT_MIN_MINUTES &&
+    understat.minutes > 0
+  ) {
+    const usXg = (understat.xg / understat.minutes) * 90;
+    const usXa = (understat.xa / understat.minutes) * 90;
+    const w = UNDERSTAT_BLEND_WEIGHT;
+    xgPer90 = (1 - w) * xgPer90 + w * usXg;
+    xaPer90 = (1 - w) * xaPer90 + w * usXa;
+  }
 
   // Opponent-specific history: H2H PPG vs season PPG, amplified then clamped.
   // If the player has ≥3 games vs this opponent and his PPG there differs from
@@ -840,11 +1004,22 @@ export function projectPlayerForFixture(args: {
   const pDC = poissonUpperCdf(lambdaActions, dcThreshold);
   const xp_dc = 2 * pDC;
 
-  // Bonus: role-aware — DEF/GKP use CS / concession profile, not atkContext alone.
+  // Cards: linear expectation from rolling card rates (-1 yellow, -3 red).
+  const yellowPer90 =
+    roll.minutes > 0 ? (roll.yellow_cards / roll.minutes) * 90 : 0;
+  const redPer90 =
+    roll.minutes > 0 ? (roll.red_cards / roll.minutes) * 90 : 0;
+  const xp_cards =
+    -1 * yellowPer90 * minutesFactor - 3 * redPer90 * minutesFactor;
+
+  // Bonus: role-aware — DEF/GKP use CS / concession profile; ICT per 90 scales appetite for BPS.
   const bonusPer90 =
     roll.minutes > 0 ? (roll.bonus / roll.minutes) * 90 : 0;
+  const ictPer90 =
+    roll.minutes > 0 ? (roll.ict / roll.minutes) * 90 : 0;
+  const ictMult = bonusIctMultiplier(ictPer90);
   const bonusMult = bonusContextMultiplier(position, atkContext, pCS, teamGA);
-  const xp_bonus = bonusPer90 * minutesFactor * bonusMult;
+  const xp_bonus = bonusPer90 * minutesFactor * bonusMult * ictMult;
 
   const posCal = positionCalibration(position);
   const xp_appearance_c = xp_appearance * posCal;
@@ -855,8 +1030,9 @@ export function projectPlayerForFixture(args: {
   const xp_saves_c = xp_saves * posCal;
   const xp_dc_c = xp_dc * posCal;
   const xp_bonus_c = xp_bonus * posCal;
+  const xp_cards_c = xp_cards * posCal;
 
-  const xp_total =
+  const rawSum =
     xp_appearance_c +
     xp_goals_c +
     xp_assists_c +
@@ -864,7 +1040,9 @@ export function projectPlayerForFixture(args: {
     xp_gc_c +
     xp_saves_c +
     xp_dc_c +
-    xp_bonus_c;
+    xp_bonus_c +
+    xp_cards_c;
+  const sc = positionOutputScale(position);
 
   return {
     gw: fixture.gw,
@@ -886,15 +1064,16 @@ export function projectPlayerForFixture(args: {
     exp_defensive_actions: round(lambdaActions, 2),
     dc_threshold: dcThreshold,
     p_dc: round(pDC, 3),
-    xp_appearance: round(xp_appearance_c, 2),
-    xp_goals: round(xp_goals_c, 2),
-    xp_assists: round(xp_assists_c, 2),
-    xp_cs: round(xp_cs_c, 2),
-    xp_gc: round(xp_gc_c, 2),
-    xp_saves: round(xp_saves_c, 2),
-    xp_dc: round(xp_dc_c, 2),
-    xp_bonus: round(xp_bonus_c, 2),
-    xp_total: round(xp_total, 2),
+    xp_appearance: round(xp_appearance_c * sc, 2),
+    xp_goals: round(xp_goals_c * sc, 2),
+    xp_assists: round(xp_assists_c * sc, 2),
+    xp_cs: round(xp_cs_c * sc, 2),
+    xp_gc: round(xp_gc_c * sc, 2),
+    xp_saves: round(xp_saves_c * sc, 2),
+    xp_dc: round(xp_dc_c * sc, 2),
+    xp_bonus: round(xp_bonus_c * sc, 2),
+    xp_cards: round(xp_cards_c * sc, 2),
+    xp_total: round(rawSum * sc, 2),
   };
 }
 
@@ -904,6 +1083,8 @@ export interface ProjectOptions {
   currentGw: number;
   fromGw: number;
   toGw: number;
+  /** Include finished fixtures (e.g. historical GW backtest). Default false. */
+  includeFinishedFixtures?: boolean;
 }
 
 export async function projectPlayers(
@@ -913,18 +1094,23 @@ export async function projectPlayers(
   const out = new Map<number, PlayerProjection>();
   if (playerIds.length === 0) return out;
 
-  const [teams, fixtures, players, rollingAll] = await Promise.all([
-    loadTeams(),
-    loadFixturesWindow(opts.fromGw, opts.toGw),
-    loadPlayers(playerIds),
-    loadRollingStats(playerIds, opts.currentGw),
-  ]);
+  const rollingFromGw = Math.max(1, opts.currentGw - ROLLING_WINDOW + 1);
+  const includeFinished = opts.includeFinishedFixtures === true;
 
-  // group fixtures by team (unfinished only)
+  const [teams, fixtures, players, rollingAll, understatByPlayer] =
+    await Promise.all([
+      loadTeams(),
+      loadFixturesWindow(opts.fromGw, opts.toGw),
+      loadPlayers(playerIds),
+      loadRollingStats(playerIds, opts.currentGw),
+      loadUnderstatRollingForWindow(playerIds, rollingFromGw, opts.currentGw),
+    ]);
+
+  // group fixtures by team (skip finished unless backtesting)
   const fixturesByTeam = new Map<number, Fixture[]>();
   const oppIdsSet = new Set<number>();
   for (const f of fixtures) {
-    if (f.finished) continue;
+    if (!includeFinished && f.finished) continue;
     for (const tid of [f.home_team_id, f.away_team_id]) {
       if (!fixturesByTeam.has(tid)) fixturesByTeam.set(tid, []);
       fixturesByTeam.get(tid)!.push(f);
@@ -977,6 +1163,7 @@ export async function projectPlayers(
           setPieces: sp,
           oppHistory: hist && hist.games > 0 ? hist : null,
           seasonPpg,
+          understat: understatByPlayer.get(pid) ?? null,
         }),
       );
     }
@@ -1034,7 +1221,7 @@ export async function resolveCurrentGw(): Promise<{
 }
 
 export const XP_SCORING_NOTE =
-  "xP = attacking (Poisson team xG + rolling per-90 xG/xA; fixture attack context capped) + appearance + clean-sheet + goals conceded + saves + defensive-contribution (Poisson vs FPL DC thresholds; λ boosted slightly for DEF/GK) + bonus per 90. Bonus for DEF/GK uses CS probability + concession profile, not team xGF alone (aligns BPS with defensive fixtures). Light position calibration (DEF/GKP slightly up, FWD slightly down) for realistic starter bands. Rolling 6-GW 70/30 season blend. Opponent H2H PPG vs season PPG: amplified multiplier on xG/xA (clamp ~0.62–1.42 when ≥3 meetings). Set-piece / availability as before.";
+  "xP = (Poisson team xG + rolling per-90 xG/xA with optional Understat blend; fixture attack context capped) + appearance + CS + GC + saves + DC + bonus×ICT + card EV; E[minutes] uses a small rolling-profile boost for nailed starters; all line items × position output scale (MID/FWD > DEF/GKP). Position calibration before scale. Rolling 6-GW 70/30 FPL blend. H2H PPG on xG/xA. Set-piece / availability.";
 
 // --- EO / ownership-aware captain ranking ----------------------------------
 

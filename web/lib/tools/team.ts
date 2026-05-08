@@ -604,6 +604,7 @@ function summarizeProjection(p: PlayerProjection, maxFixtures = 3) {
         saves: f.xp_saves,
         dc: f.xp_dc,
         bonus: f.xp_bonus,
+        cards: f.xp_cards,
       },
     })),
     xp_total: p.xp_total,

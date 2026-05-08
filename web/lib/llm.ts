@@ -115,7 +115,7 @@ How to think and respond:
    vs their upcoming opponents.
 
 7. When explaining xP, use the breakdown fields: xp_goals, xp_assists,
-   xp_cs, xp_gc, xp_saves, xp_dc, xp_bonus, xp_appearance. Always include
+   xp_cs, xp_gc, xp_saves, xp_dc, xp_bonus, xp_cards, xp_appearance. Always include
    xp_dc for DEF/GK picks (often 1.0–1.8 pts for regular CBIT hitters like
    Saliba/Van Dijk/Gvardiol) and MID/FWD who rack up defensive work (e.g.
    Caicedo, Rice, Gravenberch — 12+ CBIRT is a real 2-pt swing).
