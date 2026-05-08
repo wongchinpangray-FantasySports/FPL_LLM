@@ -4,25 +4,43 @@
  * (e.g. a specific entry's picks).
  *
  * FPL sometimes returns **403** to minimal or datacenter-looking clients.
- * We send browser-like headers; override with `FPL_FETCH_USER_AGENT` if needed.
+ * We send browser-like headers (including `sec-fetch-*` / `sec-ch-ua` when using
+ * the default UA). Override with `FPL_FETCH_USER_AGENT` if needed — when set,
+ * we omit `sec-ch-ua*` so they cannot contradict your custom UA.
  */
 const FPL_BASE = "https://fantasy.premierleague.com/api";
 
 const DEFAULT_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
+
+/** Must match the Chrome major version embedded in {@link DEFAULT_UA} for `sec-ch-ua`. */
+const DEFAULT_CHROME_MAJOR = "136";
 
 function fplHeaders(): Record<string, string> {
-  const ua =
-    (typeof process !== "undefined" &&
-      process.env.FPL_FETCH_USER_AGENT?.trim()) ||
-    DEFAULT_UA;
-  return {
+  const customUa =
+    typeof process !== "undefined" &&
+    process.env.FPL_FETCH_USER_AGENT?.trim();
+  const ua = customUa || DEFAULT_UA;
+
+  const base: Record<string, string> = {
     "user-agent": ua,
     accept: "application/json, text/plain, */*",
     "accept-language": "en-GB,en;q=0.9",
     referer: "https://fantasy.premierleague.com/",
     origin: "https://fantasy.premierleague.com",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
   };
+
+  if (!customUa) {
+    base["sec-ch-ua"] =
+      `"Google Chrome";v="${DEFAULT_CHROME_MAJOR}", "Chromium";v="${DEFAULT_CHROME_MAJOR}", "Not A(Brand";v="24"`;
+    base["sec-ch-ua-mobile"] = "?0";
+    base["sec-ch-ua-platform"] = '"Windows"';
+  }
+
+  return base;
 }
 
 export async function fplGet<T = unknown>(
