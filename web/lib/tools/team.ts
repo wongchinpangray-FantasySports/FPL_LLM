@@ -1,8 +1,10 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
   fplGet,
+  fplGetSession,
   type FplEntry,
   type FplHistoryResponse,
+  type FplMyTeamResponse,
   type FplPicksResponse,
 } from "@/lib/fpl";
 import type { ToolContext, ToolHandler } from "./types";
@@ -17,7 +19,7 @@ import {
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
-const TEAM_RAW_VERSION = 7;
+const TEAM_RAW_VERSION = 8;
 
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
@@ -352,16 +354,14 @@ async function fetchIsNextEventFromBootstrap(bust: boolean): Promise<number | nu
  * or `current_event` ahead of live bootstrap caused the planner to mirror **Points** /
  * last-lock snapshots instead of **Pick Team**.
  *
- * Always prefer live bootstrap `is_next` first (`bust` → cache-busted fetch on sync).
+ * `bootstrapIsNext` must come from a single live `bootstrap-static` fetch (caller supplies it).
  */
 async function resolveEventIdsForPicks(args: {
   supa: ReturnType<typeof getServerSupabase>;
   entryCurrentEvent: number | null;
-  bust: boolean;
+  bootstrapIsNext: number | null;
 }): Promise<number[]> {
-  const { supa, entryCurrentEvent, bust } = args;
-
-  const bootstrapIsNext = await fetchIsNextEventFromBootstrap(bust);
+  const { supa, entryCurrentEvent, bootstrapIsNext } = args;
 
   const { data: gwRow } = await supa
     .from("gameweeks")
@@ -388,6 +388,31 @@ async function resolveEventIdsForPicks(args: {
   add(entryCurrentEvent != null && entryCurrentEvent > 1 ? entryCurrentEvent - 1 : null);
 
   return out;
+}
+
+/** Map authenticated `/my-team/` JSON into the same shape as `/event/{gw}/picks/` for shared builders. */
+function myTeamToPicksResponse(
+  mt: FplMyTeamResponse,
+  planningEvent: number,
+  entry: FplEntry,
+): FplPicksResponse {
+  const t = mt.transfers ?? {};
+  const bank = t.bank ?? entry.last_deadline_bank ?? 0;
+  const value = t.value ?? entry.last_deadline_value ?? 0;
+  return {
+    active_chip: mt.active_chip ?? null,
+    automatic_subs: [],
+    entry_history: {
+      event: planningEvent,
+      points: 0,
+      total_points: 0,
+      bank,
+      value,
+      event_transfers: t.event_transfers ?? t.num ?? 0,
+      event_transfers_cost: t.event_transfers_cost ?? t.cost ?? 0,
+    },
+    picks: mt.picks ?? [],
+  };
 }
 
 export async function fetchAndCacheTeam(
@@ -447,28 +472,63 @@ export async function fetchAndCacheTeam(
 
   let picksResp: FplPicksResponse | null = null;
   let picksGw: number | null = null;
+  let myTeamSource: FplMyTeamResponse | null = null;
   const bustOpt = bust ? { cacheBust: true as const } : undefined;
 
-  const eventIds = await resolveEventIdsForPicks({
-    supa,
-    entryCurrentEvent: confirmedGw,
-    bust,
-  });
+  const bootstrapIsNext = await fetchIsNextEventFromBootstrap(bust);
+  const planningEvent =
+    bootstrapIsNext ??
+    (confirmedGw != null && Number.isFinite(confirmedGw) ? confirmedGw : null) ??
+    1;
 
-  for (const eid of eventIds) {
-    try {
-      const r = await fplGet<FplPicksResponse>(
-        `/entry/${entryId}/event/${eid}/picks/`,
-        bustOpt,
-      );
-      if (picksOk(r)) {
-        picksResp = r;
-        picksGw = eid;
-        break;
+  const myTeam = await fplGetSession<FplMyTeamResponse>(
+    `/my-team/${entryId}/`,
+    bustOpt,
+  );
+  if (myTeam?.picks?.length) {
+    picksResp = myTeamToPicksResponse(myTeam, planningEvent, entry);
+    picksGw = bootstrapIsNext ?? picksResp.entry_history.event;
+    myTeamSource = myTeam;
+  }
+
+  if (!picksResp) {
+    const eventIds = await resolveEventIdsForPicks({
+      supa,
+      entryCurrentEvent: confirmedGw,
+      bootstrapIsNext,
+    });
+
+    for (const eid of eventIds) {
+      try {
+        const r = await fplGet<FplPicksResponse>(
+          `/entry/${entryId}/event/${eid}/picks/`,
+          bustOpt,
+        );
+        if (picksOk(r)) {
+          picksResp = r;
+          picksGw = eid;
+          break;
+        }
+      } catch {
+        /* try next event id */
       }
-    } catch {
-      /* try next event id */
     }
+  }
+
+  let bankTenths = entry.last_deadline_bank ?? 0;
+  let valueTenths = entry.last_deadline_value ?? 0;
+  if (myTeamSource?.transfers) {
+    const tr = myTeamSource.transfers;
+    if (typeof tr.bank === "number") bankTenths = tr.bank;
+    if (typeof tr.value === "number") valueTenths = tr.value;
+  }
+
+  let freeTransfersOut = 1;
+  if (
+    myTeamSource?.transfers != null &&
+    typeof myTeamSource.transfers.limit === "number"
+  ) {
+    freeTransfersOut = myTeamSource.transfers.limit;
   }
 
   const picks = picksResp
@@ -511,11 +571,12 @@ export async function fetchAndCacheTeam(
       /* e.g. GW1 has no previous event */
     }
   }
-  // If we're still showing the confirmed GW's picks (not the next one) and
-  // there's a next GW on the horizon, we can't see any pending chip/FH/WC
-  // the manager may have saved. Flag it.
+  // Public event picks can lag Pick Team; authenticated `/my-team/` does not.
   const picksMayBeStale =
-    picksGw != null && confirmedGw != null && picksGw === confirmedGw;
+    myTeamSource == null &&
+    picksGw != null &&
+    confirmedGw != null &&
+    picksGw === confirmedGw;
 
   const fetchedAt = new Date().toISOString();
   const out: CachedTeam = {
@@ -529,9 +590,9 @@ export async function fetchAndCacheTeam(
       summary_overall_rank: entry.summary_overall_rank,
       current_event: entry.current_event,
     },
-    bank: (entry.last_deadline_bank ?? 0) / 10,
-    team_value: (entry.last_deadline_value ?? 0) / 10,
-    free_transfers: 1,
+    bank: bankTenths / 10,
+    team_value: valueTenths / 10,
+    free_transfers: freeTransfersOut,
     current_gw: confirmedGw,
     active_chip: picksResp?.active_chip ?? null,
     picks,
@@ -592,7 +653,7 @@ export async function fetchTeamForUi(
 const getMyTeam: ToolHandler = {
   name: "get_my_team",
   description:
-    "Fetch the user's FPL squad: 15 players, captain, vice, bank, team value, free transfers, active chip, recent chips played. Pass force_refresh=true when the user says they just made transfers or activated a chip. During a Free Hit gameweek, `picks` is the REVERT/long-term squad used for transfers and planning; `picks_free_hit_gameweek_snapshot` (when present) is the temporary FH 15 only. If picks_may_be_stale=true, the GW{picks_gw} picks haven't been published by FPL yet so the squad shown is the last confirmed team.",
+    "Fetch the user's FPL squad: 15 players, captain, vice, bank, team value, free transfers, active chip, recent chips played. Pass force_refresh=true when the user says they just made transfers or activated a chip. During a Free Hit gameweek, `picks` is the REVERT/long-term squad used for transfers and planning; `picks_free_hit_gameweek_snapshot` (when present) is the temporary FH 15 only. If picks_may_be_stale=true, the GW{picks_gw} picks haven't been published by FPL yet so the squad shown is the last confirmed team. For an exact match to the official Pick Team page from cloud hosts, the deployment may need server env FPL_SESSION_COOKIE (browser Cookie while logged into fantasy.premierleague.com).",
   input_schema: {
     type: "object",
     properties: {

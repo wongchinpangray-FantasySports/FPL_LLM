@@ -62,6 +62,64 @@ export async function fplGet<T = unknown>(
   return (await res.json()) as T;
 }
 
+/**
+ * Session cookie for authenticated routes (`/my-team/`, etc.).
+ * Copy from the browser while logged in at fantasy.premierleague.com (Application → Cookies,
+ * or the `Cookie` request header on any `/api/` XHR). **Server-only** — treat like a password.
+ */
+export function fplSessionCookie(): string | undefined {
+  const v =
+    typeof process !== "undefined"
+      ? process.env.FPL_SESSION_COOKIE?.trim()
+      : undefined;
+  return v || undefined;
+}
+
+/** `/my-team/{entry}/` — same 15 as the official Pick Team page when logged in (requires cookie). */
+export interface FplMyTeamResponse {
+  picks?: FplPick[];
+  active_chip?: string | null;
+  chips?: unknown[];
+  /** Bank / value / FT limits — field names vary slightly by season */
+  transfers?: {
+    bank?: number;
+    value?: number;
+    /** free transfers remaining this period (sometimes `limit`) */
+    limit?: number;
+    num?: number;
+    cost?: number;
+    event_transfers?: number;
+    event_transfers_cost?: number;
+  };
+}
+
+/**
+ * Authenticated GET (Pick Team / my-team). Returns `null` if no cookie, non-OK response, or invalid JSON.
+ */
+export async function fplGetSession<T = unknown>(
+  path: string,
+  opts?: { cacheBust?: boolean },
+): Promise<T | null> {
+  const cookie = fplSessionCookie();
+  if (!cookie) return null;
+
+  let url = `${FPL_BASE}${path}`;
+  if (opts?.cacheBust) {
+    url += path.includes("?") ? "&" : "?";
+    url += `_=${Date.now()}`;
+  }
+  try {
+    const res = await fetch(url, {
+      headers: { ...fplHeaders(), Cookie: cookie },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export interface FplEntry {
   id: number;
   name: string;
