@@ -17,7 +17,7 @@ import {
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
-const TEAM_RAW_VERSION = 5;
+const TEAM_RAW_VERSION = 6;
 
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
@@ -344,8 +344,11 @@ async function fetchIsNextEventFromBootstrap(bust: boolean): Promise<number | nu
 }
 
 /**
- * `/event/{id}/picks/` ids to try in order. The editable squad is usually on `is_next`,
- * not strictly `entry.current_event + 1`.
+ * `/event/{id}/picks/` ids to try in order.
+ *
+ * Supabase `gameweeks.is_next` can lag real FPL by a GW after rollovers — managers
+ * then see GW35 picks while transfers apply to GW36. On **forceRefresh**, always
+ * read live `is_next` from **bootstrap-static** first (cache-busted).
  */
 async function resolveEventIdsForPicks(args: {
   supa: ReturnType<typeof getServerSupabase>;
@@ -353,16 +356,21 @@ async function resolveEventIdsForPicks(args: {
   bust: boolean;
 }): Promise<number[]> {
   const { supa, entryCurrentEvent, bust } = args;
-  let isNextId: number | null = null;
+
+  let bootstrapIsNext: number | null = null;
+  if (bust) {
+    bootstrapIsNext = await fetchIsNextEventFromBootstrap(true);
+  }
+
   const { data: gwRow } = await supa
     .from("gameweeks")
     .select("id")
     .eq("is_next", true)
     .maybeSingle();
-  if (gwRow?.id != null) isNextId = Number(gwRow.id);
+  const dbIsNext = gwRow?.id != null ? Number(gwRow.id) : null;
 
-  if (isNextId == null) {
-    isNextId = await fetchIsNextEventFromBootstrap(bust);
+  if (!bust && dbIsNext == null) {
+    bootstrapIsNext = await fetchIsNextEventFromBootstrap(false);
   }
 
   const seen = new Set<number>();
@@ -376,7 +384,10 @@ async function resolveEventIdsForPicks(args: {
     out.push(n);
   }
 
-  add(isNextId);
+  if (bust) add(bootstrapIsNext);
+  add(dbIsNext);
+  if (!bust) add(bootstrapIsNext);
+
   add(entryCurrentEvent);
   add(entryCurrentEvent != null ? entryCurrentEvent + 1 : null);
   add(entryCurrentEvent != null && entryCurrentEvent > 1 ? entryCurrentEvent - 1 : null);
