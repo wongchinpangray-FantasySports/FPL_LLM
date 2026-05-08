@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
+import { unstable_noStore as noStore } from "next/cache";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
 import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
@@ -13,25 +14,38 @@ export default async function PlannerPage({
   searchParams,
 }: {
   params: { locale: string; entryId: string };
-  searchParams?: { squad?: string; refresh?: string };
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
 }) {
-  const entryId = Number(params.entryId);
+  noStore();
+
+  const resolvedParams = await Promise.resolve(params);
+  const entryId = Number(resolvedParams.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
 
-  setRequestLocale(params.locale);
+  setRequestLocale(resolvedParams.locale);
+
+  const sp = await Promise.resolve(searchParams ?? {});
+  const refreshRaw = sp.refresh;
+  const refreshVal = Array.isArray(refreshRaw)
+    ? refreshRaw[0]
+    : refreshRaw;
+  const squadRaw = sp.squad;
+  const squadVal = Array.isArray(squadRaw) ? squadRaw[0] : squadRaw;
 
   const pt = await getTranslations({
-    locale: params.locale,
+    locale: resolvedParams.locale,
     namespace: "planner",
   });
   const fb = await getTranslations({
-    locale: params.locale,
+    locale: resolvedParams.locale,
     namespace: "fhBanner",
   });
 
-  const useFreeHitSquad = searchParams?.squad === "freehit";
+  const useFreeHitSquad = squadVal === "freehit";
   const forceRefresh =
-    searchParams?.refresh === "1" || searchParams?.refresh === "true";
+    refreshVal === "1" || refreshVal === "true";
 
   let team;
   try {
@@ -96,6 +110,9 @@ export default async function PlannerPage({
       is_vice_captain: p.is_vice_captain,
     }));
 
+  /** Remount client planner when FPL squad snapshot changes (see PlannerApp useState). */
+  const plannerSquadKey = `${team.fetched_at}-${initialPicks.map((p) => p.fpl_id).sort((a, b) => a - b).join(",")}`;
+
   const picksGwStr = String(team.picks_gw ?? "?");
   const longGwStr = String(team.long_team_gw ?? "?");
   const prevGwStr = String((team.picks_gw ?? 1) - 1);
@@ -116,6 +133,7 @@ export default async function PlannerPage({
 
   return (
     <PlannerApp
+      key={plannerSquadKey}
       entryId={entryId}
       entryName={team.entry.name}
       initialBank={team.bank}

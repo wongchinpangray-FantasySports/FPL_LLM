@@ -372,13 +372,18 @@ export async function fetchAndCacheTeam(
     }
   }
 
+  const bust = opts.forceRefresh === true;
   const [entry, history] = await Promise.all([
-    fplGet<FplEntry>(`/entry/${entryId}/`),
-    fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`).catch(
+    fplGet<FplEntry>(`/entry/${entryId}/`, bust ? { cacheBust: true } : undefined),
+    fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`, bust ? { cacheBust: true } : undefined).catch(
       () => null as FplHistoryResponse | null,
     ),
   ]);
   const confirmedGw = entry.current_event;
+
+  function picksOk(resp: FplPicksResponse | null): resp is FplPicksResponse {
+    return Boolean(resp?.picks?.length);
+  }
 
   // Try both the current event and the next one. If the next-GW picks are
   // already public (deadline passed), prefer them — they reflect any chip
@@ -388,18 +393,25 @@ export async function fetchAndCacheTeam(
   let picksGw: number | null = null;
   if (confirmedGw) {
     const nextGw = confirmedGw + 1;
+    const bustOpt = bust ? { cacheBust: true as const } : undefined;
     const [nextTry, curTry] = await Promise.all([
-      fplGet<FplPicksResponse>(`/entry/${entryId}/event/${nextGw}/picks/`)
+      fplGet<FplPicksResponse>(
+        `/entry/${entryId}/event/${nextGw}/picks/`,
+        bustOpt,
+      )
         .then((r) => r)
         .catch(() => null as FplPicksResponse | null),
-      fplGet<FplPicksResponse>(`/entry/${entryId}/event/${confirmedGw}/picks/`)
+      fplGet<FplPicksResponse>(
+        `/entry/${entryId}/event/${confirmedGw}/picks/`,
+        bustOpt,
+      )
         .then((r) => r)
         .catch(() => null as FplPicksResponse | null),
     ]);
-    if (nextTry) {
+    if (picksOk(nextTry)) {
       picksResp = nextTry;
       picksGw = nextGw;
-    } else if (curTry) {
+    } else if (picksOk(curTry)) {
       picksResp = curTry;
       picksGw = confirmedGw;
     }
@@ -426,6 +438,7 @@ export async function fetchAndCacheTeam(
     try {
       const prev = await fplGet<FplPicksResponse>(
         `/entry/${entryId}/event/${picksGw - 1}/picks/`,
+        bust ? { cacheBust: true } : undefined,
       );
       if (prev?.picks?.length) {
         let revertFromMinimal = false;

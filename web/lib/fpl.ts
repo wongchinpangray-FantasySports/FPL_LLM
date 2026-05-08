@@ -25,8 +25,16 @@ function fplHeaders(): Record<string, string> {
   };
 }
 
-export async function fplGet<T = unknown>(path: string): Promise<T> {
-  const res = await fetch(`${FPL_BASE}${path}`, {
+export async function fplGet<T = unknown>(
+  path: string,
+  opts?: { cacheBust?: boolean },
+): Promise<T> {
+  let url = `${FPL_BASE}${path}`;
+  if (opts?.cacheBust) {
+    url += path.includes("?") ? "&" : "?";
+    url += `_=${Date.now()}`;
+  }
+  const res = await fetch(url, {
     headers: fplHeaders(),
     cache: "no-store",
   });
