@@ -17,7 +17,7 @@ import {
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
-const TEAM_RAW_VERSION = 6;
+const TEAM_RAW_VERSION = 7;
 
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
@@ -346,9 +346,13 @@ async function fetchIsNextEventFromBootstrap(bust: boolean): Promise<number | nu
 /**
  * `/event/{id}/picks/` ids to try in order.
  *
- * Supabase `gameweeks.is_next` can lag real FPL by a GW after rollovers — managers
- * then see GW35 picks while transfers apply to GW36. On **forceRefresh**, always
- * read live `is_next` from **bootstrap-static** first (cache-busted).
+ * The official **Pick Team** page shows `/entry/{id}/event/{gw}/picks/` for the
+ * gameweek marked **`is_next`** on `bootstrap-static` (FPL’s planning / next-deadline GW).
+ * `entry.current_event` is often one GW behind while matches play — ordering DB `is_next`
+ * or `current_event` ahead of live bootstrap caused the planner to mirror **Points** /
+ * last-lock snapshots instead of **Pick Team**.
+ *
+ * Always prefer live bootstrap `is_next` first (`bust` → cache-busted fetch on sync).
  */
 async function resolveEventIdsForPicks(args: {
   supa: ReturnType<typeof getServerSupabase>;
@@ -357,10 +361,7 @@ async function resolveEventIdsForPicks(args: {
 }): Promise<number[]> {
   const { supa, entryCurrentEvent, bust } = args;
 
-  let bootstrapIsNext: number | null = null;
-  if (bust) {
-    bootstrapIsNext = await fetchIsNextEventFromBootstrap(true);
-  }
+  const bootstrapIsNext = await fetchIsNextEventFromBootstrap(bust);
 
   const { data: gwRow } = await supa
     .from("gameweeks")
@@ -368,10 +369,6 @@ async function resolveEventIdsForPicks(args: {
     .eq("is_next", true)
     .maybeSingle();
   const dbIsNext = gwRow?.id != null ? Number(gwRow.id) : null;
-
-  if (!bust && dbIsNext == null) {
-    bootstrapIsNext = await fetchIsNextEventFromBootstrap(false);
-  }
 
   const seen = new Set<number>();
   const out: number[] = [];
@@ -384,10 +381,8 @@ async function resolveEventIdsForPicks(args: {
     out.push(n);
   }
 
-  if (bust) add(bootstrapIsNext);
+  add(bootstrapIsNext);
   add(dbIsNext);
-  if (!bust) add(bootstrapIsNext);
-
   add(entryCurrentEvent);
   add(entryCurrentEvent != null ? entryCurrentEvent + 1 : null);
   add(entryCurrentEvent != null && entryCurrentEvent > 1 ? entryCurrentEvent - 1 : null);
