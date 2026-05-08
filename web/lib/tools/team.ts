@@ -17,7 +17,7 @@ import {
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 /** Bumps when `raw` shape changes so old Supabase rows are not served forever. */
-const TEAM_RAW_VERSION = 4;
+const TEAM_RAW_VERSION = 5;
 
 export interface FetchTeamOpts {
   /** bypass the 10-min Supabase cache */
@@ -330,6 +330,60 @@ async function resolveEntryId(
   return id;
 }
 
+/** `bootstrap-static` → gameweek id where `is_next` (FPL "planning" GW). */
+async function fetchIsNextEventFromBootstrap(bust: boolean): Promise<number | null> {
+  try {
+    const raw = await fplGet<{
+      events?: Array<{ id: number; is_next?: boolean }>;
+    }>("/bootstrap-static/", bust ? { cacheBust: true } : undefined);
+    const ev = raw.events?.find((e) => e.is_next);
+    return ev?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `/event/{id}/picks/` ids to try in order. The editable squad is usually on `is_next`,
+ * not strictly `entry.current_event + 1`.
+ */
+async function resolveEventIdsForPicks(args: {
+  supa: ReturnType<typeof getServerSupabase>;
+  entryCurrentEvent: number | null;
+  bust: boolean;
+}): Promise<number[]> {
+  const { supa, entryCurrentEvent, bust } = args;
+  let isNextId: number | null = null;
+  const { data: gwRow } = await supa
+    .from("gameweeks")
+    .select("id")
+    .eq("is_next", true)
+    .maybeSingle();
+  if (gwRow?.id != null) isNextId = Number(gwRow.id);
+
+  if (isNextId == null) {
+    isNextId = await fetchIsNextEventFromBootstrap(bust);
+  }
+
+  const seen = new Set<number>();
+  const out: number[] = [];
+  function add(x: number | null | undefined) {
+    if (x == null || !Number.isFinite(x)) return;
+    const n = Math.trunc(Number(x));
+    if (n < 1 || n > 38) return;
+    if (seen.has(n)) return;
+    seen.add(n);
+    out.push(n);
+  }
+
+  add(isNextId);
+  add(entryCurrentEvent);
+  add(entryCurrentEvent != null ? entryCurrentEvent + 1 : null);
+  add(entryCurrentEvent != null && entryCurrentEvent > 1 ? entryCurrentEvent - 1 : null);
+
+  return out;
+}
+
 export async function fetchAndCacheTeam(
   entryId: number,
   opts: FetchTeamOpts = {},
@@ -385,35 +439,29 @@ export async function fetchAndCacheTeam(
     return Boolean(resp?.picks?.length);
   }
 
-  // Try both the current event and the next one. If the next-GW picks are
-  // already public (deadline passed), prefer them — they reflect any chip
-  // (Free Hit / Wildcard / Bench Boost) or transfers the manager has locked
-  // in. Otherwise fall back to current_event.
   let picksResp: FplPicksResponse | null = null;
   let picksGw: number | null = null;
-  if (confirmedGw) {
-    const nextGw = confirmedGw + 1;
-    const bustOpt = bust ? { cacheBust: true as const } : undefined;
-    const [nextTry, curTry] = await Promise.all([
-      fplGet<FplPicksResponse>(
-        `/entry/${entryId}/event/${nextGw}/picks/`,
+  const bustOpt = bust ? { cacheBust: true as const } : undefined;
+
+  const eventIds = await resolveEventIdsForPicks({
+    supa,
+    entryCurrentEvent: confirmedGw,
+    bust,
+  });
+
+  for (const eid of eventIds) {
+    try {
+      const r = await fplGet<FplPicksResponse>(
+        `/entry/${entryId}/event/${eid}/picks/`,
         bustOpt,
-      )
-        .then((r) => r)
-        .catch(() => null as FplPicksResponse | null),
-      fplGet<FplPicksResponse>(
-        `/entry/${entryId}/event/${confirmedGw}/picks/`,
-        bustOpt,
-      )
-        .then((r) => r)
-        .catch(() => null as FplPicksResponse | null),
-    ]);
-    if (picksOk(nextTry)) {
-      picksResp = nextTry;
-      picksGw = nextGw;
-    } else if (picksOk(curTry)) {
-      picksResp = curTry;
-      picksGw = confirmedGw;
+      );
+      if (picksOk(r)) {
+        picksResp = r;
+        picksGw = eid;
+        break;
+      }
+    } catch {
+      /* try next event id */
     }
   }
 
