@@ -178,6 +178,9 @@
     "title": "Scenario planner",
     "subtitleSuffix": "Transfers & XI vs budget/FPL rules · xP projection · read-only.",
     "dashboard": "Dashboard",
+    "refreshSquad": "Sync from FPL",
+    "refreshSquadTitle":
+      "Reload your 15 from the official FPL API (after transfers). Bypasses the short server cache.",
     "chat": "Chat",
     "bank": "Bank",
     "horizon": "Horizon (GWs)",

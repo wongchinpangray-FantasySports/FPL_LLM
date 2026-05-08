@@ -783,6 +783,17 @@ export function PlannerApp({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
+            href={
+              squadToggle?.useFreeHit
+                ? `/planner/${entryId}?refresh=1&squad=freehit`
+                : `/planner/${entryId}?refresh=1`
+            }
+            title={t("refreshSquadTitle")}
+            className="rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-200 transition-colors hover:border-emerald-400/50 hover:bg-emerald-500/15"
+          >
+            {t("refreshSquad")}
+          </Link>
+          <Link
             href={`/dashboard/${entryId}`}
             className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-slate-300 transition-colors hover:border-brand-accent/30 hover:text-white"
           >

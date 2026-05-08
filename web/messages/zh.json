@@ -178,6 +178,9 @@
     "title": "情景规划",
     "subtitleSuffix": "转会与首发 vs 预算 / FPL 规则 · xP 预估 · 只读推演。",
     "dashboard": "仪表盘",
+    "refreshSquad": "从 FPL 同步阵容",
+    "refreshSquadTitle":
+      "从官方 FPL 接口重新读取 15 人（转会后使用）。会跳过短时间服务端缓存。",
     "chat": "对话",
     "bank": "资金",
     "horizon": "展望（GW 数）",
