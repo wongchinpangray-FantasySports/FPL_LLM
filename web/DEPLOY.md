@@ -69,6 +69,25 @@ If you already followed **GitHub monorepo steps** above, you’re done. Otherwis
 
 After deploy, share **`https://<project>.vercel.app`** (or your custom domain).
 
+### Cloudflare Workers (alternative)
+
+The same Next.js app can run on **[Cloudflare Workers](https://developers.cloudflare.com/workers/)** via **OpenNext** (`web/open-next.config.ts`, `web/wrangler.jsonc`).
+
+1. One-time: `cd web && npx wrangler login` (Cloudflare account).
+2. In the [dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → create/link project **fpl-llm-web**, or deploy from CLI only.
+3. Set the same server env vars as in the table above (**Workers & Pages → your worker → Settings → Variables**), or `cd web && npx wrangler secret put SUPABASE_URL`, etc.
+4. Deploy:
+
+```bash
+cd web
+npm ci
+npm run deploy:cloudflare
+```
+
+You get a **`*.workers.dev`** URL unless you add a custom domain. Local preview (same runtime as prod): `npm run preview:cloudflare`.
+
+**Note:** Long API routes may hit Workers CPU limits; OpenNext also warns that **Windows** local builds can be flaky — use **WSL** or rely on **Linux CI** for stable builds.
+
 ### Custom domain (optional)
 
 In the project → **Settings → Domains** → add your domain and follow DNS instructions.
