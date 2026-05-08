@@ -98,6 +98,8 @@ Deploy reads the root **`wrangler.jsonc`**, which points at **`web/.open-next/`*
 
 Do **not** leave **Build command** empty — that skips `opennextjs-cloudflare build`, so `.open-next/assets` never exists.
 
+The **`name`** in `web/wrangler.jsonc` must match your **Workers project name** in Cloudflare (this repo uses **`fplllm`**). The **`services[].service`** self-reference must use that same name, or deploy fails with “Worker … was not found”.
+
 #### CLI deploy (no Git)
 
 1. One-time: `cd web && npx wrangler login` (Cloudflare account).

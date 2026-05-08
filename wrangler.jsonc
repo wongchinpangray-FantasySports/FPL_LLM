@@ -3,7 +3,7 @@
 	// Keep worker name + flags aligned with web/wrangler.jsonc.
 	"$schema": "./web/node_modules/wrangler/config-schema.json",
 	"main": "web/.open-next/worker.js",
-	"name": "fpl-llm-web",
+	"name": "fplllm",
 	"compatibility_date": "2025-04-01",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"assets": {
@@ -13,7 +13,7 @@
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
-			"service": "fpl-llm-web"
+			"service": "fplllm"
 		}
 	]
 }
