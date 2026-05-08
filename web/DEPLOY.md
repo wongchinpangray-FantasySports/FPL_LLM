@@ -71,12 +71,38 @@ After deploy, share **`https://<project>.vercel.app`** (or your custom domain).
 
 ### Cloudflare Workers (alternative)
 
-The same Next.js app can run on **[Cloudflare Workers](https://developers.cloudflare.com/workers/)** via **OpenNext** (`web/open-next.config.ts`, `web/wrangler.jsonc`).
+The same Next.js app can run on **[Cloudflare Workers](https://developers.cloudflare.com/workers/)** via **OpenNext** (`web/open-next.config.ts`, `web/wrangler.jsonc`). The repo root also has **`wrangler.jsonc`** so Git-connected builds work when the dashboard **Root directory** is **`/`** (monorepo).
+
+#### Git integration — required dashboard settings
+
+If you connect **GitHub** and the build fails with *“Could not detect a directory containing static files”*, **`wrangler deploy` ran without OpenNext.** You must build first.
+
+**Recommended (simplest):**
+
+| Setting | Value |
+|--------|--------|
+| **Root directory** | **`web`** |
+| **Build command** | **`npm ci && npm run build:cloudflare`** |
+| **Deploy command** | **`npx wrangler deploy`** |
+| **Environment variables** | Same as the Vercel table (Production) — do **not** leave empty |
+
+**If Root directory must stay `/` (repo root):**
+
+| Setting | Value |
+|--------|--------|
+| **Root directory** | **`/`** |
+| **Build command** | **`npm ci --prefix web && npm run build:cloudflare --prefix web`** |
+| **Deploy command** | **`npx wrangler deploy`** |
+
+Deploy reads the root **`wrangler.jsonc`**, which points at **`web/.open-next/`** produced by the build.
+
+Do **not** leave **Build command** empty — that skips `opennextjs-cloudflare build`, so `.open-next/assets` never exists.
+
+#### CLI deploy (no Git)
 
 1. One-time: `cd web && npx wrangler login` (Cloudflare account).
-2. In the [dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → create/link project **fpl-llm-web**, or deploy from CLI only.
-3. Set the same server env vars as in the table above (**Workers & Pages → your worker → Settings → Variables**), or `cd web && npx wrangler secret put SUPABASE_URL`, etc.
-4. Deploy:
+2. Set the same server env vars (**Workers & Pages → your worker → Settings → Variables**), or `cd web && npx wrangler secret put SUPABASE_URL`, etc.
+3. Deploy:
 
 ```bash
 cd web
@@ -112,6 +138,7 @@ In the project → **Settings → Domains** → add your domain and follow DNS i
 | Chat returns quota / API errors | `GEMINI_API_KEY`, billing/quota in Google AI Studio. |
 | Dashboard / planner “couldn’t load” | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; DB has data. |
 | Build fails on Vercel | Root Directory must be **`web`** if the repo root is the monorepo. |
+| Cloudflare: “Could not detect … static files” / deploy fails | Set a **Build command** that runs OpenNext (`npm ci && npm run build:cloudflare` from **`web`**, or the `--prefix web` variant from repo root). Empty build + only `wrangler deploy` skips `.open-next/assets`. Add env vars. |
 | Rate limit for everyone | Configure Upstash vars or temporarily rely on Gemini-side limits only. |
 
 ## Deploy without Git (CLI)
