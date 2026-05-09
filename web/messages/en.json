@@ -74,7 +74,7 @@
     "snapshotLastOr": "OR after last GW",
     "snapshotPct": "FPL percentile (latest GW)",
     "chartOrSection": "Overall rank trend",
-    "chartOrHint": "Lower overall rank is better. Line uses your published history for each gameweek.",
+    "chartOrHint": "Lower overall rank is better (better toward the top). Line uses your published history for each gameweek.",
     "chartOrAria": "Overall rank by gameweek",
     "chartOrEmpty": "No gameweek history yet for this season.",
     "chartAxisGw": "Gameweek",

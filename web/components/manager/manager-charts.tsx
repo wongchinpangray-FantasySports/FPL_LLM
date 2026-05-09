@@ -17,6 +17,18 @@ function scaleY(
   return y0 + ((max - v) / (max - min)) * (y1 - y0);
 }
 
+/** Overall rank: lower number = better → show better ranks higher on the chart. */
+function scaleYRankBetterUp(
+  v: number,
+  min: number,
+  max: number,
+  yTop: number,
+  yBottom: number,
+): number {
+  if (max === min) return (yTop + yBottom) / 2;
+  return yTop + ((v - min) / (max - min)) * (yBottom - yTop);
+}
+
 /** Linear tick positions between lo and hi (inclusive). */
 function linearYTicks(lo: number, hi: number, count: number): number[] {
   if (count < 2) return [lo];
@@ -77,7 +89,13 @@ export function ManagerOrTrendChart({
       const x =
         padRect.l +
         (rows.length <= 1 ? innerW / 2 : (i / (rows.length - 1)) * innerW);
-      const y = scaleY(ys[i]!, lo, hi, padRect.t, padRect.t + innerH);
+      const y = scaleYRankBetterUp(
+        ys[i]!,
+        lo,
+        hi,
+        padRect.t,
+        padRect.t + innerH,
+      );
       pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
       dots.push({ cx: x, cy: y });
     }
@@ -144,7 +162,13 @@ export function ManagerOrTrendChart({
 
         {/* Horizontal grid + Y ticks */}
         {yTicks.map((tick) => {
-          const y = scaleY(tick, layout.lo, layout.hi, padRect.t, yBottom);
+          const y = scaleYRankBetterUp(
+            tick,
+            layout.lo,
+            layout.hi,
+            padRect.t,
+            yBottom,
+          );
           return (
             <g key={`gy-${tick}`}>
               <line

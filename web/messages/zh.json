@@ -74,7 +74,7 @@
     "snapshotLastOr": "上轮后总排名",
     "snapshotPct": "FPL 百分位（最近一轮）",
     "chartOrSection": "总排名走势",
-    "chartOrHint": "总排名数字越小越好。折线使用各轮历史中的总排名。",
+    "chartOrHint": "总排名数字越小越好（越靠图表上方越好）。折线使用各轮历史中的总排名。",
     "chartOrAria": "按轮次总排名",
     "chartOrEmpty": "本赛季尚无按周历史。",
     "chartAxisGw": "比赛周",
