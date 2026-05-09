@@ -116,7 +116,42 @@ You get a **`*.workers.dev`** URL unless you add a custom domain. Local preview 
 
 **Note:** Long API routes may hit Workers CPU limits; OpenNext also warns that **Windows** local builds can be flaky — use **WSL** or rely on **Linux CI** for stable builds.
 
-### Custom domain (optional)
+### Custom domain (GoDaddy + Cloudflare Workers)
+
+Your app is served by a **Worker** (`*.workers.dev`). To use **`www.faleague-ai.com`** (zone root **`faleague-ai.com`**), DNS must be managed in **the same Cloudflare account** as the Worker; then you attach the hostname to the Worker.
+
+#### 1. Add the zone in Cloudflare
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com) → **Add a site** → enter **`faleague-ai.com`** (omit `www`).
+2. Pick the Free plan if prompted. Complete the scan/import DNS step.
+
+#### 2. Point GoDaddy nameservers to Cloudflare
+
+1. Cloudflare shows **two nameservers** for `faleague-ai.com` (e.g. `ada.ns.cloudflare.com`, `bob.ns.cloudflare.com`).
+2. **GoDaddy** → **My Products** → **Domains** → **faleague-ai.com** → **DNS** or **Manage DNS** → **Nameservers** → **Change** → **Custom nameservers** → paste **only** Cloudflare’s two values → Save.
+
+Propagation can take minutes to 48 hours. In Cloudflare, the domain should become **Active**.
+
+#### 3. Attach the hostname to your Worker
+
+1. **Workers & Pages** → open **`fplllm`** (your Worker project).
+2. **Custom domains** → **Set up a custom domain** → enter **`www.faleague-ai.com`** → continue.
+
+Cloudflare usually creates the right **DNS record** and provisions **TLS** automatically.
+
+Optionally add **`faleague-ai.com`** (apex) as another custom domain, then use **Rules → Redirect Rules** to send **`https://faleague-ai.com/*`** → **`https://www.faleague-ai.com/$1`** so visitors always land on `www`.
+
+#### 4. SSL
+
+Under **SSL/TLS** for the zone, **Full** or **Full (strict)** is normal once the zone is active. Edge certs for your hostnames are issued by Cloudflare.
+
+#### 5. App env (optional)
+
+No code change is required for the domain. Optionally add **`NEXT_PUBLIC_SITE_URL=https://www.faleague-ai.com`** in Worker variables if you later use absolute public URLs.
+
+---
+
+### Custom domain on Vercel (alternative host)
 
 In the project → **Settings → Domains** → add your domain and follow DNS instructions.
 
