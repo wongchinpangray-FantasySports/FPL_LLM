@@ -87,27 +87,28 @@ export function ManagerGameweekHistory({
           className="flex max-h-[min(85vh,720px)] w-[min(96vw,640px)] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(15,12,22)] text-slate-100 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-white/[0.08] px-4 py-3 sm:px-5">
+          <div className="relative z-30 flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.08] bg-[rgb(15,12,22)] px-4 py-3 sm:px-5">
             <h3 id="manager-gw-history-title" className="text-sm font-semibold text-white">
               {t("gwHistoryTitle")}
             </h3>
-            <button
-              type="button"
-              className="rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              onClick={() => dialogRef.current?.close()}
-            >
-              {t("gwHistoryClose")}
-            </button>
+            <form method="dialog" className="m-0 inline p-0">
+              <button
+                type="submit"
+                className="rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {t("gwHistoryClose")}
+              </button>
+            </form>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto px-3 pb-4 pt-2 sm:px-5">
-            <table className="w-full min-w-[520px] text-left text-sm">
-              <thead className="sticky top-0 z-10 bg-[rgb(15,12,22)] shadow-[0_1px_0_rgba(255,255,255,0.06)]">
-                <tr className="border-b border-white/10 text-[10px] uppercase tracking-wide text-slate-500">
-                  <th className="py-2 pr-3 font-medium">{t("gwHistoryColGw")}</th>
-                  <th className="py-2 pr-3 font-medium">{t("gwHistoryColPts")}</th>
-                  <th className="py-2 pr-3 font-medium">{t("gwHistoryColOr")}</th>
-                  <th className="py-2 pr-3 font-medium">{t("gwHistoryColItb")}</th>
-                  <th className="py-2 font-medium">{t("gwHistoryColChips")}</th>
+          <div className="relative isolate min-h-0 flex-1 overflow-auto px-3 pb-4 pt-2 sm:px-5">
+            <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+              <thead className="sticky top-0 z-20">
+                <tr className="border-b border-white/10 bg-[rgb(15,12,22)] text-[10px] uppercase tracking-wide text-slate-500">
+                  <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColGw")}</th>
+                  <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColPts")}</th>
+                  <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColOr")}</th>
+                  <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColItb")}</th>
+                  <th className="bg-[rgb(15,12,22)] py-2 font-medium">{t("gwHistoryColChips")}</th>
                 </tr>
               </thead>
               <tbody>
