@@ -73,6 +73,13 @@
     "snapshotPtsShort": "分",
     "snapshotLastOr": "上轮后总排名",
     "snapshotPct": "FPL 百分位（最近一轮）",
+    "gwHistoryButton": "各轮历史",
+    "gwHistoryTitle": "各轮得分与排名",
+    "gwHistoryClose": "关闭",
+    "gwHistoryColGw": "轮次",
+    "gwHistoryColPts": "得分",
+    "gwHistoryColOr": "总排名",
+    "gwHistoryColItb": "剩余预算",
     "chartOrSection": "总排名走势",
     "chartOrHint": "总排名数字越小越好（越靠图表上方越好）。折线使用各轮历史中的总排名。",
     "chartOrAria": "按轮次总排名",
@@ -409,7 +416,8 @@
     "suggestion4": "未来 4 个 GW 哪些赛程最轻松？",
     "toolLabel": "工具",
     "aiLabel": "AI",
-    "userLabel": "我"
+    "userLabel": "我",
+    "loadingHistory": "正在加载对话…"
   },
   "planner": {
     "errorTitle": "无法加载阵容",

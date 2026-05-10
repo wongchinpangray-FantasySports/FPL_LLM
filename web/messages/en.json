@@ -73,6 +73,13 @@
     "snapshotPtsShort": "pts",
     "snapshotLastOr": "OR after last GW",
     "snapshotPct": "FPL percentile (latest GW)",
+    "gwHistoryButton": "Gameweek history",
+    "gwHistoryTitle": "Gameweek history",
+    "gwHistoryClose": "Close",
+    "gwHistoryColGw": "GW",
+    "gwHistoryColPts": "Points",
+    "gwHistoryColOr": "Overall rank",
+    "gwHistoryColItb": "In the bank",
     "chartOrSection": "Overall rank trend",
     "chartOrHint": "Lower overall rank is better (better toward the top). Line uses your published history for each gameweek.",
     "chartOrAria": "Overall rank by gameweek",
@@ -410,7 +417,8 @@
     "suggestion4": "Easiest fixtures next 4 GWs?",
     "toolLabel": "Tool",
     "aiLabel": "AI",
-    "userLabel": "U"
+    "userLabel": "U",
+    "loadingHistory": "Loading conversation…"
   },
   "planner": {
     "errorTitle": "Couldn’t load team",

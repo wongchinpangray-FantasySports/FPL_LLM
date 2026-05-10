@@ -15,14 +15,70 @@ interface UiMessage {
   toolUses?: { name: string; input: unknown }[];
 }
 
+const CHAT_SESSION_STORAGE_KEY = "fpl_chat_session_id";
+
 export function Chat() {
   const t = useTranslations("chatUi");
   const locale = useLocale();
   const { entryId } = useEntryId();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      let id = window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, id);
+      }
+      setSessionId(id);
+    } catch {
+      setSessionId(crypto.randomUUID());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/chat/history?sessionId=${encodeURIComponent(sessionId)}`,
+        );
+        if (!res.ok || cancelled) {
+          if (!cancelled) setHydrated(true);
+          return;
+        }
+        const data = (await res.json()) as {
+          messages?: Array<{
+            role: Role;
+            content: string;
+            toolUses?: { name: string; input: unknown }[];
+          }>;
+        };
+        const list = data.messages ?? [];
+        if (cancelled) return;
+        setMessages(
+          list.map((m) => ({
+            role: m.role,
+            content: m.content ?? "",
+            ...(m.toolUses?.length ? { toolUses: m.toolUses } : {}),
+          })),
+        );
+      } catch {
+        /* ignore */
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -31,8 +87,31 @@ export function Chat() {
     });
   }, [messages, streaming]);
 
+  useEffect(() => {
+    if (!sessionId || !hydrated || streaming) return;
+    const timer = window.setTimeout(() => {
+      const payload = messages.map(({ role, content, toolUses }) => ({
+        role,
+        content,
+        ...(toolUses?.length ? { toolUses } : {}),
+      }));
+      void fetch("/api/chat/history", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          entryId:
+            entryId && /^\d+$/.test(entryId) ? Number(entryId) : null,
+          locale,
+          messages: payload,
+        }),
+      }).catch(() => {});
+    }, 750);
+    return () => window.clearTimeout(timer);
+  }, [messages, streaming, sessionId, hydrated, entryId, locale]);
+
   async function send(content: string) {
-    if (!content.trim() || streaming) return;
+    if (!content.trim() || streaming || !hydrated) return;
 
     const historyForApi = messages
       .filter((m) => m.content)
@@ -107,12 +186,12 @@ export function Chat() {
                   ],
                 };
               } else if (evt.type === "error") {
-          copy[copy.length - 1] = {
-            ...last,
-            content:
-              (last.content ? last.content + "\n\n" : "") +
-              `_Error: ${evt.message}_`,
-          };
+                copy[copy.length - 1] = {
+                  ...last,
+                  content:
+                    (last.content ? last.content + "\n\n" : "") +
+                    `_Error: ${evt.message}_`,
+                };
               }
               return copy;
             });
@@ -143,7 +222,10 @@ export function Chat() {
         className="flex flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl"
       >
         <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
-          {messages.length === 0 && (
+          {!hydrated && (
+            <p className="text-xs text-slate-500 sm:text-sm">{t("loadingHistory")}</p>
+          )}
+          {hydrated && messages.length === 0 && (
             <div className="flex flex-col gap-3 rounded-lg border border-dashed border-white/10 bg-black/20 p-4 text-slate-300 sm:gap-5 sm:rounded-xl sm:p-5 md:p-6">
               <p className="text-xs leading-relaxed sm:text-sm">
                 {t("emptyLead")}
@@ -171,7 +253,8 @@ export function Chat() {
                       key={s}
                       type="button"
                       onClick={() => send(s)}
-                      className="rounded-full border border-white/[0.1] bg-white/[0.06] px-3.5 py-2 text-left text-xs text-slate-200 transition-colors hover:border-brand-accent/35 hover:bg-white/[0.1]"
+                      disabled={streaming || !hydrated}
+                      className="rounded-full border border-white/[0.1] bg-white/[0.06] px-3.5 py-2 text-left text-xs text-slate-200 transition-colors hover:border-brand-accent/35 hover:bg-white/[0.1] disabled:pointer-events-none disabled:opacity-40"
                     >
                       {s}
                     </button>
@@ -197,10 +280,10 @@ export function Chat() {
             placeholder={t("placeholder")}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={streaming}
+            disabled={streaming || !hydrated}
             className="flex-1 border-white/[0.08] bg-black/30"
           />
-          <Button type="submit" disabled={streaming || !input.trim()}>
+          <Button type="submit" disabled={streaming || !hydrated || !input.trim()}>
             {streaming ? t("sending") : t("send")}
           </Button>
         </form>

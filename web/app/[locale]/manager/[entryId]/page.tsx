@@ -9,6 +9,7 @@ import {
   ManagerPercentileChart,
   ManagerPointsCompareChart,
 } from "@/components/manager/manager-charts";
+import { ManagerGameweekHistory } from "@/components/manager/manager-gameweek-history";
 import { fplGet } from "@/lib/fpl";
 import type { FplEntry } from "@/lib/fpl";
 
@@ -102,9 +103,10 @@ export default async function ManagerEntryPage({
       />
 
       <section className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
-        <h2 className="mb-3 text-sm font-semibold text-white">
-          {t("snapshotSection")}
-        </h2>
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-sm font-semibold text-white">{t("snapshotSection")}</h2>
+          <ManagerGameweekHistory rows={data.currentSeason} />
+        </div>
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
             <dt className="text-[10px] uppercase text-slate-500">{t("snapshotOr")}</dt>
