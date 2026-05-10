@@ -78,7 +78,7 @@ export function ManagerGameweekHistory({
       <dialog
         ref={dialogRef}
         aria-labelledby="manager-gw-history-title"
-        className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-transparent p-3 sm:p-4 [&::backdrop]:bg-black/75 open:flex"
+        className="fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none bg-transparent p-3 sm:p-4 [&::backdrop]:bg-black/75 [&:not([open])]:hidden [&[open]]:flex [&[open]]:items-center [&[open]]:justify-center"
         onClick={(e) => {
           if (e.target === dialogRef.current) dialogRef.current?.close();
         }}
@@ -91,14 +91,13 @@ export function ManagerGameweekHistory({
             <h3 id="manager-gw-history-title" className="text-sm font-semibold text-white">
               {t("gwHistoryTitle")}
             </h3>
-            <form method="dialog" className="m-0 inline p-0">
-              <button
-                type="submit"
-                className="rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                {t("gwHistoryClose")}
-              </button>
-            </form>
+            <button
+              type="button"
+              className="rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              onClick={() => dialogRef.current?.close()}
+            >
+              {t("gwHistoryClose")}
+            </button>
           </div>
           <div className="relative isolate min-h-0 flex-1 overflow-auto px-3 pb-4 pt-2 sm:px-5">
             <table className="w-full min-w-[520px] border-collapse text-left text-sm">
