@@ -105,7 +105,10 @@ export default async function ManagerEntryPage({
       <section className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-semibold text-white">{t("snapshotSection")}</h2>
-          <ManagerGameweekHistory rows={data.currentSeason} />
+          <ManagerGameweekHistory
+            rows={data.currentSeason}
+            chipsPlayed={data.chipsPlayed}
+          />
         </div>
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">

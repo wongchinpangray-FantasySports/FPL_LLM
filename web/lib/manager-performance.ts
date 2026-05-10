@@ -1,5 +1,6 @@
 import { fplGet } from "@/lib/fpl";
 import type {
+  FplChipPlay,
   FplEntry,
   FplHistoryCurrentRow,
   FplHistoryPastSeason,
@@ -71,6 +72,8 @@ export type ManagerPerformancePayload = {
     top100kSampleEntryId: number | null;
     top100kSampleRank: number | null;
   };
+  /** Chips played this season (from `/entry/{id}/history/`). */
+  chipsPlayed: Pick<FplChipPlay, "event" | "name">[];
 };
 
 export async function loadManagerPerformance(
@@ -149,5 +152,9 @@ export async function loadManagerPerformance(
       top100kSampleEntryId: proxy100?.entryId ?? null,
       top100kSampleRank: proxy100?.rankLabel ?? null,
     },
+    chipsPlayed: (history.chips ?? []).map((c) => ({
+      event: c.event,
+      name: c.name,
+    })),
   };
 }
