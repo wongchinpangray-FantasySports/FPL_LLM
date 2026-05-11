@@ -46,12 +46,38 @@ async function resolveGeminiGatewayBaseUrlFromBinding(): Promise<string | undefi
 
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const { env } = getCloudflareContext();
+    // `runtime = "nodejs"` routes often have no sync context on `globalThis`; async mode
+    // resolves via OpenNext (global first, then wrangler proxy in dev).
+    const { env } = await getCloudflareContext({ async: true });
     const ai = (env as unknown as { AI?: AiBinding }).AI;
-    if (!ai?.gateway) return undefined;
-    const url = await ai.gateway(gatewayName).getUrl("google-ai-studio");
+    if (!ai?.gateway) {
+      console.warn(
+        "[gemini-gateway] CLOUDFLARE_AI_GATEWAY_NAME is set but env.AI binding is missing. Redeploy with wrangler.jsonc `ai` binding.",
+      );
+      return undefined;
+    }
+    let url: string;
+    try {
+      url = await ai.gateway(gatewayName).getUrl("google-ai-studio");
+    } catch (e1) {
+      try {
+        const root = await ai.gateway(gatewayName).getUrl();
+        url = `${root.replace(/\/$/, "")}/google-ai-studio`;
+      } catch (e2) {
+        console.warn(
+          "[gemini-gateway] gateway.getUrl failed:",
+          e1 instanceof Error ? e1.message : e1,
+          e2 instanceof Error ? e2.message : e2,
+        );
+        return undefined;
+      }
+    }
     return url.replace(/\/$/, "");
-  } catch {
+  } catch (e) {
+    console.warn(
+      "[gemini-gateway] getCloudflareContext / AI gateway URL failed:",
+      e instanceof Error ? e.message : e,
+    );
     return undefined;
   }
 }
