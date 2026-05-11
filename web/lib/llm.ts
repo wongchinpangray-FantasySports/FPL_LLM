@@ -24,12 +24,20 @@ export async function getGenAI(): Promise<GoogleGenAI> {
         "(3) Or set **CLOUDFLARE_ACCOUNT_ID** + **CLOUDFLARE_AI_GATEWAY_NAME** so the URL is built without the binding.",
     );
   }
-  const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}`;
+  const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
+  // Include apiVersion in the key so isolates never reuse a GoogleGenAI client built
+  // before gateway httpOptions changed (e.g. v1beta → v1 for Cloudflare AI Gateway).
+  const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}\0${httpOptions?.apiVersion ?? ""}`;
   if (_genaiCache?.sig === sig) return _genaiCache.client;
 
-  const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
   const client = new GoogleGenAI(
-    httpOptions ? { apiKey, httpOptions } : { apiKey },
+    httpOptions
+      ? {
+          apiKey,
+          httpOptions,
+          ...(httpOptions.apiVersion ? { apiVersion: httpOptions.apiVersion } : {}),
+        }
+      : { apiKey },
   );
   _genaiCache = { sig, client };
   return client;
