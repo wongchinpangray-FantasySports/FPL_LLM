@@ -1,71 +1,29 @@
 import { GoogleGenAI, type FunctionDeclaration, type Schema } from "@google/genai";
 import type { JsonSchema, ToolHandler } from "@/lib/tools";
+import {
+  buildGeminiHttpOptions,
+  resolveGeminiGatewayBaseUrlAsync,
+} from "@/lib/gemini-gateway";
 
-let _client: GoogleGenAI | null = null;
+let _genaiCache: { sig: string; client: GoogleGenAI } | null = null;
 
-/**
- * Optional **Cloudflare AI Gateway** base URL for Google AI Studio / Gemini.
- * When set, Gemini traffic goes through `gateway.ai.cloudflare.com`, which often fixes
- * `User location is not supported` on Workers when direct Google egress is blocked.
- *
- * Set either the full URL, or **`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`**
- * (aliases `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`) — the app builds:
- * `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/google-ai-studio`
- *
- * @see https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/
- */
-function resolveGeminiGatewayBaseUrl(): string | undefined {
-  const explicit = (
-    process.env.GEMINI_AI_GATEWAY_BASE_URL ??
-    process.env.CF_AI_GATEWAY_GEMINI_BASE_URL ??
-    ""
-  )
-    .trim()
-    .replace(/\/$/, "");
-  if (explicit) return explicit;
-
-  const account =
-    process.env.CLOUDFLARE_ACCOUNT_ID?.trim() ??
-    process.env.CF_ACCOUNT_ID?.trim();
-  const gatewayName =
-    process.env.CLOUDFLARE_AI_GATEWAY_NAME?.trim() ??
-    process.env.CF_AI_GATEWAY_NAME?.trim();
-  if (account && gatewayName) {
-    return `https://gateway.ai.cloudflare.com/v1/${account}/${gatewayName}/google-ai-studio`;
-  }
-  return undefined;
-}
-
-function geminiHttpOptions():
-  | { baseUrl: string; headers?: Record<string, string> }
-  | undefined {
-  const baseUrl = resolveGeminiGatewayBaseUrl();
-  if (!baseUrl) return undefined;
-
-  const raw =
-    process.env.GEMINI_AI_GATEWAY_TOKEN?.trim() ??
-    process.env.CF_AIG_AUTHORIZATION?.trim() ??
-    "";
-  const headers: Record<string, string> = {};
-  if (raw) {
-    headers["cf-aig-authorization"] = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
-  }
-  return Object.keys(headers).length ? { baseUrl, headers } : { baseUrl };
-}
-
-export function getGenAI(): GoogleGenAI {
-  if (_client) return _client;
+export async function getGenAI(): Promise<GoogleGenAI> {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     throw new Error(
       "Missing GEMINI_API_KEY (or GOOGLE_API_KEY) env var. Get one at https://aistudio.google.com/apikey",
     );
   }
-  const httpOptions = geminiHttpOptions();
-  _client = new GoogleGenAI(
+  const baseUrl = await resolveGeminiGatewayBaseUrlAsync();
+  const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}`;
+  if (_genaiCache?.sig === sig) return _genaiCache.client;
+
+  const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
+  const client = new GoogleGenAI(
     httpOptions ? { apiKey, httpOptions } : { apiKey },
   );
-  return _client;
+  _genaiCache = { sig, client };
+  return client;
 }
 
 export const DEFAULT_MODEL =
@@ -264,20 +222,18 @@ export function userFacingGeminiError(
     if (zh) {
       return (
         "无法使用 Google Gemini：谷歌因**地区政策**拒绝了本次请求（通常取决于**服务器出口 IP**，而不是你的手机）。\n\n" +
-        "**Cloudflare Workers：** 在 Cloudflare 控制台创建 **AI Gateway**（Google AI Studio），然后设置环境变量：\n" +
-        "• `GEMINI_AI_GATEWAY_BASE_URL` = `https://gateway.ai.cloudflare.com/v1/<账户ID>/<网关名>/google-ai-studio`，或\n" +
-        "• `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`（代码会自动拼出上述 URL）。\n" +
-        "可选：`GEMINI_AI_GATEWAY_TOKEN`（网关开启鉴权时）。\n\n" +
-        "**Vercel：** 可为 `/api/chat` 固定美国区 `iad1`（仓库已设置 `preferredRegion`）。"
+        "**Cloudflare Workers（推荐）：** 在 Dashboard 创建 **AI Gateway**；本仓库的 `wrangler.jsonc` 已包含 **`ai` binding (`AI`)**。" +
+        "只需设置 **`CLOUDFLARE_AI_GATEWAY_NAME`** = 网关名称（与 Dashboard 一致），并保留 **`GEMINI_API_KEY`**；应用会通过 `env.AI.gateway(...).getUrl` 自动拿到网关地址。" +
+        "若网关开启鉴权，再加 **`GEMINI_AI_GATEWAY_TOKEN`**。也可改用完整 URL：`GEMINI_AI_GATEWAY_BASE_URL`。\n\n" +
+        "**Vercel：** `/api/chat` 已固定 `iad1`；若仍报错请确认已部署最新代码。"
       );
     }
     return (
       "Gemini blocked this request under **Google's regional policy** (usually your **host's egress IP**, not your phone).\n\n" +
-      "**If you use Cloudflare Workers:** create an **AI Gateway** (Google AI Studio provider), then set either:\n" +
-      "• `GEMINI_AI_GATEWAY_BASE_URL` = `https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY_NAME>/google-ai-studio`, or\n" +
-      "• `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME` (the app builds that URL for you).\n" +
-      "Optional: `GEMINI_AI_GATEWAY_TOKEN` if the gateway requires `cf-aig-authorization`.\n\n" +
-      "**On Vercel:** `/api/chat` is pinned to `iad1` (US East) in code; redeploy if you still see this."
+      "**Cloudflare Workers (recommended):** Create an **AI Gateway** in the dashboard. This repo's `wrangler.jsonc` already declares the **`ai` binding (`AI`)**. " +
+      "Set **`CLOUDFLARE_AI_GATEWAY_NAME`** to that gateway's **name** (same as in the dashboard) and keep **`GEMINI_API_KEY`** — the app resolves the gateway URL via `env.AI.gateway(...).getUrl('google-ai-studio')` automatically. " +
+      "Add **`GEMINI_AI_GATEWAY_TOKEN`** only if your gateway requires `cf-aig-authorization`. Alternatively set the full **`GEMINI_AI_GATEWAY_BASE_URL`**.\n\n" +
+      "**On Vercel:** `/api/chat` is pinned to `iad1`; redeploy the latest build if this persists."
     );
   }
 

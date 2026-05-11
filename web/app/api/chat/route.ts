@@ -1,4 +1,4 @@
-import type { Content, FunctionCall, Part } from "@google/genai";
+import type { Content, FunctionCall, Part, GoogleGenAI } from "@google/genai";
 import {
   DEFAULT_MODEL,
   SYSTEM_PROMPT,
@@ -58,9 +58,9 @@ export async function POST(req: Request) {
 
   const ctx: ToolContext = { entryId: body.entryId ?? null };
 
-  let ai: ReturnType<typeof getGenAI>;
+  let ai: GoogleGenAI;
   try {
-    ai = getGenAI();
+    ai = await getGenAI();
   } catch (e) {
     const message =
       e instanceof Error

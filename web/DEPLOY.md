@@ -48,8 +48,9 @@ Set these in the Vercel project (**Settings → Environment Variables**). Use **
 |----------|----------|--------|
 | `GEMINI_API_KEY` | **Yes** | From [Google AI Studio](https://aistudio.google.com/apikey). Same as `GOOGLE_API_KEY` if you prefer that name. |
 | `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` in code. Override if you use another model id. |
-| `GEMINI_AI_GATEWAY_BASE_URL` | No | **Cloudflare Workers:** set to AI Gateway Google AI Studio base URL to avoid Gemini “user location” blocks. See [Cloudflare Workers](#cloudflare-workers-alternative) below. |
-| `GEMINI_AI_GATEWAY_TOKEN` | No | If the AI Gateway requires auth: token for `cf-aig-authorization`. |
+| `CLOUDFLARE_AI_GATEWAY_NAME` | No | **Cloudflare Workers (recommended):** AI Gateway **name** only — with repo `wrangler.jsonc` **`ai` binding**, the app resolves the gateway URL at runtime. Aliases: `CF_AI_GATEWAY_NAME`. |
+| `GEMINI_AI_GATEWAY_BASE_URL` | No | **Workers alternative:** full Google AI Studio gateway base URL (no trailing slash). Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. Or set `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`. |
+| `GEMINI_AI_GATEWAY_TOKEN` | No | If the AI Gateway requires auth: token for `cf-aig-authorization`. Alias: `CF_AIG_AUTHORIZATION`. |
 | `SUPABASE_URL` | **Yes** | Project URL from Supabase dashboard. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server only.** Never expose in client code. Lets API routes read `players_static`, fixtures, etc. |
 | `UPSTASH_REDIS_REST_URL` | No | If set with token, enables chat rate limiting (~20 req/min per IP). |
@@ -118,27 +119,22 @@ You get a **`*.workers.dev`** URL unless you add a custom domain. Local preview 
 
 #### Gemini on Workers: “User location is not supported”
 
-Google may block **direct** Gemini calls from some **Worker egress** regions. Route traffic through **[Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/)** so requests use Cloudflare’s **Google AI Studio** integration:
+Google may block **direct** Gemini calls from some **Worker egress** regions. Route traffic through **[Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/)**.
 
-1. Dashboard → **AI** → **AI Gateway** → create a gateway (note the **gateway name**).
-2. Build the base URL (no trailing slash):
+**Recommended (minimal env):** this repo’s **`web/wrangler.jsonc`** and root **`wrangler.jsonc`** declare an **[`ai` binding](https://developers.cloudflare.com/ai-gateway/integrations/worker-binding-methods/)** named **`AI`**. The app calls `env.AI.gateway(<name>).getUrl("google-ai-studio")` at runtime, so you **do not** need to paste your account ID into an env var.
 
-   `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/google-ai-studio`
+1. Dashboard → **AI** → **AI Gateway** → create a gateway. Copy its **name** (e.g. `fpl-gemini`).
+2. **Workers & Pages** → your Worker → **Settings** → **Variables**:
+   - **`CLOUDFLARE_AI_GATEWAY_NAME`** = that gateway name (required for the binding path). Aliases: `CF_AI_GATEWAY_NAME`.
+   - **`GEMINI_API_KEY`** = your Google AI Studio key (unchanged).
+   - **`GEMINI_AI_GATEWAY_TOKEN`** only if the gateway is **authenticated** (`cf-aig-authorization`). Aliases: `CF_AIG_AUTHORIZATION`.
+3. **`nodejs_compat_populate_process_env`** is already in `wrangler.jsonc` so secrets/vars populate `process.env` at runtime.
+4. **Redeploy** the Worker after changing `wrangler.jsonc` (so the `AI` binding is live) and after setting variables.
 
-   Replace `{account_id}` with your Cloudflare **account ID** (Overview sidebar or URL bar) and `{gateway_name}` with the gateway’s name.
+**Alternatives** (if you prefer not to use the binding):
 
-3. In **Workers & Pages → your project → Settings → Variables** (or `npx wrangler secret put …`), set:
-
-   | Variable | Required | Notes |
-   |----------|----------|--------|
-   | `GEMINI_AI_GATEWAY_BASE_URL` | For this fix | Full URL above. Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. **Shortcut:** set `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME` instead (aliases: `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`) — the app builds the URL. |
-   | `GEMINI_AI_GATEWAY_TOKEN` | If the gateway is **authenticated** | Value for header `cf-aig-authorization` (with or without `Bearer ` prefix). Alias: `CF_AIG_AUTHORIZATION`. |
-
-4. Keep **`GEMINI_API_KEY`** (Google AI Studio key) as today — the gateway forwards it (`x-goog-api-key` is handled by the SDK).
-
-5. This repo’s **`wrangler.jsonc`** includes **`nodejs_compat_populate_process_env`** so Worker **secrets / variables** are reliably exposed on `process.env` at runtime (needed for the gateway URL and API key).
-
-6. Redeploy the Worker. Chat should call Gemini via the gateway.
+- Set **`GEMINI_AI_GATEWAY_BASE_URL`** to the full base URL (no trailing slash), or  
+- Set **`CLOUDFLARE_ACCOUNT_ID`** + **`CLOUDFLARE_AI_GATEWAY_NAME`** — the app builds the URL.
 
 **Note:** Long API routes may hit Workers CPU limits; OpenNext also warns that **Windows** local builds can be flaky — use **WSL** or rely on **Linux CI** for stable builds.
 
@@ -198,7 +194,7 @@ In the project → **Settings → Domains** → add your domain and follow DNS i
 
 | Issue | What to check |
 |-------|----------------|
-| Chat shows “User location is not supported” (FAILED_PRECONDITION) | Google **blocks Gemini** for requests they classify as coming from **unsupported regions** (often the **host’s egress IP**, not the user’s phone). **Vercel:** this repo pins `/api/chat` to **`iad1` (US East)** via `preferredRegion` so most deploys egress from a supported area. **Cloudflare Workers:** edge colos can still egress from a blocked geography — try **Vercel for chat**, **Cloudflare AI Gateway** in front of Gemini, or a **non-Google** model in a supported region. |
+| Chat shows “User location is not supported” (FAILED_PRECONDITION) | **Cloudflare Workers:** enable **AI Gateway** and set **`CLOUDFLARE_AI_GATEWAY_NAME`** (this repo includes the **`ai` / `AI` binding** in `wrangler.jsonc` — redeploy after pulling). Or set **`GEMINI_AI_GATEWAY_BASE_URL`**. **Vercel:** `/api/chat` uses **`preferredRegion: iad1`**. |
 | Dashboard / planner “couldn’t load” | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; DB has data. |
 | Build fails on Vercel | Root Directory must be **`web`** if the repo root is the monorepo. |
 | Cloudflare: “Could not detect … static files” / deploy fails | Set a **Build command** that runs OpenNext (`npm ci && npm run build:cloudflare` from **`web`**, or the `--prefix web` variant from repo root). Empty build + only `wrangler deploy` skips `.open-next/assets`. Add env vars. |

@@ -8,6 +8,9 @@
 		"nodejs_compat_populate_process_env",
 		"global_fetch_strictly_public"
 	],
+	"ai": {
+		"binding": "AI"
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
