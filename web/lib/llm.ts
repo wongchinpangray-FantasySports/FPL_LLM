@@ -3,6 +3,39 @@ import type { JsonSchema, ToolHandler } from "@/lib/tools";
 
 let _client: GoogleGenAI | null = null;
 
+/**
+ * Optional **Cloudflare AI Gateway** base URL for Google AI Studio / Gemini.
+ * When set, Gemini traffic goes through `gateway.ai.cloudflare.com`, which often fixes
+ * `User location is not supported` on Workers when direct Google egress is blocked.
+ *
+ * Full value (no trailing slash), e.g.
+ * `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/google-ai-studio`
+ *
+ * @see https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/
+ */
+function geminiHttpOptions():
+  | { baseUrl: string; headers?: Record<string, string> }
+  | undefined {
+  const baseUrl = (
+    process.env.GEMINI_AI_GATEWAY_BASE_URL ??
+    process.env.CF_AI_GATEWAY_GEMINI_BASE_URL ??
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
+  if (!baseUrl) return undefined;
+
+  const raw =
+    process.env.GEMINI_AI_GATEWAY_TOKEN?.trim() ??
+    process.env.CF_AIG_AUTHORIZATION?.trim() ??
+    "";
+  const headers: Record<string, string> = {};
+  if (raw) {
+    headers["cf-aig-authorization"] = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
+  }
+  return Object.keys(headers).length ? { baseUrl, headers } : { baseUrl };
+}
+
 export function getGenAI(): GoogleGenAI {
   if (_client) return _client;
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
@@ -11,7 +44,10 @@ export function getGenAI(): GoogleGenAI {
       "Missing GEMINI_API_KEY (or GOOGLE_API_KEY) env var. Get one at https://aistudio.google.com/apikey",
     );
   }
-  _client = new GoogleGenAI({ apiKey });
+  const httpOptions = geminiHttpOptions();
+  _client = new GoogleGenAI(
+    httpOptions ? { apiKey, httpOptions } : { apiKey },
+  );
   return _client;
 }
 
@@ -182,7 +218,12 @@ export function toolsToFunctionDeclarations(
 }
 
 /** Turn Gemini / Google API failures into a short user-readable line (no raw JSON blobs). */
-export function userFacingGeminiError(err: unknown): string {
+export function userFacingGeminiError(
+  err: unknown,
+  locale?: string | null,
+): string {
+  const zh = (locale ?? "").trim().toLowerCase() === "zh";
+
   let raw = err instanceof Error ? err.message : String(err);
   raw = raw.trim();
 
@@ -197,6 +238,26 @@ export function userFacingGeminiError(err: unknown): string {
   }
 
   const low = raw.toLowerCase();
+  const regionBlocked =
+    low.includes("user location") ||
+    low.includes("location is not supported") ||
+    low.includes("not supported for the api use");
+
+  if (regionBlocked) {
+    if (zh) {
+      return (
+        "无法使用 Google Gemini：谷歌因**地区政策**拒绝了本次请求（通常取决于**网站服务器出口 IP** 所在国家/地区，而不是你个人）。\n\n" +
+        "站点维护者可将聊天接口部署在 Google 支持的区域（例如在 Vercel 上为 `/api/chat` 固定美国区 `iad1`），" +
+        "或改用 Cloudflare AI Gateway / 其他在你目标地区可用的模型服务。"
+      );
+    }
+    return (
+      "Gemini refused this request because of **Google's regional policy** (they often look at the **server's egress region**, not your phone).\n\n" +
+      "Ask the site operator to run `/api/chat` in a **supported region** (e.g. pin Vercel to `iad1`), " +
+      "or route Gemini through **Cloudflare AI Gateway** / another provider that serves your audience."
+    );
+  }
+
   const quota =
     low.includes("quota") ||
     low.includes("resource_exhausted") ||
@@ -206,6 +267,11 @@ export function userFacingGeminiError(err: unknown): string {
     /"code"\s*:\s*429/.test(raw);
 
   if (quota) {
+    if (zh) {
+      return (
+        "已达到 Gemini 用量或频率上限。请稍后再试，或在 Google AI Studio（aistudio.google.com）开通计费/提升配额。"
+      );
+    }
     return (
       "AI quota reached (Gemini free tier is limited). Wait a few minutes, or enable billing / upgrade " +
       "in Google AI Studio (aistudio.google.com), then try again."
@@ -213,6 +279,9 @@ export function userFacingGeminiError(err: unknown): string {
   }
 
   if (raw.length > 240) {
+    if (zh) {
+      return "AI 请求失败。请检查 GEMINI_API_KEY 与 AI Studio 配额。";
+    }
     return "AI request failed. Check GEMINI_API_KEY and AI Studio quota.";
   }
 

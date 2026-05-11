@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEntryId } from "./entry-id-context";
+import { randomUuid } from "@/lib/random-uuid";
 import { cn } from "@/lib/utils";
 
 type Role = "user" | "assistant";
@@ -32,12 +33,16 @@ export function Chat() {
     try {
       let id = window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY);
       if (!id) {
-        id = crypto.randomUUID();
-        window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, id);
+        id = randomUuid();
+        try {
+          window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, id);
+        } catch {
+          /* private mode / quota — keep in-memory session id only */
+        }
       }
       setSessionId(id);
     } catch {
-      setSessionId(crypto.randomUUID());
+      setSessionId(randomUuid());
     }
   }, []);
 

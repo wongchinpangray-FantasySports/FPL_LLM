@@ -48,6 +48,8 @@ Set these in the Vercel project (**Settings → Environment Variables**). Use **
 |----------|----------|--------|
 | `GEMINI_API_KEY` | **Yes** | From [Google AI Studio](https://aistudio.google.com/apikey). Same as `GOOGLE_API_KEY` if you prefer that name. |
 | `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` in code. Override if you use another model id. |
+| `GEMINI_AI_GATEWAY_BASE_URL` | No | **Cloudflare Workers:** set to AI Gateway Google AI Studio base URL to avoid Gemini “user location” blocks. See [Cloudflare Workers](#cloudflare-workers-alternative) below. |
+| `GEMINI_AI_GATEWAY_TOKEN` | No | If the AI Gateway requires auth: token for `cf-aig-authorization`. |
 | `SUPABASE_URL` | **Yes** | Project URL from Supabase dashboard. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server only.** Never expose in client code. Lets API routes read `players_static`, fixtures, etc. |
 | `UPSTASH_REDIS_REST_URL` | No | If set with token, enables chat rate limiting (~20 req/min per IP). |
@@ -114,6 +116,28 @@ npm run deploy:cloudflare
 
 You get a **`*.workers.dev`** URL unless you add a custom domain. Local preview (same runtime as prod): `npm run preview:cloudflare`.
 
+#### Gemini on Workers: “User location is not supported”
+
+Google may block **direct** Gemini calls from some **Worker egress** regions. Route traffic through **[Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/)** so requests use Cloudflare’s **Google AI Studio** integration:
+
+1. Dashboard → **AI** → **AI Gateway** → create a gateway (note the **gateway name**).
+2. Build the base URL (no trailing slash):
+
+   `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/google-ai-studio`
+
+   Replace `{account_id}` with your Cloudflare **account ID** (Overview sidebar or URL bar) and `{gateway_name}` with the gateway’s name.
+
+3. In **Workers & Pages → your project → Settings → Variables** (or `npx wrangler secret put …`), set:
+
+   | Variable | Required | Notes |
+   |----------|----------|--------|
+   | `GEMINI_AI_GATEWAY_BASE_URL` | For this fix | Full URL above. Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. |
+   | `GEMINI_AI_GATEWAY_TOKEN` | If the gateway is **authenticated** | Value for header `cf-aig-authorization` (with or without `Bearer ` prefix). Alias: `CF_AIG_AUTHORIZATION`. |
+
+4. Keep **`GEMINI_API_KEY`** (Google AI Studio key) as today — the gateway forwards it (`x-goog-api-key` is handled by the SDK).
+
+5. Redeploy the Worker. Chat should call Gemini via the gateway.
+
 **Note:** Long API routes may hit Workers CPU limits; OpenNext also warns that **Windows** local builds can be flaky — use **WSL** or rely on **Linux CI** for stable builds.
 
 ### Custom domain (GoDaddy + Cloudflare Workers)
@@ -172,7 +196,7 @@ In the project → **Settings → Domains** → add your domain and follow DNS i
 
 | Issue | What to check |
 |-------|----------------|
-| Chat returns quota / API errors | `GEMINI_API_KEY`, billing/quota in Google AI Studio. |
+| Chat shows “User location is not supported” (FAILED_PRECONDITION) | Google **blocks Gemini** for requests they classify as coming from **unsupported regions** (often the **host’s egress IP**, not the user’s phone). **Vercel:** this repo pins `/api/chat` to **`iad1` (US East)** via `preferredRegion` so most deploys egress from a supported area. **Cloudflare Workers:** edge colos can still egress from a blocked geography — try **Vercel for chat**, **Cloudflare AI Gateway** in front of Gemini, or a **non-Google** model in a supported region. |
 | Dashboard / planner “couldn’t load” | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; DB has data. |
 | Build fails on Vercel | Root Directory must be **`web`** if the repo root is the monorepo. |
 | Cloudflare: “Could not detect … static files” / deploy fails | Set a **Build command** that runs OpenNext (`npm ci && npm run build:cloudflare` from **`web`**, or the `--prefix web` variant from repo root). Empty build + only `wrangler deploy` skips `.open-next/assets`. Add env vars. |

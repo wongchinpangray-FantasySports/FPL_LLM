@@ -12,6 +12,8 @@ import { getClientIp, getRateLimiter } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Prefer US East so Gemini sees a supported egress region (helps CN/EU users when the host defaults elsewhere). */
+export const preferredRegion = "iad1";
 
 interface ChatBody {
   messages: { role: "user" | "assistant"; content: string }[];
@@ -197,7 +199,7 @@ export async function POST(req: Request) {
 
         send({ type: "done" });
       } catch (err) {
-        send({ type: "error", message: userFacingGeminiError(err) });
+        send({ type: "error", message: userFacingGeminiError(err, body.locale) });
       } finally {
         controller.close();
       }
