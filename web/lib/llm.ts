@@ -2,6 +2,7 @@ import { GoogleGenAI, type FunctionDeclaration, type Schema } from "@google/gena
 import type { JsonSchema, ToolHandler } from "@/lib/tools";
 import {
   buildGeminiHttpOptions,
+  expectsAiBindingGatewayOnly,
   resolveGeminiGatewayBaseUrlAsync,
 } from "@/lib/gemini-gateway";
 
@@ -15,6 +16,14 @@ export async function getGenAI(): Promise<GoogleGenAI> {
     );
   }
   const baseUrl = await resolveGeminiGatewayBaseUrlAsync();
+  if (!baseUrl && expectsAiBindingGatewayOnly()) {
+    throw new Error(
+      "AI Gateway: CLOUDFLARE_AI_GATEWAY_NAME is set but the gateway URL could not be resolved (env.AI missing or OpenNext context unavailable). " +
+        "Fix: (1) Workers **Preview** deployments need the same variables as Production — in Workers & Pages → Settings → Variables, add values for **Preview** (or set **GEMINI_AI_GATEWAY_BASE_URL** to the full Google AI Studio base URL from AI → AI Gateway). " +
+        "(2) Redeploy after `wrangler.jsonc` includes `\"ai\": { \"binding\": \"AI\" }`. " +
+        "(3) Or set **CLOUDFLARE_ACCOUNT_ID** + **CLOUDFLARE_AI_GATEWAY_NAME** so the URL is built without the binding.",
+    );
+  }
   const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}`;
   if (_genaiCache?.sig === sig) return _genaiCache.client;
 

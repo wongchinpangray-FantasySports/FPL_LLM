@@ -131,6 +131,8 @@ Google may block **direct** Gemini calls from some **Worker egress** regions. Ro
 3. **`nodejs_compat_populate_process_env`** is already in `wrangler.jsonc` so secrets/vars populate `process.env` at runtime.
 4. **Redeploy** the Worker after changing `wrangler.jsonc` (so the `AI` binding is live) and after setting variables.
 
+**Preview URLs (`*-fplllm.*.workers.dev`):** Cloudflare often applies **Production** variables only to production. For **branch / preview** deployments, open **Workers & Pages → your project → Settings → Variables** and add **`CLOUDFLARE_AI_GATEWAY_NAME`** (and `GEMINI_API_KEY`, etc.) for **Preview** as well, **or** set **`GEMINI_AI_GATEWAY_BASE_URL`** once (same value for all environments).
+
 **Alternatives** (if you prefer not to use the binding):
 
 - Set **`GEMINI_AI_GATEWAY_BASE_URL`** to the full base URL (no trailing slash), or  
