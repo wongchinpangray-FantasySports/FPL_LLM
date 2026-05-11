@@ -131,12 +131,14 @@ Google may block **direct** Gemini calls from some **Worker egress** regions. Ro
 
    | Variable | Required | Notes |
    |----------|----------|--------|
-   | `GEMINI_AI_GATEWAY_BASE_URL` | For this fix | Full URL above. Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. |
+   | `GEMINI_AI_GATEWAY_BASE_URL` | For this fix | Full URL above. Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. **Shortcut:** set `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME` instead (aliases: `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`) — the app builds the URL. |
    | `GEMINI_AI_GATEWAY_TOKEN` | If the gateway is **authenticated** | Value for header `cf-aig-authorization` (with or without `Bearer ` prefix). Alias: `CF_AIG_AUTHORIZATION`. |
 
 4. Keep **`GEMINI_API_KEY`** (Google AI Studio key) as today — the gateway forwards it (`x-goog-api-key` is handled by the SDK).
 
-5. Redeploy the Worker. Chat should call Gemini via the gateway.
+5. This repo’s **`wrangler.jsonc`** includes **`nodejs_compat_populate_process_env`** so Worker **secrets / variables** are reliably exposed on `process.env` at runtime (needed for the gateway URL and API key).
+
+6. Redeploy the Worker. Chat should call Gemini via the gateway.
 
 **Note:** Long API routes may hit Workers CPU limits; OpenNext also warns that **Windows** local builds can be flaky — use **WSL** or rely on **Linux CI** for stable builds.
 

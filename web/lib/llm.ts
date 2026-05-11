@@ -8,21 +8,38 @@ let _client: GoogleGenAI | null = null;
  * When set, Gemini traffic goes through `gateway.ai.cloudflare.com`, which often fixes
  * `User location is not supported` on Workers when direct Google egress is blocked.
  *
- * Full value (no trailing slash), e.g.
+ * Set either the full URL, or **`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`**
+ * (aliases `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`) — the app builds:
  * `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/google-ai-studio`
  *
  * @see https://developers.cloudflare.com/ai-gateway/providers/google-ai-studio/
  */
-function geminiHttpOptions():
-  | { baseUrl: string; headers?: Record<string, string> }
-  | undefined {
-  const baseUrl = (
+function resolveGeminiGatewayBaseUrl(): string | undefined {
+  const explicit = (
     process.env.GEMINI_AI_GATEWAY_BASE_URL ??
     process.env.CF_AI_GATEWAY_GEMINI_BASE_URL ??
     ""
   )
     .trim()
     .replace(/\/$/, "");
+  if (explicit) return explicit;
+
+  const account =
+    process.env.CLOUDFLARE_ACCOUNT_ID?.trim() ??
+    process.env.CF_ACCOUNT_ID?.trim();
+  const gatewayName =
+    process.env.CLOUDFLARE_AI_GATEWAY_NAME?.trim() ??
+    process.env.CF_AI_GATEWAY_NAME?.trim();
+  if (account && gatewayName) {
+    return `https://gateway.ai.cloudflare.com/v1/${account}/${gatewayName}/google-ai-studio`;
+  }
+  return undefined;
+}
+
+function geminiHttpOptions():
+  | { baseUrl: string; headers?: Record<string, string> }
+  | undefined {
+  const baseUrl = resolveGeminiGatewayBaseUrl();
   if (!baseUrl) return undefined;
 
   const raw =
@@ -246,15 +263,21 @@ export function userFacingGeminiError(
   if (regionBlocked) {
     if (zh) {
       return (
-        "无法使用 Google Gemini：谷歌因**地区政策**拒绝了本次请求（通常取决于**网站服务器出口 IP** 所在国家/地区，而不是你个人）。\n\n" +
-        "站点维护者可将聊天接口部署在 Google 支持的区域（例如在 Vercel 上为 `/api/chat` 固定美国区 `iad1`），" +
-        "或改用 Cloudflare AI Gateway / 其他在你目标地区可用的模型服务。"
+        "无法使用 Google Gemini：谷歌因**地区政策**拒绝了本次请求（通常取决于**服务器出口 IP**，而不是你的手机）。\n\n" +
+        "**Cloudflare Workers：** 在 Cloudflare 控制台创建 **AI Gateway**（Google AI Studio），然后设置环境变量：\n" +
+        "• `GEMINI_AI_GATEWAY_BASE_URL` = `https://gateway.ai.cloudflare.com/v1/<账户ID>/<网关名>/google-ai-studio`，或\n" +
+        "• `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`（代码会自动拼出上述 URL）。\n" +
+        "可选：`GEMINI_AI_GATEWAY_TOKEN`（网关开启鉴权时）。\n\n" +
+        "**Vercel：** 可为 `/api/chat` 固定美国区 `iad1`（仓库已设置 `preferredRegion`）。"
       );
     }
     return (
-      "Gemini refused this request because of **Google's regional policy** (they often look at the **server's egress region**, not your phone).\n\n" +
-      "Ask the site operator to run `/api/chat` in a **supported region** (e.g. pin Vercel to `iad1`), " +
-      "or route Gemini through **Cloudflare AI Gateway** / another provider that serves your audience."
+      "Gemini blocked this request under **Google's regional policy** (usually your **host's egress IP**, not your phone).\n\n" +
+      "**If you use Cloudflare Workers:** create an **AI Gateway** (Google AI Studio provider), then set either:\n" +
+      "• `GEMINI_AI_GATEWAY_BASE_URL` = `https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY_NAME>/google-ai-studio`, or\n" +
+      "• `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME` (the app builds that URL for you).\n" +
+      "Optional: `GEMINI_AI_GATEWAY_TOKEN` if the gateway requires `cf-aig-authorization`.\n\n" +
+      "**On Vercel:** `/api/chat` is pinned to `iad1` (US East) in code; redeploy if you still see this."
     );
   }
 
