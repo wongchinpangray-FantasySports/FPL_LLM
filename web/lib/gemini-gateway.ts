@@ -142,8 +142,12 @@ export function expectsAiBindingGatewayOnly(): boolean {
 
 export function buildGeminiHttpOptions(baseUrl: string): {
   baseUrl: string;
+  /** Cloudflare AI Gateway expects Gemini REST under `.../google-ai-studio/v1/...`; the SDK defaults to `v1beta`, which breaks routing. */
+  apiVersion?: string;
   headers?: Record<string, string>;
 } {
+  const trimmed = baseUrl.trim().replace(/\/$/, "");
+  const isCloudflareAiGateway = trimmed.includes("gateway.ai.cloudflare.com");
   const raw =
     process.env.GEMINI_AI_GATEWAY_TOKEN?.trim() ??
     process.env.CF_AIG_AUTHORIZATION?.trim() ??
@@ -152,5 +156,14 @@ export function buildGeminiHttpOptions(baseUrl: string): {
   if (raw) {
     headers["cf-aig-authorization"] = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
   }
-  return Object.keys(headers).length ? { baseUrl, headers } : { baseUrl };
+  const out: {
+    baseUrl: string;
+    apiVersion?: string;
+    headers?: Record<string, string>;
+  } = {
+    baseUrl: trimmed,
+    ...(isCloudflareAiGateway ? { apiVersion: "v1" } : {}),
+  };
+  if (Object.keys(headers).length) out.headers = headers;
+  return out;
 }
