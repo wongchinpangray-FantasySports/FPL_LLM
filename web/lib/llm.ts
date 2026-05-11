@@ -4,6 +4,7 @@ import {
   buildGeminiHttpOptions,
   expectsAiBindingGatewayOnly,
   resolveGeminiGatewayBaseUrlAsync,
+  validateCloudflareGeminiGatewayBaseUrl,
 } from "@/lib/gemini-gateway";
 
 let _genaiCache: { sig: string; client: GoogleGenAI } | null = null;
@@ -23,6 +24,12 @@ export async function getGenAI(): Promise<GoogleGenAI> {
         "(2) Redeploy after `wrangler.jsonc` includes `\"ai\": { \"binding\": \"AI\" }`. " +
         "(3) Or set **CLOUDFLARE_ACCOUNT_ID** + **CLOUDFLARE_AI_GATEWAY_NAME** so the URL is built without the binding.",
     );
+  }
+  if (baseUrl) {
+    const bad = validateCloudflareGeminiGatewayBaseUrl(baseUrl);
+    if (bad) {
+      throw new Error(bad);
+    }
   }
   const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
   // Include apiVersion in the key so isolates never reuse a GoogleGenAI client built
