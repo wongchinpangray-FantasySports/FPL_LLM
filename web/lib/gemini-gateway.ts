@@ -198,12 +198,9 @@ export function expectsAiBindingGatewayOnly(): boolean {
 
 export function buildGeminiHttpOptions(baseUrl: string): {
   baseUrl: string;
-  /** Cloudflare AI Gateway expects Gemini REST under `.../google-ai-studio/v1/...`; the SDK defaults to `v1beta`, which breaks routing. */
-  apiVersion?: string;
   headers?: Record<string, string>;
 } {
   const trimmed = baseUrl.trim().replace(/\/$/, "");
-  const isCloudflareAiGateway = trimmed.includes(CF_AI_GATEWAY_HOST);
   const raw =
     process.env.GEMINI_AI_GATEWAY_TOKEN?.trim() ??
     process.env.CF_AIG_AUTHORIZATION?.trim() ??
@@ -212,14 +209,10 @@ export function buildGeminiHttpOptions(baseUrl: string): {
   if (raw) {
     headers["cf-aig-authorization"] = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
   }
-  const out: {
-    baseUrl: string;
-    apiVersion?: string;
-    headers?: Record<string, string>;
-  } = {
-    baseUrl: trimmed,
-    ...(isCloudflareAiGateway ? { apiVersion: "v1" } : {}),
-  };
-  if (Object.keys(headers).length) out.headers = headers;
-  return out;
+  // Do not set `apiVersion` here. Forcing `v1` made URLs like `.../google-ai-studio/v1/models/...`
+  // which use Google's v1 JSON schema — @google/genai then sends `systemInstruction` / `tools`
+  // as v1beta expects and Google returns "Unknown name systemInstruction" / "Unknown name tools".
+  // Default SDK `v1beta` yields `.../google-ai-studio/v1beta/...` while the path still begins with
+  // `/v1/<account>/<gateway>/...` for Cloudflare AI Gateway.
+  return Object.keys(headers).length ? { baseUrl: trimmed, headers } : { baseUrl: trimmed };
 }

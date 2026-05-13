@@ -32,8 +32,7 @@ export async function getGenAI(): Promise<GoogleGenAI> {
     }
   }
   const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
-  // Include apiVersion in the key so isolates never reuse a GoogleGenAI client built
-  // before gateway httpOptions changed (e.g. v1beta → v1 for Cloudflare AI Gateway).
+  // Include optional httpOptions.apiVersion in the key when we override it (e.g. future gateway tweaks).
   const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}\0${httpOptions?.apiVersion ?? ""}`;
   if (_genaiCache?.sig === sig) return _genaiCache.client;
 
