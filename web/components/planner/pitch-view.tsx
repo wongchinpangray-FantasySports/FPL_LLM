@@ -163,8 +163,8 @@ export function PitchView({
   /** After Refresh xP: show model xP for first GW in horizon (captain ×2 on card) */
   nextGwXpByFplId,
   nextGwXpTitle,
-  /** Planning pitch: GK top → DEF → MID → FWD bottom. Your FPL pitch stays attack-first. */
-  gkAtTop = false,
+  /** XI rows top→bottom: GK, DEF, MID, FWD. Set false for legacy attack-first layout. */
+  gkAtTop = true,
 }: {
   picks: PlannerPickPayload[];
   title: string;
@@ -210,7 +210,7 @@ export function PitchView({
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
 
-          {/* XI rows: default attack-first; Planning uses gkAtTop (defence-first). */}
+          {/* XI rows: GK → DEF → MID → FWD (top to bottom); pass gkAtTop={false} for attack-first. */}
           {(gkAtTop
             ? [
                 { key: "gk", players: gk },
