@@ -229,9 +229,14 @@ export function userFacingGeminiError(
   try {
     const j = JSON.parse(raw) as {
       error?: { message?: string; code?: number; status?: string };
+      errors?: Array<{ message?: string; code?: number }>;
     };
     const inner = j?.error?.message;
     if (typeof inner === "string" && inner.length > 0) raw = inner;
+    else if (Array.isArray(j?.errors) && j.errors.length > 0) {
+      const first = j.errors[0]?.message;
+      if (typeof first === "string" && first.length > 0) raw = first;
+    }
   } catch {
     /* not JSON */
   }
@@ -258,6 +263,25 @@ export function userFacingGeminiError(
       "Set **`CLOUDFLARE_AI_GATEWAY_NAME`** to that gateway's **name** (same as in the dashboard) and keep **`GEMINI_API_KEY`** — the app resolves the gateway URL via `env.AI.gateway(...).getUrl('google-ai-studio')` automatically. " +
       "Add **`GEMINI_AI_GATEWAY_TOKEN`** only if your gateway requires `cf-aig-authorization`. Alternatively set the full **`GEMINI_AI_GATEWAY_BASE_URL`**.\n\n" +
       "**On Vercel:** `/api/chat` is pinned to `iad1`; redeploy the latest build if this persists."
+    );
+  }
+
+  const badKey =
+    low.includes("api key not valid") ||
+    low.includes("invalid api key") ||
+    (low.includes("invalid_argument") && low.includes("api key")) ||
+    /\b401\b/.test(raw) ||
+    low.includes("permission_denied") ||
+    low.includes("requested entity was not found");
+
+  if (badKey) {
+    if (zh) {
+      return "Gemini API 密钥无效或无权访问该模型。请在 Google AI Studio 重新生成密钥，并核对 Workers 里的 GEMINI_AI_GATEWAY_BASE_URL / 网关鉴权配置。";
+    }
+    return (
+      "Gemini rejected the API key (invalid, revoked, or wrong for this model). " +
+      "Regenerate the key in Google AI Studio and update **`GEMINI_API_KEY`** on the Worker. " +
+      "If you use AI Gateway, also verify **`GEMINI_AI_GATEWAY_BASE_URL`** and **`GEMINI_AI_GATEWAY_TOKEN`** (when authenticated gateway is on)."
     );
   }
 
