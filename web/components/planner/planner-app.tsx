@@ -980,6 +980,7 @@ export function PlannerApp({
           />
           <PitchView
             title={t("planningScenario")}
+            gkAtTop
             benchLabel={t("pitchBench")}
             benchGkAbbrev={t("pitchBenchGkAbbrev")}
             caption={

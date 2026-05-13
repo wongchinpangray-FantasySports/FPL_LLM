@@ -163,6 +163,8 @@ export function PitchView({
   /** After Refresh xP: show model xP for first GW in horizon (captain ×2 on card) */
   nextGwXpByFplId,
   nextGwXpTitle,
+  /** Planning pitch: GK top → DEF → MID → FWD bottom. Your FPL pitch stays attack-first. */
+  gkAtTop = false,
 }: {
   picks: PlannerPickPayload[];
   title: string;
@@ -180,6 +182,7 @@ export function PitchView({
   cardSublineByFplId?: Record<number, string>;
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
+  gkAtTop?: boolean;
 }) {
   const starters = picks.filter((p) => p.is_starter);
   const benchAll = sortBySlot(picks.filter((p) => !p.is_starter));
@@ -207,55 +210,35 @@ export function PitchView({
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
 
-          {/* Attack → defence (top to bottom of pitch) */}
-          <Line
-            players={fwds}
-            captainId={captainId}
-            viceId={viceId}
-            highlightSlots={highlightSlots}
-            reorderSelectedSlot={reorderSelectedSlot}
-            interactive={interactive}
-            cardSublineByFplId={cardSublineByFplId}
-            nextGwXpByFplId={nextGwXpByFplId}
-            nextGwXpTitle={nextGwXpTitle}
-            onPickSlot={onPickSlot}
-          />
-          <Line
-            players={mids}
-            captainId={captainId}
-            viceId={viceId}
-            highlightSlots={highlightSlots}
-            reorderSelectedSlot={reorderSelectedSlot}
-            interactive={interactive}
-            cardSublineByFplId={cardSublineByFplId}
-            nextGwXpByFplId={nextGwXpByFplId}
-            nextGwXpTitle={nextGwXpTitle}
-            onPickSlot={onPickSlot}
-          />
-          <Line
-            players={defs}
-            captainId={captainId}
-            viceId={viceId}
-            highlightSlots={highlightSlots}
-            reorderSelectedSlot={reorderSelectedSlot}
-            interactive={interactive}
-            cardSublineByFplId={cardSublineByFplId}
-            nextGwXpByFplId={nextGwXpByFplId}
-            nextGwXpTitle={nextGwXpTitle}
-            onPickSlot={onPickSlot}
-          />
-          <Line
-            players={gk}
-            captainId={captainId}
-            viceId={viceId}
-            highlightSlots={highlightSlots}
-            reorderSelectedSlot={reorderSelectedSlot}
-            interactive={interactive}
-            cardSublineByFplId={cardSublineByFplId}
-            nextGwXpByFplId={nextGwXpByFplId}
-            nextGwXpTitle={nextGwXpTitle}
-            onPickSlot={onPickSlot}
-          />
+          {/* XI rows: default attack-first; Planning uses gkAtTop (defence-first). */}
+          {(gkAtTop
+            ? [
+                { key: "gk", players: gk },
+                { key: "def", players: defs },
+                { key: "mid", players: mids },
+                { key: "fwd", players: fwds },
+              ]
+            : [
+                { key: "fwd", players: fwds },
+                { key: "mid", players: mids },
+                { key: "def", players: defs },
+                { key: "gk", players: gk },
+              ]
+          ).map(({ key, players }) => (
+            <Line
+              key={key}
+              players={players}
+              captainId={captainId}
+              viceId={viceId}
+              highlightSlots={highlightSlots}
+              reorderSelectedSlot={reorderSelectedSlot}
+              interactive={interactive}
+              cardSublineByFplId={cardSublineByFplId}
+              nextGwXpByFplId={nextGwXpByFplId}
+              nextGwXpTitle={nextGwXpTitle}
+              onPickSlot={onPickSlot}
+            />
+          ))}
         </div>
 
         {/* Bench */}
