@@ -32,18 +32,11 @@ export async function getGenAI(): Promise<GoogleGenAI> {
     }
   }
   const httpOptions = baseUrl ? buildGeminiHttpOptions(baseUrl) : undefined;
-  // Include optional httpOptions.apiVersion in the key when we override it (e.g. future gateway tweaks).
-  const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}\0${httpOptions?.apiVersion ?? ""}`;
+  const sig = `${apiKey}\0${baseUrl ?? ""}\0${process.env.GEMINI_AI_GATEWAY_TOKEN ?? ""}`;
   if (_genaiCache?.sig === sig) return _genaiCache.client;
 
   const client = new GoogleGenAI(
-    httpOptions
-      ? {
-          apiKey,
-          httpOptions,
-          ...(httpOptions.apiVersion ? { apiVersion: httpOptions.apiVersion } : {}),
-        }
-      : { apiKey },
+    httpOptions ? { apiKey, httpOptions } : { apiKey },
   );
   _genaiCache = { sig, client };
   return client;
