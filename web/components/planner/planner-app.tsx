@@ -987,7 +987,7 @@ export function PlannerApp({
         <p className="text-sm text-rose-300">{projError}</p>
       )}
 
-      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_17rem] xl:items-start xl:gap-6 2xl:grid-cols-[minmax(0,1fr)_19rem]">
+      <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
         <div className="min-w-0 flex flex-col gap-5 sm:gap-6">
           <section className="flex flex-col gap-2 sm:gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

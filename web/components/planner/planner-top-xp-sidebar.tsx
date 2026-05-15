@@ -80,7 +80,7 @@ export function PlannerTopXpSidebar({
       ) : null}
 
       {tops != null ? (
-        <div className="mt-3 space-y-4">
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
           {ORDER.map((pos) => (
             <div key={pos}>
               <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-accent/90">

@@ -86,6 +86,14 @@ function PlayerChip({
   const isV = viceId != null && p.fpl_id === viceId;
 
   const hasStrip = gwStrip != null && gwStrip.length > 0;
+  /** Match horizon totals: starter captain earns double in each GW on the strip. */
+  const gwStripForDisplay =
+    hasStrip && gwStrip && p.is_starter && isC
+      ? gwStrip.map((c) => ({
+          ...c,
+          xp: Math.round(c.xp * 2 * 10) / 10,
+        }))
+      : gwStrip;
   const nextXp =
     nextGwXpByFplId != null ? nextGwXpByFplId[p.fpl_id] : undefined;
   /** Per-GW strip already includes xP; do not duplicate next-GW xP on the bottom row. */
@@ -100,8 +108,8 @@ function PlayerChip({
       <div className="truncate text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
         {p.web_name ?? `#${p.fpl_id}`}
       </div>
-      {hasStrip ? (
-        <GwStripRow cells={gwStrip} />
+      {hasStrip && gwStripForDisplay ? (
+        <GwStripRow cells={gwStripForDisplay} />
       ) : (
         <div className="truncate text-[7px] text-slate-400 sm:text-[9px]">
           {cardSubline ?? p.team ?? "–"}
