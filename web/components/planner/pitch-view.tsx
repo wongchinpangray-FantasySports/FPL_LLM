@@ -77,7 +77,7 @@ function PlayerChip({
   cardSubline?: string;
   /** Upcoming GWs (fixtures + xP) after Refresh xP */
   gwStrip?: PlannerGwStripCell[];
-  /** When set, show next-GW xP (values may include captain ×2) instead of £ when known */
+  /** When set and no GW strip, show next-GW xP (values may include captain ×2) instead of £ */
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
   onClick?: () => void;
@@ -85,14 +85,15 @@ function PlayerChip({
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
 
+  const hasStrip = gwStrip != null && gwStrip.length > 0;
   const nextXp =
     nextGwXpByFplId != null ? nextGwXpByFplId[p.fpl_id] : undefined;
+  /** Per-GW strip already includes xP; do not duplicate next-GW xP on the bottom row. */
   const showNextXp =
+    !hasStrip &&
     nextGwXpByFplId != null &&
     nextXp !== undefined &&
     Number.isFinite(nextXp);
-
-  const hasStrip = gwStrip != null && gwStrip.length > 0;
 
   const inner = (
     <>
