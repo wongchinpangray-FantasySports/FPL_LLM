@@ -103,13 +103,16 @@ export function Chat() {
       void fetch("/api/chat/history", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          entryId:
-            entryId && /^\d+$/.test(entryId) ? Number(entryId) : null,
-          locale,
-          messages: payload,
-        }),
+        body: JSON.stringify(
+          {
+            sessionId,
+            entryId:
+              entryId && /^\d+$/.test(entryId) ? Number(entryId) : null,
+            locale,
+            messages: payload,
+          },
+          (_, v) => (typeof v === "bigint" ? v.toString() : v),
+        ),
       }).catch(() => {});
     }, 750);
     return () => window.clearTimeout(timer);
@@ -138,11 +141,14 @@ export function Chat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          messages: requestMessages,
-          entryId,
-          locale,
-        }),
+        body: JSON.stringify(
+          {
+            messages: requestMessages,
+            entryId,
+            locale,
+          },
+          (_, v) => (typeof v === "bigint" ? v.toString() : v),
+        ),
       });
 
       if (!res.ok || !res.body) {
@@ -165,6 +171,7 @@ export function Chat() {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
+        buffer = buffer.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
         const parts = buffer.split("\n\n");
         buffer = parts.pop() ?? "";
         for (const part of parts) {
@@ -172,35 +179,59 @@ export function Chat() {
           const payload = part.slice(5).trim();
           if (!payload) continue;
           try {
-            const evt = JSON.parse(payload);
+            const evt = JSON.parse(payload) as {
+              type?: string;
+              delta?: string;
+              name?: string;
+              input?: unknown;
+              message?: string;
+            };
             setMessages((prev) => {
               const copy = [...prev];
               const last = copy[copy.length - 1];
               if (!last || last.role !== "assistant") return copy;
               if (evt.type === "text") {
+                const d =
+                  typeof evt.delta === "string"
+                    ? evt.delta
+                    : evt.delta != null
+                      ? String(evt.delta)
+                      : "";
                 copy[copy.length - 1] = {
                   ...last,
-                  content: last.content + evt.delta,
+                  content: last.content + d,
                 };
-              } else if (evt.type === "tool_use") {
+              } else if (evt.type === "tool_use" && typeof evt.name === "string") {
                 copy[copy.length - 1] = {
                   ...last,
                   toolUses: [
                     ...(last.toolUses ?? []),
-                    { name: evt.name, input: evt.input },
+                    { name: evt.name, input: evt.input ?? {} },
                   ],
                 };
               } else if (evt.type === "error") {
+                const msg =
+                  typeof evt.message === "string"
+                    ? evt.message
+                    : evt.message != null
+                      ? String(evt.message)
+                      : "Unknown error";
                 copy[copy.length - 1] = {
                   ...last,
                   content:
                     (last.content ? last.content + "\n\n" : "") +
-                    `_Error: ${evt.message}_`,
+                    `_Error: ${msg}_`,
                 };
               }
               return copy;
             });
-          } catch {}
+          } catch (parseErr) {
+            console.warn(
+              "[chat] SSE JSON parse failed",
+              parseErr,
+              payload.slice(0, 160),
+            );
+          }
         }
       }
     } catch (err) {

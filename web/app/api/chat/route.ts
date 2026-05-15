@@ -24,6 +24,13 @@ interface ChatBody {
 
 const MAX_TOOL_ITERATIONS = 6;
 
+/** Safe JSON for SSE lines (handles BigInt; avoids throw on odd tool payloads). */
+function jsonForSse(payload: unknown): string {
+  return JSON.stringify(payload, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value,
+  );
+}
+
 export async function POST(req: Request) {
   let body: ChatBody;
   try {
@@ -99,9 +106,17 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (event: unknown) => {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
-        );
+        let line: string;
+        try {
+          line = jsonForSse(event);
+        } catch (e) {
+          console.error("[api/chat] SSE serialize failed", e);
+          line = jsonForSse({
+            type: "error",
+            message: "Stream encoding failed for this response.",
+          });
+        }
+        controller.enqueue(encoder.encode(`data: ${line}\n\n`));
       };
 
       try {

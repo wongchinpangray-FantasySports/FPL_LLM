@@ -2,7 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NextFixtureOpponent } from "@/lib/xp";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
 import type { ValidationIssue } from "@/lib/planner/validate";
@@ -58,7 +58,10 @@ import {
   PlannerPlayerInspectSheet,
   type PlannerPlayerInspectDetail,
 } from "@/components/planner/planner-player-inspect";
-import { PitchView } from "@/components/planner/pitch-view";
+import {
+  PitchView,
+  type PlannerGwStripCell,
+} from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +99,7 @@ type ProjRow = {
   web_name: string | null;
   position: string | null;
   team: string | null;
+  by_gw?: { gw: number; opp: string; xp: number }[];
 };
 
 function pitchSecondLineFromNext(
@@ -738,6 +742,44 @@ export function PlannerApp({
     gw: projMeta?.fromGw ?? "–",
   });
 
+  /** Up to 5 GWs: opponent code + H/A and xP per GW (after Refresh xP). */
+  const gwForecastByFplId = useMemo(() => {
+    if (Object.keys(projById).length === 0) return undefined;
+    const out: Record<number, PlannerGwStripCell[]> = {};
+    for (const id of Object.keys(projById)) {
+      const pr = projById[id];
+      const strip = pr?.by_gw;
+      if (!strip?.length) continue;
+      out[Number(id)] = strip.slice(0, 5);
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }, [projById]);
+
+  const scenarioPitchRef = useRef<HTMLDivElement>(null);
+  const [pngBusy, setPngBusy] = useState(false);
+
+  const downloadScenarioPng = useCallback(async () => {
+    const el = scenarioPitchRef.current;
+    if (!el) return;
+    setPngBusy(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(el, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#052e16",
+      });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `fpl-planner-${entryId}.png`;
+      a.click();
+    } catch (err) {
+      console.error("[planner] download pitch png", err);
+    } finally {
+      setPngBusy(false);
+    }
+  }, [entryId]);
+
   return (
     <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
       {baselineBanner ? (
@@ -973,15 +1015,29 @@ export function PlannerApp({
             captainId={cap0}
             viceId={vice0}
             cardSublineByFplId={baselinePitchSubline}
+            gwForecastByFplId={gwForecastByFplId}
             nextGwXpByFplId={baselineNextGwXpByFplId}
             nextGwXpTitle={pitchCardXpTitle}
             interactive
             onPickSlot={handleBaselineInspect}
           />
           <PitchView
+            ref={scenarioPitchRef}
             title={t("planningScenario")}
             benchLabel={t("pitchBench")}
             benchGkAbbrev={t("pitchBenchGkAbbrev")}
+            titleAction={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs"
+                disabled={pngBusy}
+                onClick={() => void downloadScenarioPng()}
+              >
+                {pngBusy ? t("downloadScenarioPngWorking") : t("downloadScenarioPng")}
+              </Button>
+            }
             caption={
               changedFromFpl.size > 0
                 ? t("pitchPlanningCaptionDiff", {
@@ -994,6 +1050,7 @@ export function PlannerApp({
             captainId={captainId}
             viceId={viceId}
             cardSublineByFplId={scenarioPitchSubline}
+            gwForecastByFplId={gwForecastByFplId}
             nextGwXpByFplId={scenarioNextGwXpByFplId}
             nextGwXpTitle={pitchCardXpTitle}
             highlightSlots={changedFromFpl}

@@ -255,6 +255,8 @@
     "pitchBenchGkAbbrev": "GK",
     "pitchCardNextGwXpTitle":
       "Model xP for GW{gw} (first GW in your horizon). Starter captain ×2 on the chip.",
+    "downloadScenarioPng": "Download pitch PNG",
+    "downloadScenarioPngWorking": "Exporting…",
     "tableBadgeCaptain": "(C)",
     "tableBadgeVice": "(V)",
     "valSize": "Need 15 players (have {have}).",

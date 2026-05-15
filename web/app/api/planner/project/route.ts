@@ -1,5 +1,36 @@
 import { NextResponse } from "next/server";
+import type { FixtureProjection } from "@/lib/xp";
 import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
+
+/** One row per GW (DGW: opponents joined with ·, xP summed). */
+function buildByGwStrip(
+  fixtures: FixtureProjection[],
+  fromGw: number,
+  toGw: number,
+): { gw: number; opp: string; xp: number }[] {
+  const map = new Map<number, { parts: string[]; xp: number }>();
+  for (const f of fixtures) {
+    if (f.gw < fromGw || f.gw > toGw) continue;
+    const tag = `${f.opp_short}${f.home ? "H" : "A"}`;
+    const cur = map.get(f.gw);
+    if (!cur) {
+      map.set(f.gw, { parts: [tag], xp: f.xp_total });
+    } else {
+      cur.parts.push(tag);
+      cur.xp += f.xp_total;
+    }
+  }
+  return Array.from(map.keys())
+    .sort((a, b) => a - b)
+    .map((gw) => {
+      const { parts, xp } = map.get(gw)!;
+      return {
+        gw,
+        opp: parts.join("·"),
+        xp: Math.round(xp * 100) / 100,
+      };
+    });
+}
 
 export async function POST(req: Request) {
   try {
@@ -55,6 +86,8 @@ export async function POST(req: Request) {
         web_name: string | null;
         position: string | null;
         team: string | null;
+        /** Per-GW opponent tag + xP for the requested horizon (planner pitch strip). */
+        by_gw: { gw: number; opp: string; xp: number }[];
       }
     > = {};
     for (const [id, p] of projections) {
@@ -68,6 +101,7 @@ export async function POST(req: Request) {
         web_name: p.web_name,
         position: p.position,
         team: p.team,
+        by_gw: buildByGwStrip(p.fixtures, fromGw, toGw),
       };
     }
 
