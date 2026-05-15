@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { EntryIdForm } from "@/components/entry-id-form";
+import { HomeShowcaseSquad } from "@/components/home-showcase-squad";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
@@ -61,6 +62,8 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      <HomeShowcaseSquad />
 
       <section>
         <h2 className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">

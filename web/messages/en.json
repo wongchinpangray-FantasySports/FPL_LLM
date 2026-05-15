@@ -36,7 +36,15 @@
     "feature3Body": "Entry ID → XI, bank, chips — advice in context.",
     "playersCardTitle": "Player profiles",
     "playersCardBody": "Search any asset — FPL stats, xP outlook, and a radar vs same-position peers.",
-    "playersCardCta": "Browse players"
+    "playersCardCta": "Browse players",
+    "showcase": {
+      "eyebrow": "Showcase",
+      "title": "Model squad · GW{gw}",
+      "subtitle": "Auto-built from our next-gameweek xP: a valid £100m squad (max three per club), then the best legal XI with captain and vice. It is generic, not your team — open Planner with your Entry ID to optimize yours.",
+      "pitchTitle": "Next GW (model draft)",
+      "pitchCaption": "XI xP (C×2) {xi} · ~£{cost}m",
+      "ctaPlanner": "Open planner"
+    }
   },
   "entryForm": {
     "label": "Entry ID",

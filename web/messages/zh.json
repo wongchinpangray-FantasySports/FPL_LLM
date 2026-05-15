@@ -36,7 +36,15 @@
     "feature3Body": "输入 Entry ID → 首发、预算、芯片 —— 结合上下文的建议。",
     "playersCardTitle": "球员资料",
     "playersCardBody": "搜索任意球员 —— FPL 数据、xP 展望、以及与同位置对比的雷达图。",
-    "playersCardCta": "浏览球员"
+    "playersCardCta": "浏览球员",
+    "showcase": {
+      "eyebrow": "示例阵容",
+      "title": "模型阵容 · 第{gw}轮",
+      "subtitle": "根据下一轮 xP 自动生成：符合 £100m、每队最多 3 人的 15 人名单，再选出合法首发 11 人并设正、副队长。此为通用演示，非你的球队 — 在规划页输入 Entry ID 可针对你自己的阵容优化。",
+      "pitchTitle": "下一轮展望（模型阵容）",
+      "pitchCaption": "首发 xP（队长×2）{xi} · 约 £{cost}m",
+      "ctaPlanner": "打开规划"
+    }
   },
   "entryForm": {
     "label": "Entry ID",
