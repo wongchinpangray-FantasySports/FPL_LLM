@@ -4,14 +4,9 @@ import { HomeShowcaseSquad } from "@/components/home-showcase-squad";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { getShowcaseRecommendedSquad } from "@/lib/planner/showcase-recommended-squad";
 
 export default async function HomePage() {
-  const [t, tPlanner, showcase] = await Promise.all([
-    getTranslations("home"),
-    getTranslations("plannerApp"),
-    getShowcaseRecommendedSquad(),
-  ]);
+  const t = await getTranslations("home");
 
   const features = [
     { title: t("feature1Title"), body: t("feature1Body") },
@@ -73,24 +68,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {showcase ? (
-        <HomeShowcaseSquad
-          data={showcase}
-          title={t("showcase.title", { gw: showcase.targetGw })}
-          subtitle={t("showcase.subtitle")}
-          ctaPlanner={t("showcase.ctaPlanner")}
-          pitchTitle={t("showcase.pitchTitle")}
-          pitchCaption={t("showcase.pitchCaption", {
-            xi: showcase.xiXpNext.toFixed(1),
-            cost: showcase.squadCost.toFixed(1),
-          })}
-          benchLabel={tPlanner("pitchBench")}
-          benchGkAbbrev={tPlanner("pitchBenchGkAbbrev")}
-          nextGwXpTitle={tPlanner("pitchCardNextGwXpTitle", {
-            gw: showcase.targetGw,
-          })}
-        />
-      ) : null}
+      <HomeShowcaseSquad />
 
       <section>
         <h2 className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
