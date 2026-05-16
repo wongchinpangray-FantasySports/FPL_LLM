@@ -27,6 +27,69 @@ const POOL_LIMITS: Record<Pos, number> = {
   FWD: 6,
 };
 
+/**
+ * Full-league `projectPlayers` (~650+) exceeds Cloudflare Worker CPU limits.
+ * Rank by official `form` / PPG from `players_static`, then xP-project only
+ * this many candidates per line (still enough for POOL_LIMITS + bench fill).
+ */
+const SHOWCASE_PROJ_CAP: Record<Pos, number> = {
+  GKP: 12,
+  DEF: 32,
+  MID: 32,
+  FWD: 26,
+};
+
+type StaticProjRow = {
+  fpl_id: number;
+  team_id: number | null;
+  position: string | null;
+  base_price: unknown;
+  form: string | null;
+  points_per_game: string | null;
+  total_points: number | null;
+};
+
+function staticFormScore(r: StaticProjRow): number {
+  const form = Number.parseFloat(String(r.form ?? ""));
+  if (Number.isFinite(form) && form > 0) return form;
+  const ppg = Number.parseFloat(String(r.points_per_game ?? ""));
+  if (Number.isFinite(ppg) && ppg > 0) return ppg * 0.45;
+  const tp = r.total_points != null ? Number(r.total_points) : 0;
+  if (Number.isFinite(tp) && tp > 0) return tp / 38;
+  return 0;
+}
+
+function pickShowcaseProjectionIds(rows: StaticProjRow[]): number[] {
+  const byPos: Record<Pos, StaticProjRow[]> = {
+    GKP: [],
+    DEF: [],
+    MID: [],
+    FWD: [],
+  };
+  for (const r of rows) {
+    if (r.team_id == null) continue;
+    const pos = r.position as Pos;
+    if (!byPos[pos]) continue;
+    byPos[pos].push(r);
+  }
+  const seen = new Set<number>();
+  const ids: number[] = [];
+  for (const pos of POS_ORDER) {
+    const sorted = [...byPos[pos]].sort(
+      (a, b) => staticFormScore(b) - staticFormScore(a),
+    );
+    const cap = SHOWCASE_PROJ_CAP[pos];
+    for (const r of sorted.slice(0, cap)) {
+      const id = Number(r.fpl_id);
+      if (!Number.isFinite(id) || id <= 0) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 export type ShowcaseRecommendedSquad = {
   targetGw: number;
   currentGw: number;
@@ -176,15 +239,17 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("players_static")
-    .select("fpl_id, team_id, position, base_price")
+    .select(
+      "fpl_id, team_id, position, base_price, form, points_per_game, total_points",
+    )
     .not("team_id", "is", null)
     .in("position", [...POS_ORDER]);
 
   if (error || !data?.length) return null;
 
-  const ids = data
-    .map((r) => r.fpl_id as number)
-    .filter((n) => Number.isFinite(n) && n > 0);
+  const rows = data as unknown as StaticProjRow[];
+  const ids = pickShowcaseProjectionIds(rows);
+  if (ids.length < 24) return null;
 
   /** Same `currentGw` / `fromGw` contract as `/api/planner/project` (Planner client). */
   const proj = await projectPlayers(ids, {
@@ -322,12 +387,13 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 }
 
 /**
- * Home-page “Best XI”: same projection contract as Planner (`/api/planner/project`),
- * then search a ~22-player pool for the legal XI that maximises next-GW FPL score
- * with optimal captain (`sum(xp) + max(xp)`). Bench = four best fillers for a valid 15.
+ * Home-page “Best XI”: same xP engine as Planner, but only a **stratified subset**
+ * of players is projected (see `SHOWCASE_PROJ_CAP`) so edge/serverless CPU stays
+ * bounded. Then search a ~22-player pool for the legal XI that maximises next-GW
+ * FPL score with optimal captain (`sum(xp) + max(xp)`). Bench = four best fillers.
  */
 export const getShowcaseRecommendedSquad = unstable_cache(
   computeShowcaseRecommendedSquadUncached,
-  ["showcase-recommended-squad-v4"],
+  ["showcase-recommended-squad-v5"],
   { revalidate: 600 },
 );
