@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export function LanguageSwitcher() {
   const t = useTranslations("language");
   const locale = useLocale();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const router = useRouter();
 
   return (

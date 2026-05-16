@@ -31,7 +31,7 @@ function NavLink({
 
 export function SiteNav() {
   const t = useTranslations("nav");
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { entryId } = useEntryId();
 
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
