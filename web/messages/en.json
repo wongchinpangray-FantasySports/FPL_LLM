@@ -428,6 +428,7 @@
     "send": "Send",
     "sending": "…",
     "sorry": "Sorry — {message}",
+    "streamInterrupted": "The reply stream was interrupted (network or timeout). Try again.",
     "suggestion1": "Captain this GW?",
     "suggestion2": "Best midfielder under £8m?",
     "suggestion3": "Saka vs Palmer — next 5 GWs",

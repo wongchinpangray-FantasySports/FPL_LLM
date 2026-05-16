@@ -427,6 +427,7 @@
     "send": "发送",
     "sending": "…",
     "sorry": "抱歉 — {message}",
+    "streamInterrupted": "回复流被中断（网络或超时）。请重试。",
     "suggestion1": "本周队长选谁？",
     "suggestion2": "800 万以内最好的中场？",
     "suggestion3": "萨卡 vs 帕尔默 —— 未来 5 个 GW",

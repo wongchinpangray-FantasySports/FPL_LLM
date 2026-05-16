@@ -168,7 +168,21 @@ export function Chat() {
       let buffer = "";
 
       while (true) {
-        const { done, value } = await reader.read();
+        let chunk: ReadableStreamReadResult<Uint8Array>;
+        try {
+          chunk = await reader.read();
+        } catch (streamErr) {
+          const msg =
+            streamErr instanceof Error
+              ? streamErr.message
+              : String(streamErr);
+          throw new Error(
+            msg.includes("closed") || msg.includes("aborted")
+              ? t("streamInterrupted")
+              : msg,
+          );
+        }
+        const { done, value } = chunk;
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         buffer = buffer.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
