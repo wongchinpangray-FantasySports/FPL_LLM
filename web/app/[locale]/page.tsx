@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { HomeShowcaseSquad } from "@/components/home-showcase-squad";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 export default async function HomePage() {
   const t = await getTranslations("home");
@@ -37,10 +38,14 @@ export default async function HomePage() {
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <Link href="/chat" className="inline-flex">
-            <Button variant="secondary" size="lg">
-              {t("openChat")}
-            </Button>
+          <Link
+            href="/chat"
+            className={cn(
+              buttonVariants({ variant: "secondary", size: "lg" }),
+              "inline-flex no-underline",
+            )}
+          >
+            {t("openChat")}
           </Link>
           <Link
             href="/players"

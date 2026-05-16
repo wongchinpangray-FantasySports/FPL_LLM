@@ -12,6 +12,10 @@ function sortBySlot(rows: PlannerPickPayload[]): PlannerPickPayload[] {
 
 const GW_STRIP_MAX = 5;
 
+function stripXpLabel(xp: unknown): string {
+  return typeof xp === "number" && Number.isFinite(xp) ? xp.toFixed(1) : "–";
+}
+
 function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
   const n = Math.min(GW_STRIP_MAX, cells.length);
   const shown = cells.slice(0, GW_STRIP_MAX);
@@ -20,7 +24,7 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
     <div
       className="mt-0.5 w-full border-t border-white/10 pt-0.5"
       title={shown
-        .map((c) => `GW${c.gw} ${c.opp} ${c.xp.toFixed(1)} xP`)
+        .map((c) => `GW${c.gw} ${c.opp} ${stripXpLabel(c.xp)} xP`)
         .join(" · ")}
     >
       <div
@@ -31,7 +35,7 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
       >
         {shown.map((c) => (
           <div
-            key={c.gw}
+            key={`${c.gw}-${c.opp}`}
             className="flex min-w-0 flex-col items-center justify-start gap-px leading-none"
           >
             <span className="text-[5px] font-medium text-slate-500 sm:text-[6px]">
@@ -44,7 +48,7 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
               {c.opp}
             </span>
             <span className="text-[6px] font-semibold tabular-nums text-brand-accent/95 sm:text-[7px]">
-              {c.xp.toFixed(1)}
+              {stripXpLabel(c.xp)}
             </span>
           </div>
         ))}
@@ -89,10 +93,14 @@ function PlayerChip({
   /** Match horizon totals: starter captain earns double in each GW on the strip. */
   const gwStripForDisplay =
     hasStrip && gwStrip && p.is_starter && isC
-      ? gwStrip.map((c) => ({
-          ...c,
-          xp: Math.round(c.xp * 2 * 10) / 10,
-        }))
+      ? gwStrip.map((c) => {
+          const base =
+            typeof c.xp === "number" && Number.isFinite(c.xp) ? c.xp : 0;
+          return {
+            ...c,
+            xp: Math.round(base * 2 * 10) / 10,
+          };
+        })
       : gwStrip;
   const nextXp =
     nextGwXpByFplId != null ? nextGwXpByFplId[p.fpl_id] : undefined;
@@ -125,8 +133,8 @@ function PlayerChip({
           )}
           title={showNextXp ? nextGwXpTitle : undefined}
         >
-          {showNextXp
-            ? nextXp!.toFixed(1)
+          {showNextXp && nextXp != null && Number.isFinite(nextXp)
+            ? nextXp.toFixed(1)
             : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
         </span>
         {isC && (

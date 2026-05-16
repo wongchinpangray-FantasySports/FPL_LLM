@@ -1,6 +1,7 @@
 import { PitchView } from "@/components/planner/pitch-view";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { getShowcaseRecommendedSquad } from "@/lib/planner/showcase-recommended-squad";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
@@ -38,10 +39,14 @@ async function HomeShowcaseSquadInner() {
             {t("showcase.subtitle")}
           </p>
         </div>
-        <Link href="/planner" className="shrink-0">
-          <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-            {t("showcase.ctaPlanner")}
-          </Button>
+        <Link
+          href="/planner"
+          className={cn(
+            buttonVariants({ variant: "secondary", size: "sm" }),
+            "shrink-0 inline-flex w-full no-underline sm:w-auto",
+          )}
+        >
+          {t("showcase.ctaPlanner")}
         </Link>
       </div>
 
