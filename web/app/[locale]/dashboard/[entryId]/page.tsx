@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import {
   loadDoubleGameweekKeys,
   projectPlayers,
-  resolveCurrentGw,
 } from "@/lib/xp";
 import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
 
@@ -115,13 +114,21 @@ export default async function DashboardPage({
     }
   }
 
-  /** FPL regular season is 38 gameweeks; never show GW39+ in the heatmap. */
-  const rawStartGw = (team.current_gw ?? 0) + 1;
+  /** First GW column: FPL `picks_gw` when present (same event as Pick Team), else `current_event+1`. */
+  const planningGwFallback = Math.min(
+    FPL_LAST_SEASON_GW,
+    Math.max(1, (team.current_gw ?? 0) + 1),
+  );
+  const startGw =
+    team.picks_gw != null &&
+    team.picks_gw >= 1 &&
+    team.picks_gw <= FPL_LAST_SEASON_GW
+      ? team.picks_gw
+      : planningGwFallback;
   const horizon = Math.max(
     0,
-    Math.min(5, FPL_LAST_SEASON_GW - rawStartGw + 1),
+    Math.min(5, FPL_LAST_SEASON_GW - startGw + 1),
   );
-  const startGw = rawStartGw;
   const allTeamIds = await allPremierTeamIds();
   const grid = await teamsFixtureGrid(allTeamIds, startGw, horizon);
   const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
@@ -135,12 +142,14 @@ export default async function DashboardPage({
   const startingXI = displayPicks.filter((p) => p.is_starter);
   const bench = displayPicks.filter((p) => !p.is_starter);
 
-  // Project xP for every player in the squad over the horizon.
-  const { current } = await resolveCurrentGw();
+  // Rolling stats through GW `startGw - 1` so xP matches home Best XI / planner
+  // (avoid mixing DB `is_current` with FPL entry `current_event` lag).
+  const currentGwForProjection = Math.max(1, startGw - 1);
+
   const projections =
     horizon > 0
       ? await projectPlayers(displayPicks.map((p) => p.fpl_id), {
-          currentGw: current,
+          currentGw: currentGwForProjection,
           fromGw: startGw,
           toGw: startGw + horizon - 1,
         })

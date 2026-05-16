@@ -139,7 +139,7 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
     .filter((n) => Number.isFinite(n) && n > 0);
 
   const proj = await projectPlayers(ids, {
-    currentGw: current,
+    currentGw: Math.max(1, fromGw - 1),
     fromGw,
     toGw: fromGw,
   });
@@ -293,7 +293,7 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 
   return {
     targetGw: fromGw,
-    currentGw: current,
+    currentGw: Math.max(1, fromGw - 1),
     picks,
     captainId,
     viceId,
@@ -311,6 +311,6 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
  */
 export const getShowcaseRecommendedSquad = unstable_cache(
   computeShowcaseRecommendedSquadUncached,
-  ["showcase-recommended-squad-v2"],
+  ["showcase-recommended-squad-v3"],
   { revalidate: 600 },
 );
