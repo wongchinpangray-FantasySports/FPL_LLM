@@ -31,12 +31,9 @@ async function HomeShowcaseSquadInner() {
     <section className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl sm:p-6 md:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="min-w-0 space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-accent/90">
-            {t("showcase.eyebrow")}
-          </h2>
-          <p className="text-lg font-semibold text-white sm:text-xl">
+          <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
             {t("showcase.title", { gw: data.targetGw })}
-          </p>
+          </h2>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-400">
             {t("showcase.subtitle")}
           </p>

@@ -16,7 +16,6 @@ const NEED_FULL: Record<Pos, number> = {
   MID: 5,
   FWD: 3,
 };
-const BUDGET = 100;
 
 export type ShowcaseRecommendedSquad = {
   targetGw: number;
@@ -81,39 +80,6 @@ function nextGwXp(
   return Math.round(v * 100) / 100;
 }
 
-function minPriceByPosition(
-  rows: { position: string | null; base_price: number | null }[],
-): Record<Pos, number> {
-  const m: Record<Pos, number> = {
-    GKP: 99,
-    DEF: 99,
-    MID: 99,
-    FWD: 99,
-  };
-  for (const r of rows) {
-    const pos = r.position as Pos | null;
-    if (!pos || !(pos in m)) continue;
-    const pr = r.base_price != null ? Number(r.base_price) : null;
-    if (pr == null || !Number.isFinite(pr)) continue;
-    m[pos] = Math.min(m[pos], pr);
-  }
-  for (const pos of POS_ORDER) {
-    if (m[pos] >= 98) m[pos] = 3.9;
-  }
-  return m;
-}
-
-function minCostToComplete(
-  need: Record<Pos, number>,
-  minP: Record<Pos, number>,
-): number {
-  let s = 0;
-  for (const pos of POS_ORDER) {
-    s += need[pos] * minP[pos];
-  }
-  return s;
-}
-
 function totalNeed(need: Record<Pos, number>): number {
   return POS_ORDER.reduce((acc, p) => acc + need[p], 0);
 }
@@ -136,6 +102,24 @@ function orderBench(squad: Cand[], xi: Set<number>): Cand[] {
   return [...gk, ...of];
 }
 
+/** Best addable player for a line still needing picks (lists are xp-sorted). */
+function bestAddableForPosition(
+  pos: Pos,
+  need: Record<Pos, number>,
+  squad: Cand[],
+  teamCount: Map<number, number>,
+  byPos: Record<Pos, Cand[]>,
+): Cand | null {
+  if (need[pos] <= 0) return null;
+  for (const cand of byPos[pos]) {
+    if (squad.some((s) => s.fpl_id === cand.fpl_id)) continue;
+    const tid = cand.team_id ?? -1;
+    if (tid >= 0 && (teamCount.get(tid) ?? 0) >= 3) continue;
+    return cand;
+  }
+  return null;
+}
+
 async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecommendedSquad | null> {
   const { current } = await resolveCurrentGw();
   const fromGw = current + 1;
@@ -150,7 +134,6 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 
   if (error || !data?.length) return null;
 
-  const minP = minPriceByPosition(data);
   const ids = data
     .map((r) => r.fpl_id as number)
     .filter((n) => Number.isFinite(n) && n > 0);
@@ -195,33 +178,37 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
   }
 
   const need = { ...NEED_FULL };
-  let budget = BUDGET;
   const squad: Cand[] = [];
   const teamCount = new Map<number, number>();
 
   while (totalNeed(need) > 0) {
-    let progressed = false;
+    let best: Cand | null = null;
+    let bestPos: Pos | null = null;
     for (const pos of POS_ORDER) {
-      if (need[pos] <= 0) continue;
-      for (const cand of byPos[pos]) {
-        if (squad.some((s) => s.fpl_id === cand.fpl_id)) continue;
-        const tid = cand.team_id ?? -1;
-        if (tid >= 0 && (teamCount.get(tid) ?? 0) >= 3) continue;
-        const nextNeed = { ...need, [pos]: need[pos] - 1 };
-        const minRest = minCostToComplete(nextNeed, minP);
-        if (budget - cand.price + 1e-6 < minRest) continue;
-        squad.push(cand);
-        budget -= cand.price;
-        need[pos] -= 1;
-        if (tid >= 0) {
-          teamCount.set(tid, (teamCount.get(tid) ?? 0) + 1);
-        }
-        progressed = true;
-        break;
+      const cand = bestAddableForPosition(
+        pos,
+        need,
+        squad,
+        teamCount,
+        byPos,
+      );
+      if (!cand) continue;
+      if (
+        best == null ||
+        cand.xp_next > best.xp_next ||
+        (cand.xp_next === best.xp_next && cand.price < best.price)
+      ) {
+        best = cand;
+        bestPos = pos;
       }
-      if (progressed) break;
     }
-    if (!progressed) return null;
+    if (best == null || bestPos == null) return null;
+    const tid = best.team_id ?? -1;
+    squad.push(best);
+    need[bestPos] -= 1;
+    if (tid >= 0) {
+      teamCount.set(tid, (teamCount.get(tid) ?? 0) + 1);
+    }
   }
 
   if (squad.length !== 15) return null;
@@ -318,12 +305,12 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 }
 
 /**
- * Model “free hit” style squad for the next planning GW: greedy fill under £100m
- * and 3-per-club, then best XI + C/V by next-GW xP (same projection engine as Planner).
+ * Next planning GW: maximize next-GW xP with a valid 15 (2/5/5/3, max three per club),
+ * then best legal XI + C/V (same projection engine as Planner). No budget cap — cost is shown for info only.
  * Cached to avoid recomputing full-league projections on every home page view.
  */
 export const getShowcaseRecommendedSquad = unstable_cache(
   computeShowcaseRecommendedSquadUncached,
-  ["showcase-recommended-squad-v1"],
+  ["showcase-recommended-squad-v2"],
   { revalidate: 600 },
 );

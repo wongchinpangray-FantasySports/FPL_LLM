@@ -38,11 +38,10 @@
     "playersCardBody": "Search any asset — FPL stats, xP outlook, and a radar vs same-position peers.",
     "playersCardCta": "Browse players",
     "showcase": {
-      "eyebrow": "Showcase",
-      "title": "Model squad · GW{gw}",
-      "subtitle": "Auto-built from our next-gameweek xP: a valid £100m squad (max three per club), then the best legal XI with captain and vice. It is generic, not your team — open Planner with your Entry ID to optimize yours.",
-      "pitchTitle": "Next GW (model draft)",
-      "pitchCaption": "XI xP (C×2) {xi} · ~£{cost}m",
+      "title": "Faleague Best XI for GW{gw}",
+      "subtitle": "Built from our next-gameweek xP: a valid 15-man squad (max three per club), greedily maximising single-GW projection, then the best legal starting XI with captain and vice. No £100m limit here — total price is informational. Open Planner with your Entry ID for a real-budget plan.",
+      "pitchTitle": "Next GW",
+      "pitchCaption": "XI xP (C×2) {xi} · ~£{cost}m squad",
       "ctaPlanner": "Open planner"
     }
   },
