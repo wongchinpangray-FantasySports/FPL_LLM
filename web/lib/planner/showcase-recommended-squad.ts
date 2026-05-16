@@ -1,7 +1,9 @@
 import type { PlannerPickPayload } from "@/components/planner/types";
 import type { PlannerGwStripCell } from "@/components/planner/pitch-view";
-import { findBestXiByXp } from "@/lib/planner/optimize-xi";
-import { validatePlannerSquad } from "@/lib/planner/validate";
+import {
+  findBestStartingElevenFromPool,
+} from "@/lib/planner/optimize-xi";
+import { countByPosition, countByTeam, validatePlannerSquad } from "@/lib/planner/validate";
 import { getServerSupabase } from "@/lib/supabase";
 import type { FixtureProjection } from "@/lib/xp";
 import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
@@ -17,13 +19,21 @@ const NEED_FULL: Record<Pos, number> = {
   FWD: 3,
 };
 
+/** Top-N per line into search pool (C(n,11) must stay fast on cold start). */
+const POOL_LIMITS: Record<Pos, number> = {
+  GKP: 4,
+  DEF: 7,
+  MID: 7,
+  FWD: 6,
+};
+
 export type ShowcaseRecommendedSquad = {
   targetGw: number;
   currentGw: number;
   picks: PlannerPickPayload[];
   captainId: number | null;
   viceId: number | null;
-  /** Sum of next-GW xP for best XI with captain doubled */
+  /** Next-GW FPL score: XI xP with captain on best starter (same objective as search). */
   xiXpNext: number;
   squadCost: number;
   gwForecastByFplId: Record<number, PlannerGwStripCell[]>;
@@ -80,10 +90,6 @@ function nextGwXp(
   return Math.round(v * 100) / 100;
 }
 
-function totalNeed(need: Record<Pos, number>): number {
-  return POS_ORDER.reduce((acc, p) => acc + need[p], 0);
-}
-
 function orderStarters(squad: Cand[], xi: Set<number>): Cand[] {
   const st = squad.filter((c) => xi.has(c.fpl_id));
   const line = (pos: Pos) =>
@@ -93,31 +99,73 @@ function orderStarters(squad: Cand[], xi: Set<number>): Cand[] {
   return [...line("GKP"), ...line("DEF"), ...line("MID"), ...line("FWD")];
 }
 
-function orderBench(squad: Cand[], xi: Set<number>): Cand[] {
-  const b = squad.filter((c) => !xi.has(c.fpl_id));
-  const gk = b.filter((c) => c.position === "GKP");
-  const of = b
+function orderBench(bench: Cand[]): Cand[] {
+  const gk = bench.filter((c) => c.position === "GKP");
+  const of = bench
     .filter((c) => c.position !== "GKP")
     .sort((a, b) => b.xp_next - a.xp_next || a.price - b.price);
   return [...gk, ...of];
 }
 
-/** Best addable player for a line still needing picks (lists are xp-sorted). */
-function bestAddableForPosition(
-  pos: Pos,
-  need: Record<Pos, number>,
-  squad: Cand[],
-  teamCount: Map<number, number>,
-  byPos: Record<Pos, Cand[]>,
-): Cand | null {
-  if (need[pos] <= 0) return null;
-  for (const cand of byPos[pos]) {
-    if (squad.some((s) => s.fpl_id === cand.fpl_id)) continue;
-    const tid = cand.team_id ?? -1;
-    if (tid >= 0 && (teamCount.get(tid) ?? 0) >= 3) continue;
-    return cand;
+function buildSearchPool(byPos: Record<Pos, Cand[]>): PlannerPickPayload[] {
+  const poolMap = new Map<number, PlannerPickPayload>();
+  let slot = 1;
+  for (const pos of POS_ORDER) {
+    for (const c of byPos[pos].slice(0, POOL_LIMITS[pos])) {
+      if (poolMap.has(c.fpl_id)) continue;
+      poolMap.set(c.fpl_id, {
+        slot: slot++,
+        fpl_id: c.fpl_id,
+        web_name: c.web_name,
+        team: c.team,
+        team_id: c.team_id,
+        position: c.position,
+        base_price: c.price,
+        is_starter: false,
+        is_captain: false,
+        is_vice_captain: false,
+      });
+    }
   }
-  return null;
+  return [...poolMap.values()];
+}
+
+/** Four bench slots: fill remaining position counts, max 3 per club, highest xP first. */
+function fillBench(
+  xiPayloads: PlannerPickPayload[],
+  byPos: Record<Pos, Cand[]>,
+): Cand[] | null {
+  const xiIds = new Set(xiPayloads.map((p) => p.fpl_id));
+  const need = { ...NEED_FULL };
+  const xiCounts = countByPosition(xiPayloads);
+  for (const pos of POS_ORDER) {
+    need[pos] -= xiCounts[pos] ?? 0;
+  }
+  const team = countByTeam(xiPayloads);
+  const flat: Cand[] = [];
+  for (const pos of POS_ORDER) {
+    for (const c of byPos[pos]) {
+      if (!xiIds.has(c.fpl_id)) flat.push(c);
+    }
+  }
+  flat.sort(
+    (a, b) => b.xp_next - a.xp_next || a.price - b.price,
+  );
+  const bench: Cand[] = [];
+  for (const c of flat) {
+    if (bench.length >= 4) break;
+    const pos = c.position;
+    if (need[pos] <= 0) continue;
+    const tid = c.team_id ?? -1;
+    if (tid >= 0 && (team.get(tid) ?? 0) >= 3) continue;
+    bench.push(c);
+    need[pos] -= 1;
+    if (tid >= 0) {
+      team.set(tid, (team.get(tid) ?? 0) + 1);
+    }
+  }
+  if (bench.length < 4) return null;
+  return bench;
 }
 
 async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecommendedSquad | null> {
@@ -138,8 +186,9 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
     .map((r) => r.fpl_id as number)
     .filter((n) => Number.isFinite(n) && n > 0);
 
+  /** Same `currentGw` / `fromGw` contract as `/api/planner/project` (Planner client). */
   const proj = await projectPlayers(ids, {
-    currentGw: Math.max(1, fromGw - 1),
+    currentGw: current,
     fromGw,
     toGw: fromGw,
   });
@@ -177,87 +226,58 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
     );
   }
 
-  const need = { ...NEED_FULL };
-  const squad: Cand[] = [];
-  const teamCount = new Map<number, number>();
-
-  while (totalNeed(need) > 0) {
-    let best: Cand | null = null;
-    let bestPos: Pos | null = null;
-    for (const pos of POS_ORDER) {
-      const cand = bestAddableForPosition(
-        pos,
-        need,
-        squad,
-        teamCount,
-        byPos,
-      );
-      if (!cand) continue;
-      if (
-        best == null ||
-        cand.xp_next > best.xp_next ||
-        (cand.xp_next === best.xp_next && cand.price < best.price)
-      ) {
-        best = cand;
-        bestPos = pos;
-      }
-    }
-    if (best == null || bestPos == null) return null;
-    const tid = best.team_id ?? -1;
-    squad.push(best);
-    need[bestPos] -= 1;
-    if (tid >= 0) {
-      teamCount.set(tid, (teamCount.get(tid) ?? 0) + 1);
+  const candByFid = new Map<number, Cand>();
+  for (const pos of POS_ORDER) {
+    for (const c of byPos[pos]) {
+      candByFid.set(c.fpl_id, c);
     }
   }
 
-  if (squad.length !== 15) return null;
-
-  const picksBare: PlannerPickPayload[] = squad.map((c, i) => ({
-    slot: i + 1,
-    fpl_id: c.fpl_id,
-    web_name: c.web_name,
-    team: c.team,
-    team_id: c.team_id,
-    position: c.position,
-    base_price: c.price,
-    is_starter: false,
-    is_captain: false,
-    is_vice_captain: false,
-  }));
+  const pool = buildSearchPool(byPos);
+  if (pool.length < 11) return null;
 
   const xpByFid: Record<string, number> = {};
-  for (const c of squad) xpByFid[String(c.fpl_id)] = c.xp_next;
+  for (const p of pool) {
+    xpByFid[String(p.fpl_id)] = candByFid.get(p.fpl_id)!.xp_next;
+  }
 
-  const xi = findBestXiByXp(picksBare, xpByFid);
-  if (!xi || xi.length !== 11) return null;
+  const found = findBestStartingElevenFromPool(pool, xpByFid);
+  if (!found) return null;
 
-  const xiSet = new Set(xi);
+  const xiPayloads = found.xi;
+  const xiSet = new Set(xiPayloads.map((p) => p.fpl_id));
+
   let captainId: number | null = null;
   let best = -1;
-  for (const id of xi) {
-    const x = xpByFid[String(id)] ?? 0;
+  for (const p of xiPayloads) {
+    const x = xpByFid[String(p.fpl_id)] ?? 0;
     if (x > best) {
       best = x;
-      captainId = id;
+      captainId = p.fpl_id;
     }
   }
   let viceId: number | null = null;
   let second = -1;
-  for (const id of xi) {
-    if (id === captainId) continue;
-    const x = xpByFid[String(id)] ?? 0;
+  for (const p of xiPayloads) {
+    if (p.fpl_id === captainId) continue;
+    const x = xpByFid[String(p.fpl_id)] ?? 0;
     if (x > second) {
       second = x;
-      viceId = id;
+      viceId = p.fpl_id;
     }
   }
 
-  const startersOrdered = orderStarters(squad, xiSet);
-  const benchOrdered = orderBench(squad, xiSet);
-  const ordered = [...startersOrdered, ...benchOrdered];
+  const benchCands = fillBench(xiPayloads, byPos);
+  if (!benchCands) return null;
 
-  const picks: PlannerPickPayload[] = ordered.map((c, i) => ({
+  const xiCands = xiPayloads
+    .map((p) => candByFid.get(p.fpl_id))
+    .filter((c): c is Cand => c != null);
+  const startersOrdered = orderStarters(xiCands, xiSet);
+  const benchOrdered = orderBench(benchCands);
+  const orderedCands = [...startersOrdered, ...benchOrdered];
+
+  const picks: PlannerPickPayload[] = orderedCands.map((c, i) => ({
     slot: i + 1,
     fpl_id: c.fpl_id,
     web_name: c.web_name,
@@ -272,14 +292,11 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 
   if (validatePlannerSquad(picks).length > 0) return null;
 
-  let xiXpNext = 0;
-  for (const id of xi) {
-    const x = xpByFid[String(id)] ?? 0;
-    xiXpNext += id === captainId ? x * 2 : x;
-  }
-  xiXpNext = Math.round(xiXpNext * 10) / 10;
+  const xiXpNext = Math.round(found.score * 10) / 10;
 
-  const squadCost = Math.round(squad.reduce((s, c) => s + c.price, 0) * 10) / 10;
+  const squad = [...xiCands, ...benchCands];
+  const squadCost =
+    Math.round(squad.reduce((s, c) => s + c.price, 0) * 10) / 10;
 
   const gwForecastByFplId: Record<number, PlannerGwStripCell[]> = {};
   const nextGwXpByFplId: Record<number, number> = {};
@@ -293,7 +310,7 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 
   return {
     targetGw: fromGw,
-    currentGw: Math.max(1, fromGw - 1),
+    currentGw: current,
     picks,
     captainId,
     viceId,
@@ -305,12 +322,12 @@ async function computeShowcaseRecommendedSquadUncached(): Promise<ShowcaseRecomm
 }
 
 /**
- * Next planning GW: maximize next-GW xP with a valid 15 (2/5/5/3, max three per club),
- * then best legal XI + C/V (same projection engine as Planner). No budget cap — cost is shown for info only.
- * Cached to avoid recomputing full-league projections on every home page view.
+ * Home-page “Best XI”: same projection contract as Planner (`/api/planner/project`),
+ * then search a ~22-player pool for the legal XI that maximises next-GW FPL score
+ * with optimal captain (`sum(xp) + max(xp)`). Bench = four best fillers for a valid 15.
  */
 export const getShowcaseRecommendedSquad = unstable_cache(
   computeShowcaseRecommendedSquadUncached,
-  ["showcase-recommended-squad-v3"],
+  ["showcase-recommended-squad-v4"],
   { revalidate: 600 },
 );

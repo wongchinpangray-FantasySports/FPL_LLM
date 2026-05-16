@@ -39,9 +39,9 @@
     "playersCardCta": "Browse players",
     "showcase": {
       "title": "Faleague Best XI for GW{gw}",
-      "subtitle": "Built from our next-gameweek xP: a valid 15-man squad (max three per club), greedily maximising single-GW projection, then the best legal starting XI with captain and vice. No £100m limit here — total price is informational. Open Planner with your Entry ID for a real-budget plan.",
+      "subtitle": "Same next-GW xP engine as Planner. We search a shortlist (~22 players / line) for the legal XI that maximises FPL score with the armband on the best starter (`sum + max` xP), then add four bench fillers (max three per club, no budget cap). Open Planner with your Entry ID for your own squad.",
       "pitchTitle": "Next GW",
-      "pitchCaption": "XI xP (C×2) {xi} · ~£{cost}m squad",
+      "pitchCaption": "XI score (next GW, optimal captain) {xi} · ~£{cost}m squad",
       "ctaPlanner": "Open planner"
     }
   },
