@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { getShowcaseRecommendedSquad } from "@/lib/planner/showcase-recommended-squad";
 
-/** ISR-style freshness for this handler (matches showcase `unstable_cache` window). */
-export const revalidate = 600;
+/**
+ * Do not prerender at `next build`: CI (e.g. Cloudflare) often has no Supabase
+ * env vars during the build image, and this handler would throw on
+ * `getServerSupabase()`. Freshness comes from `Cache-Control` + in-function
+ * `unstable_cache` (see `getShowcaseRecommendedSquad`).
+ */
+export const dynamic = "force-dynamic";
 
 /**
  * Public JSON for the home “Best XI” block. Heavy CPU work is isolated from the
