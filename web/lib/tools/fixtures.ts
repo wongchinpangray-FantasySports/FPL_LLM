@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 import type { ToolHandler } from "./types";
 
 async function currentGw(): Promise<number> {
@@ -66,6 +67,7 @@ const getFixtures: ToolHandler = {
   },
   async run(input) {
     const supa = getServerSupabase();
+    const season = await getCurrentFplSeason();
     const tmap = await teamMap();
     const cur = await currentGw();
     const fromGw = Number(input.from_gw ?? cur) || cur;
@@ -83,6 +85,7 @@ const getFixtures: ToolHandler = {
       .select(
         "id,gw,kickoff_time,home_team_id,away_team_id,home_team_score,away_team_score,home_fdr,away_fdr,finished,started,minutes",
       )
+      .eq("season", season)
       .gte("gw", fromGw)
       .lte("gw", toGw)
       .order("gw", { ascending: true })
@@ -138,6 +141,7 @@ const getFdr: ToolHandler = {
   },
   async run(input) {
     const supa = getServerSupabase();
+    const season = await getCurrentFplSeason();
     const tmap = await teamMap();
     const cur = await currentGw();
     const horizon = Math.min(
@@ -158,6 +162,7 @@ const getFdr: ToolHandler = {
       const { data, error } = await supa
         .from("fixtures")
         .select("gw,home_team_id,away_team_id,home_fdr,away_fdr,finished")
+        .eq("season", season)
         .gte("gw", cur)
         .lt("gw", cur + horizon)
         .or(`home_team_id.eq.${tid},away_team_id.eq.${tid}`)

@@ -17,6 +17,7 @@ import {
   loadDoubleGameweekKeys,
   projectPlayers,
 } from "@/lib/xp";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
 
 export const dynamic = "force-dynamic";
@@ -130,13 +131,15 @@ export default async function DashboardPage({
     Math.min(5, FPL_LAST_SEASON_GW - startGw + 1),
   );
   const allTeamIds = await allPremierTeamIds();
-  const grid = await teamsFixtureGrid(allTeamIds, startGw, horizon);
+  const fplSeason = await getCurrentFplSeason();
+  const grid = await teamsFixtureGrid(allTeamIds, startGw, horizon, fplSeason);
   const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
 
   const dgwTeamGw = await loadDoubleGameweekKeys(
     allTeamIds,
     startGw,
     horizon > 0 ? startGw + horizon - 1 : startGw,
+    fplSeason,
   );
 
   const startingXI = displayPicks.filter((p) => p.is_starter);

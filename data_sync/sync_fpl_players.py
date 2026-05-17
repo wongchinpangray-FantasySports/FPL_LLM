@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 from .common import (
     POSITION_MAP,
     fpl_get,
+    fpl_season_start_year_from_bootstrap,
     get_supabase_client,
     upsert_batch,
 )
@@ -142,6 +143,14 @@ def fetch_and_sync() -> None:
     print("Fetching FPL bootstrap-static...")
     supabase = get_supabase_client()
     data = fpl_get("/bootstrap-static/")
+    season = fpl_season_start_year_from_bootstrap(data)
+    print(f"FPL season start year: {season} (written to fpl_meta.current_season)")
+    upsert_batch(
+        supabase,
+        "fpl_meta",
+        [{"key": "current_season", "value": season}],
+        on_conflict="key",
+    )
 
     teams = data["teams"]
     events = data["events"]

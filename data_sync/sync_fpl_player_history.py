@@ -14,7 +14,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List
 
-from .common import fpl_get, get_supabase_client, upsert_batch
+from .common import (
+    fpl_get,
+    fpl_season_start_year_from_bootstrap,
+    get_supabase_client,
+    upsert_batch,
+)
 
 
 def _num(val: Any) -> float | None:
@@ -26,12 +31,15 @@ def _num(val: Any) -> float | None:
         return None
 
 
-def _history_rows(player_id: int, history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _history_rows(
+    player_id: int, history: List[Dict[str, Any]], season: str
+) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for h in history:
         rows.append(
             {
                 "player_id": player_id,
+                "season": season,
                 "gw": h.get("round"),
                 "fixture_id": h.get("fixture"),
                 "opponent_team_id": h.get("opponent_team"),
@@ -74,15 +82,17 @@ def _history_rows(player_id: int, history: List[Dict[str, Any]]) -> List[Dict[st
     return rows
 
 
-def _fetch_summary(player_id: int) -> List[Dict[str, Any]]:
+def _fetch_summary(player_id: int, season: str) -> List[Dict[str, Any]]:
     data = fpl_get(f"/element-summary/{player_id}/")
-    return _history_rows(player_id, data.get("history", []))
+    return _history_rows(player_id, data.get("history", []), season)
 
 
 def fetch_and_sync(max_workers: int = 6, limit: int | None = None) -> None:
     print("Fetching player index from bootstrap-static...")
     supabase = get_supabase_client()
     bs = fpl_get("/bootstrap-static/")
+    season = fpl_season_start_year_from_bootstrap(bs)
+    print(f"FPL season start year for history rows: {season}")
     player_ids = [p["id"] for p in bs["elements"]]
     if limit:
         player_ids = player_ids[:limit]
@@ -91,7 +101,9 @@ def fetch_and_sync(max_workers: int = 6, limit: int | None = None) -> None:
     all_rows: List[Dict[str, Any]] = []
     start = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        future_to_pid = {pool.submit(_fetch_summary, pid): pid for pid in player_ids}
+        future_to_pid = {
+            pool.submit(_fetch_summary, pid, season): pid for pid in player_ids
+        }
         for i, fut in enumerate(as_completed(future_to_pid), start=1):
             pid = future_to_pid[fut]
             try:
@@ -107,7 +119,7 @@ def fetch_and_sync(max_workers: int = 6, limit: int | None = None) -> None:
         gw = row.get("gw")
         if pid is None or gw is None:
             continue
-        key = (pid, gw)
+        key = (pid, gw, row.get("season") or season)
         existing = deduped.get(key)
         if existing is None:
             deduped[key] = dict(row)
@@ -156,7 +168,7 @@ def fetch_and_sync(max_workers: int = 6, limit: int | None = None) -> None:
         f" (from {len(all_rows)} raw rows)..."
     )
     upsert_batch(
-        supabase, "player_gw_stats", final_rows, on_conflict="player_id,gw"
+        supabase, "player_gw_stats", final_rows, on_conflict="player_id,gw,season"
     )
     print("Done.")
 

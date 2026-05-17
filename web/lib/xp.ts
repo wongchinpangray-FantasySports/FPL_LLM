@@ -28,6 +28,7 @@
  */
 
 import { getServerSupabase } from "./supabase";
+import { getCurrentFplSeason } from "./fpl-season";
 
 export interface TeamStrength {
   id: number;
@@ -191,7 +192,7 @@ export interface PlayerProjection {
 
 // --- constants -------------------------------------------------------------
 
-const ROLLING_WINDOW = 6;
+export const ROLLING_WINDOW = 6;
 
 const HOME_BASE_GOALS = 1.45;
 const AWAY_BASE_GOALS = 1.15;
@@ -360,6 +361,7 @@ export async function loadTeams(): Promise<Map<number, TeamStrength>> {
 export async function loadFixturesWindow(
   fromGw: number,
   toGw: number,
+  fplSeason: string,
 ): Promise<Fixture[]> {
   const supa = getServerSupabase();
   const { data } = await supa
@@ -367,6 +369,7 @@ export async function loadFixturesWindow(
     .select(
       "id,gw,home_team_id,away_team_id,home_fdr,away_fdr,finished,kickoff_time",
     )
+    .eq("season", fplSeason)
     .gte("gw", fromGw)
     .lte("gw", toGw)
     .order("gw", { ascending: true });
@@ -378,6 +381,7 @@ export async function loadUnderstatRollingForWindow(
   playerIds: number[],
   fromGw: number,
   toGw: number,
+  fplSeason: string,
 ): Promise<Map<number, { xg: number; xa: number; minutes: number }>> {
   const out = new Map<number, { xg: number; xa: number; minutes: number }>();
   if (playerIds.length === 0 || fromGw > toGw) return out;
@@ -386,6 +390,7 @@ export async function loadUnderstatRollingForWindow(
   const { data: fxDates } = await supa
     .from("fixtures")
     .select("kickoff_time")
+    .eq("season", fplSeason)
     .gte("gw", fromGw)
     .lte("gw", toGw)
     .not("kickoff_time", "is", null);
@@ -406,15 +411,16 @@ export async function loadUnderstatRollingForWindow(
   const minDate = new Date(minTs).toISOString().slice(0, 10);
   const maxDate = new Date(maxTs).toISOString().slice(0, 10);
 
-  const season =
-    process.env.FPL_UNDERSTAT_SEASON ??
+  const understatSeason =
+    process.env.FPL_UNDERSTAT_SEASON?.trim() ||
+    fplSeason ||
     (await resolveUnderstatSeasonFallback());
 
   const { data: usRows } = await supa
     .from("understat_xg")
     .select("matched_fpl_id,xg,xa,minutes")
     .in("matched_fpl_id", playerIds)
-    .eq("season", season)
+    .eq("season", understatSeason)
     .gte("match_date", minDate)
     .lte("match_date", maxDate)
     .not("matched_fpl_id", "is", null);
@@ -460,6 +466,7 @@ export async function nextFixtureForPlayers(
   if (playerIds.length === 0) return out;
 
   const { current } = await resolveCurrentGw();
+  const fplSeason = await getCurrentFplSeason();
   const [teamsMap, players] = await Promise.all([
     loadTeams(),
     loadPlayers(playerIds),
@@ -467,7 +474,7 @@ export async function nextFixtureForPlayers(
 
   const fromGw = current;
   const toGw = current + 15;
-  const raw = await loadFixturesWindow(fromGw, toGw);
+  const raw = await loadFixturesWindow(fromGw, toGw, fplSeason);
   const unfinished = raw.filter((f) => !f.finished);
 
   const byTeam = new Map<number, Fixture[]>();
@@ -520,6 +527,7 @@ export async function loadDoubleGameweekKeys(
   teamIds: number[],
   fromGw: number,
   toGw: number,
+  fplSeason: string,
 ): Promise<Set<string>> {
   const out = new Set<string>();
   if (teamIds.length === 0) return out;
@@ -528,6 +536,7 @@ export async function loadDoubleGameweekKeys(
   const { data } = await supa
     .from("fixtures")
     .select("gw,home_team_id,away_team_id")
+    .eq("season", fplSeason)
     .gte("gw", fromGw)
     .lte("gw", toGw);
 
@@ -604,6 +613,7 @@ export function setPieceFlags(p: PlayerCoreRow): SetPieceFlags {
 export async function loadOpponentHistory(
   playerIds: number[],
   oppTeamIds: number[],
+  fplSeason: string,
 ): Promise<Map<number, Map<number, OpponentHistory>>> {
   const out = new Map<number, Map<number, OpponentHistory>>();
   if (playerIds.length === 0 || oppTeamIds.length === 0) return out;
@@ -613,6 +623,7 @@ export async function loadOpponentHistory(
     .select(
       "player_id,opponent_team_id,minutes,total_points,goals_scored,assists",
     )
+    .eq("season", fplSeason)
     .in("player_id", playerIds)
     .in("opponent_team_id", oppTeamIds);
 
@@ -645,6 +656,7 @@ export async function loadRollingStats(
   ids: number[],
   currentGw: number,
   window = ROLLING_WINDOW,
+  fplSeason: string,
 ): Promise<Map<number, PlayerRolling>> {
   const out = new Map<number, PlayerRolling>();
   if (ids.length === 0) return out;
@@ -659,6 +671,7 @@ export async function loadRollingStats(
   const first = await supa
     .from("player_gw_stats")
     .select(FULL_COLS)
+    .eq("season", fplSeason)
     .in("player_id", ids)
     .gte("gw", fromGw)
     .lte("gw", currentGw);
@@ -667,6 +680,7 @@ export async function loadRollingStats(
     const fallback = await supa
       .from("player_gw_stats")
       .select(LEGACY_COLS)
+      .eq("season", fplSeason)
       .in("player_id", ids)
       .gte("gw", fromGw)
       .lte("gw", currentGw);
@@ -1094,16 +1108,22 @@ export async function projectPlayers(
   const out = new Map<number, PlayerProjection>();
   if (playerIds.length === 0) return out;
 
+  const fplSeason = await getCurrentFplSeason();
   const rollingFromGw = Math.max(1, opts.currentGw - ROLLING_WINDOW + 1);
   const includeFinished = opts.includeFinishedFixtures === true;
 
   const [teams, fixtures, players, rollingAll, understatByPlayer] =
     await Promise.all([
       loadTeams(),
-      loadFixturesWindow(opts.fromGw, opts.toGw),
+      loadFixturesWindow(opts.fromGw, opts.toGw, fplSeason),
       loadPlayers(playerIds),
-      loadRollingStats(playerIds, opts.currentGw),
-      loadUnderstatRollingForWindow(playerIds, rollingFromGw, opts.currentGw),
+      loadRollingStats(playerIds, opts.currentGw, ROLLING_WINDOW, fplSeason),
+      loadUnderstatRollingForWindow(
+        playerIds,
+        rollingFromGw,
+        opts.currentGw,
+        fplSeason,
+      ),
     ]);
 
   // group fixtures by team (skip finished unless backtesting)
@@ -1132,6 +1152,7 @@ export async function projectPlayers(
   const oppHistoryByPlayer = await loadOpponentHistory(
     playerIds,
     Array.from(oppIdsSet),
+    fplSeason,
   );
 
   for (const pid of playerIds) {

@@ -4,8 +4,10 @@ import {
   loadRollingStats,
   projectPlayers,
   resolveCurrentGw,
+  ROLLING_WINDOW,
   XP_SCORING_NOTE,
 } from "@/lib/xp";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 
 const PLAYER_COLS = [
   "fpl_id",
@@ -242,13 +244,14 @@ const comparePlayers: ToolHandler = {
       .filter((v): v is number => typeof v === "number");
 
     const { current, next } = await resolveCurrentGw();
+    const season = await getCurrentFplSeason();
     const [projections, rolling] = await Promise.all([
       projectPlayers(ids, {
         currentGw: current,
         fromGw: next,
         toGw: next + horizon - 1,
       }),
-      loadRollingStats(ids, current),
+      loadRollingStats(ids, current, ROLLING_WINDOW, season),
     ]);
 
     const supa = getServerSupabase();
@@ -569,9 +572,11 @@ const getPlayerRecentGameweeks: ToolHandler = {
         .maybeSingle();
       if (pErr) throw new Error(pErr.message);
 
+      const season = await getCurrentFplSeason();
       const { data: gws, error: gErr } = await supa
         .from("player_gw_stats")
         .select(GW_STATS_SELECT)
+        .eq("season", season)
         .eq("player_id", r.fpl_id)
         .order("gw", { ascending: false })
         .limit(nGw);

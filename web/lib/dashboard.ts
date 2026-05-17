@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 
 export interface DashFixture {
   gw: number;
@@ -35,6 +36,7 @@ export async function teamsFixtureGrid(
   teamIds: number[],
   startGw: number,
   horizon: number,
+  fplSeason: string,
 ): Promise<DashTeam[]> {
   if (teamIds.length === 0) return [];
   const supa = getServerSupabase();
@@ -54,6 +56,7 @@ export async function teamsFixtureGrid(
     .select(
       "gw,home_team_id,away_team_id,home_fdr,away_fdr,home_team_score,away_team_score,finished",
     )
+    .eq("season", fplSeason)
     .gte("gw", startGw)
     .lt("gw", endExclusive)
     .or(

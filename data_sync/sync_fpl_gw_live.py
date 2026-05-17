@@ -11,10 +11,10 @@ import argparse
 import sys
 from typing import Any, Dict, List
 
-from .common import fpl_get, get_supabase_client, upsert_batch
+from .common import fpl_get, fpl_season_start_year_from_bootstrap, get_supabase_client, upsert_batch
 
 
-def _build_rows(gw: int, elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _build_rows(gw: int, elements: List[Dict[str, Any]], season: str) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for el in elements:
         stats = el.get("stats", {})
@@ -23,6 +23,7 @@ def _build_rows(gw: int, elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         rows.append(
             {
                 "player_id": el["id"],
+                "season": season,
                 "gw": gw,
                 "fixture_id": fixture_id,
                 "minutes": stats.get("minutes"),
@@ -88,12 +89,14 @@ def _current_gw() -> int | None:
 def sync_gw(gw: int) -> None:
     print(f"Fetching live stats for GW {gw}...")
     supabase = get_supabase_client()
+    bs = fpl_get("/bootstrap-static/")
+    season = fpl_season_start_year_from_bootstrap(bs)
     data = fpl_get(f"/event/{gw}/live/")
     elements = data.get("elements", [])
-    rows = _build_rows(gw, elements)
-    print(f"Syncing {len(rows)} player-GW rows for GW {gw}...")
+    rows = _build_rows(gw, elements, season)
+    print(f"Syncing {len(rows)} player-GW rows for GW {gw} (season={season})...")
     upsert_batch(
-        supabase, "player_gw_stats", rows, on_conflict="player_id,gw"
+        supabase, "player_gw_stats", rows, on_conflict="player_id,gw,season"
     )
 
 

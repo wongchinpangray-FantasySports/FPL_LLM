@@ -41,11 +41,14 @@ async function main(): Promise<void> {
 
   const { getServerSupabase } = await import("../lib/supabase");
   const { projectPlayers } = await import("../lib/xp");
+  const { getCurrentFplSeason } = await import("../lib/fpl-season");
 
   const supa = getServerSupabase();
+  const season = await getCurrentFplSeason();
   const { data: actualRows, error } = await supa
     .from("player_gw_stats")
     .select("player_id,total_points,minutes")
+    .eq("season", season)
     .eq("gw", targetGw)
     .gt("minutes", 0);
 

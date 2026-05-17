@@ -17,6 +17,25 @@ from supabase import create_client, Client
 
 FPL_BASE = "https://fantasy.premierleague.com/api"
 
+
+def fpl_season_start_year_from_bootstrap(data: dict) -> str:
+    """Calendar year when the FPL season kicks off (e.g. 2025 for 2025/26).
+
+    Prefer ``FPL_CURRENT_SEASON`` env when set. Otherwise derive from the
+    earliest event's ``deadline_time`` (GW1) in ``bootstrap-static`` JSON.
+    """
+    env = os.environ.get("FPL_CURRENT_SEASON", "").strip()
+    if env:
+        return env
+    events = data.get("events") or []
+    if not events:
+        return "2025"
+    first = min(events, key=lambda e: int(e.get("id", 999)))
+    dt = first.get("deadline_time")
+    if isinstance(dt, str) and len(dt) >= 4 and dt[:4].isdigit():
+        return dt[:4]
+    return "2025"
+
 _DEFAULT_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (compatible; FPL-LLM/0.1; +https://github.com/)"

@@ -9,15 +9,23 @@ from __future__ import annotations
 import sys
 from typing import Any, Dict, List
 
-from .common import fpl_get, get_supabase_client, upsert_batch
+from .common import (
+    fpl_get,
+    fpl_season_start_year_from_bootstrap,
+    get_supabase_client,
+    upsert_batch,
+)
 
 
-def _build_fixture_rows(fixtures: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _build_fixture_rows(
+    fixtures: List[Dict[str, Any]], season: str
+) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for f in fixtures:
         rows.append(
             {
                 "id": f["id"],
+                "season": season,
                 "gw": f.get("event"),
                 "kickoff_time": f.get("kickoff_time"),
                 "home_team_id": f.get("team_h"),
@@ -38,10 +46,15 @@ def _build_fixture_rows(fixtures: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def fetch_and_sync() -> None:
     print("Fetching FPL fixtures...")
     supabase = get_supabase_client()
+    bs = fpl_get("/bootstrap-static/")
+    season = fpl_season_start_year_from_bootstrap(bs)
     fixtures = fpl_get("/fixtures/")
-    print(f"Syncing {len(fixtures)} fixtures...")
+    print(f"Syncing {len(fixtures)} fixtures (season={season})...")
     upsert_batch(
-        supabase, "fixtures", _build_fixture_rows(fixtures), on_conflict="id"
+        supabase,
+        "fixtures",
+        _build_fixture_rows(fixtures, season),
+        on_conflict="id",
     )
     print("Done. fixtures table is up to date.")
 

@@ -48,7 +48,11 @@ FPL_LLM/
 2. Open the SQL editor and paste the contents of
    [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
    Run it. Rerunning is safe — the migration is idempotent.
-3. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
+3. Run [`supabase/migrations/0005_fpl_season_scoping.sql`](supabase/migrations/0005_fpl_season_scoping.sql)
+   as well (adds `season` to `fixtures` / `player_gw_stats`, `fpl_meta` for the
+   active campaign). **Re-run your Python syncs** after this so rows include
+   the correct `season` (see the Python sync section below).
+4. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Project Settings → API.
 
 ## 2. Set up Python data-sync locally
@@ -62,7 +66,7 @@ pip install -r requirements.txt
 copy .env.example .env    # then edit and fill in Supabase creds
 ```
 
-Run each sync once:
+Run each sync once (after migrations; order matters the first time):
 
 ```bash
 python -m data_sync.sync_fpl_players
@@ -71,6 +75,13 @@ python -m data_sync.sync_fpl_player_history
 python -m data_sync.sync_fpl_gw_live           # current GW only
 python -m data_sync.sync_understat --season 2025
 ```
+
+`sync_fpl_players` writes **`fpl_meta.current_season`** (from FPL bootstrap, or
+override with env **`FPL_CURRENT_SEASON`**). Fixture and GW-stat rows carry the
+same `season` so the app never mixes last year’s GW numbers with this season.
+
+Optional env (Python + Next.js): **`FPL_CURRENT_SEASON=2025`** when you need to
+pin the campaign before meta is synced or for local testing.
 
 After this, `players_static`, `teams`, `gameweeks`, `fixtures`,
 `player_gw_stats`, and `understat_xg` will be populated.

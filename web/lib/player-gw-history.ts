@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 
 const GW_STATS_SELECT = [
   "gw",
@@ -71,10 +72,12 @@ export async function loadPlayerGwHistory(
   if (!Number.isFinite(fplId) || fplId <= 0) return [];
 
   const lim = Math.min(Math.max(Math.floor(limit), 1), 10);
+  const season = await getCurrentFplSeason();
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("player_gw_stats")
     .select(GW_STATS_SELECT)
+    .eq("season", season)
     .eq("player_id", fplId)
     .order("gw", { ascending: false })
     .limit(lim);
