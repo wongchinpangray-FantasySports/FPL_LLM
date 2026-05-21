@@ -24,6 +24,66 @@ export function countMiniByPosition(
   return c;
 }
 
+/** Rules while building a squad (before all 5 slots are filled). */
+export function validatePartialSquad(picks: MiniPickInput[]): MiniValidationIssue[] {
+  const issues: MiniValidationIssue[] = [];
+
+  if (picks.length > 5) {
+    issues.push({
+      code: "size",
+      message: "Squad cannot have more than 5 players.",
+    });
+    return issues;
+  }
+
+  const ids = picks.map((p) => p.fpl_id);
+  if (new Set(ids).size !== ids.length) {
+    issues.push({ code: "duplicate", message: "Each player can only be picked once." });
+  }
+
+  const byPos = countMiniByPosition(picks);
+  if (byPos.GKP > 1) {
+    issues.push({
+      code: "gkp",
+      message: "Only one goalkeeper allowed.",
+    });
+  }
+
+  for (const pos of ["DEF", "MID", "FWD"] as const) {
+    if (byPos[pos] > MAX_PER_POSITION[pos]) {
+      issues.push({
+        code: `pos_${pos}`,
+        message: `At most ${MAX_PER_POSITION[pos]} ${pos} (have ${byPos[pos]}).`,
+      });
+    }
+  }
+
+  const byTeam = new Map<number, number>();
+  for (const p of picks) {
+    if (p.team_id == null) continue;
+    byTeam.set(p.team_id, (byTeam.get(p.team_id) ?? 0) + 1);
+  }
+  for (const [tid, n] of byTeam) {
+    if (n > 2) {
+      issues.push({
+        code: "club_cap",
+        message: `Max 2 players per club (team ${tid}: ${n}).`,
+      });
+    }
+  }
+
+  for (const p of picks) {
+    if (!p.position || !(p.position in MAX_PER_POSITION)) {
+      issues.push({
+        code: "invalid_position",
+        message: `Invalid position for player ${p.fpl_id}.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
 export function validateMiniSquad(picks: MiniPickInput[]): MiniValidationIssue[] {
   const issues: MiniValidationIssue[] = [];
 

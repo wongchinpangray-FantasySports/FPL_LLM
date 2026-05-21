@@ -53,3 +53,24 @@ export async function getCurrentFplSeason(): Promise<string> {
 export function clearFplSeasonCache(): void {
   cache = null;
 }
+
+const FPL_SEASON_YEAR_RE = /^\d{4}$/;
+
+/** True if `s` is a plausible FPL season key (e.g. `2025` for 2025/26). */
+export function isFplSeasonKey(s: string): boolean {
+  return FPL_SEASON_YEAR_RE.test(s.trim());
+}
+
+/**
+ * If the model passed an explicit `fpl_season`, use it for **historical** reads
+ * (GW stats / past fixtures). Otherwise use the active campaign from meta/env.
+ */
+export async function resolveFplSeasonForTool(
+  fplSeasonInput: unknown,
+): Promise<string> {
+  if (typeof fplSeasonInput === "string") {
+    const t = fplSeasonInput.trim();
+    if (isFplSeasonKey(t)) return t;
+  }
+  return getCurrentFplSeason();
+}

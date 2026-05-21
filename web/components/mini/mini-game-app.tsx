@@ -5,23 +5,25 @@ import { useTranslations } from "next-intl";
 import { useEntryId } from "@/components/entry-id-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   countMiniByPosition,
   validateCaptaincy,
   validateMiniSquad,
+  validatePartialSquad,
   type MiniPickInput,
 } from "@/lib/mini/validate";
 import type { MiniPickStored } from "@/lib/mini/types";
+import {
+  MINI_GK_SLOT,
+  MINI_SLOT_COUNT,
+  MiniPitch,
+  type MiniPitchPlayer,
+} from "@/components/mini/mini-pitch";
+import { MiniModal, MiniModalActions } from "@/components/mini/mini-modal";
+import { MiniPlayerPicker } from "@/components/mini/mini-player-picker";
 
-type PlayerHit = {
-  fpl_id: number;
-  web_name: string | null;
-  name: string | null;
-  team: string | null;
-  team_id: number | null;
-  position: string | null;
-  base_price: number | null;
-};
+type PlayerHit = MiniPitchPlayer & { team_id: number | null };
 
 type MiniContext = {
   season: string;
@@ -42,12 +44,32 @@ type LeaderboardRow = {
   updated_at: string;
 };
 
+const EMPTY_SLOTS: (PlayerHit | null)[] = Array.from(
+  { length: MINI_SLOT_COUNT },
+  () => null,
+);
+
 function toPickInput(p: PlayerHit): MiniPickInput {
   return {
     fpl_id: p.fpl_id,
     position: p.position,
     team_id: p.team_id,
   };
+}
+
+function slotsToPicks(slots: (PlayerHit | null)[]): PlayerHit[] {
+  return slots.filter((p): p is PlayerHit => p != null);
+}
+
+function picksToSlots(picks: PlayerHit[]): (PlayerHit | null)[] {
+  const slots = [...EMPTY_SLOTS];
+  const gk = picks.find((p) => p.position === "GKP");
+  const rest = picks.filter((p) => p.position !== "GKP");
+  if (gk) slots[MINI_GK_SLOT] = gk;
+  rest.forEach((p, i) => {
+    if (i + 1 < MINI_SLOT_COUNT) slots[i + 1] = p;
+  });
+  return slots;
 }
 
 function formatDeadline(iso: string | null, locale: string): string {
@@ -67,16 +89,16 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const { entryId: storedEntryId, setEntryId } = useEntryId();
   const [entryInput, setEntryInput] = useState("");
   const [ctx, setCtx] = useState<MiniContext | null>(null);
-  const [picks, setPicks] = useState<PlayerHit[]>([]);
+  const [slots, setSlots] = useState<(PlayerHit | null)[]>([...EMPTY_SLOTS]);
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
-  const [searchQ, setSearchQ] = useState("");
-  const [searchHits, setSearchHits] = useState<PlayerHit[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeMessage, setNoticeMessage] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "loading" | "ok" | "error"
   >("idle");
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [lbGw, setLbGw] = useState<number | null>(null);
   const [lbMeta, setLbMeta] = useState<{
@@ -87,10 +109,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const [activeTab, setActiveTab] = useState<"pick" | "leaderboard">("pick");
 
   const entryId = entryInput.trim() || storedEntryId || "";
+  const picks = useMemo(() => slotsToPicks(slots), [slots]);
+  const submissionOpen = Boolean(ctx?.submission_open);
 
   useEffect(() => {
     if (storedEntryId) setEntryInput(storedEntryId);
   }, [storedEntryId]);
+
+  const showNotice = useCallback((message: string) => {
+    setNoticeMessage(message);
+    setNoticeOpen(true);
+  }, []);
 
   const loadContext = useCallback(async () => {
     const res = await fetch("/api/mini/context");
@@ -133,7 +162,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
       } | null;
     };
     if (!data.entry) {
-      setPicks([]);
+      setSlots([...EMPTY_SLOTS]);
       setCaptainId(null);
       setViceId(null);
       return;
@@ -147,7 +176,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
       position: p.position,
       base_price: null,
     }));
-    setPicks(restored);
+    setSlots(picksToSlots(restored));
     setCaptainId(data.entry.captain_fpl_id);
     setViceId(data.entry.vice_fpl_id);
   }, []);
@@ -167,88 +196,93 @@ export function MiniGameApp({ locale }: { locale: string }) {
     if (entryId && /^\d+$/.test(entryId)) void loadExistingEntry(entryId);
   }, [entryId, loadExistingEntry, ctx?.submission_gw]);
 
-  useEffect(() => {
-    const trimmed = searchQ.trim();
-    if (trimmed.length < 2) {
-      setSearchHits([]);
-      return;
-    }
-    const id = window.setTimeout(() => {
-      void (async () => {
-        setSearchLoading(true);
-        try {
-          const res = await fetch(
-            `/api/planner/players?q=${encodeURIComponent(trimmed)}`,
-          );
-          const data = (await res.json()) as { players?: PlayerHit[] };
-          setSearchHits(data.players ?? []);
-        } catch {
-          setSearchHits([]);
-        } finally {
-          setSearchLoading(false);
-        }
-      })();
-    }, 220);
-    return () => window.clearTimeout(id);
-  }, [searchQ]);
-
   const posCounts = useMemo(() => countMiniByPosition(picks.map(toPickInput)), [picks]);
 
   const validationIssues = useMemo(() => {
     const inputs = picks.map(toPickInput);
     const squad = validateMiniSquad(inputs);
-    if (captainId != null && viceId != null) {
+    if (picks.length === 5 && captainId != null && viceId != null) {
       return [...squad, ...validateCaptaincy(inputs, captainId, viceId)];
     }
     if (picks.length === 5) {
-      if (captainId == null) {
-        return [...squad, { code: "captain", message: t("needCaptain") }];
-      }
-      if (viceId == null) {
-        return [...squad, { code: "vice", message: t("needVice") }];
-      }
+      const extra = [];
+      if (captainId == null) extra.push({ code: "captain", message: t("needCaptain") });
+      if (viceId == null) extra.push({ code: "vice", message: t("needVice") });
+      return [...squad, ...extra];
     }
     return squad;
   }, [picks, captainId, viceId, t]);
 
-  function tryAddPlayer(p: PlayerHit) {
-    if (picks.some((x) => x.fpl_id === p.fpl_id)) return;
-    if (picks.length >= 5) return;
-    const next = [...picks, p];
-    const issues = validateMiniSquad(next.map(toPickInput));
-    if (issues.length > 0) {
-      setSubmitError(issues[0]!.message);
+  const squadComplete = picks.length === 5 && validationIssues.length === 0;
+
+  const canSubmit = Boolean(
+    submissionOpen &&
+    squadComplete &&
+    /^\d+$/.test(entryInput.trim()),
+  );
+
+  function assignPlayerToSlot(slotIndex: number, player: PlayerHit) {
+    if (slotIndex === MINI_GK_SLOT && player.position !== "GKP") {
+      showNotice(t("gkSlotOnly"));
       return;
     }
-    setSubmitError(null);
-    setPicks(next);
-    if (next.length === 1 && captainId == null) setCaptainId(p.fpl_id);
+    if (slotIndex !== MINI_GK_SLOT && player.position === "GKP") {
+      showNotice(t("outfieldNoGk"));
+      return;
+    }
+
+    const next = [...slots];
+    for (let i = 0; i < next.length; i++) {
+      if (next[i]?.fpl_id === player.fpl_id) next[i] = null;
+    }
+    next[slotIndex] = player;
+
+    const partial = slotsToPicks(next).map(toPickInput);
+    const issues = validatePartialSquad(partial);
+    if (issues.length > 0) {
+      showNotice(issues[0]!.message);
+      return;
+    }
+
+    setSlots(next);
+    if (captainId == null && partial.length === 1) setCaptainId(player.fpl_id);
   }
 
-  function removePlayer(fplId: number) {
-    setPicks((prev) => prev.filter((p) => p.fpl_id !== fplId));
-    if (captainId === fplId) setCaptainId(null);
-    if (viceId === fplId) setViceId(null);
-    setSubmitError(null);
+  function clearSlot(slotIndex: number) {
+    const removed = slots[slotIndex];
+    const next = [...slots];
+    next[slotIndex] = null;
+    setSlots(next);
+    if (removed) {
+      if (captainId === removed.fpl_id) setCaptainId(null);
+      if (viceId === removed.fpl_id) setViceId(null);
+    }
   }
 
-  async function onSubmit() {
+  function onSlotClick(slotIndex: number) {
+    if (!submissionOpen) {
+      showNotice(t("submissionsClosed"));
+      return;
+    }
+    setPickerSlot(slotIndex);
+  }
+
+  async function performSubmit() {
     const eid = entryInput.trim();
     if (!/^\d+$/.test(eid)) {
-      setSubmitError(t("invalidEntry"));
+      showNotice(t("invalidEntry"));
       return;
     }
-    if (validationIssues.length > 0) {
-      setSubmitError(validationIssues[0]!.message);
+    if (!squadComplete) {
+      showNotice(validationIssues[0]?.message ?? t("squadIncomplete"));
       return;
     }
     if (!ctx?.submission_open) {
-      setSubmitError(t("submissionsClosed"));
+      showNotice(t("submissionsClosed"));
       return;
     }
 
     setSubmitStatus("loading");
-    setSubmitError(null);
     setEntryId(eid);
 
     const res = await fetch("/api/mini/submit", {
@@ -263,20 +297,35 @@ export function MiniGameApp({ locale }: { locale: string }) {
       }),
     });
 
-    const data = (await res.json()) as { error?: string; issues?: { message: string }[] };
+    const data = (await res.json()) as {
+      error?: string;
+      issues?: { message: string }[];
+    };
     if (!res.ok) {
       setSubmitStatus("error");
-      setSubmitError(
-        data.issues?.[0]?.message ?? data.error ?? t("submitFailed"),
-      );
+      showNotice(data.issues?.[0]?.message ?? data.error ?? t("submitFailed"));
       return;
     }
     setSubmitStatus("ok");
     void loadLeaderboard();
   }
 
+  function onSubmitClick() {
+    if (!canSubmit) {
+      if (picks.length < 5) showNotice(t("needFivePlayers"));
+      else if (validationIssues[0]) showNotice(validationIssues[0].message);
+      else if (!/^\d+$/.test(entryInput.trim())) showNotice(t("invalidEntry"));
+      else showNotice(t("submissionsClosed"));
+      return;
+    }
+    setConfirmOpen(true);
+  }
+
   const submissionGw = ctx?.submission_gw;
-  const canSubmit = Boolean(ctx?.submission_open && picks.length === 5);
+  const pickerTitle =
+    pickerSlot === MINI_GK_SLOT
+      ? t("pickerTitleGk")
+      : t("pickerTitleOut");
 
   return (
     <div className="flex flex-col gap-8">
@@ -334,7 +383,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-slate-400">{t("squadTitle")}</p>
+            <p className="mb-2 text-sm text-slate-400">{t("pitchHint")}</p>
             <p className="mb-3 text-xs text-slate-500">
               {t("posCounts", {
                 gkp: posCounts.GKP,
@@ -343,101 +392,30 @@ export function MiniGameApp({ locale }: { locale: string }) {
                 fwd: posCounts.FWD,
               })}
             </p>
-            <ul className="flex flex-col gap-2">
-              {picks.map((p) => {
-                const label = p.web_name ?? p.name ?? `#${p.fpl_id}`;
-                const isCap = captainId === p.fpl_id;
-                const isVice = viceId === p.fpl_id;
-                return (
-                  <li
-                    key={p.fpl_id}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 font-medium text-white">
-                      {label}{" "}
-                      <span className="text-slate-500">
-                        {p.position} · {p.team}
-                      </span>
-                    </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={isCap ? "primary" : "secondary"}
-                      onClick={() => setCaptainId(p.fpl_id)}
-                    >
-                      {t("captain")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={isVice ? "primary" : "secondary"}
-                      onClick={() => setViceId(p.fpl_id)}
-                    >
-                      {t("vice")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removePlayer(p.fpl_id)}
-                    >
-                      {t("remove")}
-                    </Button>
-                  </li>
-                );
-              })}
-              {picks.length < 5 && (
-                <li className="text-sm text-slate-500">{t("slotsLeft", { n: 5 - picks.length })}</li>
-              )}
-            </ul>
+            <MiniPitch
+              slots={slots}
+              captainId={captainId}
+              viceId={viceId}
+              activeSlot={pickerSlot}
+              disabled={!submissionOpen}
+              slotGkLabel={t("slotGk")}
+              slotOutLabel={t("slotOut")}
+              captainLabel={t("captain")}
+              viceLabel={t("vice")}
+              emptyLabel={t("tapToPick")}
+              onSlotClick={onSlotClick}
+              onSetCaptain={(id) => {
+                if (!submissionOpen) return;
+                setCaptainId(id);
+                if (viceId === id) setViceId(null);
+              }}
+              onSetVice={(id) => {
+                if (!submissionOpen) return;
+                setViceId(id);
+                if (captainId === id) setCaptainId(null);
+              }}
+            />
           </div>
-
-          {ctx?.submission_open && picks.length < 5 ? (
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                {t("searchLabel")}
-              </label>
-              <input
-                type="search"
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder={t("searchPlaceholder")}
-                className="w-full max-w-xl rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
-              />
-              {searchLoading ? (
-                <p className="mt-2 text-xs text-slate-500">{t("searching")}</p>
-              ) : null}
-              {searchHits.length > 0 ? (
-                <ul className="mt-2 max-w-xl divide-y divide-white/10 rounded-xl border border-white/10">
-                  {searchHits.map((p) => (
-                    <li key={p.fpl_id}>
-                      <button
-                        type="button"
-                        onClick={() => tryAddPlayer(p)}
-                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-white/5"
-                      >
-                        <span className="text-white">
-                          {p.web_name ?? p.name}{" "}
-                          <span className="text-slate-500">
-                            {p.position} · {p.team}
-                          </span>
-                        </span>
-                        <span className="text-slate-500">
-                          £{p.base_price ?? "—"}m
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ) : null}
-
-          {submitError ? (
-            <p className="text-sm text-red-400" role="alert">
-              {submitError}
-            </p>
-          ) : null}
 
           {submitStatus === "ok" ? (
             <p className="text-sm text-brand-accent">{t("submitOk")}</p>
@@ -445,11 +423,19 @@ export function MiniGameApp({ locale }: { locale: string }) {
 
           <Button
             type="button"
+            size="lg"
             disabled={!canSubmit || submitStatus === "loading"}
-            onClick={() => void onSubmit()}
+            className={cn(
+              canSubmit &&
+                "shadow-[0_0_28px_rgba(0,255,135,0.5)] ring-2 ring-brand-accent/40",
+            )}
+            onClick={onSubmitClick}
           >
             {submitStatus === "loading" ? t("submitting") : t("submit")}
           </Button>
+          {!canSubmit && picks.length < 5 ? (
+            <p className="text-center text-xs text-slate-500">{t("submitLocked")}</p>
+          ) : null}
         </div>
       ) : (
         <div>
@@ -472,7 +458,12 @@ export function MiniGameApp({ locale }: { locale: string }) {
                 </p>
               ) : null}
             </div>
-            <Button type="button" size="sm" variant="secondary" onClick={() => void loadLeaderboard()}>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => void loadLeaderboard()}
+            >
               {t("refresh")}
             </Button>
           </div>
@@ -528,6 +519,66 @@ export function MiniGameApp({ locale }: { locale: string }) {
           )}
         </div>
       )}
+
+      <MiniPlayerPicker
+        open={pickerSlot != null}
+        title={pickerTitle}
+        positionFilter={pickerSlot === MINI_GK_SLOT ? "GKP" : null}
+        searchPlaceholder={t("searchPlaceholder")}
+        searchingLabel={t("searching")}
+        noResultsLabel={t("noResults")}
+        clearSlotLabel={t("clearSlot")}
+        showClear={pickerSlot != null && slots[pickerSlot!] != null}
+        onClose={() => setPickerSlot(null)}
+        onClearSlot={() => {
+          if (pickerSlot != null) clearSlot(pickerSlot);
+        }}
+        onSelect={(p) => {
+          if (pickerSlot == null) return;
+          assignPlayerToSlot(pickerSlot, {
+            fpl_id: p.fpl_id,
+            web_name: p.web_name,
+            name: p.name,
+            team: p.team,
+            team_id: p.team_id ?? null,
+            position: p.position,
+            base_price: p.base_price,
+          });
+        }}
+      />
+
+      <MiniModal
+        open={noticeOpen}
+        title={t("noticeTitle")}
+        onClose={() => setNoticeOpen(false)}
+        actions={
+          <Button type="button" onClick={() => setNoticeOpen(false)}>
+            {t("noticeOk")}
+          </Button>
+        }
+      >
+        {noticeMessage}
+      </MiniModal>
+
+      <MiniModal
+        open={confirmOpen}
+        title={t("confirmTitle")}
+        onClose={() => setConfirmOpen(false)}
+        actions={
+          <MiniModalActions
+            cancelLabel={t("confirmNo")}
+            confirmLabel={t("confirmYes")}
+            confirmLoading={submitStatus === "loading"}
+            onCancel={() => setConfirmOpen(false)}
+            onConfirm={() => {
+              setConfirmOpen(false);
+              void performSubmit();
+            }}
+          />
+        }
+      >
+        {t("confirmBody")}
+      </MiniModal>
     </div>
   );
 }

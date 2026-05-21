@@ -3,10 +3,12 @@ import { playerTools } from "./players";
 import { fixtureTools } from "./fixtures";
 import { teamTools } from "./team";
 import { fetchUrlTools } from "./fetch_url";
+import { seasonTools } from "./seasons";
 
 export const ALL_TOOLS: ToolHandler[] = [
   ...playerTools,
   ...fixtureTools,
+  ...seasonTools,
   ...teamTools,
   ...fetchUrlTools,
 ];

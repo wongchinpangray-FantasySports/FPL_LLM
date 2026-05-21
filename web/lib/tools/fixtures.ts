@@ -1,5 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
-import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { resolveFplSeasonForTool } from "@/lib/fpl-season";
 import type { ToolHandler } from "./types";
 
 async function currentGw(): Promise<number> {
@@ -43,7 +43,7 @@ async function resolveTeamId(query: string): Promise<number | null> {
 const getFixtures: ToolHandler = {
   name: "get_fixtures",
   description:
-    "Get upcoming (or past) fixtures. Optionally filter by team and GW range. Each fixture includes home/away teams, kickoff time, and FDR (fixture difficulty rating).",
+    "Get upcoming (or past) fixtures for a GW range. **Omit `fpl_season`** for the active campaign (live schedule). Pass **`fpl_season`** (see `list_fpl_seasons`) to inspect a historical season's schedule in the DB.",
   input_schema: {
     type: "object",
     properties: {
@@ -63,11 +63,16 @@ const getFixtures: ToolHandler = {
         type: "boolean",
         description: "Include already-finished fixtures. Default false.",
       },
+      fpl_season: {
+        type: "string",
+        description:
+          "Optional four-digit campaign year (e.g. \"2024\"). Omit for active season.",
+      },
     },
   },
   async run(input) {
     const supa = getServerSupabase();
-    const season = await getCurrentFplSeason();
+    const season = await resolveFplSeasonForTool(input.fpl_season);
     const tmap = await teamMap();
     const cur = await currentGw();
     const fromGw = Number(input.from_gw ?? cur) || cur;
@@ -102,6 +107,7 @@ const getFixtures: ToolHandler = {
       current_gw: cur,
       from_gw: fromGw,
       to_gw: toGw,
+      fpl_season: season,
       fixtures: (data ?? []).map((f) => ({
         id: f.id,
         gw: f.gw,
@@ -123,7 +129,7 @@ const getFixtures: ToolHandler = {
 const getFdr: ToolHandler = {
   name: "get_fdr",
   description:
-    "Compute a fixture-difficulty summary for one or more teams over the next N gameweeks. Returns each team's fixtures with FDR and the sum/average.",
+    "Fixture-difficulty summary for teams over the next N GWs. **Omit `fpl_season`** for the live schedule; pass it for a past campaign in the DB.",
   input_schema: {
     type: "object",
     properties: {
@@ -136,12 +142,17 @@ const getFdr: ToolHandler = {
         type: "integer",
         description: "Number of upcoming GWs to consider (default 5, max 10).",
       },
+      fpl_season: {
+        type: "string",
+        description:
+          "Optional four-digit campaign year (e.g. \"2024\"). Omit for active season.",
+      },
     },
     required: ["teams"],
   },
   async run(input) {
     const supa = getServerSupabase();
-    const season = await getCurrentFplSeason();
+    const season = await resolveFplSeasonForTool(input.fpl_season);
     const tmap = await teamMap();
     const cur = await currentGw();
     const horizon = Math.min(
@@ -192,7 +203,7 @@ const getFdr: ToolHandler = {
       });
     }
 
-    return { current_gw: cur, horizon, teams: results };
+    return { current_gw: cur, horizon, fpl_season: season, teams: results };
   },
 };
 

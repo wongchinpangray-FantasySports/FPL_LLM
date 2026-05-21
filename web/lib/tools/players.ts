@@ -7,7 +7,7 @@ import {
   ROLLING_WINDOW,
   XP_SCORING_NOTE,
 } from "@/lib/xp";
-import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { getCurrentFplSeason, resolveFplSeasonForTool } from "@/lib/fpl-season";
 
 const PLAYER_COLS = [
   "fpl_id",
@@ -213,7 +213,7 @@ async function resolvePlayerIds(queries: string[]): Promise<
 const comparePlayers: ToolHandler = {
   name: "compare_players",
   description:
-    "Compare 2+ players with rich metrics: per-90 xG/xA, last 6-GW rolling form (minutes, goals, assists, bonus, xG, xA, points), availability, price, ownership, and xP projection over the next N GWs (default 5) so the user can see who has the better outlook, not just season totals.",
+    "Compare 2+ players: per-90 xG/xA, rolling form (last 6 GWs from DB), availability, price, ownership, and forward xP over the next N GWs. **Omit `fpl_season`** for live next-GW / transfer advice (uses the active campaign). Pass **`fpl_season`** (e.g. \"2024\", discover via `list_fpl_seasons`) only to study **historical** rolling form; forward xP and fixtures always use the **active** season.",
   input_schema: {
     type: "object",
     properties: {
@@ -225,6 +225,11 @@ const comparePlayers: ToolHandler = {
       horizon: {
         type: "integer",
         description: "Projection horizon in GWs (default 5, max 8).",
+      },
+      fpl_season: {
+        type: "string",
+        description:
+          "Optional. Four-digit start year of the FPL campaign for **rolling (last-6-GW) stats only** (e.g. \"2024\"). Omit for the active season. Forward projections always use the live game.",
       },
     },
     required: ["names_or_ids"],
@@ -244,14 +249,15 @@ const comparePlayers: ToolHandler = {
       .filter((v): v is number => typeof v === "number");
 
     const { current, next } = await resolveCurrentGw();
-    const season = await getCurrentFplSeason();
+    const rollingSeason = await resolveFplSeasonForTool(input.fpl_season);
+    const activeSeason = await getCurrentFplSeason();
     const [projections, rolling] = await Promise.all([
       projectPlayers(ids, {
         currentGw: current,
         fromGw: next,
         toGw: next + horizon - 1,
       }),
-      loadRollingStats(ids, current, ROLLING_WINDOW, season),
+      loadRollingStats(ids, current, ROLLING_WINDOW, rollingSeason),
     ]);
 
     const supa = getServerSupabase();
@@ -347,6 +353,12 @@ const comparePlayers: ToolHandler = {
     return {
       horizon,
       scoring: XP_SCORING_NOTE,
+      meta: {
+        rolling_stats_season: rollingSeason,
+        active_season: activeSeason,
+        projection_note:
+          "Forward xP and fixture breakdowns always use the active FPL season.",
+      },
       players: payload,
     };
   },
@@ -502,7 +514,7 @@ function summarizeRecentWindow(
 const getPlayerRecentGameweeks: ToolHandler = {
   name: "get_player_recent_gameweeks",
   description:
-    "Fetch per-gameweek FPL **match data** from the database: goals, assists, clean sheets, goals conceded, saves, bonus, BPS, ICT, expected goals/assists/xGC, and defensive actions (CBI, recoveries, tackles, FPL defensive contribution points) for each recent GW. Includes window totals and per-90 rates. Use for 'upside form', momentum, or any question that needs the **full** FPL picture (not only xG from external models). Pairs with compare_players (which adds projections) — this tool is the raw recent reality.",
+    "Fetch per-gameweek FPL **match data** from the database (goals, assists, CS, xG/xA, bonus, BPS, defensive actions, etc.) with window totals. **Omit `fpl_season`** for current-campaign form (next-GW / transfer questions). Pass **`fpl_season`** (see `list_fpl_seasons`) for historical seasons. `players_static` names/teams are always the **live** game — past-GW rows may reflect an old club.",
   input_schema: {
     type: "object",
     properties: {
@@ -515,6 +527,11 @@ const getPlayerRecentGameweeks: ToolHandler = {
         type: "integer",
         description:
           "How many of the most recent GWs to return per player (default 6, max 10).",
+      },
+      fpl_season: {
+        type: "string",
+        description:
+          "Optional four-digit campaign year (e.g. \"2024\"). Omit for the active season.",
       },
     },
     required: ["names_or_ids"],
@@ -535,6 +552,7 @@ const getPlayerRecentGameweeks: ToolHandler = {
 
     const supa = getServerSupabase();
     const resolved = await resolvePlayerIds(queries);
+    const season = await resolveFplSeasonForTool(input.fpl_season);
     const out: Array<{
       query: string;
       fpl_id: number | null;
@@ -572,7 +590,6 @@ const getPlayerRecentGameweeks: ToolHandler = {
         .maybeSingle();
       if (pErr) throw new Error(pErr.message);
 
-      const season = await getCurrentFplSeason();
       const { data: gws, error: gErr } = await supa
         .from("player_gw_stats")
         .select(GW_STATS_SELECT)
@@ -624,6 +641,7 @@ const getPlayerRecentGameweeks: ToolHandler = {
     return {
       description:
         "Recent GWs are from player_gw_stats (FPL official live/summary). defensive_contribution = FPL DC/bonus-relevant actions where synced.",
+      fpl_season: season,
       players: out,
     };
   },

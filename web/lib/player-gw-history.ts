@@ -1,5 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
-import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { getCurrentFplSeason, isFplSeasonKey } from "@/lib/fpl-season";
 
 const GW_STATS_SELECT = [
   "gw",
@@ -68,11 +68,16 @@ function normalizeRow(r: Record<string, unknown>): PlayerGwHistoryRow {
 export async function loadPlayerGwHistory(
   fplId: number,
   limit = 10,
+  /** When set (e.g. `"2024"`), load that campaign's GW rows; otherwise active season. */
+  fplSeason?: string,
 ): Promise<PlayerGwHistoryRow[]> {
   if (!Number.isFinite(fplId) || fplId <= 0) return [];
 
   const lim = Math.min(Math.max(Math.floor(limit), 1), 10);
-  const season = await getCurrentFplSeason();
+  const season =
+    fplSeason != null && isFplSeasonKey(fplSeason)
+      ? fplSeason.trim()
+      : await getCurrentFplSeason();
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("player_gw_stats")

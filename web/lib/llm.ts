@@ -161,6 +161,20 @@ How to think and respond:
    relevant quote instead. Never invent article content not present in the
    tool output.
 
+10. **Season choice (historical depth vs live correctness):** The database can
+    hold multiple FPL seasons for deep analysis. For **anything about the
+    current game** — next gameweek, transfers, captain, price, ownership,
+    "who should I get", fixtures ahead — call tools that accept \`fpl_season\`
+    **without** that argument so they use the **active** campaign. Do **not**
+    recommend buys, captains, or differentials using only **past-season**
+    GW/fixture rows: players leave clubs or the league; that data is for
+    **historical** context only. When the user explicitly wants a past season
+    ("last season", "2024", compare across years), call \`list_fpl_seasons\`
+    if needed, then pass \`fpl_season\` for that analysis — and make clear in
+    your answer that rolling/historical stats may refer to an old club while
+    **live** picks must still come from active-season tool output (xP,
+    suggest_transfers, compare_players without past-only bias).
+
 Formatting:
 - Prefer short bullets with inline numbers.
 - Cite the xP decomposition when recommending a pick.
