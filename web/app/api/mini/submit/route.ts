@@ -6,6 +6,10 @@ import {
   validateMiniSquad,
   type MiniPickInput,
 } from "@/lib/mini/validate";
+import {
+  MINI_PLAYER_DISPLAY_COLS,
+  rowToMiniPlayerDisplay,
+} from "@/lib/mini/player-stats";
 import type { MiniPickStored } from "@/lib/mini/types";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +63,7 @@ export async function POST(req: Request) {
   const supa = getServerSupabase();
   const { data: players, error: pErr } = await supa
     .from("players_static")
-    .select("fpl_id,web_name,name,team,team_id,position")
+    .select(MINI_PLAYER_DISPLAY_COLS)
     .in("fpl_id", pickIds);
 
   if (pErr) {
@@ -69,13 +73,7 @@ export async function POST(req: Request) {
   const byId = new Map(
     (players ?? []).map((p) => [
       p.fpl_id as number,
-      {
-        fpl_id: p.fpl_id as number,
-        position: (p.position as string | null) ?? null,
-        team_id: (p.team_id as number | null) ?? null,
-        web_name: (p.web_name as string | null) ?? (p.name as string | null),
-        team: (p.team as string | null) ?? null,
-      },
+      rowToMiniPlayerDisplay(p as Record<string, unknown>),
     ]),
   );
 
@@ -106,16 +104,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const picksStored: MiniPickStored[] = pickIds.map((id) => {
-    const p = byId.get(id)!;
-    return {
-      fpl_id: id,
-      web_name: p.web_name,
-      team: p.team,
-      team_id: p.team_id,
-      position: p.position,
-    };
-  });
+  const picksStored: MiniPickStored[] = pickIds.map((id) => byId.get(id)!);
 
   const entryName =
     typeof body.entry_name === "string" && body.entry_name.trim()

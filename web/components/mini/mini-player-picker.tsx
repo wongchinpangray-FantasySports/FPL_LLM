@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { MiniModal } from "./mini-modal";
-import type { MiniPitchPlayer } from "./mini-pitch";
+import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 
-type PlayerHit = MiniPitchPlayer & { team_id?: number | null };
+type PlayerHit = MiniPlayerDisplay;
 
 export function MiniPlayerPicker({
   open,
@@ -110,7 +110,7 @@ export function MiniPlayerPicker({
                 }}
               >
                 <span className="text-white">
-                  {p.web_name ?? p.name}{" "}
+                  {p.web_name ?? `#${p.fpl_id}`}{" "}
                   <span className="text-slate-500">
                     {p.position} · {p.team}
                   </span>

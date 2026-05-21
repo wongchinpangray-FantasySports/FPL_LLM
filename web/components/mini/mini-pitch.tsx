@@ -1,19 +1,33 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 
 export const MINI_SLOT_COUNT = 5;
 /** Slot 0 = GK (bottom); slots 1–4 = outfield. */
 export const MINI_GK_SLOT = 0;
 
-export type MiniPitchPlayer = {
-  fpl_id: number;
-  web_name: string | null;
-  name: string | null;
-  team: string | null;
-  position: string | null;
-  base_price: number | null;
-};
+export type MiniPitchPlayer = MiniPlayerDisplay;
+
+function fmtNum(v: number | null | undefined, digits = 1): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return v.toFixed(digits);
+}
+
+function statusLabel(
+  status: string | null | undefined,
+  t: (key: string) => string,
+): string | null {
+  if (!status || status === "a") return null;
+  const map: Record<string, string> = {
+    i: t("statusInjured"),
+    d: t("statusDoubt"),
+    s: t("statusSuspended"),
+    u: t("statusUnavailable"),
+  };
+  return map[status] ?? status.toUpperCase();
+}
 
 function PitchCard({
   slotIndex,
@@ -44,70 +58,149 @@ function PitchCard({
   viceLabel: string;
   emptyLabel: string;
 }) {
+  const t = useTranslations("mini");
   const filled = player != null;
   const isC = filled && captainId === player.fpl_id;
   const isV = filled && viceId === player.fpl_id;
-  const name = player?.web_name ?? player?.name ?? null;
+  const name = player?.web_name ?? null;
+  const status = filled ? statusLabel(player.status, t) : null;
+  const ga =
+    filled &&
+    (player.goals_scored != null || player.assists != null) &&
+    (player.goals_scored !== 0 || player.assists !== 0)
+      ? `${player.goals_scored ?? 0}G ${player.assists ?? 0}A`
+      : null;
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex w-full max-w-[11rem] flex-col items-center gap-2 sm:max-w-[13rem]">
       <button
         type="button"
         disabled={disabled}
         onClick={() => onSlotClick(slotIndex)}
         className={cn(
-          "relative flex min-h-[52px] min-w-[56px] max-w-[88px] flex-col items-center justify-center rounded-lg border px-1 py-1.5 text-center shadow-sm transition-all sm:min-h-[64px] sm:min-w-[72px] sm:max-w-[100px] sm:rounded-xl sm:px-2 sm:py-2",
-          "border-white/20 bg-black/45 backdrop-blur-sm",
-          !disabled && "hover:border-brand-accent/60 hover:bg-black/55 cursor-pointer",
-          active && "ring-2 ring-brand-accent ring-offset-1 ring-offset-emerald-950",
-          filled && "border-brand-accent/30",
-          !filled && "border-dashed border-white/25 bg-black/25",
+          "relative flex w-full flex-col rounded-xl border text-left shadow-md transition-all",
+          filled
+            ? "min-h-[7.5rem] border-brand-accent/35 bg-black/55 px-2.5 py-2.5 sm:min-h-[8.5rem] sm:px-3 sm:py-3"
+            : "min-h-[7rem] items-center justify-center border-dashed border-white/30 bg-black/30 px-3 py-4 sm:min-h-[8rem]",
+          !disabled &&
+            "cursor-pointer hover:border-brand-accent/55 hover:bg-black/65",
+          active &&
+            "ring-2 ring-brand-accent ring-offset-2 ring-offset-emerald-950",
         )}
       >
         {filled ? (
           <>
-            <span className="line-clamp-2 text-[9px] font-semibold leading-tight text-white sm:text-[11px]">
+            <div className="mb-1.5 flex items-start justify-between gap-1">
+              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-200 sm:text-[11px]">
+                {player.position ?? "—"}
+              </span>
+              <div className="flex shrink-0 gap-0.5">
+                {isC && (
+                  <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-bold text-brand-ink sm:text-[11px]">
+                    C
+                  </span>
+                )}
+                {isV && !isC && (
+                  <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white sm:text-[11px]">
+                    V
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <p className="line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-base">
               {name ?? `#${player.fpl_id}`}
-            </span>
-            <span className="mt-0.5 truncate text-[7px] text-slate-400 sm:text-[8px]">
-              {player.team ?? "—"}
-            </span>
-            <span className="text-[7px] tabular-nums text-slate-500 sm:text-[8px]">
-              £{player.base_price != null ? player.base_price.toFixed(1) : "?"}m
-            </span>
-            <div className="mt-0.5 flex items-center justify-center gap-0.5">
-              {isC && (
-                <span className="rounded bg-brand-accent/25 px-1 text-[7px] font-bold text-brand-accent sm:text-[8px]">
-                  C
-                </span>
+            </p>
+            <p className="mt-0.5 truncate text-xs text-slate-400">{player.team ?? "—"}</p>
+
+            {status ? (
+              <p className="mt-1 text-[10px] font-medium text-amber-400/90 sm:text-[11px]">
+                {status}
+              </p>
+            ) : null}
+
+            <div className="mt-2 grid w-full grid-cols-2 gap-x-2 gap-y-1 border-t border-white/10 pt-2 text-[10px] sm:text-[11px]">
+              <div>
+                <span className="text-slate-500">{t("cardPrice")}</span>
+                <p className="font-medium tabular-nums text-slate-200">
+                  £{fmtNum(player.base_price)}m
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500">{t("cardForm")}</span>
+                <p className="font-medium tabular-nums text-slate-200">
+                  {fmtNum(player.form)}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500">{t("cardPpg")}</span>
+                <p className="font-medium tabular-nums text-slate-200">
+                  {fmtNum(player.points_per_game)}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500">{t("cardOwn")}</span>
+                <p className="font-medium tabular-nums text-slate-200">
+                  {player.selected_by_percent != null
+                    ? `${fmtNum(player.selected_by_percent)}%`
+                    : "—"}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-500">{t("cardSeasonPts")}</span>
+                <p className="font-semibold tabular-nums text-brand-accent/95">
+                  {player.total_points != null ? player.total_points : "—"}{" "}
+                  <span className="font-normal text-slate-500">{t("cardPtsUnit")}</span>
+                </p>
+              </div>
+              {(player.expected_goals != null ||
+                player.expected_assists != null) && (
+                <div className="col-span-2 flex gap-3 text-[10px] sm:text-[11px]">
+                  <span className="text-slate-500">
+                    {t("cardXg")}{" "}
+                    <span className="font-medium text-slate-300">
+                      {fmtNum(player.expected_goals, 2)}
+                    </span>
+                  </span>
+                  <span className="text-slate-500">
+                    {t("cardXa")}{" "}
+                    <span className="font-medium text-slate-300">
+                      {fmtNum(player.expected_assists, 2)}
+                    </span>
+                  </span>
+                </div>
               )}
-              {isV && !isC && (
-                <span className="rounded bg-white/15 px-1 text-[7px] text-slate-300 sm:text-[8px]">
-                  V
-                </span>
-              )}
+              {ga ? (
+                <div className="col-span-2 text-[10px] text-slate-400 sm:text-[11px]">
+                  {t("cardGoalsAssists")}: {ga}
+                </div>
+              ) : null}
             </div>
           </>
         ) : (
           <>
-            <span className="text-lg text-slate-500 sm:text-xl">+</span>
-            <span className="text-[8px] text-slate-500 sm:text-[9px]">{emptyLabel}</span>
+            <span className="text-3xl font-light text-slate-500 sm:text-4xl">+</span>
+            <span className="mt-2 text-center text-xs text-slate-400 sm:text-sm">
+              {emptyLabel}
+            </span>
           </>
         )}
       </button>
-      <span className="text-[9px] font-medium uppercase tracking-wider text-slate-500">
+
+      <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500 sm:text-xs">
         {slotLabel}
       </span>
+
       {filled ? (
-        <div className="flex gap-1">
+        <div className="flex w-full gap-2">
           <button
             type="button"
             disabled={disabled}
             onClick={() => onSetCaptain(player.fpl_id)}
             className={cn(
-              "rounded px-1.5 py-0.5 text-[9px] font-semibold sm:text-[10px]",
+              "flex-1 rounded-lg py-1.5 text-xs font-semibold sm:text-sm",
               isC
-                ? "bg-brand-accent text-brand-ink"
+                ? "bg-brand-accent text-brand-ink shadow-[0_0_12px_rgba(0,255,135,0.35)]"
                 : "bg-white/10 text-slate-300 hover:bg-white/15",
             )}
           >
@@ -118,9 +211,9 @@ function PitchCard({
             disabled={disabled}
             onClick={() => onSetVice(player.fpl_id)}
             className={cn(
-              "rounded px-1.5 py-0.5 text-[9px] font-semibold sm:text-[10px]",
+              "flex-1 rounded-lg py-1.5 text-xs font-semibold sm:text-sm",
               isV
-                ? "bg-white/20 text-white"
+                ? "bg-white/25 text-white"
                 : "bg-white/10 text-slate-300 hover:bg-white/15",
             )}
           >
@@ -180,13 +273,13 @@ export function MiniPitch({
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg sm:rounded-2xl">
-      <div className="relative flex aspect-[5/3.2] flex-col justify-between px-2 py-3 sm:aspect-[5/3.5] sm:px-4 sm:py-4">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[24%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
+    <div className="overflow-hidden rounded-2xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg">
+      <div className="relative px-3 py-5 sm:px-6 sm:py-8">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[78%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
 
-        <div className="flex flex-1 flex-col justify-between gap-2">
-          <div className="flex justify-center gap-2 sm:gap-4">
+        <div className="relative flex flex-col items-center gap-5 sm:gap-7">
+          <div className="grid w-full max-w-lg grid-cols-2 justify-items-center gap-4 sm:max-w-2xl sm:gap-6">
             <PitchCard
               slotIndex={1}
               player={out1}
@@ -202,7 +295,7 @@ export function MiniPitch({
               {...cardProps}
             />
           </div>
-          <div className="flex justify-center gap-2 sm:gap-4">
+          <div className="grid w-full max-w-lg grid-cols-2 justify-items-center gap-4 sm:max-w-2xl sm:gap-6">
             <PitchCard
               slotIndex={3}
               player={out3}

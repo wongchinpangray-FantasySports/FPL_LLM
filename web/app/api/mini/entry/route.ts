@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
-import type { MiniEntryRow } from "@/lib/mini/types";
+import {
+  MINI_PLAYER_DISPLAY_COLS,
+  mergePickWithDisplay,
+  rowToMiniPlayerDisplay,
+} from "@/lib/mini/player-stats";
+import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +45,27 @@ export async function GET(req: Request) {
     return NextResponse.json({ entry: null, gw, season: ctx.season });
   }
 
+  const entry = data as MiniEntryRow;
+  const picks = (entry.picks ?? []) as MiniPickStored[];
+  const ids = picks.map((p) => p.fpl_id);
+
+  let enrichedPicks = picks;
+  if (ids.length > 0) {
+    const { data: rows } = await supa
+      .from("players_static")
+      .select(MINI_PLAYER_DISPLAY_COLS)
+      .in("fpl_id", ids);
+    const byId = new Map(
+      (rows ?? []).map((r) => [
+        r.fpl_id as number,
+        rowToMiniPlayerDisplay(r as Record<string, unknown>),
+      ]),
+    );
+    enrichedPicks = picks.map((p) => mergePickWithDisplay(p, byId.get(p.fpl_id)));
+  }
+
   return NextResponse.json({
-    entry: data as MiniEntryRow,
+    entry: { ...entry, picks: enrichedPicks },
     gw,
     season: ctx.season,
     context: ctx,

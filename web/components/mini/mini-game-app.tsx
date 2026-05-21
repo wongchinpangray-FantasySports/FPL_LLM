@@ -18,12 +18,12 @@ import {
   MINI_GK_SLOT,
   MINI_SLOT_COUNT,
   MiniPitch,
-  type MiniPitchPlayer,
 } from "@/components/mini/mini-pitch";
+import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 import { MiniModal, MiniModalActions } from "@/components/mini/mini-modal";
 import { MiniPlayerPicker } from "@/components/mini/mini-player-picker";
 
-type PlayerHit = MiniPitchPlayer & { team_id: number | null };
+type PlayerHit = MiniPlayerDisplay;
 
 type MiniContext = {
   season: string;
@@ -170,11 +170,19 @@ export function MiniGameApp({ locale }: { locale: string }) {
     const restored: PlayerHit[] = data.entry.picks.map((p) => ({
       fpl_id: p.fpl_id,
       web_name: p.web_name,
-      name: p.web_name,
       team: p.team,
       team_id: p.team_id,
       position: p.position,
-      base_price: null,
+      base_price: p.base_price ?? null,
+      status: p.status ?? null,
+      form: p.form ?? null,
+      total_points: p.total_points ?? null,
+      points_per_game: p.points_per_game ?? null,
+      selected_by_percent: p.selected_by_percent ?? null,
+      goals_scored: p.goals_scored ?? null,
+      assists: p.assists ?? null,
+      expected_goals: p.expected_goals ?? null,
+      expected_assists: p.expected_assists ?? null,
     }));
     setSlots(picksToSlots(restored));
     setCaptainId(data.entry.captain_fpl_id);
@@ -538,11 +546,19 @@ export function MiniGameApp({ locale }: { locale: string }) {
           assignPlayerToSlot(pickerSlot, {
             fpl_id: p.fpl_id,
             web_name: p.web_name,
-            name: p.name,
             team: p.team,
             team_id: p.team_id ?? null,
             position: p.position,
-            base_price: p.base_price,
+            base_price: p.base_price ?? null,
+            status: p.status ?? null,
+            form: p.form ?? null,
+            total_points: p.total_points ?? null,
+            points_per_game: p.points_per_game ?? null,
+            selected_by_percent: p.selected_by_percent ?? null,
+            goals_scored: p.goals_scored ?? null,
+            assists: p.assists ?? null,
+            expected_goals: p.expected_goals ?? null,
+            expected_assists: p.expected_assists ?? null,
           });
         }}
       />

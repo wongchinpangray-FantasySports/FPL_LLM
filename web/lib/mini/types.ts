@@ -4,6 +4,16 @@ export interface MiniPickStored {
   team: string | null;
   team_id: number | null;
   position: string | null;
+  base_price?: number | null;
+  status?: string | null;
+  form?: number | null;
+  total_points?: number | null;
+  points_per_game?: number | null;
+  selected_by_percent?: number | null;
+  goals_scored?: number | null;
+  assists?: number | null;
+  expected_goals?: number | null;
+  expected_assists?: number | null;
 }
 
 export interface MiniEntryRow {
