@@ -52,7 +52,11 @@ FPL_LLM/
    as well (adds `season` to `fixtures` / `player_gw_stats`, `fpl_meta` for the
    active campaign). **Re-run your Python syncs** after this so rows include
    the correct `season` (see the Python sync section below).
-4. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
+4. Run [`supabase/migrations/0006_fpl_seasons_list_view.sql`](supabase/migrations/0006_fpl_seasons_list_view.sql)
+   (view `fpl_seasons_list` for the **`list_fpl_seasons`** chat tool).
+5. Run [`supabase/migrations/0007_mini_fantasy.sql`](supabase/migrations/0007_mini_fantasy.sql)
+   (table `mini_entries` for the **Mini 5** page at `/mini`).
+6. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Project Settings → API.
 
 ## 2. Set up Python data-sync locally

@@ -10,6 +10,7 @@
     "manager": "Manager",
     "planner": "Planner",
     "players": "Players",
+    "mini": "Mini 5",
     "ariaMain": "Main"
   },
   "footer": {
@@ -448,5 +449,48 @@
     "eyebrow": "Planner",
     "title": "Squad planner",
     "description": "Enter your FPL Entry ID to work with your team in the planner. Each browser and each Vercel URL keeps its own copy — re-enter on a new link if Planner looked missing."
+  },
+  "miniIndex": {
+    "backHome": "← Home",
+    "eyebrow": "Mini fantasy",
+    "title": "Pick 5 — live leaderboard",
+    "description": "Five-player squads with FPL scoring. Submit with your Entry ID before the official deadline; your latest squad counts. Captain doubles (vice if captain blanks), max 2 per club."
+  },
+  "mini": {
+    "statusOpen": "Submissions open for GW{gw} · deadline {deadline}",
+    "statusClosed": "Submissions closed · live scores for GW{gw}",
+    "rulesShort": "5 players: 1 GK, 4 outfield (max 2 DEF / MID / FWD each), max 2 from one club. FPL points + captain rules.",
+    "tabPick": "Pick squad",
+    "tabLeaderboard": "Leaderboard",
+    "entryLabel": "FPL Entry ID",
+    "entryPlaceholder": "e.g. 1234567",
+    "squadTitle": "Your squad",
+    "posCounts": "GK {gkp}/1 · DEF {def}/2 · MID {mid}/2 · FWD {fwd}/2",
+    "captain": "C",
+    "vice": "VC",
+    "remove": "Remove",
+    "slotsLeft": "{n} slot(s) left",
+    "searchLabel": "Add player",
+    "searchPlaceholder": "Search name…",
+    "searching": "Searching…",
+    "needCaptain": "Select a captain.",
+    "needVice": "Select a vice-captain.",
+    "invalidEntry": "Enter a valid numeric Entry ID.",
+    "submissionsClosed": "Submissions are closed for this gameweek.",
+    "submitFailed": "Could not save squad.",
+    "submit": "Submit squad",
+    "submitting": "Saving…",
+    "submitOk": "Squad saved. Last submission before the deadline counts.",
+    "leaderboardGw": "GW{gw} leaderboard",
+    "leaderboardNextGw": "New squads are being collected for GW{gw}; points appear here once that gameweek is live.",
+    "liveRefresh": "Auto-refresh ~45s",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "noEntries": "No squads yet for this gameweek.",
+    "colRank": "#",
+    "colEntry": "Entry",
+    "colPoints": "Pts",
+    "colCaptain": "Captain",
+    "colSquad": "Squad"
   }
 }

@@ -10,6 +10,7 @@
     "manager": "经理",
     "planner": "规划",
     "players": "球员",
+    "mini": "五人赛",
     "ariaMain": "主导航"
   },
   "footer": {
@@ -447,5 +448,48 @@
     "eyebrow": "规划",
     "title": "阵容规划",
     "description": "输入 FPL Entry ID，在规划器中使用你的阵容。每个浏览器与每个部署链接会单独保存 —— 若看不到规划器，请在新链接下重新输入。"
+  },
+  "miniIndex": {
+    "backHome": "← 返回首页",
+    "eyebrow": "五人迷你范特西",
+    "title": "选 5 人 · 实时积分榜",
+    "description": "五人阵容，沿用 FPL 官方计分。用 Entry ID 在截止前提交，以截止前最后一次为准。队长双倍（队长零分钟则副队双倍），同一俱乐部最多 2 人。"
+  },
+  "mini": {
+    "statusOpen": "GW{gw} 可提交 · 截止 {deadline}",
+    "statusClosed": "已截止提交 · GW{gw} 实时积分",
+    "rulesShort": "5 人：1 门将，4 场外（DEF/MID/FWD 各最多 2），同一俱乐部最多 2 人。FPL 积分 + 队长规则。",
+    "tabPick": "选阵",
+    "tabLeaderboard": "积分榜",
+    "entryLabel": "FPL Entry ID",
+    "entryPlaceholder": "例如 1234567",
+    "squadTitle": "你的阵容",
+    "posCounts": "门将 {gkp}/1 · 后卫 {def}/2 · 中场 {mid}/2 · 前锋 {fwd}/2",
+    "captain": "队长",
+    "vice": "副队",
+    "remove": "移除",
+    "slotsLeft": "还可选 {n} 人",
+    "searchLabel": "添加球员",
+    "searchPlaceholder": "搜索姓名…",
+    "searching": "搜索中…",
+    "needCaptain": "请选择队长。",
+    "needVice": "请选择副队长。",
+    "invalidEntry": "请输入有效的数字 Entry ID。",
+    "submissionsClosed": "本 gameweek 已截止提交。",
+    "submitFailed": "保存失败。",
+    "submit": "提交阵容",
+    "submitting": "保存中…",
+    "submitOk": "已保存。截止前以最后一次提交为准。",
+    "leaderboardGw": "GW{gw} 积分榜",
+    "leaderboardNextGw": "GW{gw} 阵容正在收集中；该轮开赛后会在此显示积分。",
+    "liveRefresh": "约 45 秒自动刷新",
+    "refresh": "刷新",
+    "loading": "加载中…",
+    "noEntries": "本 gameweek 尚无阵容。",
+    "colRank": "名次",
+    "colEntry": "账号",
+    "colPoints": "分",
+    "colCaptain": "队长",
+    "colSquad": "阵容"
   }
 }
