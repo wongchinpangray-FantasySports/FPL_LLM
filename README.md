@@ -56,7 +56,11 @@ FPL_LLM/
    (view `fpl_seasons_list` for the **`list_fpl_seasons`** chat tool).
 5. Run [`supabase/migrations/0007_mini_fantasy.sql`](supabase/migrations/0007_mini_fantasy.sql)
    (table `mini_entries` for the **Mini 5** page at `/mini`).
-6. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
+6. If GitHub Actions sync fails with **“Could not find table fpl_meta”**, run
+   [`0005_fpl_season_scoping.sql`](supabase/migrations/0005_fpl_season_scoping.sql)
+   (full season support) or at minimum
+   [`0008_ensure_fpl_meta.sql`](supabase/migrations/0008_ensure_fpl_meta.sql).
+7. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Project Settings → API.
 
 ## 2. Set up Python data-sync locally

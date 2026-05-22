@@ -118,4 +118,27 @@ def upsert_batch(
     print(f"  upserted {total} rows into {table}")
 
 
+def upsert_fpl_meta_season(supabase: Client, season: str) -> bool:
+    """Write ``current_season`` to ``fpl_meta``. Returns False if the table is missing."""
+    try:
+        supabase.table("fpl_meta").upsert(
+            [{"key": "current_season", "value": season}],
+            on_conflict="key",
+        ).execute()
+        return True
+    except Exception as exc:
+        msg = str(exc)
+        code = getattr(exc, "code", None)
+        if code == "PGRST205" or "fpl_meta" in msg:
+            print(
+                "WARNING: public.fpl_meta table not found — skipping meta write.\n"
+                "  Fix: run supabase/migrations/0005_fpl_season_scoping.sql "
+                "or 0008_ensure_fpl_meta.sql in the Supabase SQL editor.\n"
+                f"  Fallback: set FPL_CURRENT_SEASON={season} in GitHub Actions env.",
+                file=sys.stderr,
+            )
+            return False
+        raise
+
+
 POSITION_MAP: Dict[int, str] = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}

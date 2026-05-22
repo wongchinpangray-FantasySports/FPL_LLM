@@ -15,6 +15,7 @@ from .common import (
     fpl_season_start_year_from_bootstrap,
     get_supabase_client,
     upsert_batch,
+    upsert_fpl_meta_season,
 )
 
 
@@ -144,13 +145,13 @@ def fetch_and_sync() -> None:
     supabase = get_supabase_client()
     data = fpl_get("/bootstrap-static/")
     season = fpl_season_start_year_from_bootstrap(data)
-    print(f"FPL season start year: {season} (written to fpl_meta.current_season)")
-    upsert_batch(
-        supabase,
-        "fpl_meta",
-        [{"key": "current_season", "value": season}],
-        on_conflict="key",
-    )
+    if upsert_fpl_meta_season(supabase, season):
+        print(f"FPL season start year: {season} (written to fpl_meta.current_season)")
+    else:
+        print(
+            f"FPL season start year: {season} "
+            "(fpl_meta missing — using env/bootstrap only)",
+        )
 
     teams = data["teams"]
     events = data["events"]
