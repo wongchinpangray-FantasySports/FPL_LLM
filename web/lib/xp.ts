@@ -27,6 +27,7 @@
  * this single projection so recommendations are internally consistent.
  */
 
+import { chunkArray } from "@/lib/chunk";
 import { getServerSupabase } from "./supabase";
 import { getCurrentFplSeason } from "./fpl-season";
 
@@ -569,24 +570,24 @@ export async function loadPlayers(
   const out = new Map<number, PlayerCoreRow>();
   if (ids.length === 0) return out;
   const supa = getServerSupabase();
-  // Try with set-piece cols; if migration 0002 hasn't run yet, fall back to
-  // the base column set so the engine still works.
-  const first = await supa
-    .from("players_static")
-    .select(PLAYER_CORE_COLS)
-    .in("fpl_id", ids);
-  let rows = first.data as unknown as Array<Record<string, unknown>> | null;
-  if (first.error) {
-    const fallback = await supa
+  for (const chunk of chunkArray(ids, 100)) {
+    const first = await supa
       .from("players_static")
-      .select(
-        "fpl_id,web_name,name,team,team_id,position,base_price,status,chance_of_playing,form,points_per_game,total_points,minutes,goals_scored,assists,clean_sheets,bonus,bps,expected_goals,expected_assists,expected_goal_involve,selected_by_percent",
-      )
-      .in("fpl_id", ids);
-    rows = fallback.data as unknown as Array<Record<string, unknown>> | null;
-  }
-  for (const r of rows ?? []) {
-    out.set(Number(r.fpl_id), r as unknown as PlayerCoreRow);
+      .select(PLAYER_CORE_COLS)
+      .in("fpl_id", chunk);
+    let rows = first.data as unknown as Array<Record<string, unknown>> | null;
+    if (first.error) {
+      const fallback = await supa
+        .from("players_static")
+        .select(
+          "fpl_id,web_name,name,team,team_id,position,base_price,status,chance_of_playing,form,points_per_game,total_points,minutes,goals_scored,assists,clean_sheets,bonus,bps,expected_goals,expected_assists,expected_goal_involve,selected_by_percent",
+        )
+        .in("fpl_id", chunk);
+      rows = fallback.data as unknown as Array<Record<string, unknown>> | null;
+    }
+    for (const r of rows ?? []) {
+      out.set(Number(r.fpl_id), r as unknown as PlayerCoreRow);
+    }
   }
   return out;
 }
@@ -618,32 +619,35 @@ export async function loadOpponentHistory(
   const out = new Map<number, Map<number, OpponentHistory>>();
   if (playerIds.length === 0 || oppTeamIds.length === 0) return out;
   const supa = getServerSupabase();
-  const { data } = await supa
-    .from("player_gw_stats")
-    .select(
-      "player_id,opponent_team_id,minutes,total_points,goals_scored,assists",
-    )
-    .eq("season", fplSeason)
-    .in("player_id", playerIds)
-    .in("opponent_team_id", oppTeamIds);
-
   for (const pid of playerIds) out.set(pid, new Map());
-  for (const r of data ?? []) {
-    const pid = r.player_id as number;
-    const opp = r.opponent_team_id as number | null;
-    if (opp == null) continue;
-    const inner = out.get(pid)!;
-    const agg: OpponentHistory =
-      inner.get(opp) ??
-      { games: 0, minutes: 0, points: 0, goals: 0, assists: 0, ppg: null };
-    const mins = num(r.minutes);
-    if (mins > 0) agg.games += 1;
-    agg.minutes += mins;
-    agg.points += num(r.total_points);
-    agg.goals += num(r.goals_scored);
-    agg.assists += num(r.assists);
-    agg.ppg = agg.games > 0 ? agg.points / agg.games : null;
-    inner.set(opp, agg);
+
+  for (const chunk of chunkArray(playerIds, 80)) {
+    const { data } = await supa
+      .from("player_gw_stats")
+      .select(
+        "player_id,opponent_team_id,minutes,total_points,goals_scored,assists",
+      )
+      .eq("season", fplSeason)
+      .in("player_id", chunk)
+      .in("opponent_team_id", oppTeamIds);
+
+    for (const r of data ?? []) {
+      const pid = r.player_id as number;
+      const opp = r.opponent_team_id as number | null;
+      if (opp == null) continue;
+      const inner = out.get(pid)!;
+      const agg: OpponentHistory =
+        inner.get(opp) ??
+        { games: 0, minutes: 0, points: 0, goals: 0, assists: 0, ppg: null };
+      const mins = num(r.minutes);
+      if (mins > 0) agg.games += 1;
+      agg.minutes += mins;
+      agg.points += num(r.total_points);
+      agg.goals += num(r.goals_scored);
+      agg.assists += num(r.assists);
+      agg.ppg = agg.games > 0 ? agg.points / agg.games : null;
+      inner.set(opp, agg);
+    }
   }
   return out;
 }
@@ -668,30 +672,34 @@ export async function loadRollingStats(
     "player_id,gw,minutes,goals_scored,assists,clean_sheets,goals_conceded,saves,bonus,bps,expected_goals,expected_assists,expected_goal_involve,expected_goals_conceded,total_points,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,starts,yellow_cards,red_cards,ict_index";
   const LEGACY_COLS =
     "player_id,gw,minutes,goals_scored,assists,clean_sheets,goals_conceded,saves,bonus,bps,expected_goals,expected_assists,expected_goal_involve,expected_goals_conceded,total_points";
-  const first = await supa
-    .from("player_gw_stats")
-    .select(FULL_COLS)
-    .eq("season", fplSeason)
-    .in("player_id", ids)
-    .gte("gw", fromGw)
-    .lte("gw", currentGw);
-  let data = first.data as unknown as Array<Record<string, unknown>> | null;
-  if (first.error) {
-    const fallback = await supa
+  const allRows: Array<Record<string, unknown>> = [];
+  for (const chunk of chunkArray(ids, 100)) {
+    const first = await supa
       .from("player_gw_stats")
-      .select(LEGACY_COLS)
+      .select(FULL_COLS)
       .eq("season", fplSeason)
-      .in("player_id", ids)
+      .in("player_id", chunk)
       .gte("gw", fromGw)
       .lte("gw", currentGw);
-    data = fallback.data as unknown as Array<Record<string, unknown>> | null;
+    let data = first.data as unknown as Array<Record<string, unknown>> | null;
+    if (first.error) {
+      const fallback = await supa
+        .from("player_gw_stats")
+        .select(LEGACY_COLS)
+        .eq("season", fplSeason)
+        .in("player_id", chunk)
+        .gte("gw", fromGw)
+        .lte("gw", currentGw);
+      data = fallback.data as unknown as Array<Record<string, unknown>> | null;
+    }
+    if (data) allRows.push(...data);
   }
 
   for (const id of ids) {
     out.set(id, emptyRolling(currentGw - fromGw + 1));
   }
 
-  for (const r of data ?? []) {
+  for (const r of allRows) {
     const pid = Number(r.player_id);
     const agg = out.get(pid);
     if (!agg) continue;

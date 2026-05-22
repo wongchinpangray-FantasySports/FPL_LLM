@@ -64,6 +64,15 @@ export function PlannerTopXpSidebar({
       {fromGw != null && toGw != null && horizon != null ? (
         <p className="mt-1.5 text-[10px] text-slate-600">
           {t("topsGwRange", { from: fromGw, to: toGw, horizon })}
+          {horizon === 1 ? (
+            <span className="mt-0.5 block text-slate-500">
+              {t("topsXpPitchAlign", { from: fromGw ?? "–" })}
+            </span>
+          ) : (
+            <span className="mt-0.5 block text-slate-500">
+              {t("topsXpHorizonAlign")}
+            </span>
+          )}
         </p>
       ) : null}
 
@@ -116,8 +125,17 @@ export function PlannerTopXpSidebar({
                             {row.team ?? "—"}
                           </span>
                         </span>
-                        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-brand-accent/95">
-                          {row.xp_total.toFixed(1)}
+                        <span
+                          className="shrink-0 text-[11px] font-semibold tabular-nums text-brand-accent/95"
+                          title={
+                            horizon === 1
+                              ? t("topsXpNextGwTitle", { gw: fromGw ?? "–" })
+                              : t("topsXpHorizonTitle")
+                          }
+                        >
+                          {(horizon === 1 ? row.xp_next_gw : row.xp_total).toFixed(
+                            1,
+                          )}
                         </span>
                       </button>
                     </li>

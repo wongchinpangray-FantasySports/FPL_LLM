@@ -573,6 +573,13 @@ export function PlannerApp({
         projections?: Record<string, ProjRow>;
         fromGw?: number;
         toGw?: number;
+        horizon?: number;
+        leagueTops?: {
+          tops?: Record<PlannerTopPosition, TopXpPlayerRow[]>;
+          fromGw?: number;
+          toGw?: number;
+          horizon?: number;
+        } | null;
         error?: string;
       };
       if (!res.ok) {
@@ -592,42 +599,21 @@ export function PlannerApp({
           : null,
       );
 
-      setTopsLoading(true);
-      setTopsError(null);
-      try {
-        const topRes = await fetch("/api/planner/top-xp-by-position", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ horizon }),
-        });
-        const topData = (await topRes.json()) as {
-          tops?: Record<PlannerTopPosition, TopXpPlayerRow[]>;
-          fromGw?: number;
-          toGw?: number;
-          horizon?: number;
-          error?: string;
-        };
-        if (!topRes.ok) {
-          setTopsError(topData.error ?? t("topsLoadFailed"));
-          setTopsByPos(null);
-          setTopsFromGw(null);
-          setTopsToGw(null);
-          setTopsHorizon(null);
-        } else {
-          setTopsByPos(topData.tops ?? null);
-          setTopsFromGw(topData.fromGw ?? null);
-          setTopsToGw(topData.toGw ?? null);
-          setTopsHorizon(topData.horizon ?? null);
-        }
-      } catch {
+      const lt = data.leagueTops;
+      if (lt?.tops) {
+        setTopsByPos(lt.tops);
+        setTopsFromGw(lt.fromGw ?? data.fromGw ?? null);
+        setTopsToGw(lt.toGw ?? data.toGw ?? null);
+        setTopsHorizon(lt.horizon ?? data.horizon ?? horizon);
+        setTopsError(null);
+      } else {
         setTopsError(t("topsLoadFailed"));
         setTopsByPos(null);
         setTopsFromGw(null);
         setTopsToGw(null);
         setTopsHorizon(null);
-      } finally {
-        setTopsLoading(false);
       }
+      setTopsLoading(false);
     } catch (e) {
       setProjError(e instanceof Error ? e.message : t("errProjectionFailed"));
       setTopsByPos(null);

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { FixtureProjection } from "@/lib/xp";
-import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
+import { projectPlayers } from "@/lib/xp";
+import { computeTopXpByPosition } from "@/lib/planner/top-xp-by-position";
+import { resolvePlannerProjectionWindow } from "@/lib/planner/projection-window";
 
 /** One row per GW (DGW: opponents joined with ·, xP summed). */
 function buildByGwStrip(
@@ -38,10 +40,10 @@ export async function POST(req: Request) {
       playerIds?: number[];
       fromGw?: number;
       horizon?: number;
+      includeLeagueTops?: boolean;
     };
 
     const ids = body.playerIds;
-    /** Planner sends the union of loaded FPL 15 + scenario 15 so both can be scored after transfers */
     if (!Array.isArray(ids) || ids.length < 15) {
       return NextResponse.json(
         {
@@ -65,14 +67,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const { current } = await resolveCurrentGw();
     const horizon = Math.min(Math.max(Number(body.horizon ?? 5) || 5, 1), 8);
-    const fromGw =
-      Number(body.fromGw) > 0 ? Number(body.fromGw) : current + 1;
-    const toGw = fromGw + horizon - 1;
+    const window = await resolvePlannerProjectionWindow(
+      horizon,
+      Number(body.fromGw) > 0 ? Number(body.fromGw) : undefined,
+    );
+    const { currentGw, fromGw, toGw } = window;
 
     const projections = await projectPlayers(ids, {
-      currentGw: current,
+      currentGw,
       fromGw,
       toGw,
     });
@@ -86,7 +89,6 @@ export async function POST(req: Request) {
         web_name: string | null;
         position: string | null;
         team: string | null;
-        /** Per-GW opponent tag + xP for the requested horizon (planner pitch strip). */
         by_gw: { gw: number; opp: string; xp: number }[];
       }
     > = {};
@@ -105,12 +107,19 @@ export async function POST(req: Request) {
       };
     }
 
+    const includeLeagueTops = body.includeLeagueTops !== false;
+    let leagueTops = null;
+    if (includeLeagueTops) {
+      leagueTops = await computeTopXpByPosition(horizon, fromGw);
+    }
+
     return NextResponse.json({
-      currentGw: current,
+      currentGw,
       fromGw,
       toGw,
-      horizon,
+      horizon: window.horizon,
       projections: out,
+      leagueTops,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Projection failed";
