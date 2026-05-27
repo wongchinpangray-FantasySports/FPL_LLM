@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildWcFdrGrid, buildWcXpRows, listWcPlayers } from "@/lib/wc/data";
+import { ensureWcSeeded } from "@/lib/wc/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const position = url.searchParams.get("position") ?? "ALL";
+
+    await ensureWcSeeded();
 
     const [fdrGrid, xp, players] = await Promise.all([
       buildWcFdrGrid(),
