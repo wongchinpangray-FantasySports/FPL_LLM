@@ -60,7 +60,9 @@ FPL_LLM/
    [`0005_fpl_season_scoping.sql`](supabase/migrations/0005_fpl_season_scoping.sql)
    (full season support) or at minimum
    [`0008_ensure_fpl_meta.sql`](supabase/migrations/0008_ensure_fpl_meta.sql).
-7. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
+7. Run [`supabase/migrations/0009_wc_fantasy.sql`](supabase/migrations/0009_wc_fantasy.sql)
+   (World Cup fantasy tables for `/worldcup`; seeded automatically on first visit).
+8. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Project Settings → API.
 
 ## 2. Set up Python data-sync locally

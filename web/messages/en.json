@@ -11,6 +11,7 @@
     "planner": "Planner",
     "players": "Players",
     "mini": "Mini 5",
+    "worldcup": "World Cup",
     "ariaMain": "Main"
   },
   "footer": {
@@ -524,5 +525,42 @@
     "colPoints": "Pts",
     "colCaptain": "Captain",
     "colSquad": "Squad"
+  },
+  "worldcupIndex": {
+    "backHome": "← Home",
+    "eyebrow": "FIFA World Cup 2026",
+    "title": "World Cup fantasy hub",
+    "description": "Projected fixture difficulty, expected points, and player comparison for the group stage. Stats blend FPL season data where linked; FDR and xP are FALEAGUE models — not official FIFA scoring."
+  },
+  "worldcup": {
+    "tabFdr": "FDR grid",
+    "tabXp": "xP heatmap",
+    "tabCompare": "Compare",
+    "loading": "Loading…",
+    "fdrTitle": "Group-stage fixture difficulty",
+    "fdrHint": "FDR 1 = easiest attack matchup (green). Based on FIFA rank–derived team strength.",
+    "xpTitle": "Projected xP — group stage",
+    "xpHint": "Expected fantasy points per matchday (MD1–3). Colours follow FPL-style xP buckets.",
+    "compareTitle": "Player profile comparison",
+    "compareHint": "Pentagon chart: xG, xA, form, goals and assists (season). Normalised vs the WC player pool.",
+    "colTeam": "Team",
+    "colGroup": "Grp",
+    "colPlayer": "Player",
+    "colPos": "Pos",
+    "colTotal": "Total",
+    "filterPos": "Position",
+    "posAll": "All",
+    "posGkp": "GKP",
+    "posDef": "DEF",
+    "posMid": "MID",
+    "posFwd": "FWD",
+    "playerA": "Player A",
+    "playerB": "Player B (optional)",
+    "rawStats": "Season stats",
+    "metric": "Metric",
+    "form": "Form",
+    "goals": "Goals",
+    "assists": "Assists",
+    "radarNote": "Radar axes scaled 0–100 relative to all World Cup fantasy players in this app."
   }
 }

@@ -84,6 +84,9 @@ export function SiteNav() {
       <NavLink href="/mini" active={pathname === "/mini"}>
         {t("mini")}
       </NavLink>
+      <NavLink href="/worldcup" active={pathname === "/worldcup"}>
+        {t("worldcup")}
+      </NavLink>
     </nav>
   );
 }

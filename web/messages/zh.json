@@ -11,6 +11,7 @@
     "planner": "规划",
     "players": "球员",
     "mini": "五人赛",
+    "worldcup": "世界杯",
     "ariaMain": "主导航"
   },
   "footer": {
@@ -523,5 +524,42 @@
     "colPoints": "分",
     "colCaptain": "队长",
     "colSquad": "阵容"
+  },
+  "worldcupIndex": {
+    "backHome": "← 返回首页",
+    "eyebrow": "2026 世界杯",
+    "title": "世界杯范特西中心",
+    "description": "小组赛赛程难度、预期积分与球员对比。已关联 FPL 的球员会拉取赛季数据；FDR 与 xP 为 FALEAGUE 自研模型，非 FIFA 官方计分。"
+  },
+  "worldcup": {
+    "tabFdr": "赛程难度",
+    "tabXp": "xP 热力图",
+    "tabCompare": "球员对比",
+    "loading": "加载中…",
+    "fdrTitle": "小组赛赛程难度 (FDR)",
+    "fdrHint": "FDR 1 = 进攻端最容易（绿色）。基于 FIFA 排名推导的球队攻防强度。",
+    "xpTitle": "小组赛预期积分 (xP)",
+    "xpHint": "每轮 (MD1–3) 预期范特西积分，配色沿用 FPL 风格 xP 分档。",
+    "compareTitle": "球员能力对比",
+    "compareHint": "五边形：xG、xA、状态、进球与助攻（赛季）。相对本页球员池归一化。",
+    "colTeam": "球队",
+    "colGroup": "组",
+    "colPlayer": "球员",
+    "colPos": "位置",
+    "colTotal": "合计",
+    "filterPos": "位置",
+    "posAll": "全部",
+    "posGkp": "门将",
+    "posDef": "后卫",
+    "posMid": "中场",
+    "posFwd": "前锋",
+    "playerA": "球员 A",
+    "playerB": "球员 B（可选）",
+    "rawStats": "赛季数据",
+    "metric": "指标",
+    "form": "状态",
+    "goals": "进球",
+    "assists": "助攻",
+    "radarNote": "雷达各轴按本应用内全部世界杯范特西球员池缩放至 0–100。"
   }
 }
