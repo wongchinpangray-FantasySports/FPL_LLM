@@ -122,9 +122,16 @@ function mergeBootstraps(
   return merged.elements.length > 0 ? merged : null;
 }
 
+export type FifaFetchDebug = {
+  path_configured: string;
+  urls_tried: { url: string; status: number; parsed_players: number }[];
+  cookie_used: boolean;
+};
+
 export async function fetchFifaBootstrap(): Promise<{
   bootstrap: FifaBootstrap | null;
   fetchError?: string;
+  debug?: FifaFetchDebug;
 }> {
   const path = await resolveBootstrapPath();
   if (!path) return { bootstrap: null };
@@ -135,45 +142,67 @@ export async function fetchFifaBootstrap(): Promise<{
   const cookie = await getFifaAuthCookie();
   let merged: FifaBootstrap | null = null;
   let lastStatus = 0;
+  const urls_tried: FifaFetchDebug["urls_tried"] = [];
 
   for (const url of urls) {
     let { data, status } = await fetchFifaJson(url, "");
+    let usedCookie = false;
     lastStatus = status;
     if (!data && cookie) {
       const retry = await fetchFifaJson(url, cookie);
       data = retry.data;
       lastStatus = retry.status;
+      usedCookie = true;
     }
+    const parsed = data ? parseFifaPlayerFeed(data) : null;
+    urls_tried.push({
+      url,
+      status: lastStatus,
+      parsed_players: parsed?.elements.length ?? 0,
+    });
     if (!data) continue;
-    merged = mergeBootstraps(merged, parseFifaPlayerFeed(data));
+    merged = mergeBootstraps(merged, parsed);
   }
 
+  const debug: FifaFetchDebug = {
+    path_configured: path,
+    urls_tried,
+    cookie_used: Boolean(cookie),
+  };
+
   if (!merged?.elements.length) {
+    const hint =
+      lastStatus === 401 || lastStatus === 403
+        ? "HTTP 401/403 — add cookie via Supabase fpl_meta key fifa_fantasy_auth_cookie"
+        : lastStatus === 404
+          ? "HTTP 404 — paste the full players.json Request URL from DevTools"
+          : "use the full https://play.fifa.com/json/.../players.json URL";
     return {
       bootstrap: null,
-      fetchError: cookie
-        ? `FIFA feed returned no players (HTTP ${lastStatus || "error"}). Check FIFA_FANTASY_BOOTSTRAP_PATH is the full players.json Request URL.`
-        : `FIFA feed returned no players (HTTP ${lastStatus || "error"}). Add cookie in Supabase fpl_meta or FIFA_FANTASY_AUTH_COOKIE if required.`,
+      fetchError: `FIFA feed returned no players (last HTTP ${lastStatus || "error"}). ${hint}.`,
+      debug,
     };
   }
 
-  return { bootstrap: merged };
+  return { bootstrap: merged, debug };
 }
 
 export async function syncWcPlayersFromFifa(): Promise<{
   synced: number;
   skipped: boolean;
   reason?: string;
+  debug?: FifaFetchDebug;
 }> {
-  const { bootstrap, fetchError } = await fetchFifaBootstrap();
+  const { bootstrap, fetchError, debug } = await fetchFifaBootstrap();
   if (!bootstrap?.elements.length) {
     return {
       synced: 0,
       skipped: true,
       reason: isFifaFantasyConfigured()
         ? fetchError ??
-          "FIFA fetch failed — use the full players.json URL from DevTools (not /api/bootstrap-static unless that is what Network shows)"
+          "FIFA fetch failed — use the full players.json URL from DevTools"
         : "Set FIFA_FANTASY_BOOTSTRAP_PATH or FIFA_FANTASY_GAME_ID to sync the official player pool",
+      debug,
     };
   }
 

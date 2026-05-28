@@ -75,6 +75,12 @@ export async function refreshWcPlayerPool(
       lastFifaSyncAt = Date.now();
       const fifa = await syncWcPlayersFromFifa();
       fifaReason = fifa.reason;
+      if (fifa.debug && fifa.reason) {
+        const tries = fifa.debug.urls_tried
+          .map((u) => `${u.status}@${u.url} (${u.parsed_players} players)`)
+          .join("; ");
+        fifaReason = `${fifa.reason} [${tries}]`;
+      }
       fifaCount = await countBySource(supa, "fifa");
       fplCount = await countBySource(supa, "fpl");
     }
