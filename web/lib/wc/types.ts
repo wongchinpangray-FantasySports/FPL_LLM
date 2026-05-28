@@ -28,6 +28,7 @@ export type WcPlayer = {
   team_code: string;
   team_short: string;
   price: number | null;
+  selection_pct: number;
   goals: number;
   assists: number;
   xg: number;

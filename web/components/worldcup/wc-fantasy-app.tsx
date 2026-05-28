@@ -7,6 +7,7 @@ import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
 import { WcFdrGrid } from "@/components/worldcup/wc-fdr-grid";
 import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
 import { WcRadarChart } from "@/components/worldcup/wc-radar-chart";
+import type { WcComparePlayer } from "@/lib/wc/radar";
 
 type Tab = "fdr" | "xp" | "compare";
 
@@ -19,24 +20,44 @@ type ContextPayload = {
 };
 
 type ComparePayload = {
-  a: {
-    id: number;
-    name: string;
-    team_code: string;
-    position: string;
-    raw: { xg: number; xa: number; form: number; goals: number; assists: number };
-    values: number[];
-  };
-  b: {
-    id: number;
-    name: string;
-    team_code: string;
-    position: string;
-    raw: { xg: number; xa: number; form: number; goals: number; assists: number };
-    values: number[];
-  };
+  a: WcComparePlayer;
+  b: WcComparePlayer;
   labels: string[];
 };
+
+function PlayerMeta({
+  p,
+  labels,
+}: {
+  p: WcComparePlayer;
+  labels: {
+    price: string;
+    selected: string;
+    xp: string;
+    source: string;
+    fpl: string;
+    fifa: string;
+  };
+}) {
+  return (
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-400">
+      <dt>{labels.price}</dt>
+      <dd className="text-right text-white">
+        {p.price != null ? `$${p.price.toFixed(1)}m` : "—"}
+      </dd>
+      <dt>{labels.selected}</dt>
+      <dd className="text-right text-white">{p.selection_pct.toFixed(1)}%</dd>
+      <dt>{labels.xp}</dt>
+      <dd className="text-right font-medium text-brand-accent">
+        {p.xp_total.toFixed(1)}
+      </dd>
+      <dt>{labels.source}</dt>
+      <dd className="text-right text-slate-300">
+        {p.fpl_linked ? labels.fpl : labels.fifa}
+      </dd>
+    </dl>
+  );
+}
 
 function PlayerPicker({
   label,
@@ -294,7 +315,7 @@ export function WcFantasyApp() {
           ) : null}
           {compare && playerA != null ? (
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+              <div className="flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
                 <WcRadarChart
                   values={compare.a.values}
                   labels={compare.labels}
@@ -308,6 +329,30 @@ export function WcFantasyApp() {
                       : undefined
                   }
                 />
+                <PlayerMeta
+                  p={compare.a}
+                  labels={{
+                    price: t("colPrice"),
+                    selected: t("colSelected"),
+                    xp: t("xpProjected"),
+                    source: "Data",
+                    fpl: t("fplLinked"),
+                    fifa: t("fifaPriors"),
+                  }}
+                />
+                {playerB != null && compare.b.id !== compare.a.id ? (
+                  <PlayerMeta
+                    p={compare.b}
+                    labels={{
+                      price: t("colPrice"),
+                      selected: t("colSelected"),
+                      xp: t("xpProjected"),
+                      source: "Data",
+                      fpl: t("fplLinked"),
+                      fifa: t("fifaPriors"),
+                    }}
+                  />
+                ) : null}
               </div>
               {playerB != null && compare.b.id !== compare.a.id ? (
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">

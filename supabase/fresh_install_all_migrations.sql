@@ -442,3 +442,11 @@ alter table public.wc_players
 
 create index if not exists wc_players_source_idx on public.wc_players (source);
 
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- 0012_wc_player_selection_pct.sql
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+alter table public.wc_players
+  add column if not exists selection_pct numeric(5, 2) default 0;
+

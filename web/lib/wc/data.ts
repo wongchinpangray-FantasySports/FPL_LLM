@@ -2,6 +2,8 @@ import { getServerSupabase } from "@/lib/supabase";
 import { ensureWcSeeded } from "@/lib/wc/seed";
 import { ensureWcPlayerPool, type WcPoolStatus } from "@/lib/wc/player-pool";
 import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
+import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
+import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
 import { wcTeamFullName } from "@/lib/wc/team-names";
@@ -42,6 +44,8 @@ export type WcPlayerListItem = {
   team_code: string;
   team_name: string;
   position: string;
+  price: number | null;
+  selection_pct: number;
 };
 
 async function loadTeams(): Promise<Map<number, WcTeam>> {
@@ -74,41 +78,60 @@ async function loadFixtures() {
   return data ?? [];
 }
 
+function mapWcPlayerRow(r: Record<string, unknown>): WcPlayer {
+  const teamRaw = r.wc_teams as
+    | { code: string; short_name: string }
+    | { code: string; short_name: string }[]
+    | null;
+  const team = Array.isArray(teamRaw) ? teamRaw[0] : teamRaw;
+  return {
+    id: r.id as number,
+    wc_team_id: r.wc_team_id as number,
+    name: r.name as string,
+    fpl_id: r.fpl_id as number | null,
+    position: r.position as string,
+    team_code: team?.code ?? "???",
+    team_short: team?.short_name ?? "???",
+    price: r.price != null ? Number(r.price) : null,
+    selection_pct: Number(r.selection_pct ?? 0),
+    goals: Number(r.goals ?? 0),
+    assists: Number(r.assists ?? 0),
+    xg: Number(r.xg ?? 0),
+    xa: Number(r.xa ?? 0),
+    form: Number(r.form ?? 0),
+    minutes: Number(r.minutes ?? 0),
+  };
+}
+
 async function loadPlayers(): Promise<WcPlayer[]> {
   await ensureWcPlayerPool();
   const supa = getServerSupabase();
+
+  const { count: fifaCount } = await supa
+    .from("wc_players")
+    .select("id", { count: "exact", head: true })
+    .eq("source", "fifa");
+  const { count: fplLinked } = await supa
+    .from("wc_players")
+    .select("id", { count: "exact", head: true })
+    .eq("source", "fifa")
+    .not("fpl_id", "is", null);
+  if ((fifaCount ?? 0) > 100 && (fplLinked ?? 0) < 80) {
+    await enrichWcPlayersFromFpl(supa);
+  }
+
   const { data, error } = await supa
     .from("wc_players")
     .select(
-      "id,wc_team_id,name,fpl_id,position,price,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
+      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
     )
     .order("name");
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((r) => {
-    const teamRaw = r.wc_teams as
-      | { code: string; short_name: string }
-      | { code: string; short_name: string }[]
-      | null;
-    const team = Array.isArray(teamRaw) ? teamRaw[0] : teamRaw;
-    return {
-      id: r.id as number,
-      wc_team_id: r.wc_team_id as number,
-      name: r.name as string,
-      fpl_id: r.fpl_id as number | null,
-      position: r.position as string,
-      team_code: team?.code ?? "???",
-      team_short: team?.short_name ?? "???",
-      price: r.price as number | null,
-      goals: Number(r.goals ?? 0),
-      assists: Number(r.assists ?? 0),
-      xg: Number(r.xg ?? 0),
-      xa: Number(r.xa ?? 0),
-      form: Number(r.form ?? 0),
-      minutes: Number(r.minutes ?? 0),
-    };
-  });
+  return hydrateWcPlayers(
+    (data ?? []).map((r) => mapWcPlayerRow(r as Record<string, unknown>)),
+  );
 }
 
 export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
@@ -204,6 +227,8 @@ export async function listWcPlayers(): Promise<WcPlayerListItem[]> {
     team_code: p.team_code,
     team_name: wcTeamFullName(p.team_code),
     position: p.position,
+    price: p.price,
+    selection_pct: p.selection_pct,
   }));
 }
 
@@ -215,7 +240,7 @@ export async function getWcPlayerById(id: number): Promise<WcPlayer | null> {
   const { data, error } = await supa
     .from("wc_players")
     .select(
-      "id,wc_team_id,name,fpl_id,position,price,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
+      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -223,28 +248,21 @@ export async function getWcPlayerById(id: number): Promise<WcPlayer | null> {
   if (error) throw new Error(error.message);
   if (!data) return null;
 
-  const teamRaw = data.wc_teams as
-    | { code: string; short_name: string }
-    | { code: string; short_name: string }[]
-    | null;
-  const team = Array.isArray(teamRaw) ? teamRaw[0] : teamRaw;
+  return hydrateWcPlayer(mapWcPlayerRow(data as Record<string, unknown>));
+}
 
-  return {
-    id: data.id as number,
-    wc_team_id: data.wc_team_id as number,
-    name: data.name as string,
-    fpl_id: data.fpl_id as number | null,
-    position: data.position as string,
-    team_code: team?.code ?? "???",
-    team_short: team?.short_name ?? "???",
-    price: data.price as number | null,
-    goals: Number(data.goals ?? 0),
-    assists: Number(data.assists ?? 0),
-    xg: Number(data.xg ?? 0),
-    xa: Number(data.xa ?? 0),
-    form: Number(data.form ?? 0),
-    minutes: Number(data.minutes ?? 0),
-  };
+export async function xpTotalForPlayer(
+  playerId: number,
+  players?: WcPlayer[],
+): Promise<number> {
+  const teams = await loadTeams();
+  const fixtures = await loadFixtures();
+  const fdrLookup = buildWcFdrLookup(teams, fixtures);
+  const pool = players ?? (await loadPlayers());
+  const player = pool.find((p) => p.id === playerId);
+  if (!player) return 0;
+  const [proj] = projectWcPlayers([player], teams, fixtures, fdrLookup);
+  return proj?.xp_total ?? 0;
 }
 
 export async function getWcPlayersByIds(ids: number[]): Promise<WcPlayer[]> {

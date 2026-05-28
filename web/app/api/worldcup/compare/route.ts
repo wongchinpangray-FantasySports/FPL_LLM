@@ -4,13 +4,40 @@ import {
   radarLabelsArray,
   buildWcRadarAxes,
   radarAxesToArray,
+  type WcComparePlayer,
 } from "@/lib/wc/radar";
 import {
+  buildWcXpRows,
   getWcPlayerById,
   loadAllWcPlayers,
 } from "@/lib/wc/data";
 
 export const dynamic = "force-dynamic";
+
+function comparePlayer(
+  p: NonNullable<Awaited<ReturnType<typeof getWcPlayerById>>>,
+  pool: Awaited<ReturnType<typeof loadAllWcPlayers>>,
+  xpById: Map<number, number>,
+): WcComparePlayer {
+  return {
+    id: p.id,
+    name: p.name,
+    team_code: p.team_code,
+    position: p.position,
+    price: p.price,
+    selection_pct: p.selection_pct,
+    xp_total: xpById.get(p.id) ?? 0,
+    fpl_linked: p.fpl_id != null,
+    raw: {
+      xg: p.xg,
+      xa: p.xa,
+      form: p.form,
+      goals: p.goals,
+      assists: p.assists,
+    },
+    values: radarAxesToArray(buildWcRadarAxes(p, pool)),
+  };
+}
 
 export async function GET(req: Request) {
   try {
@@ -22,29 +49,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing player id ?a=" }, { status: 400 });
     }
 
-    const pool = await loadAllWcPlayers();
+    const [pool, xp] = await Promise.all([loadAllWcPlayers(), buildWcXpRows()]);
+    const xpById = new Map(xp.rows.map((r) => [r.id, r.xp_total]));
+
     const playerA = await getWcPlayerById(aId);
     if (!playerA) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
 
     if (!Number.isFinite(bId) || bId <= 0) {
-      const axes = buildWcRadarAxes(playerA, pool);
       return NextResponse.json({
-        player: {
-          id: playerA.id,
-          name: playerA.name,
-          team_code: playerA.team_code,
-          position: playerA.position,
-          raw: {
-            xg: playerA.xg,
-            xa: playerA.xa,
-            form: playerA.form,
-            goals: playerA.goals,
-            assists: playerA.assists,
-          },
-          values: radarAxesToArray(axes),
-        },
+        player: comparePlayer(playerA, pool, xpById),
         labels: radarLabelsArray(),
       });
     }
@@ -54,7 +69,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Compare player not found" }, { status: 404 });
     }
 
-    return NextResponse.json(buildWcCompare(playerA, playerB, pool));
+    return NextResponse.json(buildWcCompare(playerA, playerB, pool, xpById));
   } catch (e) {
     const message = e instanceof Error ? e.message : "Compare failed";
     return NextResponse.json({ error: message }, { status: 500 });

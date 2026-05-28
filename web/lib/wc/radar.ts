@@ -58,60 +58,59 @@ export function radarLabelsArray(): string[] {
   return WC_RADAR_ORDER.map((k) => WC_RADAR_LABELS[k]);
 }
 
+export type WcComparePlayer = {
+  id: number;
+  name: string;
+  team_code: string;
+  position: string;
+  price: number | null;
+  selection_pct: number;
+  xp_total: number;
+  fpl_linked: boolean;
+  raw: Pick<WcPlayer, "xg" | "xa" | "form" | "goals" | "assists">;
+  values: number[];
+};
+
 export type WcComparePayload = {
-  a: {
-    id: number;
-    name: string;
-    team_code: string;
-    position: string;
-    raw: Pick<WcPlayer, "xg" | "xa" | "form" | "goals" | "assists">;
-    values: number[];
-  };
-  b: {
-    id: number;
-    name: string;
-    team_code: string;
-    position: string;
-    raw: Pick<WcPlayer, "xg" | "xa" | "form" | "goals" | "assists">;
-    values: number[];
-  };
+  a: WcComparePlayer;
+  b: WcComparePlayer;
   labels: string[];
 };
+
+function toComparePlayer(
+  p: WcPlayer,
+  pool: WcPlayer[],
+  xp_total: number,
+): WcComparePlayer {
+  return {
+    id: p.id,
+    name: p.name,
+    team_code: p.team_code,
+    position: p.position,
+    price: p.price,
+    selection_pct: p.selection_pct,
+    xp_total,
+    fpl_linked: p.fpl_id != null,
+    raw: {
+      xg: p.xg,
+      xa: p.xa,
+      form: p.form,
+      goals: p.goals,
+      assists: p.assists,
+    },
+    values: radarAxesToArray(buildWcRadarAxes(p, pool)),
+  };
+}
 
 export function buildWcCompare(
   a: WcPlayer,
   b: WcPlayer,
   pool: WcPlayer[],
+  xpById: Map<number, number>,
 ): WcComparePayload {
-  const axesA = buildWcRadarAxes(a, pool);
-  const axesB = buildWcRadarAxes(b, pool);
-  const labels = radarLabelsArray();
-
-  const raw = (p: WcPlayer) => ({
-    xg: p.xg,
-    xa: p.xa,
-    form: p.form,
-    goals: p.goals,
-    assists: p.assists,
-  });
-
   return {
-    a: {
-      id: a.id,
-      name: a.name,
-      team_code: a.team_code,
-      position: a.position,
-      raw: raw(a),
-      values: radarAxesToArray(axesA),
-    },
-    b: {
-      id: b.id,
-      name: b.name,
-      team_code: b.team_code,
-      position: b.position,
-      raw: raw(b),
-      values: radarAxesToArray(axesB),
-    },
-    labels,
+    a: toComparePlayer(a, pool, xpById.get(a.id) ?? 0),
+    b: toComparePlayer(b, pool, xpById.get(b.id) ?? 0),
+    labels: radarLabelsArray(),
   };
 }

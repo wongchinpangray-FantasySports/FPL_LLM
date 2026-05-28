@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { getFifaAuthCookie } from "@/lib/wc/fifa-auth";
+import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import {
   buildFifaBootstrap,
   parseFifaPlayersList,
@@ -183,6 +184,7 @@ export async function syncWcPlayersFromFifa(): Promise<{
   skipped: boolean;
   reason?: string;
   debug?: FifaFetchDebug;
+  fpl_matched?: number;
 }> {
   const { bootstrap, fetchError, debug } = await fetchFifaBootstrap();
   if (!bootstrap?.elements.length) {
@@ -242,6 +244,7 @@ export async function syncWcPlayersFromFifa(): Promise<{
         xa: num(el.expected_assists),
         form: num(el.form),
         minutes: num(el.minutes),
+        selection_pct: num(el.selection_pct),
         source: "fifa",
       };
     })
@@ -274,5 +277,7 @@ export async function syncWcPlayersFromFifa(): Promise<{
     await supa.from("wc_players").delete().in("source", ["fpl", "seed"]);
   }
 
-  return { synced: deduped.length, skipped: false };
+  const { matched: fplMatched } = await enrichWcPlayersFromFpl(supa);
+
+  return { synced: deduped.length, skipped: false, fpl_matched: fplMatched };
 }

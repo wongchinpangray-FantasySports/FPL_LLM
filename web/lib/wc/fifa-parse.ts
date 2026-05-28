@@ -16,6 +16,7 @@ export type FifaElement = {
   expected_goals?: string | number;
   expected_assists?: string | number;
   minutes?: number;
+  selection_pct?: number;
 };
 
 export type FifaBootstrap = {
@@ -99,6 +100,7 @@ function normalizePlayer(raw: Record<string, unknown>): FifaElement | null {
     expected_goals: (raw.expected_goals ?? raw.xg) as string | number | undefined,
     expected_assists: (raw.expected_assists ?? raw.xa) as string | number | undefined,
     minutes: num(raw.minutes),
+    selection_pct: num(raw.percentSelected ?? raw.selection_pct),
   };
 }
 
