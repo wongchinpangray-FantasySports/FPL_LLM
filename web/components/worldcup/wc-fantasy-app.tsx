@@ -15,6 +15,7 @@ type ContextPayload = {
   xp: { matchdays: number[]; rows: WcXpRow[] };
   players: WcPlayerListItem[];
   disclaimer: string;
+  pool_note?: string;
 };
 
 type ComparePayload = {
@@ -211,6 +212,9 @@ export function WcFantasyApp() {
         ))}
       </div>
 
+      {ctx?.pool_note ? (
+        <p className="text-xs leading-relaxed text-amber-200/80">{ctx.pool_note}</p>
+      ) : null}
       {ctx?.disclaimer ? (
         <p className="text-xs leading-relaxed text-slate-500">{ctx.disclaimer}</p>
       ) : null}

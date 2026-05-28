@@ -133,10 +133,9 @@ After migrations **0009** and **0010**, open `/worldcup`. The app seeds teams/fi
 and builds a player pool automatically:
 
 - **FDR** uses quintiles across all group-stage fixtures (clear 1–5 spread).
-- **xP** uses all players in `wc_players` (expanded FPL international pool by default).
+- **xP** and **Compare** use players in `wc_players` — **FIFA fantasy bootstrap first** when configured, else a small FPL seed fallback.
 
-To reload the player pool manually: `POST /api/worldcup/sync` (or revisit `/worldcup`
-after deploy — seed runs when the pool has fewer than 200 players).
+To reload the player pool manually: `POST /api/worldcup/sync` (FIFA first when env vars are set).
 
 #### Full official FIFA fantasy player list (optional)
 
@@ -162,9 +161,12 @@ your browser and set it on Vercel.
    | Name | Value |
    |------|--------|
    | `FIFA_FANTASY_BOOTSTRAP_PATH` | Path or full URL from step 1. If you copied a full URL, paste it as-is. If you copied only the path, use e.g. `games/your-game-id/bootstrap-static` (no leading slash). |
+   | `FIFA_FANTASY_GAME_ID` | (Alternative) Game id only — app will call `games/{id}/bootstrap-static` on the proxy base. |
    | `FIFA_FANTASY_AUTH_COOKIE` | (Optional) If the API only works when logged in: in Network → that request → **Headers** → copy the entire **Cookie** header value. |
 
 3. Optional: `FIFA_FANTASY_PROXY_BASE` defaults to `https://play.fifa.com/api` — only change if your Network tab shows a different host.
+
+The app **always tries FIFA first** when either bootstrap path or game id is set; the small FPL seed list is only used if FIFA sync fails.
 
 4. **Redeploy** the project (Deployments → … → Redeploy) so the new variables apply.
 

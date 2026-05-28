@@ -1,35 +1,23 @@
 import { NextResponse } from "next/server";
-import { getServerSupabase } from "@/lib/supabase";
-import { WC_GROUP_TEAMS } from "@/lib/wc/seed-data";
-import { syncWcPlayersFromFifa } from "@/lib/wc/fifa-sync";
-import { replaceExpandedWcPlayers } from "@/lib/wc/fpl-wc-pool";
+import { ensureWcSeeded } from "@/lib/wc/seed";
+import { ensureWcPlayerPool } from "@/lib/wc/player-pool";
 
 export const dynamic = "force-dynamic";
 
-/** Force-refresh WC player pool (FIFA API if configured, else expanded FPL fallback). */
+/** Force-refresh WC player pool (FIFA bootstrap first when configured). */
 export async function POST() {
   try {
-    const supa = getServerSupabase();
-    const { data: teams } = await supa.from("wc_teams").select("id,code");
-    const teamByCode = new Map(
-      (teams ?? []).map((t) => [t.code as string, t.id as number]),
-    );
-    const validCodes = new Set(WC_GROUP_TEAMS.map((t) => t.code));
-
-    const fifa = await syncWcPlayersFromFifa();
-    let expanded = 0;
-    if (fifa.skipped || fifa.synced < 50) {
-      expanded = await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
-    }
-
-    const { count } = await supa
-      .from("wc_players")
-      .select("id", { count: "exact", head: true });
+    await ensureWcSeeded();
+    const pool = await ensureWcPlayerPool({ force: true });
 
     return NextResponse.json({
-      fifa,
-      expanded,
-      total_players: count ?? 0,
+      pool,
+      message:
+        pool.source === "fifa"
+          ? `Synced ${pool.fifa_count} players from FIFA fantasy`
+          : pool.fifa_configured
+            ? `FIFA sync did not reach minimum pool — ${pool.fifa_last_reason ?? "unknown"}`
+            : "FIFA not configured — using FPL seed fallback. Set FIFA_FANTASY_BOOTSTRAP_PATH on Vercel.",
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Sync failed";

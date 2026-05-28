@@ -1,14 +1,18 @@
 import { getServerSupabase } from "@/lib/supabase";
-import { WC_GROUP_TEAMS } from "@/lib/wc/seed-data";
+import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
 
 const FIFA_PROXY =
   process.env.FIFA_FANTASY_PROXY_BASE ?? "https://play.fifa.com/api";
 const FIFA_BOOTSTRAP_PATH =
   process.env.FIFA_FANTASY_BOOTSTRAP_PATH ?? "";
+const FIFA_GAME_ID = process.env.FIFA_FANTASY_GAME_ID ?? "";
 const FIFA_AUTH_COOKIE = process.env.FIFA_FANTASY_AUTH_COOKIE ?? "";
 
 /** Minimum players before we consider the FIFA pool incomplete. */
 export const WC_MIN_PLAYER_POOL = 200;
+
+/** Mapped FIFA elements required to prefer official pool over FPL fallback. */
+export const FIFA_POOL_OK = 30;
 
 type FifaElement = {
   id: number;
@@ -39,21 +43,23 @@ const POSITION_BY_TYPE: Record<number, string> = {
   4: "FWD",
 };
 
-const FIFA_TEAM_CODE_MAP: Record<string, string> = Object.fromEntries(
-  WC_GROUP_TEAMS.map((t) => [t.code, t.code]),
-);
-
 function num(v: unknown, fallback = 0): number {
   if (v == null || v === "") return fallback;
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function normalizeTeamCode(raw: unknown): string | null {
-  if (raw == null) return null;
-  const s = String(raw).trim().toUpperCase();
-  if (FIFA_TEAM_CODE_MAP[s]) return FIFA_TEAM_CODE_MAP[s];
-  return null;
+export function isFifaFantasyConfigured(): boolean {
+  return Boolean(
+    FIFA_BOOTSTRAP_PATH.trim() || FIFA_GAME_ID.trim(),
+  );
+}
+
+function resolveBootstrapPath(): string {
+  if (FIFA_BOOTSTRAP_PATH.trim()) return FIFA_BOOTSTRAP_PATH.trim();
+  const id = FIFA_GAME_ID.trim();
+  if (!id) return "";
+  return `games/${id}/bootstrap-static`;
 }
 
 function mapPosition(el: FifaElement, bootstrap: FifaBootstrap): string {
@@ -71,11 +77,12 @@ function mapPosition(el: FifaElement, bootstrap: FifaBootstrap): string {
 }
 
 export async function fetchFifaBootstrap(): Promise<FifaBootstrap | null> {
-  if (!FIFA_BOOTSTRAP_PATH) return null;
+  const path = resolveBootstrapPath();
+  if (!path) return null;
 
-  const url = FIFA_BOOTSTRAP_PATH.startsWith("http")
-    ? FIFA_BOOTSTRAP_PATH
-    : `${FIFA_PROXY.replace(/\/$/, "")}/${FIFA_BOOTSTRAP_PATH.replace(/^\//, "")}`;
+  const url = path.startsWith("http")
+    ? path
+    : `${FIFA_PROXY.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -101,9 +108,9 @@ export async function syncWcPlayersFromFifa(): Promise<{
     return {
       synced: 0,
       skipped: true,
-      reason: FIFA_BOOTSTRAP_PATH
-        ? "FIFA bootstrap fetch failed or returned no elements"
-        : "Set FIFA_FANTASY_BOOTSTRAP_PATH to sync the official player pool",
+      reason: isFifaFantasyConfigured()
+        ? "FIFA bootstrap fetch failed or returned no elements — check path/cookie on Vercel"
+        : "Set FIFA_FANTASY_BOOTSTRAP_PATH or FIFA_FANTASY_GAME_ID to sync the official player pool",
     };
   }
 
@@ -117,9 +124,11 @@ export async function syncWcPlayersFromFifa(): Promise<{
     (wcTeams ?? []).map((t) => [t.code as string, t.id as number]),
   );
   const fifaTeamToWc = new Map<number, string>();
+  let unmappedTeams = 0;
   for (const t of bootstrap.teams ?? []) {
-    const code = normalizeTeamCode(t.short_name ?? t.code ?? t.name);
+    const code = fifaTeamToWcCode(t);
     if (code) fifaTeamToWc.set(t.id, code);
+    else unmappedTeams++;
   }
 
   const rows = bootstrap.elements
@@ -153,13 +162,21 @@ export async function syncWcPlayersFromFifa(): Promise<{
     .filter(Boolean);
 
   if (rows.length === 0) {
-    return { synced: 0, skipped: true, reason: "No FIFA elements mapped to WC teams" };
+    return {
+      synced: 0,
+      skipped: true,
+      reason: `No FIFA elements mapped to WC teams (${unmappedTeams} FIFA teams unmapped)`,
+    };
   }
 
   const { error } = await supa.from("wc_players").upsert(rows, {
     onConflict: "fifa_element_id",
   });
   if (error) throw new Error(error.message);
+
+  if (rows.length >= FIFA_POOL_OK) {
+    await supa.from("wc_players").delete().in("source", ["fpl", "seed"]);
+  }
 
   return { synced: rows.length, skipped: false };
 }

@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { ensureWcSeeded } from "@/lib/wc/seed";
+import { ensureWcPlayerPool, type WcPoolStatus } from "@/lib/wc/player-pool";
 import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
@@ -74,6 +75,7 @@ async function loadFixtures() {
 }
 
 async function loadPlayers(): Promise<WcPlayer[]> {
+  await ensureWcPlayerPool();
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("wc_players")
@@ -208,6 +210,7 @@ export async function listWcPlayers(): Promise<WcPlayerListItem[]> {
 export async function getWcPlayerById(id: number): Promise<WcPlayer | null> {
   if (!Number.isFinite(id) || id <= 0) return null;
   await ensureWcSeeded();
+  await ensureWcPlayerPool();
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("wc_players")
@@ -254,4 +257,9 @@ export async function getWcPlayersByIds(ids: number[]): Promise<WcPlayer[]> {
 export async function loadAllWcPlayers(): Promise<WcPlayer[]> {
   await ensureWcSeeded();
   return loadPlayers();
+}
+
+export async function getWcPoolStatus(): Promise<WcPoolStatus> {
+  await ensureWcSeeded();
+  return ensureWcPlayerPool();
 }

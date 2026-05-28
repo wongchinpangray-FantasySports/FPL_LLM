@@ -4,11 +4,7 @@ import {
   groupStagePairings,
   rankToStrength,
 } from "@/lib/wc/seed-data";
-import {
-  syncWcPlayersFromFifa,
-  WC_MIN_PLAYER_POOL,
-} from "@/lib/wc/fifa-sync";
-import { replaceExpandedWcPlayers } from "@/lib/wc/fpl-wc-pool";
+import { ensureWcPlayerPool } from "@/lib/wc/player-pool";
 
 const EXPECTED_TEAMS = WC_GROUP_TEAMS.length;
 
@@ -67,31 +63,8 @@ async function runSeed(): Promise<{ seeded: boolean }> {
     if (refreshErr) throw new Error(refreshErr.message);
   }
 
-  if (
-    teamCount >= EXPECTED_TEAMS &&
-    mdCount >= 3 &&
-    fxCount > 0 &&
-    playerCount >= WC_MIN_PLAYER_POOL
-  ) {
-    const { count: fifaCount } = await supa
-      .from("wc_players")
-      .select("id", { count: "exact", head: true })
-      .eq("source", "fifa");
-    const { count: fplCount } = await supa
-      .from("wc_players")
-      .select("id", { count: "exact", head: true })
-      .eq("source", "fpl");
-    const legacyFuzzyFplPool =
-      (fifaCount ?? 0) < 100 && (fplCount ?? 0) > 35;
-    if (legacyFuzzyFplPool) {
-      const { data: allTeams } = await supa.from("wc_teams").select("id,code");
-      const teamByCode = new Map(
-        (allTeams ?? []).map((r) => [r.code as string, r.id as number]),
-      );
-      const validCodes = new Set(WC_GROUP_TEAMS.map((t) => t.code));
-      await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
-      return { seeded: true };
-    }
+  if (teamCount >= EXPECTED_TEAMS && mdCount >= 3 && fxCount > 0) {
+    await ensureWcPlayerPool();
     return { seeded: false };
   }
 
@@ -182,18 +155,8 @@ async function runSeed(): Promise<{ seeded: boolean }> {
     didWork = true;
   }
 
-  if (playerCount < WC_MIN_PLAYER_POOL) {
-    const validCodes = new Set(WC_GROUP_TEAMS.map((t) => t.code));
-    const fifa = await syncWcPlayersFromFifa();
-    const afterFifa = fifa.skipped ? playerCount : await tableCount("wc_players");
-
-    if (afterFifa < WC_MIN_PLAYER_POOL) {
-      const n = await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
-      if (n > 0) didWork = true;
-    } else if (!fifa.skipped) {
-      didWork = true;
-    }
-  }
+  const pool = await ensureWcPlayerPool();
+  if (pool.total > playerCount) didWork = true;
 
   return { seeded: didWork };
 }
