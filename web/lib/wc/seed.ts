@@ -1,13 +1,14 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
   WC_GROUP_TEAMS,
-  WC_PLAYER_SEEDS,
   groupStagePairings,
   rankToStrength,
 } from "@/lib/wc/seed-data";
-
-const PLAYER_COLS =
-  "fpl_id,web_name,name,position,base_price,form,goals_scored,assists,expected_goals,expected_assists,minutes";
+import {
+  syncWcPlayersFromFifa,
+  WC_MIN_PLAYER_POOL,
+} from "@/lib/wc/fifa-sync";
+import { replaceExpandedWcPlayers } from "@/lib/wc/fpl-wc-pool";
 
 const EXPECTED_TEAMS = WC_GROUP_TEAMS.length;
 
@@ -46,11 +47,31 @@ async function runSeed(): Promise<{ seeded: boolean }> {
     tableCount("wc_players"),
   ]);
 
+  // Always refresh team strengths so FDR quintiles use the latest model.
+  {
+    const teamRows = WC_GROUP_TEAMS.map((t) => {
+      const s = rankToStrength(t.rank);
+      return {
+        code: t.code,
+        name: t.name,
+        short_name: t.short,
+        group_letter: t.group,
+        attack_strength: s.attack,
+        defence_strength: s.defence,
+        fifa_rank: t.rank,
+      };
+    });
+    const { error: refreshErr } = await supa
+      .from("wc_teams")
+      .upsert(teamRows, { onConflict: "code" });
+    if (refreshErr) throw new Error(refreshErr.message);
+  }
+
   if (
     teamCount >= EXPECTED_TEAMS &&
     mdCount >= 3 &&
     fxCount > 0 &&
-    playerCount > 0
+    playerCount >= WC_MIN_PLAYER_POOL
   ) {
     return { seeded: false };
   }
@@ -142,50 +163,17 @@ async function runSeed(): Promise<{ seeded: boolean }> {
     didWork = true;
   }
 
-  if (playerCount === 0) {
+  if (playerCount < WC_MIN_PLAYER_POOL) {
     const validCodes = new Set(WC_GROUP_TEAMS.map((t) => t.code));
-    const fplIds = WC_PLAYER_SEEDS.map((p) => p.fpl_id).filter(
-      (id): id is number => id != null,
-    );
+    const fifa = await syncWcPlayersFromFifa();
+    const afterFifa = fifa.skipped ? playerCount : await tableCount("wc_players");
 
-    const fplById = new Map<number, Record<string, unknown>>();
-    if (fplIds.length > 0) {
-      const { data: fplRows } = await supa
-        .from("players_static")
-        .select(PLAYER_COLS)
-        .in("fpl_id", fplIds);
-      for (const r of fplRows ?? []) {
-        fplById.set(r.fpl_id as number, r as Record<string, unknown>);
-      }
+    if (afterFifa < WC_MIN_PLAYER_POOL) {
+      const n = await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
+      if (n > 0) didWork = true;
+    } else if (!fifa.skipped) {
+      didWork = true;
     }
-
-    const playerRows = WC_PLAYER_SEEDS.filter((p) =>
-      validCodes.has(p.teamCode),
-    )
-      .map((p) => {
-        const wc_team_id = teamByCode.get(p.teamCode);
-        if (wc_team_id == null) return null;
-        const fpl = p.fpl_id != null ? fplById.get(p.fpl_id) : undefined;
-        return {
-          wc_team_id,
-          name: (fpl?.web_name as string) ?? p.name,
-          fpl_id: p.fpl_id ?? null,
-          position: (fpl?.position as string) ?? p.position,
-          price:
-            (fpl?.base_price as number | null) ?? p.price ?? 6.0,
-          goals: (fpl?.goals_scored as number | null) ?? p.goals ?? 0,
-          assists: (fpl?.assists as number | null) ?? p.assists ?? 0,
-          xg: (fpl?.expected_goals as number | null) ?? p.xg ?? 0,
-          xa: (fpl?.expected_assists as number | null) ?? p.xa ?? 0,
-          form: (fpl?.form as number | null) ?? p.form ?? 0,
-          minutes: (fpl?.minutes as number | null) ?? p.minutes ?? 0,
-        };
-      })
-      .filter(Boolean);
-
-    const { error: pErr } = await supa.from("wc_players").insert(playerRows);
-    if (pErr) throw new Error(pErr.message);
-    didWork = true;
   }
 
   return { seeded: didWork };

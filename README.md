@@ -62,7 +62,9 @@ FPL_LLM/
    [`0008_ensure_fpl_meta.sql`](supabase/migrations/0008_ensure_fpl_meta.sql).
 7. Run [`supabase/migrations/0009_wc_fantasy.sql`](supabase/migrations/0009_wc_fantasy.sql)
    (World Cup fantasy tables for `/worldcup`; seeded automatically on first visit).
-8. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
+8. Run [`supabase/migrations/0010_wc_fifa_players.sql`](supabase/migrations/0010_wc_fifa_players.sql)
+   (FIFA element id + player source for full-pool sync).
+9. Grab `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the public
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Project Settings → API.
 
 ## 2. Set up Python data-sync locally
@@ -124,6 +126,62 @@ UPSTASH_REDIS_REST_TOKEN=
 ```
 
 Open http://localhost:3000, paste an FPL Entry ID, and go to `/chat`.
+
+### World Cup fantasy (`/worldcup`)
+
+After migrations **0009** and **0010**, open `/worldcup`. The app seeds teams/fixtures
+and builds a player pool automatically:
+
+- **FDR** uses quintiles across all group-stage fixtures (clear 1–5 spread).
+- **xP** uses all players in `wc_players` (expanded FPL international pool by default).
+
+To reload the player pool manually: `POST /api/worldcup/sync` (or revisit `/worldcup`
+after deploy — seed runs when the pool has fewer than 200 players).
+
+#### Full official FIFA fantasy player list (optional)
+
+FIFA fantasy does **not** expose a public bootstrap URL like FPL. To sync the same
+player list as [fantasy.fifa.com](https://fantasy.fifa.com), capture the API path from
+your browser and set it on Vercel.
+
+**Step 1 — Find the bootstrap URL (Chrome or Edge)**
+
+1. Log in at [https://fantasy.fifa.com](https://fantasy.fifa.com) (or open the game via FIFA+ / Play Zone).
+2. Open **Developer Tools** → **Network** tab.
+3. Filter by **Fetch/XHR**.
+4. Refresh the page or open the **Transfers / Pick team** screen so player data loads.
+5. Look for a request that returns JSON with an **`elements`** array (player list), similar to FPL’s `bootstrap-static`.
+   - Requests often go through `play.fifa.com/api/...` and proxy to `backend-fifa.eu.f2p.media.geniussports.com`.
+6. Right-click that request → **Copy** → **Copy URL** (or copy only the path after `/api/`, e.g. `games/.../bootstrap-static`).
+
+**Step 2 — Add env vars on Vercel**
+
+1. Vercel → your project → **Settings** → **Environment Variables**.
+2. Add:
+
+   | Name | Value |
+   |------|--------|
+   | `FIFA_FANTASY_BOOTSTRAP_PATH` | Path or full URL from step 1. If you copied a full URL, paste it as-is. If you copied only the path, use e.g. `games/your-game-id/bootstrap-static` (no leading slash). |
+   | `FIFA_FANTASY_AUTH_COOKIE` | (Optional) If the API only works when logged in: in Network → that request → **Headers** → copy the entire **Cookie** header value. |
+
+3. Optional: `FIFA_FANTASY_PROXY_BASE` defaults to `https://play.fifa.com/api` — only change if your Network tab shows a different host.
+
+4. **Redeploy** the project (Deployments → … → Redeploy) so the new variables apply.
+
+**Step 3 — Refresh the database**
+
+1. Run migration [`0010_wc_fifa_players.sql`](supabase/migrations/0010_wc_fifa_players.sql) on Supabase if you have not already.
+2. Trigger a sync once deploy is live:
+
+   ```bash
+   curl -X POST https://faleague-ai.com/api/worldcup/sync
+   ```
+
+   Or load `/worldcup` — seed will try FIFA sync when the pool is small.
+
+3. Open `/worldcup` → **xP heatmap** — you should see hundreds of players if the bootstrap URL is correct.
+
+If sync fails, the app keeps the **expanded FPL fallback** pool (~200+ internationals). Check Vercel **Functions** logs for the error message.
 
 ## 4. Deploy the web app to Vercel
 

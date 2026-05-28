@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       fdrGrid,
       xp,
       players,
+      player_count: players.length,
       disclaimer:
         "Projected FDR and xP use FALEAGUE team-strength model — not official FIFA fantasy data.",
     });

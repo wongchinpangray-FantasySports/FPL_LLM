@@ -538,7 +538,7 @@
     "tabCompare": "Compare",
     "loading": "Loading…",
     "fdrTitle": "Group-stage fixture difficulty",
-    "fdrHint": "FDR 1 = easiest attack matchup (green). Based on FIFA rank–derived team strength.",
+    "fdrHint": "FDR 1 = easiest attack matchup (green). Quintiles across all group-stage fixtures — wider spread than rank-only buckets.",
     "xpTitle": "Projected xP — group stage",
     "xpHint": "Expected fantasy points per matchday (MD1–3). Colours follow FPL-style xP buckets.",
     "compareTitle": "Player profile comparison",

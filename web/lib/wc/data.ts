@@ -1,6 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { ensureWcSeeded } from "@/lib/wc/seed";
-import { projectWcFdr } from "@/lib/wc/fdr";
+import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
 
@@ -105,6 +105,7 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
   await ensureWcSeeded();
   const teams = await loadTeams();
   const fixtures = await loadFixtures();
+  const fdrLookup = buildWcFdrLookup(teams, fixtures);
 
   const rows: WcFdrRow[] = [];
 
@@ -120,7 +121,7 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
         matchday: fx.matchday as number,
         opp_code: opp.code,
         home,
-        fdr: projectWcFdr(team, opp, home),
+        fdr: lookupWcFdr(fdrLookup, teamId, fx.matchday as number),
       });
     }
     rows.push({
@@ -146,12 +147,13 @@ export async function buildWcXpRows(position?: string): Promise<{
   await ensureWcSeeded();
   const teams = await loadTeams();
   const fixtures = await loadFixtures();
+  const fdrLookup = buildWcFdrLookup(teams, fixtures);
   let players = await loadPlayers();
   if (position && position !== "ALL") {
     players = players.filter((p) => p.position === position);
   }
 
-  const projections = projectWcPlayers(players, teams, fixtures);
+  const projections = projectWcPlayers(players, teams, fixtures, fdrLookup);
   const matchdays = [...new Set(fixtures.map((f) => f.matchday as number))].sort(
     (a, b) => a - b,
   );

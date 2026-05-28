@@ -537,7 +537,7 @@
     "tabCompare": "球员对比",
     "loading": "加载中…",
     "fdrTitle": "小组赛赛程难度 (FDR)",
-    "fdrHint": "FDR 1 = 进攻端最容易（绿色）。基于 FIFA 排名推导的球队攻防强度。",
+    "fdrHint": "FDR 1 = 进攻端最容易（绿色）。按全部小组赛对阵五分位划分，差异比纯排名分档更明显。",
     "xpTitle": "小组赛预期积分 (xP)",
     "xpHint": "每轮 (MD1–3) 预期范特西积分，配色沿用 FPL 风格 xP 分档。",
     "compareTitle": "球员能力对比",

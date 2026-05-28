@@ -150,10 +150,11 @@ export function groupStagePairings(
 
 export function rankToStrength(rank: number): { attack: number; defence: number } {
   const r = Math.min(Math.max(rank, 1), 100);
-  const attack = Math.round(88 - (r - 1) * 0.55);
-  const defence = Math.round(85 - (r - 1) * 0.5);
+  // Steeper curve: Spain/Brazil ~95, minnows ~22 — wider spread for FDR quintiles.
+  const attack = Math.round(96 * Math.pow(0.985, r - 1));
+  const defence = Math.round(93 * Math.pow(0.984, r - 1));
   return {
-    attack: Math.min(92, Math.max(38, attack)),
-    defence: Math.min(90, Math.max(35, defence)),
+    attack: Math.min(96, Math.max(22, attack)),
+    defence: Math.min(93, Math.max(20, defence)),
   };
 }

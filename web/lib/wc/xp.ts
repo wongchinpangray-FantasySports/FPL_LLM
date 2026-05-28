@@ -1,5 +1,5 @@
 import type { WcFixtureXp, WcPlayer, WcPlayerProjection, WcTeam } from "@/lib/wc/types";
-import { projectWcFdr } from "@/lib/wc/fdr";
+import { lookupWcFdr } from "@/lib/wc/fdr";
 
 function goalPts(position: string): number {
   if (position === "GKP" || position === "DEF") return 6;
@@ -28,8 +28,8 @@ export function projectWcPlayerFixture(
   home: boolean,
   fixtureId: number,
   matchday: number,
+  fdr: number,
 ): WcFixtureXp {
-  const fdr = projectWcFdr(team, opponent, home);
   const base = home ? 1.35 : 1.05;
 
   const lambdaFor =
@@ -90,6 +90,7 @@ export function projectWcPlayers(
     home_team_id: number;
     away_team_id: number;
   }[],
+  fdrLookup: Map<string, number>,
 ): WcPlayerProjection[] {
   const out: WcPlayerProjection[] = [];
 
@@ -107,7 +108,15 @@ export function projectWcPlayers(
       const opp = teams.get(oppId);
       if (!opp) continue;
       fxs.push(
-        projectWcPlayerFixture(player, team, opp, home, fx.id, fx.matchday),
+        projectWcPlayerFixture(
+          player,
+          team,
+          opp,
+          home,
+          fx.id,
+          fx.matchday,
+          lookupWcFdr(fdrLookup, player.wc_team_id, fx.matchday),
+        ),
       );
     }
 
