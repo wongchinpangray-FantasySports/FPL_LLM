@@ -162,11 +162,22 @@ your browser and set it on Vercel.
    |------|--------|
    | `FIFA_FANTASY_BOOTSTRAP_PATH` | Path or full URL from step 1. If you copied a full URL, paste it as-is. If you copied only the path, use e.g. `games/your-game-id/bootstrap-static` (no leading slash). |
    | `FIFA_FANTASY_GAME_ID` | (Alternative) Game id only — app will call `games/{id}/bootstrap-static` on the proxy base. |
-   | `FIFA_FANTASY_AUTH_COOKIE` | (Optional) If the API only works when logged in: in Network → that request → **Headers** → copy the entire **Cookie** header value. |
+   | `FIFA_FANTASY_AUTH_COOKIE` | (Optional) Cookie header value if the API requires login. The app **strips tracking cookies** so it fits Cloudflare’s **~5 KiB** secret limit. If still too large, store the full cookie in Supabase — see below. |
 
 3. Optional: `FIFA_FANTASY_PROXY_BASE` defaults to `https://play.fifa.com/api` — only change if your Network tab shows a different host.
 
 The app **always tries FIFA first** when either bootstrap path or game id is set; the small FPL seed list is only used if FIFA sync fails.
+
+**Cloudflare Workers:** each secret is limited to **~5.1 KiB**. Paste a **trimmed** cookie in `FIFA_FANTASY_AUTH_COOKIE` (the app removes `Optanon`, `_gcl_`, `_gads`, etc. automatically). If the dashboard still rejects it, put the **full** cookie in Supabase instead:
+
+```sql
+insert into public.fpl_meta (key, value)
+values ('fifa_fantasy_auth_cookie', 'PASTE_FULL_COOKIE_HERE')
+on conflict (key) do update
+  set value = excluded.value, updated_at = now();
+```
+
+Run that in the Supabase SQL editor (no Cloudflare size cap). Leave `FIFA_FANTASY_AUTH_COOKIE` empty on the Worker.
 
 4. **Redeploy** the project (Deployments → … → Redeploy) so the new variables apply.
 

@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { getFifaAuthCookie } from "@/lib/wc/fifa-auth";
 import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
 
 const FIFA_PROXY =
@@ -6,7 +7,6 @@ const FIFA_PROXY =
 const FIFA_BOOTSTRAP_PATH =
   process.env.FIFA_FANTASY_BOOTSTRAP_PATH ?? "";
 const FIFA_GAME_ID = process.env.FIFA_FANTASY_GAME_ID ?? "";
-const FIFA_AUTH_COOKIE = process.env.FIFA_FANTASY_AUTH_COOKIE ?? "";
 
 /** Minimum players before we consider the FIFA pool incomplete. */
 export const WC_MIN_PLAYER_POOL = 200;
@@ -76,6 +76,19 @@ function mapPosition(el: FifaElement, bootstrap: FifaBootstrap): string {
   return "MID";
 }
 
+async function fetchFifaJson(url: string, cookie: string): Promise<unknown | null> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Origin: "https://fantasy.fifa.com",
+    Referer: "https://fantasy.fifa.com/",
+  };
+  if (cookie) headers.Cookie = cookie;
+
+  const res = await fetch(url, { headers, cache: "no-store" });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function fetchFifaBootstrap(): Promise<FifaBootstrap | null> {
   const path = resolveBootstrapPath();
   if (!path) return null;
@@ -84,16 +97,14 @@ export async function fetchFifaBootstrap(): Promise<FifaBootstrap | null> {
     ? path
     : `${FIFA_PROXY.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    Origin: "https://fantasy.fifa.com",
-    Referer: "https://fantasy.fifa.com/",
-  };
-  if (FIFA_AUTH_COOKIE) headers.Cookie = FIFA_AUTH_COOKIE;
+  let raw = await fetchFifaJson(url, "");
+  if (!raw) {
+    const cookie = await getFifaAuthCookie();
+    if (cookie) raw = await fetchFifaJson(url, cookie);
+  }
+  if (!raw) return null;
 
-  const res = await fetch(url, { headers, cache: "no-store" });
-  if (!res.ok) return null;
-  const data = (await res.json()) as FifaBootstrap | { data?: FifaBootstrap };
+  const data = raw as FifaBootstrap | { data?: FifaBootstrap };
   if ("data" in data && data.data) return data.data;
   return data as FifaBootstrap;
 }

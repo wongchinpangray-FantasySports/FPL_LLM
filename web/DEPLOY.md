@@ -50,6 +50,8 @@ Set these in the Vercel project (**Settings → Environment Variables**). Use **
 | `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` in code. Override if you use another model id. |
 | `CLOUDFLARE_AI_GATEWAY_NAME` | No | **Cloudflare Workers (recommended):** AI Gateway **name** only — with repo `wrangler.jsonc` **`ai` binding**, the app resolves the gateway URL at runtime. Aliases: `CF_AI_GATEWAY_NAME`. |
 | `GEMINI_AI_GATEWAY_BASE_URL` | No | **Workers alternative:** full Google AI Studio gateway base URL (no trailing slash). Alias: `CF_AI_GATEWAY_GEMINI_BASE_URL`. Or set `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_GATEWAY_NAME`. |
+| `FIFA_FANTASY_BOOTSTRAP_PATH` | No | Full URL or path to FIFA player JSON (from browser Network tab). |
+| `FIFA_FANTASY_AUTH_COOKIE` | No (Secret) | Trimmed session cookie if required. **Max ~5 KiB on Workers** — if Cloudflare rejects the secret, store the full cookie in Supabase `fpl_meta` key `fifa_fantasy_auth_cookie` instead (see root `README.md`). |
 | `GEMINI_AI_GATEWAY_TOKEN` | No | If the AI Gateway requires auth: token for `cf-aig-authorization`. Alias: `CF_AIG_AUTHORIZATION`. |
 | `SUPABASE_URL` | **Yes** | Project URL from Supabase dashboard. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server only.** Never expose in client code. Lets API routes read `players_static`, fixtures, etc. |
