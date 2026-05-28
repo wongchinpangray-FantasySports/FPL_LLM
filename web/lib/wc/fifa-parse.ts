@@ -42,46 +42,60 @@ function posFromLabel(label: string): number {
   return 3;
 }
 
-function normalizePlayer(raw: Record<string, unknown>, teamId?: number): FifaElement | null {
+/** play.fifa.com/json/fantasy/squads.json nation row */
+export function isFifaNationSquadRow(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  const r = raw as Record<string, unknown>;
+  return Boolean(r.abbr && r.name) && r.squadId == null && r.firstName == null;
+}
+
+function normalizePlayer(raw: Record<string, unknown>): FifaElement | null {
   const id = num(raw.id ?? raw.player_id ?? raw.element_id ?? raw.playerId);
   if (id <= 0) return null;
 
+  const first = str(raw.firstName ?? raw.first_name);
+  const last = str(raw.lastName ?? raw.last_name);
   const name =
+    str(raw.knownName ?? raw.known_name) ||
     str(raw.web_name) ||
     str(raw.display_name) ||
+    (first || last ? `${first} ${last}`.trim() : "") ||
     str(raw.name) ||
-    str(raw.short_name) ||
-    `${str(raw.first_name)} ${str(raw.second_name)}`.trim();
+    str(raw.short_name);
   if (!name) return null;
 
   const country =
     str(raw.country) ||
     str(raw.nation) ||
-    str(raw.national_team) ||
     str(raw.team_code) ||
-    str(raw.country_code) ||
     str(raw.countryCode);
   const teamCode = country ? fifaTeamToWcCode({ short_name: country, name: country }) : null;
 
-  const posLabel = str(raw.position ?? raw.pos ?? raw.role ?? raw.element_type);
+  const posLabel = str(raw.position ?? raw.pos ?? raw.role);
   const element_type =
     typeof raw.element_type === "number"
       ? raw.element_type
       : posFromLabel(posLabel);
 
+  const stats =
+    raw.stats && typeof raw.stats === "object"
+      ? (raw.stats as Record<string, unknown>)
+      : null;
+  const price = num(raw.price ?? raw.now_cost);
+
   return {
     id,
     web_name: name,
-    first_name: str(raw.first_name) || undefined,
-    second_name: str(raw.second_name) || undefined,
-    team: teamId ?? num(raw.team ?? raw.team_id ?? raw.squad_id ?? raw.national_team_id),
+    first_name: first || undefined,
+    second_name: last || undefined,
+    team: num(raw.squadId ?? raw.squad_id ?? raw.team ?? raw.team_id),
     team_code: teamCode ?? undefined,
     element_type,
     position_label: posLabel || undefined,
-    now_cost: num(raw.now_cost ?? raw.price ?? raw.cost),
-    form: raw.form as string | number | undefined,
-    goals_scored: num(raw.goals_scored ?? raw.goals),
-    assists: num(raw.assists),
+    now_cost: price > 0 && price < 20 ? price * 10 : price,
+    form: num(stats?.form ?? raw.form),
+    goals_scored: num(stats?.goals ?? raw.goals_scored),
+    assists: num(stats?.assists ?? raw.assists),
     expected_goals: (raw.expected_goals ?? raw.xg) as string | number | undefined,
     expected_assists: (raw.expected_assists ?? raw.xa) as string | number | undefined,
     minutes: num(raw.minutes),
@@ -91,67 +105,85 @@ function normalizePlayer(raw: Record<string, unknown>, teamId?: number): FifaEle
 function normalizeTeam(raw: Record<string, unknown>): FifaBootstrap["teams"][0] | null {
   const id = num(raw.id ?? raw.team_id ?? raw.squad_id);
   if (id <= 0) return null;
+  const abbr = str(raw.abbr ?? raw.short_name ?? raw.code);
   return {
     id,
-    code: raw.code as number | string | undefined,
+    code: abbr || undefined,
     name: str(raw.name) || str(raw.team_name) || undefined,
-    short_name:
-      str(raw.short_name) || str(raw.code) || str(raw.abbreviation) || undefined,
+    short_name: abbr || undefined,
   };
 }
 
-function fromElements(
+/** `squads.json` — list of nations (id, name, abbr). */
+export function parseFifaSquadsTeams(raw: unknown): FifaBootstrap["teams"] {
+  const arr = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object" && Array.isArray((raw as { squads?: unknown }).squads)
+      ? (raw as { squads: unknown[] }).squads
+      : null;
+  if (!arr) return [];
+
+  return arr
+    .filter(isFifaNationSquadRow)
+    .map((row) => normalizeTeam(row as Record<string, unknown>))
+    .filter((t): t is NonNullable<typeof t> => t != null);
+}
+
+/** `players.json` — all fantasy players (squadId → nation). */
+export function parseFifaPlayersList(raw: unknown): FifaElement[] {
+  const arr = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object"
+      ? ((raw as { players?: unknown[] }).players ??
+        (raw as { elements?: unknown[] }).elements)
+      : null;
+  if (!arr || !Array.isArray(arr)) return [];
+
+  return arr
+    .filter((p) => p && typeof p === "object" && !isFifaNationSquadRow(p))
+    .map((p) => normalizePlayer(p as Record<string, unknown>))
+    .filter((p): p is FifaElement => p != null);
+}
+
+export function attachSquadCodes(
   elements: FifaElement[],
   teams: FifaBootstrap["teams"],
-): FifaBootstrap | null {
-  if (elements.length === 0) return null;
-  return { elements, teams };
+): FifaElement[] {
+  const codeBySquadId = new Map<number, string>();
+  for (const t of teams) {
+    const code =
+      fifaTeamToWcCode(t) ?? (t.short_name ? String(t.short_name).toUpperCase() : null);
+    if (code) codeBySquadId.set(t.id, code);
+  }
+  return elements.map((el) => ({
+    ...el,
+    team_code: el.team_code ?? codeBySquadId.get(el.team ?? -1),
+  }));
 }
 
-function playersFromSquads(squads: unknown[]): {
-  elements: FifaElement[];
-  teams: FifaBootstrap["teams"];
-} {
-  const elements: FifaElement[] = [];
-  const teams: FifaBootstrap["teams"] = [];
-
-  for (const sq of squads) {
-    if (!sq || typeof sq !== "object") continue;
-    const s = sq as Record<string, unknown>;
-    const team = normalizeTeam(s);
-    const teamId = team?.id;
-    if (team) teams.push(team);
-
-    const roster = s.players ?? s.squad ?? s.elements ?? s.roster;
-    if (!Array.isArray(roster)) continue;
-    for (const p of roster) {
-      if (!p || typeof p !== "object") continue;
-      const el = normalizePlayer(p as Record<string, unknown>, teamId);
-      if (el) elements.push(el);
+export function buildFifaBootstrap(
+  playersRaw: unknown,
+  squadsRaw: unknown | null,
+): FifaBootstrap | null {
+  const teams = squadsRaw ? parseFifaSquadsTeams(squadsRaw) : [];
+  let elements = parseFifaPlayersList(playersRaw);
+  if (elements.length === 0) {
+    const legacy = parseFifaPlayerFeedLegacy(playersRaw);
+    if (legacy) {
+      elements = legacy.elements;
+      if (teams.length === 0) return legacy;
     }
   }
-  return { elements, teams };
+  if (elements.length === 0) return null;
+  const withCodes = attachSquadCodes(elements, teams);
+  return { elements: withCodes, teams };
 }
 
-/** Normalize play.fifa.com `players.json`, FPL bootstrap, or squad feeds. */
-export function parseFifaPlayerFeed(raw: unknown): FifaBootstrap | null {
-  if (raw == null) return null;
-
-  if (Array.isArray(raw)) {
-    const elements = raw
-      .map((p) =>
-        p && typeof p === "object"
-          ? normalizePlayer(p as Record<string, unknown>)
-          : null,
-      )
-      .filter((p): p is FifaElement => p != null);
-    return fromElements(elements, []);
-  }
-
-  if (typeof raw !== "object") return null;
+/** FPL-style bootstrap or wrapped feeds. */
+function parseFifaPlayerFeedLegacy(raw: unknown): FifaBootstrap | null {
+  if (raw == null || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-
-  if (o.data != null) return parseFifaPlayerFeed(o.data);
+  if (o.data != null) return parseFifaPlayerFeedLegacy(o.data);
 
   if (Array.isArray(o.elements)) {
     const teams = Array.isArray(o.teams)
@@ -170,44 +202,21 @@ export function parseFifaPlayerFeed(raw: unknown): FifaBootstrap | null {
           : null,
       )
       .filter((p): p is FifaElement => p != null);
-    return fromElements(elements, teams);
+    if (elements.length === 0) return null;
+    return { elements, teams };
   }
-
-  if (Array.isArray(o.players)) {
-    const teams = Array.isArray(o.teams)
-      ? o.teams
-          .map((t) =>
-            t && typeof t === "object"
-              ? normalizeTeam(t as Record<string, unknown>)
-              : null,
-          )
-          .filter((t): t is NonNullable<typeof t> => t != null)
-      : [];
-    const elements = o.players
-      .map((p) =>
-        p && typeof p === "object"
-          ? normalizePlayer(p as Record<string, unknown>)
-          : null,
-      )
-      .filter((p): p is FifaElement => p != null);
-    return fromElements(elements, teams);
-  }
-
-  if (Array.isArray(o.squads) || Array.isArray(o.teams)) {
-    const { elements, teams } = playersFromSquads(
-      (o.squads ?? o.teams) as unknown[],
-    );
-    return fromElements(elements, teams);
-  }
-
   return null;
 }
 
-/** If URL ends with `players.json`, also try `squads.json` on the same base. */
-export function companionFifaFeedUrls(primaryUrl: string): string[] {
-  const urls = [primaryUrl];
-  if (/players\.json/i.test(primaryUrl)) {
-    urls.push(primaryUrl.replace(/players\.json/i, "squads.json"));
+/** @deprecated Use buildFifaBootstrap; kept for tests. */
+export function parseFifaPlayerFeed(raw: unknown): FifaBootstrap | null {
+  if (Array.isArray(raw) && raw.length > 0 && isFifaNationSquadRow(raw[0])) {
+    return { elements: [], teams: parseFifaSquadsTeams(raw) };
   }
-  return [...new Set(urls)];
+  return buildFifaBootstrap(raw, null);
+}
+
+export function squadsJsonUrl(playersUrl: string): string | null {
+  if (!/players\.json/i.test(playersUrl)) return null;
+  return playersUrl.replace(/players\.json/i, "squads.json");
 }

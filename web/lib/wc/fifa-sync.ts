@@ -1,8 +1,10 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { getFifaAuthCookie } from "@/lib/wc/fifa-auth";
 import {
-  companionFifaFeedUrls,
-  parseFifaPlayerFeed,
+  buildFifaBootstrap,
+  parseFifaPlayersList,
+  parseFifaSquadsTeams,
+  squadsJsonUrl,
   type FifaBootstrap,
   type FifaElement,
 } from "@/lib/wc/fifa-parse";
@@ -102,26 +104,6 @@ async function fetchFifaJson(
   }
 }
 
-function mergeBootstraps(
-  a: FifaBootstrap | null,
-  b: FifaBootstrap | null,
-): FifaBootstrap | null {
-  if (!a && !b) return null;
-  const teamById = new Map<number, FifaBootstrap["teams"][0]>();
-  for (const t of [...(a?.teams ?? []), ...(b?.teams ?? [])]) {
-    teamById.set(t.id, t);
-  }
-  const elById = new Map<number, FifaElement>();
-  for (const e of [...(a?.elements ?? []), ...(b?.elements ?? [])]) {
-    elById.set(e.id, e);
-  }
-  const merged = {
-    teams: [...teamById.values()],
-    elements: [...elById.values()],
-  };
-  return merged.elements.length > 0 ? merged : null;
-}
-
 export type FifaFetchDebug = {
   path_configured: string;
   urls_tried: { url: string; status: number; parsed_players: number }[];
@@ -137,32 +119,41 @@ export async function fetchFifaBootstrap(): Promise<{
   if (!path) return { bootstrap: null };
 
   const primaryUrl = resolveFetchUrl(path);
-  const urls = companionFifaFeedUrls(primaryUrl);
+  const squadsUrl = squadsJsonUrl(primaryUrl);
 
   const cookie = await getFifaAuthCookie();
-  let merged: FifaBootstrap | null = null;
   let lastStatus = 0;
   const urls_tried: FifaFetchDebug["urls_tried"] = [];
 
-  for (const url of urls) {
+  async function loadUrl(url: string): Promise<unknown | null> {
     let { data, status } = await fetchFifaJson(url, "");
-    let usedCookie = false;
     lastStatus = status;
     if (!data && cookie) {
       const retry = await fetchFifaJson(url, cookie);
       data = retry.data;
       lastStatus = retry.status;
-      usedCookie = true;
     }
-    const parsed = data ? parseFifaPlayerFeed(data) : null;
-    urls_tried.push({
-      url,
-      status: lastStatus,
-      parsed_players: parsed?.elements.length ?? 0,
-    });
-    if (!data) continue;
-    merged = mergeBootstraps(merged, parsed);
+    return data;
   }
+
+  let squadsRaw: unknown | null = null;
+  if (squadsUrl) {
+    squadsRaw = await loadUrl(squadsUrl);
+    urls_tried.push({
+      url: squadsUrl,
+      status: lastStatus,
+      parsed_players: parseFifaSquadsTeams(squadsRaw).length,
+    });
+  }
+
+  const playersRaw = await loadUrl(primaryUrl);
+  urls_tried.push({
+    url: primaryUrl,
+    status: lastStatus,
+    parsed_players: parseFifaPlayersList(playersRaw).length,
+  });
+
+  const merged = buildFifaBootstrap(playersRaw, squadsRaw);
 
   const debug: FifaFetchDebug = {
     path_configured: path,
