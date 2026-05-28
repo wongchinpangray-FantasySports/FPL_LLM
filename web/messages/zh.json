@@ -557,7 +557,7 @@
     "scoutSeasonClub": "赛季俱乐部",
     "scoutSeasonLeague": "联赛",
     "scoutFplName": "FPL 显示名",
-    "scoutNoClub": "尚未加载俱乐部信息 — 同步后多打开几次侦察页，系统会从 Wikidata 逐步补全。",
+    "scoutNoClub": "尚未加载俱乐部信息 — 请调用 POST /api/worldcup/enrich-clubs?limit=5（可重复）从 Wikidata 补全。",
     "scoutClubSource": "俱乐部来源",
     "scoutSourceFpl": "FPL（英超）",
     "scoutSourceWikidata": "Wikidata",

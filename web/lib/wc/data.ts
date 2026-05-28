@@ -2,7 +2,6 @@ import { getServerSupabase } from "@/lib/supabase";
 import { ensureWcSeeded } from "@/lib/wc/seed";
 import { ensureWcPlayerPool, type WcPoolStatus } from "@/lib/wc/player-pool";
 import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
-import { enrichWcPlayerClubs } from "@/lib/wc/club-enrich";
 import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
@@ -117,21 +116,30 @@ function mapWcPlayerRow(r: Record<string, unknown>): WcPlayer {
   };
 }
 
-async function loadPlayers(): Promise<WcPlayer[]> {
-  await ensureWcPlayerPool();
+type LoadPlayersOptions = {
+  /** Read path only — no pool refresh, FPL linking, or other writes (Cloudflare subrequest budget). */
+  readOnly?: boolean;
+};
+
+async function loadPlayers(opts?: LoadPlayersOptions): Promise<WcPlayer[]> {
+  if (!opts?.readOnly) {
+    await ensureWcPlayerPool();
+  }
   const supa = getServerSupabase();
 
-  const { count: fifaCount } = await supa
-    .from("wc_players")
-    .select("id", { count: "exact", head: true })
-    .eq("source", "fifa");
-  const { count: fplLinked } = await supa
-    .from("wc_players")
-    .select("id", { count: "exact", head: true })
-    .eq("source", "fifa")
-    .not("fpl_id", "is", null);
-  if ((fifaCount ?? 0) > 100 && (fplLinked ?? 0) < 80) {
-    await enrichWcPlayersFromFpl(supa);
+  if (!opts?.readOnly) {
+    const { count: fifaCount } = await supa
+      .from("wc_players")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "fifa");
+    const { count: fplLinked } = await supa
+      .from("wc_players")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "fifa")
+      .not("fpl_id", "is", null);
+    if ((fifaCount ?? 0) > 100 && (fplLinked ?? 0) < 80) {
+      await enrichWcPlayersFromFpl(supa);
+    }
   }
 
   const { data, error } = await supa
@@ -189,19 +197,12 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
   );
 }
 
-export async function buildWcXpRows(position?: string): Promise<{
-  matchdays: number[];
-  rows: WcXpRow[];
-}> {
-  await ensureWcSeeded();
+async function buildWcXpRowsFromPlayers(
+  players: WcPlayer[],
+): Promise<{ matchdays: number[]; rows: WcXpRow[] }> {
   const teams = await loadTeams();
   const fixtures = await loadFixtures();
   const fdrLookup = buildWcFdrLookup(teams, fixtures);
-  let players = await loadPlayers();
-  if (position && position !== "ALL") {
-    players = players.filter((p) => p.position === position);
-  }
-
   const projections = projectWcPlayers(players, teams, fixtures, fdrLookup);
   const matchdays = [...new Set(fixtures.map((f) => f.matchday as number))].sort(
     (a, b) => a - b,
@@ -230,6 +231,18 @@ export async function buildWcXpRows(position?: string): Promise<{
   });
 
   return { matchdays, rows };
+}
+
+export async function buildWcXpRows(position?: string): Promise<{
+  matchdays: number[];
+  rows: WcXpRow[];
+}> {
+  await ensureWcSeeded();
+  let players = await loadPlayers();
+  if (position && position !== "ALL") {
+    players = players.filter((p) => p.position === position);
+  }
+  return buildWcXpRowsFromPlayers(players);
 }
 
 export async function listWcPlayers(): Promise<WcPlayerListItem[]> {
@@ -339,16 +352,10 @@ export async function loadFplPlayerIndex(): Promise<FplPlayerIndex> {
 
 export async function buildWcScouting(): Promise<WcScoutingReport> {
   await ensureWcSeeded();
-  const supa = getServerSupabase();
-  const enrichLimit = Number(process.env.WC_CLUB_ENRICH_LIMIT ?? "40");
-  if (enrichLimit > 0) {
-    await enrichWcPlayerClubs(supa, { limit: enrichLimit }).catch(() => {});
-  }
-
-  const [players, { rows: xpRows }, fplIndex] = await Promise.all([
-    loadPlayers(),
-    buildWcXpRows(),
+  const [players, fplIndex] = await Promise.all([
+    loadPlayers({ readOnly: true }),
     loadFplPlayerIndex(),
   ]);
+  const { rows: xpRows } = await buildWcXpRowsFromPlayers(players);
   return buildWcScoutingReport(players, xpRows, fplIndex);
 }

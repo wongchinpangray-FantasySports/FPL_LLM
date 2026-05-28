@@ -13,10 +13,14 @@ export async function POST() {
     const pool = await ensureWcPlayerPool({ force: true });
 
     let club_enrich = { enriched: 0, skipped: 0 };
-    if (pool.source === "fifa") {
+    const enrichLimit = Math.min(
+      8,
+      Math.max(0, Number(process.env.WC_CLUB_ENRICH_SYNC_LIMIT ?? "0")),
+    );
+    if (pool.source === "fifa" && enrichLimit > 0) {
       try {
         club_enrich = await enrichWcPlayerClubs(getServerSupabase(), {
-          limit: Number(process.env.WC_CLUB_ENRICH_SYNC_LIMIT ?? "60"),
+          limit: enrichLimit,
         });
       } catch {
         /* non-fatal */

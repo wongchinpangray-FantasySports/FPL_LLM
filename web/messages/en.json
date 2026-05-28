@@ -558,7 +558,7 @@
     "scoutSeasonClub": "Season club",
     "scoutSeasonLeague": "League",
     "scoutFplName": "FPL name",
-    "scoutNoClub": "Domestic club not loaded yet — open Scouting again after sync, or run a few visits so we can fetch clubs from Wikidata.",
+    "scoutNoClub": "Domestic club not loaded yet — POST /api/worldcup/enrich-clubs?limit=5 (repeat) to backfill from Wikidata.",
     "scoutClubSource": "Club data",
     "scoutSourceFpl": "FPL (Premier League)",
     "scoutSourceWikidata": "Wikidata",
