@@ -23,8 +23,10 @@ export function isMegaClubName(clubName: string | null | undefined): boolean {
 export function isScoutingExcluded(opts: {
   fpl_id: number | null;
   club_name?: string | null;
+  /** Matched to FPL / Premier League via stored id or name resolution. */
+  epl_club?: boolean;
 }): boolean {
-  if (isPremierLeagueFplPlayer(opts.fpl_id != null)) return true;
+  if (opts.epl_club || isPremierLeagueFplPlayer(opts.fpl_id != null)) return true;
   if (isMegaClubName(opts.club_name)) return true;
   return false;
 }

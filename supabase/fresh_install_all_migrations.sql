@@ -450,3 +450,13 @@ create index if not exists wc_players_source_idx on public.wc_players (source);
 alter table public.wc_players
   add column if not exists selection_pct numeric(5, 2) default 0;
 
+-- 0013_wc_player_season_club.sql
+alter table public.wc_players
+  add column if not exists season_club text,
+  add column if not exists season_league text,
+  add column if not exists club_source text;
+
+create index if not exists wc_players_season_club_null_idx
+  on public.wc_players (id)
+  where season_club is null;
+

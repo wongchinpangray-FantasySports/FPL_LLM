@@ -49,7 +49,7 @@ export function applyProvisionalWcPriors(p: WcPlayer): WcPlayer {
     xg: Math.round(xg * 100) / 100,
     xa: Math.round(xa * 100) / 100,
     form: Math.round(form * 100) / 100,
-    minutes: 900,
+    minutes: 0,
   };
 }
 

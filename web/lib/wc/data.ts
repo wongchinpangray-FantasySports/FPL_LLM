@@ -2,9 +2,14 @@ import { getServerSupabase } from "@/lib/supabase";
 import { ensureWcSeeded } from "@/lib/wc/seed";
 import { ensureWcPlayerPool, type WcPoolStatus } from "@/lib/wc/player-pool";
 import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
+import { enrichWcPlayerClubs } from "@/lib/wc/club-enrich";
 import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
+import {
+  buildFplPlayerIndex,
+  type FplPlayerIndex,
+} from "@/lib/wc/fpl-club-resolve";
 import {
   buildWcScoutingReport,
   type WcScoutingReport,
@@ -106,6 +111,9 @@ function mapWcPlayerRow(r: Record<string, unknown>): WcPlayer {
     xa: Number(r.xa ?? 0),
     form: Number(r.form ?? 0),
     minutes: Number(r.minutes ?? 0),
+    season_club: (r.season_club as string | null) ?? null,
+    season_league: (r.season_league as string | null) ?? null,
+    club_source: (r.club_source as string | null) ?? null,
   };
 }
 
@@ -129,7 +137,7 @@ async function loadPlayers(): Promise<WcPlayer[]> {
   const { data, error } = await supa
     .from("wc_players")
     .select(
-      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
+      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,season_club,season_league,club_source,wc_teams(code,short_name)",
     )
     .order("name");
 
@@ -246,7 +254,7 @@ export async function getWcPlayerById(id: number): Promise<WcPlayer | null> {
   const { data, error } = await supa
     .from("wc_players")
     .select(
-      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
+      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,season_club,season_league,club_source,wc_teams(code,short_name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -288,38 +296,59 @@ export async function getWcPoolStatus(): Promise<WcPoolStatus> {
   return ensureWcPlayerPool();
 }
 
-/** FPL club names for WC players linked via `fpl_id` (Premier League teams table). */
-export async function loadFplClubByPlayerId(): Promise<Map<number, string>> {
+/** Full FPL season index for scouting exclusions and club display. */
+export async function loadFplPlayerIndex(): Promise<FplPlayerIndex> {
   const supa = getServerSupabase();
-  const { data: teams, error: tErr } = await supa.from("teams").select("id,name");
+  const { data: teams, error: tErr } = await supa
+    .from("teams")
+    .select("id,name,short_name");
   if (tErr) throw new Error(tErr.message);
 
-  const teamName = new Map<number, string>();
+  const clubNameById = new Map<number, string>();
+  const teamShortById = new Map<number, string>();
   for (const t of teams ?? []) {
-    teamName.set(t.id as number, t.name as string);
+    clubNameById.set(t.id as number, t.name as string);
+    teamShortById.set(t.id as number, t.short_name as string);
   }
 
   const { data, error } = await supa
     .from("players_static")
-    .select("fpl_id,team_id")
+    .select(
+      "fpl_id,web_name,name,team,position,team_id,goals_scored,assists,expected_goals,expected_assists,form,minutes",
+    )
     .not("fpl_id", "is", null);
   if (error) throw new Error(error.message);
 
-  const map = new Map<number, string>();
+  const clubByFplId = new Map<number, string>();
+  const shortByFplId = new Map<number, string>();
   for (const r of data ?? []) {
     const fplId = r.fpl_id as number;
     const tid = r.team_id as number | null;
-    if (tid != null) map.set(fplId, teamName.get(tid) ?? "");
+    if (tid != null) {
+      clubByFplId.set(fplId, clubNameById.get(tid) ?? "");
+      shortByFplId.set(fplId, teamShortById.get(tid) ?? (r.team as string) ?? "");
+    }
   }
-  return map;
+
+  return buildFplPlayerIndex(
+    (data ?? []) as Parameters<typeof buildFplPlayerIndex>[0],
+    clubByFplId,
+    shortByFplId,
+  );
 }
 
 export async function buildWcScouting(): Promise<WcScoutingReport> {
   await ensureWcSeeded();
-  const [players, { rows: xpRows }, clubByFplId] = await Promise.all([
+  const supa = getServerSupabase();
+  const enrichLimit = Number(process.env.WC_CLUB_ENRICH_LIMIT ?? "40");
+  if (enrichLimit > 0) {
+    await enrichWcPlayerClubs(supa, { limit: enrichLimit }).catch(() => {});
+  }
+
+  const [players, { rows: xpRows }, fplIndex] = await Promise.all([
     loadPlayers(),
     buildWcXpRows(),
-    loadFplClubByPlayerId(),
+    loadFplPlayerIndex(),
   ]);
-  return buildWcScoutingReport(players, xpRows, clubByFplId);
+  return buildWcScoutingReport(players, xpRows, fplIndex);
 }

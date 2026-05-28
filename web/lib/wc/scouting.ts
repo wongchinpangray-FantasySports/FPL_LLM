@@ -1,6 +1,12 @@
 import type { WcXpRow } from "@/lib/wc/data";
-import type { WcPlayer } from "@/lib/wc/types";
+import type { FplPlayerIndex } from "@/lib/wc/fpl-club-resolve";
+import {
+  isPremierLeagueSeasonProfile,
+  resolveFplSeasonProfile,
+} from "@/lib/wc/fpl-club-resolve";
+import { resolveWcSeasonProfile } from "@/lib/wc/season-profile";
 import { isScoutingExcluded } from "@/lib/wc/spotlight-clubs";
+import type { WcPlayer } from "@/lib/wc/types";
 import { wcTeamFullName } from "@/lib/wc/team-names";
 
 export type WcScoutArchetype =
@@ -28,6 +34,15 @@ const MAX_SELECTION_PCT = 12;
 
 const TOP_N = 12;
 
+export type WcScoutSeasonStats = {
+  goals: number;
+  assists: number;
+  xg: number;
+  xa: number;
+  form: number;
+  minutes: number;
+};
+
 export type WcScoutPick = {
   id: number;
   name: string;
@@ -40,6 +55,11 @@ export type WcScoutPick = {
   gem_score: number;
   insight: string;
   fpl_linked: boolean;
+  season_club: string | null;
+  season_league: string | null;
+  fpl_web_name: string | null;
+  club_source: string | null;
+  season_stats: WcScoutSeasonStats | null;
 };
 
 export type WcScoutingReport = {
@@ -118,7 +138,7 @@ function buildInsight(player: WcPlayer, xp: WcXpRow): string {
 export function buildWcScoutingReport(
   players: WcPlayer[],
   xpRows: WcXpRow[],
-  clubByFplId: Map<number, string>,
+  fplIndex: FplPlayerIndex,
 ): WcScoutingReport {
   const xpById = new Map(xpRows.map((r) => [r.id, r]));
   const candidates: { player: WcPlayer; xp: WcXpRow; score: number }[] = [];
@@ -130,12 +150,15 @@ export function buildWcScoutingReport(
     const xp = xpById.get(player.id);
     if (!xp) continue;
 
-    const club_name = player.fpl_id != null ? clubByFplId.get(player.fpl_id) : null;
+    const fplProfile = resolveFplSeasonProfile(player, fplIndex);
+    const club_name = fplProfile?.club_name ?? null;
+    const epl_club = isPremierLeagueSeasonProfile(fplProfile);
 
     if (
       isScoutingExcluded({
         fpl_id: player.fpl_id,
         club_name,
+        epl_club,
       })
     ) {
       excluded_spotlight++;
@@ -158,19 +181,27 @@ export function buildWcScoutingReport(
       .filter((c) => c.player.position === pos)
       .sort((a, b) => b.score - a.score)
       .slice(0, TOP_N)
-      .map(({ player, xp, score }) => ({
-        id: player.id,
-        name: player.name,
-        team_code: player.team_code,
-        team_name: wcTeamFullName(player.team_code),
-        position: player.position,
-        price: player.price,
-        selection_pct: player.selection_pct,
-        xp_total: xp.xp_total,
-        gem_score: score,
-        insight: buildInsight(player, xp),
-        fpl_linked: player.fpl_id != null,
-      }));
+      .map(({ player, xp, score }) => {
+        const season = resolveWcSeasonProfile(player, fplIndex);
+        return {
+          id: player.id,
+          name: player.name,
+          team_code: player.team_code,
+          team_name: wcTeamFullName(player.team_code),
+          position: player.position,
+          price: player.price,
+          selection_pct: player.selection_pct,
+          xp_total: xp.xp_total,
+          gem_score: score,
+          insight: buildInsight(player, xp),
+          season_club: season.season_club,
+          season_league: season.season_league,
+          fpl_web_name: season.fpl_web_name,
+          club_source: season.club_source,
+          season_stats: season.season_stats,
+          fpl_linked: season.fpl_linked,
+        };
+      });
   }
 
   return {

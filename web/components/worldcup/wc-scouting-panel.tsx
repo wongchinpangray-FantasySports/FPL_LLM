@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { WcScoutArchetype, WcScoutPick, WcScoutingReport } from "@/lib/wc/scouting";
 import { SCOUT_ARCHETYPES } from "@/lib/wc/scouting";
@@ -30,21 +31,168 @@ const ARCHETYPE_STYLE: Record<
   },
 };
 
+function clubSourceLabel(
+  source: string | null,
+  labels: { fpl: string; wikidata: string; footballData: string },
+): string | null {
+  if (!source) return null;
+  if (source === "fpl") return labels.fpl;
+  if (source === "wikidata") return labels.wikidata;
+  if (source === "football-data") return labels.footballData;
+  return source;
+}
+
+function SeasonDetail({
+  pick,
+  labels,
+}: {
+  pick: WcScoutPick;
+  labels: {
+    seasonClub: string;
+    seasonLeague: string;
+    fplName: string;
+    noClub: string;
+    clubSource: string;
+    sourceFpl: string;
+    sourceWikidata: string;
+    sourceFootballData: string;
+    fifaStats: string;
+    goals: string;
+    assists: string;
+    minutes: string;
+    form: string;
+    xg: string;
+    xa: string;
+  };
+}) {
+  const sourceNote = clubSourceLabel(pick.club_source, {
+    fpl: labels.sourceFpl,
+    wikidata: labels.sourceWikidata,
+    footballData: labels.sourceFootballData,
+  });
+
+  if (!pick.season_club && !pick.season_stats) {
+    return (
+      <p className="text-[11px] text-slate-500">{labels.noClub}</p>
+    );
+  }
+
+  const s = pick.season_stats;
+
+  return (
+    <dl className="grid gap-2 text-[11px]">
+      {pick.season_club ? (
+        <>
+          <div className="flex justify-between gap-2 border-b border-white/5 pb-2">
+            <dt className="text-slate-500">{labels.seasonClub}</dt>
+            <dd className="text-right font-medium text-white">{pick.season_club}</dd>
+          </div>
+          {pick.season_league ? (
+            <div className="flex justify-between gap-2">
+              <dt className="text-slate-500">{labels.seasonLeague}</dt>
+              <dd className="text-right text-slate-300">{pick.season_league}</dd>
+            </div>
+          ) : null}
+          {sourceNote ? (
+            <div className="flex justify-between gap-2">
+              <dt className="text-slate-500">{labels.clubSource}</dt>
+              <dd className="text-right text-slate-400">{sourceNote}</dd>
+            </div>
+          ) : null}
+          {pick.fpl_web_name ? (
+            <div className="flex justify-between gap-2">
+              <dt className="text-slate-500">{labels.fplName}</dt>
+              <dd className="text-right text-slate-300">{pick.fpl_web_name}</dd>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+      {s && !pick.fpl_linked ? (
+        <p className="text-[10px] text-slate-600">{labels.fifaStats}</p>
+      ) : null}
+      {s ? (
+        <div className="mt-1 grid grid-cols-3 gap-2 rounded-md bg-white/[0.03] p-2">
+          <div>
+            <dt className="text-slate-600">{labels.goals}</dt>
+            <dd className="font-medium text-slate-200">{s.goals}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-600">{labels.assists}</dt>
+            <dd className="font-medium text-slate-200">{s.assists}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-600">{labels.minutes}</dt>
+            <dd className="font-medium text-slate-200">{s.minutes}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-600">{labels.xg}</dt>
+            <dd className="font-medium text-slate-200">{s.xg.toFixed(2)}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-600">{labels.xa}</dt>
+            <dd className="font-medium text-slate-200">{s.xa.toFixed(2)}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-600">{labels.form}</dt>
+            <dd className="font-medium text-slate-200">{s.form.toFixed(1)}</dd>
+          </div>
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
 function GemCard({
   pick,
   rank,
+  expanded,
+  onToggle,
   labels,
 }: {
   pick: WcScoutPick;
   rank: number;
+  expanded: boolean;
+  onToggle: () => void;
   labels: {
     owned: string;
     xp: string;
     gem: string;
+    tapHint: string;
+    seasonClub: string;
+    seasonLeague: string;
+    fplName: string;
+    noClub: string;
+    clubSource: string;
+    sourceFpl: string;
+    sourceWikidata: string;
+    sourceFootballData: string;
+    fifaStats: string;
+    goals: string;
+    assists: string;
+    minutes: string;
+    form: string;
+    xg: string;
+    xa: string;
   };
 }) {
   return (
-    <article className="group relative rounded-lg border border-white/[0.06] bg-slate-950/50 p-3 transition-colors hover:border-white/12 hover:bg-white/[0.04]">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      className={cn(
+        "group relative cursor-pointer rounded-lg border bg-slate-950/50 p-3 transition-colors",
+        expanded
+          ? "border-brand-accent/30 bg-white/[0.05] ring-1 ring-brand-accent/20"
+          : "border-white/[0.06] hover:border-white/12 hover:bg-white/[0.04]",
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -55,6 +203,7 @@ function GemCard({
           </div>
           <p className="mt-0.5 truncate text-[11px] text-slate-500">
             {pick.team_name} · {pick.position}
+            {pick.season_club ? ` · ${pick.season_club}` : ""}
           </p>
         </div>
         <span
@@ -81,6 +230,16 @@ function GemCard({
         </div>
       </dl>
       <p className="mt-2 text-[11px] leading-snug text-slate-400">{pick.insight}</p>
+      {!expanded ? (
+        <p className="mt-2 text-[10px] text-slate-600">{labels.tapHint}</p>
+      ) : (
+        <div
+          className="mt-3 border-t border-white/10 pt-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SeasonDetail pick={pick} labels={labels} />
+        </div>
+      )}
     </article>
   );
 }
@@ -91,6 +250,8 @@ function ArchetypeColumn({
   title,
   tagline,
   position,
+  expandedId,
+  onExpand,
   labels,
 }: {
   archetype: WcScoutArchetype;
@@ -98,11 +259,29 @@ function ArchetypeColumn({
   title: string;
   tagline: string;
   position: string;
+  expandedId: number | null;
+  onExpand: (id: number | null) => void;
   labels: {
     owned: string;
     xp: string;
     gem: string;
     empty: string;
+    tapHint: string;
+    seasonClub: string;
+    seasonLeague: string;
+    fplName: string;
+    noClub: string;
+    clubSource: string;
+    sourceFpl: string;
+    sourceWikidata: string;
+    sourceFootballData: string;
+    fifaStats: string;
+    goals: string;
+    assists: string;
+    minutes: string;
+    form: string;
+    xg: string;
+    xa: string;
   };
 }) {
   const style = ARCHETYPE_STYLE[archetype];
@@ -135,7 +314,16 @@ function ArchetypeColumn({
             <p className="py-6 text-center text-xs text-slate-500">{labels.empty}</p>
           ) : (
             picks.map((pick, i) => (
-              <GemCard key={pick.id} pick={pick} rank={i + 1} labels={labels} />
+              <GemCard
+                key={pick.id}
+                pick={pick}
+                rank={i + 1}
+                expanded={expandedId === pick.id}
+                onToggle={() =>
+                  onExpand(expandedId === pick.id ? null : pick.id)
+                }
+                labels={labels}
+              />
             ))
           )}
         </div>
@@ -159,8 +347,26 @@ export function WcScoutingPanel({
     gem: string;
     empty: string;
     positions: Record<string, string>;
+    tapHint: string;
+    seasonClub: string;
+    seasonLeague: string;
+    fplName: string;
+    noClub: string;
+    clubSource: string;
+    sourceFpl: string;
+    sourceWikidata: string;
+    sourceFootballData: string;
+    fifaStats: string;
+    goals: string;
+    assists: string;
+    minutes: string;
+    form: string;
+    xg: string;
+    xa: string;
   };
 }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
   return (
     <section className="flex flex-col gap-5">
       <div>
@@ -196,11 +402,29 @@ export function WcScoutingPanel({
               title={copy.title}
               tagline={copy.tagline}
               position={labels.positions[posKey] ?? posKey}
+              expandedId={expandedId}
+              onExpand={setExpandedId}
               labels={{
                 owned: labels.owned,
                 xp: labels.xp,
                 gem: labels.gem,
                 empty: labels.empty,
+                tapHint: labels.tapHint,
+                seasonClub: labels.seasonClub,
+                seasonLeague: labels.seasonLeague,
+                fplName: labels.fplName,
+                noClub: labels.noClub,
+                clubSource: labels.clubSource,
+                sourceFpl: labels.sourceFpl,
+                sourceWikidata: labels.sourceWikidata,
+                sourceFootballData: labels.sourceFootballData,
+                fifaStats: labels.fifaStats,
+                goals: labels.goals,
+                assists: labels.assists,
+                minutes: labels.minutes,
+                form: labels.form,
+                xg: labels.xg,
+                xa: labels.xa,
               }}
             />
           );

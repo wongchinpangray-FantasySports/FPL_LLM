@@ -35,6 +35,9 @@ export type WcPlayer = {
   xa: number;
   form: number;
   minutes: number;
+  season_club?: string | null;
+  season_league?: string | null;
+  club_source?: string | null;
 };
 
 export type WcFixtureXp = {

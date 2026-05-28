@@ -216,6 +216,22 @@ export function WcFantasyApp() {
                     DEF: t("posDef"),
                     GKP: t("posGkp"),
                   },
+                  tapHint: t("scoutTapHint"),
+                  seasonClub: t("scoutSeasonClub"),
+                  seasonLeague: t("scoutSeasonLeague"),
+                  fplName: t("scoutFplName"),
+                  noClub: t("scoutNoClub"),
+                  clubSource: t("scoutClubSource"),
+                  sourceFpl: t("scoutSourceFpl"),
+                  sourceWikidata: t("scoutSourceWikidata"),
+                  sourceFootballData: t("scoutSourceFootballData"),
+                  fifaStats: t("scoutFifaStats"),
+                  goals: t("goals"),
+                  assists: t("assists"),
+                  minutes: t("scoutMinutes"),
+                  form: t("form"),
+                  xg: "xG",
+                  xa: "xA",
                 }}
               />
             </>

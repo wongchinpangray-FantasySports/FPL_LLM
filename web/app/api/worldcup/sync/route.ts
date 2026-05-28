@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { ensureWcSeeded } from "@/lib/wc/seed";
+import { getServerSupabase } from "@/lib/supabase";
+import { enrichWcPlayerClubs } from "@/lib/wc/club-enrich";
 import { ensureWcPlayerPool } from "@/lib/wc/player-pool";
+import { ensureWcSeeded } from "@/lib/wc/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +12,20 @@ export async function POST() {
     await ensureWcSeeded();
     const pool = await ensureWcPlayerPool({ force: true });
 
+    let club_enrich = { enriched: 0, skipped: 0 };
+    if (pool.source === "fifa") {
+      try {
+        club_enrich = await enrichWcPlayerClubs(getServerSupabase(), {
+          limit: Number(process.env.WC_CLUB_ENRICH_SYNC_LIMIT ?? "60"),
+        });
+      } catch {
+        /* non-fatal */
+      }
+    }
+
     return NextResponse.json({
       pool,
+      club_enrich,
       message:
         pool.source === "fifa"
           ? `Synced ${pool.fifa_count} players from FIFA fantasy`

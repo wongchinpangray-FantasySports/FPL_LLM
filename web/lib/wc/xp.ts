@@ -43,9 +43,10 @@ export function projectWcPlayerFixture(
     (home ? 1.05 : 1.35) *
     1.2;
 
-  const mins = Math.min(90, Math.max(60, player.minutes > 0 ? 78 : 70));
-  const pPlay = mins >= 60 ? 0.88 : 0.75;
-  const appearance = mins >= 60 ? 2 : 1;
+  const hasSeasonMinutes = player.minutes > 0;
+  const mins = Math.min(90, Math.max(60, hasSeasonMinutes ? 78 : 65));
+  const pPlay = hasSeasonMinutes ? (mins >= 60 ? 0.88 : 0.75) : 0.72;
+  const appearance = hasSeasonMinutes ? (mins >= 60 ? 2 : 1) : 1;
 
   const xg90 = per90(player.xg, player.minutes);
   const xa90 = per90(player.xa, player.minutes);
@@ -56,10 +57,13 @@ export function projectWcPlayerFixture(
 
   const pGoal = Math.min(0.55, xgExp * 0.85);
   const pAssist = Math.min(0.45, xaExp * 0.7);
+  const csBase =
+    player.position === "MID" ? 0.28 : player.position === "GKP" ? 0.32 : 0.38;
+  const csScale = hasSeasonMinutes ? 1 : 0.55;
   const pCs =
     player.position === "FWD"
       ? 0
-      : Math.exp(-lambdaAgainst) * (player.position === "MID" ? 0.35 : 0.55);
+      : Math.exp(-lambdaAgainst) * csBase * csScale;
 
   let xp =
     appearance * pPlay +
@@ -68,7 +72,8 @@ export function projectWcPlayerFixture(
     pCs * csPts(player.position);
 
   if (player.position === "GKP") {
-    xp += Math.min(3, lambdaAgainst * 0.8);
+    const saveScale = hasSeasonMinutes ? 0.65 : 0.35;
+    xp += Math.min(2, lambdaAgainst * saveScale);
   }
 
   return {
