@@ -69,7 +69,7 @@ function PlayerPicker({
         <option value="">—</option>
         {filtered.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.name} ({p.team_code} · {p.position})
+            {p.name} ({p.team_name} · {p.position})
           </option>
         ))}
       </select>
@@ -106,6 +106,7 @@ export function WcFantasyApp() {
   const [playerB, setPlayerB] = useState<number | null>(null);
   const [compare, setCompare] = useState<ComparePayload | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
 
   const loadContext = useCallback(async (pos: string) => {
     setLoading(true);
@@ -127,19 +128,24 @@ export function WcFantasyApp() {
   }, [loadContext, position]);
 
   useEffect(() => {
-    if (playerA == null) {
+    if (playerA == null || playerA <= 0) {
       setCompare(null);
+      setCompareError(null);
       return;
     }
     let cancelled = false;
     setCompareLoading(true);
-    const q = playerB != null ? `?a=${playerA}&b=${playerB}` : `?a=${playerA}`;
+    setCompareError(null);
+    const q =
+      playerB != null && playerB > 0
+        ? `?a=${playerA}&b=${playerB}`
+        : `?a=${playerA}`;
     fetch(`/api/worldcup/compare${q}`)
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Compare failed");
         if (cancelled) return;
-        if (playerB != null) {
+        if (playerB != null && playerB > 0) {
           setCompare(data as ComparePayload);
         } else {
           const single = data as {
@@ -154,7 +160,12 @@ export function WcFantasyApp() {
         }
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Compare failed");
+        if (!cancelled) {
+          setCompare(null);
+          setCompareError(
+            e instanceof Error ? e.message : "Compare failed",
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setCompareLoading(false);
@@ -269,6 +280,11 @@ export function WcFantasyApp() {
               excludeId={playerA}
             />
           </div>
+          {compareError ? (
+            <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+              {compareError}
+            </p>
+          ) : null}
           {compareLoading ? (
             <p className="text-sm text-slate-400">{t("loading")}</p>
           ) : null}

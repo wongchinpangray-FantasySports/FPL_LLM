@@ -79,7 +79,7 @@ export function WcXpHeatmap({
               <tr key={r.id} className="border-t border-white/5 hover:bg-white/5">
                 <td className="px-2 py-1.5 font-medium sm:px-3 sm:py-2">{r.name}</td>
                 <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">
-                  {r.team_code}
+                  {r.team_name}
                 </td>
                 <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
                   {r.position}
@@ -95,11 +95,11 @@ export function WcXpHeatmap({
                             "rounded px-1 py-0.5 text-center text-[10px] leading-tight sm:px-1.5 sm:py-1 sm:text-[11px]",
                             xpCellClass(xp),
                           )}
-                          title={`${cell.opp}${cell.home ? " (H)" : " (A)"} · FDR ${cell.fdr} · xP ${xp.toFixed(2)}`}
+                          title={`${cell.opp_name}${cell.home ? " (H)" : " (A)"} · FDR ${cell.fdr} · xP ${xp.toFixed(2)}`}
                         >
                           <div className="font-semibold">{xp.toFixed(1)}</div>
                           <div className="text-[9px] opacity-80">
-                            {cell.opp}
+                            {cell.opp_name}
                             {!cell.home ? "·A" : ""}
                           </div>
                         </div>

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const aId = Number(url.searchParams.get("a"));
     const bId = Number(url.searchParams.get("b"));
 
-    if (!Number.isFinite(aId)) {
+    if (!Number.isFinite(aId) || aId <= 0) {
       return NextResponse.json({ error: "Missing player id ?a=" }, { status: 400 });
     }
 
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
 
-    if (!Number.isFinite(bId)) {
+    if (!Number.isFinite(bId) || bId <= 0) {
       const axes = buildWcRadarAxes(playerA, pool);
       return NextResponse.json({
         player: {

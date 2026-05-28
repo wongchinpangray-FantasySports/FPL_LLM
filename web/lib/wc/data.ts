@@ -3,10 +3,12 @@ import { ensureWcSeeded } from "@/lib/wc/seed";
 import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
+import { wcTeamFullName } from "@/lib/wc/team-names";
 
 export type WcFdrCell = {
   matchday: number;
   opp_code: string;
+  opp_name: string;
   home: boolean;
   fdr: number;
 };
@@ -14,6 +16,7 @@ export type WcFdrCell = {
 export type WcFdrRow = {
   team_id: number;
   code: string;
+  name: string;
   short_name: string;
   group_letter: string;
   fixtures: WcFdrCell[];
@@ -23,15 +26,20 @@ export type WcXpRow = {
   id: number;
   name: string;
   team_code: string;
+  team_name: string;
   position: string;
   xp_total: number;
-  byMd: Record<number, { xp: number; opp: string; home: boolean; fdr: number }>;
+  byMd: Record<
+    number,
+    { xp: number; opp: string; opp_name: string; home: boolean; fdr: number }
+  >;
 };
 
 export type WcPlayerListItem = {
   id: number;
   name: string;
   team_code: string;
+  team_name: string;
   position: string;
 };
 
@@ -120,6 +128,7 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
       cells.push({
         matchday: fx.matchday as number,
         opp_code: opp.code,
+        opp_name: opp.name,
         home,
         fdr: lookupWcFdr(fdrLookup, teamId, fx.matchday as number),
       });
@@ -127,6 +136,7 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
     rows.push({
       team_id: teamId,
       code: team.code,
+      name: team.name,
       short_name: team.short_name,
       group_letter: team.group_letter,
       fixtures: cells.sort((a, b) => a.matchday - b.matchday),
@@ -164,6 +174,7 @@ export async function buildWcXpRows(position?: string): Promise<{
       byMd[f.matchday] = {
         xp: f.xp,
         opp: f.opp_code,
+        opp_name: wcTeamFullName(f.opp_code),
         home: f.home,
         fdr: f.fdr,
       };
@@ -172,6 +183,7 @@ export async function buildWcXpRows(position?: string): Promise<{
       id: p.player.id,
       name: p.player.name,
       team_code: p.player.team_code,
+      team_name: wcTeamFullName(p.player.team_code),
       position: p.player.position,
       xp_total: p.xp_total,
       byMd,
@@ -188,14 +200,48 @@ export async function listWcPlayers(): Promise<WcPlayerListItem[]> {
     id: p.id,
     name: p.name,
     team_code: p.team_code,
+    team_name: wcTeamFullName(p.team_code),
     position: p.position,
   }));
 }
 
 export async function getWcPlayerById(id: number): Promise<WcPlayer | null> {
+  if (!Number.isFinite(id) || id <= 0) return null;
   await ensureWcSeeded();
-  const players = await loadPlayers();
-  return players.find((p) => p.id === id) ?? null;
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("wc_players")
+    .select(
+      "id,wc_team_id,name,fpl_id,position,price,goals,assists,xg,xa,form,minutes,wc_teams(code,short_name)",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const teamRaw = data.wc_teams as
+    | { code: string; short_name: string }
+    | { code: string; short_name: string }[]
+    | null;
+  const team = Array.isArray(teamRaw) ? teamRaw[0] : teamRaw;
+
+  return {
+    id: data.id as number,
+    wc_team_id: data.wc_team_id as number,
+    name: data.name as string,
+    fpl_id: data.fpl_id as number | null,
+    position: data.position as string,
+    team_code: team?.code ?? "???",
+    team_short: team?.short_name ?? "???",
+    price: data.price as number | null,
+    goals: Number(data.goals ?? 0),
+    assists: Number(data.assists ?? 0),
+    xg: Number(data.xg ?? 0),
+    xa: Number(data.xa ?? 0),
+    form: Number(data.form ?? 0),
+    minutes: Number(data.minutes ?? 0),
+  };
 }
 
 export async function getWcPlayersByIds(ids: number[]): Promise<WcPlayer[]> {

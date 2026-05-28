@@ -46,7 +46,7 @@ export function WcFdrGrid({
             {rows.map((t) => (
               <tr key={t.team_id} className="border-t border-white/5 hover:bg-white/5">
                 <td className="px-2 py-1.5 font-medium sm:px-3 sm:py-2">
-                  {t.short_name}
+                  {t.name}
                 </td>
                 <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
                   {t.group_letter}
@@ -61,10 +61,10 @@ export function WcFdrGrid({
                             "rounded border px-1 py-0.5 text-center sm:px-1.5 sm:py-1",
                             fdrClass(f.fdr),
                           )}
-                          title={`FDR ${f.fdr} vs ${f.opp_code}${f.home ? " (H)" : " (A)"}`}
+                          title={`FDR ${f.fdr} vs ${f.opp_name}${f.home ? " (H)" : " (A)"}`}
                         >
                           <div className="font-semibold">
-                            {f.opp_code}
+                            {f.opp_name}
                             {!f.home ? " (A)" : ""}
                           </div>
                           <div className="text-[9px] opacity-80">FDR {f.fdr}</div>

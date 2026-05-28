@@ -73,6 +73,25 @@ async function runSeed(): Promise<{ seeded: boolean }> {
     fxCount > 0 &&
     playerCount >= WC_MIN_PLAYER_POOL
   ) {
+    const { count: fifaCount } = await supa
+      .from("wc_players")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "fifa");
+    const { count: fplCount } = await supa
+      .from("wc_players")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "fpl");
+    const legacyFuzzyFplPool =
+      (fifaCount ?? 0) < 100 && (fplCount ?? 0) > 35;
+    if (legacyFuzzyFplPool) {
+      const { data: allTeams } = await supa.from("wc_teams").select("id,code");
+      const teamByCode = new Map(
+        (allTeams ?? []).map((r) => [r.code as string, r.id as number]),
+      );
+      const validCodes = new Set(WC_GROUP_TEAMS.map((t) => t.code));
+      await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
+      return { seeded: true };
+    }
     return { seeded: false };
   }
 
