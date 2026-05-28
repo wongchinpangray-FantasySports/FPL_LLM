@@ -4,6 +4,11 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { WcScoutArchetype, WcScoutPick, WcScoutingReport } from "@/lib/wc/scouting";
 import { SCOUT_ARCHETYPES } from "@/lib/wc/scouting";
+import {
+  WcPlayerNameRow,
+  WcSectionIntro,
+  WcStatChip,
+} from "@/components/worldcup/wc-shared";
 
 const ARCHETYPE_STYLE: Record<
   WcScoutArchetype,
@@ -52,7 +57,6 @@ function SeasonDetail({
     seasonLeague: string;
     fplName: string;
     noClub: string;
-    clubSource: string;
     sourceFpl: string;
     sourceWikidata: string;
     sourceFootballData: string;
@@ -70,75 +74,74 @@ function SeasonDetail({
     wikidata: labels.sourceWikidata,
     footballData: labels.sourceFootballData,
   });
-
-  if (!pick.season_club && !pick.season_stats) {
-    return (
-      <p className="text-[11px] text-slate-500">{labels.noClub}</p>
-    );
-  }
-
   const s = pick.season_stats;
 
   return (
-    <dl className="grid gap-2 text-[11px]">
-      {pick.season_club ? (
-        <>
-          <div className="flex justify-between gap-2 border-b border-white/5 pb-2">
-            <dt className="text-slate-500">{labels.seasonClub}</dt>
-            <dd className="text-right font-medium text-white">{pick.season_club}</dd>
-          </div>
-          {pick.season_league ? (
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{labels.seasonLeague}</dt>
-              <dd className="text-right text-slate-300">{pick.season_league}</dd>
+    <div className="space-y-3 text-sm">
+      <p className="leading-relaxed text-slate-400">{pick.insight}</p>
+      {pick.season_club || s ? (
+        <dl className="grid gap-2 rounded-lg bg-white/[0.03] p-3 text-xs">
+          {pick.season_club ? (
+            <>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">{labels.seasonClub}</dt>
+                <dd className="text-right font-medium text-white">{pick.season_club}</dd>
+              </div>
+              {pick.season_league ? (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">{labels.seasonLeague}</dt>
+                  <dd className="text-right text-slate-300">{pick.season_league}</dd>
+                </div>
+              ) : null}
+              {sourceNote ? (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Source</dt>
+                  <dd className="text-right text-slate-400">{sourceNote}</dd>
+                </div>
+              ) : null}
+              {pick.fpl_web_name ? (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">{labels.fplName}</dt>
+                  <dd className="text-right text-slate-300">{pick.fpl_web_name}</dd>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-slate-500">{labels.noClub}</p>
+          )}
+          {s ? (
+            <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-2">
+              <div>
+                <dt className="text-slate-600">{labels.goals}</dt>
+                <dd className="font-medium text-slate-200">{s.goals}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-600">{labels.assists}</dt>
+                <dd className="font-medium text-slate-200">{s.assists}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-600">{labels.minutes}</dt>
+                <dd className="font-medium text-slate-200">{s.minutes}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-600">{labels.xg}</dt>
+                <dd className="font-medium text-slate-200">{s.xg.toFixed(2)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-600">{labels.xa}</dt>
+                <dd className="font-medium text-slate-200">{s.xa.toFixed(2)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-600">{labels.form}</dt>
+                <dd className="font-medium text-slate-200">{s.form.toFixed(1)}</dd>
+              </div>
             </div>
           ) : null}
-          {sourceNote ? (
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{labels.clubSource}</dt>
-              <dd className="text-right text-slate-400">{sourceNote}</dd>
-            </div>
-          ) : null}
-          {pick.fpl_web_name ? (
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{labels.fplName}</dt>
-              <dd className="text-right text-slate-300">{pick.fpl_web_name}</dd>
-            </div>
-          ) : null}
-        </>
-      ) : null}
-      {s && !pick.fpl_linked ? (
-        <p className="text-[10px] text-slate-600">{labels.fifaStats}</p>
-      ) : null}
-      {s ? (
-        <div className="mt-1 grid grid-cols-3 gap-2 rounded-md bg-white/[0.03] p-2">
-          <div>
-            <dt className="text-slate-600">{labels.goals}</dt>
-            <dd className="font-medium text-slate-200">{s.goals}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-600">{labels.assists}</dt>
-            <dd className="font-medium text-slate-200">{s.assists}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-600">{labels.minutes}</dt>
-            <dd className="font-medium text-slate-200">{s.minutes}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-600">{labels.xg}</dt>
-            <dd className="font-medium text-slate-200">{s.xg.toFixed(2)}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-600">{labels.xa}</dt>
-            <dd className="font-medium text-slate-200">{s.xa.toFixed(2)}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-600">{labels.form}</dt>
-            <dd className="font-medium text-slate-200">{s.form.toFixed(1)}</dd>
-          </div>
-        </div>
-      ) : null}
-    </dl>
+        </dl>
+      ) : (
+        <p className="text-xs text-slate-500">{labels.noClub}</p>
+      )}
+    </div>
   );
 }
 
@@ -157,12 +160,13 @@ function GemCard({
     owned: string;
     xp: string;
     gem: string;
-    tapHint: string;
+    expandHint: string;
+    copyName: string;
+    copiedName: string;
     seasonClub: string;
     seasonLeague: string;
     fplName: string;
     noClub: string;
-    clubSource: string;
     sourceFpl: string;
     sourceWikidata: string;
     sourceFootballData: string;
@@ -187,51 +191,32 @@ function GemCard({
         }
       }}
       className={cn(
-        "group relative cursor-pointer rounded-lg border bg-slate-950/50 p-3 transition-colors",
+        "cursor-pointer rounded-lg border p-3 transition-colors",
         expanded
           ? "border-brand-accent/30 bg-white/[0.05] ring-1 ring-brand-accent/20"
-          : "border-white/[0.06] hover:border-white/12 hover:bg-white/[0.04]",
+          : "border-white/[0.06] bg-slate-950/50 hover:border-white/12 hover:bg-white/[0.04]",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-semibold text-slate-400">
-              {rank}
-            </span>
-            <h4 className="truncate text-sm font-semibold text-white">{pick.name}</h4>
-          </div>
-          <p className="mt-0.5 truncate text-[11px] text-slate-500">
-            {pick.team_name} · {pick.position}
-            {pick.season_club ? ` · ${pick.season_club}` : ""}
-          </p>
-        </div>
-        <span
-          className="shrink-0 rounded-md bg-brand-accent/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-brand-accent"
-          title={labels.gem}
-        >
-          {pick.gem_score.toFixed(1)}
-        </span>
+      <WcPlayerNameRow
+        name={pick.name}
+        rank={rank}
+        copyLabel={labels.copyName}
+        copiedLabel={labels.copiedName}
+      />
+      <p className="mt-1.5 text-xs text-slate-500">
+        {pick.team_name} · {pick.position}
+      </p>
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+        <WcStatChip label={labels.owned} value={`${pick.selection_pct.toFixed(1)}%`} />
+        <WcStatChip
+          label={labels.xp}
+          value={pick.xp_total.toFixed(1)}
+          accent
+        />
+        <WcStatChip label={labels.gem} value={pick.gem_score.toFixed(1)} />
       </div>
-      <dl className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
-        <div>
-          <dt className="text-slate-600">{labels.owned}</dt>
-          <dd className="font-medium text-slate-300">{pick.selection_pct.toFixed(1)}%</dd>
-        </div>
-        <div>
-          <dt className="text-slate-600">{labels.xp}</dt>
-          <dd className="font-medium text-brand-accent">{pick.xp_total.toFixed(1)}</dd>
-        </div>
-        <div className="text-right">
-          <dt className="text-slate-600">$</dt>
-          <dd className="font-medium text-slate-300">
-            {pick.price != null ? pick.price.toFixed(1) : "—"}
-          </dd>
-        </div>
-      </dl>
-      <p className="mt-2 text-[11px] leading-snug text-slate-400">{pick.insight}</p>
       {!expanded ? (
-        <p className="mt-2 text-[10px] text-slate-600">{labels.tapHint}</p>
+        <p className="mt-2 text-[10px] text-slate-600">{labels.expandHint}</p>
       ) : (
         <div
           className="mt-3 border-t border-white/10 pt-3"
@@ -266,12 +251,13 @@ function ArchetypeColumn({
     xp: string;
     gem: string;
     empty: string;
-    tapHint: string;
+    expandHint: string;
+    copyName: string;
+    copiedName: string;
     seasonClub: string;
     seasonLeague: string;
     fplName: string;
     noClub: string;
-    clubSource: string;
     sourceFpl: string;
     sourceWikidata: string;
     sourceFootballData: string;
@@ -289,29 +275,29 @@ function ArchetypeColumn({
   return (
     <section
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b p-[1px]",
+        "flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b p-px",
         style.ring,
         style.glow,
       )}
     >
       <div className="flex flex-1 flex-col rounded-[11px] bg-slate-950/90">
-        <header className="border-b border-white/[0.06] px-4 py-3">
+        <header className="border-b border-white/[0.06] px-3 py-2.5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold tracking-tight text-white">{title}</h3>
+            <h3 className="text-sm font-semibold text-white">{title}</h3>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ring-1",
+                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ring-1",
                 style.badge,
               )}
             >
               {position}
             </span>
           </div>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{tagline}</p>
+          <p className="mt-1 text-[11px] text-slate-500">{tagline}</p>
         </header>
-        <div className="flex flex-col gap-2 p-3">
+        <div className="flex flex-col gap-2 p-2.5">
           {picks.length === 0 ? (
-            <p className="py-6 text-center text-xs text-slate-500">{labels.empty}</p>
+            <p className="py-8 text-center text-xs text-slate-500">{labels.empty}</p>
           ) : (
             picks.map((pick, i) => (
               <GemCard
@@ -339,20 +325,23 @@ export function WcScoutingPanel({
   report: WcScoutingReport;
   labels: {
     title: string;
-    hint: string;
+    summary: string;
+    detail: string;
+    moreDetail: string;
     meta: string;
     archetypes: Record<WcScoutArchetype, { title: string; tagline: string }>;
     owned: string;
     xp: string;
     gem: string;
     empty: string;
+    expandHint: string;
+    copyName: string;
+    copiedName: string;
     positions: Record<string, string>;
-    tapHint: string;
     seasonClub: string;
     seasonLeague: string;
     fplName: string;
     noClub: string;
-    clubSource: string;
     sourceFpl: string;
     sourceWikidata: string;
     sourceFootballData: string;
@@ -367,22 +356,19 @@ export function WcScoutingPanel({
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  const metaDetail = labels.meta
+    .replace("{scanned}", String(report.scanned))
+    .replace("{spotlight}", String(report.excluded_spotlight))
+    .replace("{popular}", String(report.excluded_popular));
+
   return (
     <section className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
-          {labels.title}
-        </h2>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-400">
-          {labels.hint}
-        </p>
-        <p className="mt-2 text-[11px] text-slate-500">
-          {labels.meta
-            .replace("{scanned}", String(report.scanned))
-            .replace("{spotlight}", String(report.excluded_spotlight))
-            .replace("{popular}", String(report.excluded_popular))}
-        </p>
-      </div>
+      <WcSectionIntro
+        title={labels.title}
+        summary={labels.summary}
+        detail={`${labels.detail}\n\n${metaDetail}`}
+        moreLabel={labels.moreDetail}
+      />
       <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         {SCOUT_ARCHETYPES.map((archetype) => {
           const copy = labels.archetypes[archetype];
@@ -409,12 +395,13 @@ export function WcScoutingPanel({
                 xp: labels.xp,
                 gem: labels.gem,
                 empty: labels.empty,
-                tapHint: labels.tapHint,
+                expandHint: labels.expandHint,
+                copyName: labels.copyName,
+                copiedName: labels.copiedName,
                 seasonClub: labels.seasonClub,
                 seasonLeague: labels.seasonLeague,
                 fplName: labels.fplName,
                 noClub: labels.noClub,
-                clubSource: labels.clubSource,
                 sourceFpl: labels.sourceFpl,
                 sourceWikidata: labels.sourceWikidata,
                 sourceFootballData: labels.sourceFootballData,

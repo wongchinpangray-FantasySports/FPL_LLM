@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
 import type { WcScoutingReport } from "@/lib/wc/scouting";
 import type { WcScoutArchetype } from "@/lib/wc/scouting";
+import { WcAboutPanel } from "@/components/worldcup/wc-shared";
 import { WcFdrGrid } from "@/components/worldcup/wc-fdr-grid";
 import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
 import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
@@ -145,7 +146,7 @@ export function WcFantasyApp() {
   } satisfies Record<WcScoutArchetype, { title: string; tagline: string }>;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-wrap gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
         {tabs.map((item) => (
           <button
@@ -153,7 +154,7 @@ export function WcFantasyApp() {
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              "rounded-md px-3 py-2 text-sm transition-colors",
               tab === item.id
                 ? "bg-brand-accent/15 text-brand-accent"
                 : "text-slate-400 hover:text-white",
@@ -164,12 +165,14 @@ export function WcFantasyApp() {
         ))}
       </div>
 
-      {ctx?.pool_note ? (
-        <p className="text-xs leading-relaxed text-amber-200/80">{ctx.pool_note}</p>
-      ) : null}
-      {ctx?.disclaimer ? (
-        <p className="text-xs leading-relaxed text-slate-500">{ctx.disclaimer}</p>
-      ) : null}
+      <WcAboutPanel
+        poolNote={ctx?.pool_note}
+        disclaimer={ctx?.disclaimer}
+        scoutingNote={
+          tab === "scouting" ? scouting?.disclaimer : undefined
+        }
+        moreLabel={t("aboutNotes")}
+      />
 
       {loading && !ctx ? (
         <p className="text-sm text-slate-400">{t("loading")}</p>
@@ -186,8 +189,15 @@ export function WcFantasyApp() {
           rows={ctx.fdrGrid}
           matchdays={matchdays}
           title={t("fdrTitle")}
-          hint={t("fdrHint")}
-          labels={{ team: t("colTeam"), group: t("colGroup") }}
+          summary={t("fdrSummary")}
+          detail={t("fdrDetail")}
+          moreLabel={t("moreDetail")}
+          labels={{
+            team: t("colTeam"),
+            group: t("colGroup"),
+            expandHint: t("expandHint"),
+            mdLabel: t("mdShort"),
+          }}
         />
       ) : null}
 
@@ -196,13 +206,18 @@ export function WcFantasyApp() {
           rows={ctx.xp.rows}
           matchdays={matchdays}
           title={t("xpTitle")}
-          hint={t("xpHint")}
+          summary={t("xpSummary")}
+          detail={t("xpDetail")}
           labels={{
             player: t("colPlayer"),
             team: t("colTeam"),
             pos: t("colPos"),
             total: t("colTotal"),
             filter: t("filterPos"),
+            expandHint: t("expandHint"),
+            copyName: t("copyName"),
+            copiedName: t("copiedName"),
+            mdLabel: t("mdShort"),
           }}
           positionFilter={position}
           onPositionChange={setPosition}
@@ -221,48 +236,44 @@ export function WcFantasyApp() {
             <p className="text-sm text-slate-400">{t("loading")}</p>
           ) : null}
           {scouting ? (
-            <>
-              {scouting.disclaimer ? (
-                <p className="text-xs leading-relaxed text-slate-500">
-                  {scouting.disclaimer}
-                </p>
-              ) : null}
-              <WcScoutingPanel
-                report={scouting}
-                labels={{
-                  title: t("scoutingTitle"),
-                  hint: t("scoutingHint"),
-                  meta: t("scoutingMeta"),
-                  archetypes: archetypeLabels,
-                  owned: t("colSelected"),
-                  xp: t("xpProjected"),
-                  gem: t("scoutGemScore"),
-                  empty: t("scoutEmpty"),
-                  positions: {
-                    FWD: t("posFwd"),
-                    MID: t("posMid"),
-                    DEF: t("posDef"),
-                    GKP: t("posGkp"),
-                  },
-                  tapHint: t("scoutTapHint"),
-                  seasonClub: t("scoutSeasonClub"),
-                  seasonLeague: t("scoutSeasonLeague"),
-                  fplName: t("scoutFplName"),
-                  noClub: t("scoutNoClub"),
-                  clubSource: t("scoutClubSource"),
-                  sourceFpl: t("scoutSourceFpl"),
-                  sourceWikidata: t("scoutSourceWikidata"),
-                  sourceFootballData: t("scoutSourceFootballData"),
-                  fifaStats: t("scoutFifaStats"),
-                  goals: t("goals"),
-                  assists: t("assists"),
-                  minutes: t("scoutMinutes"),
-                  form: t("form"),
-                  xg: "xG",
-                  xa: "xA",
-                }}
-              />
-            </>
+            <WcScoutingPanel
+              report={scouting}
+              labels={{
+                title: t("scoutingTitle"),
+                summary: t("scoutingSummary"),
+                detail: t("scoutingDetail"),
+                moreDetail: t("moreDetail"),
+                meta: t("scoutingMeta"),
+                archetypes: archetypeLabels,
+                owned: t("colSelected"),
+                xp: t("xpProjected"),
+                gem: t("scoutGemScore"),
+                empty: t("scoutEmpty"),
+                expandHint: t("expandHint"),
+                copyName: t("copyName"),
+                copiedName: t("copiedName"),
+                positions: {
+                  FWD: t("posFwd"),
+                  MID: t("posMid"),
+                  DEF: t("posDef"),
+                  GKP: t("posGkp"),
+                },
+                seasonClub: t("scoutSeasonClub"),
+                seasonLeague: t("scoutSeasonLeague"),
+                fplName: t("scoutFplName"),
+                noClub: t("scoutNoClub"),
+                sourceFpl: t("scoutSourceFpl"),
+                sourceWikidata: t("scoutSourceWikidata"),
+                sourceFootballData: t("scoutSourceFootballData"),
+                fifaStats: t("scoutFifaStats"),
+                goals: t("goals"),
+                assists: t("assists"),
+                minutes: t("scoutMinutes"),
+                form: t("form"),
+                xg: "xG",
+                xa: "xA",
+              }}
+            />
           ) : null}
         </>
       ) : null}
