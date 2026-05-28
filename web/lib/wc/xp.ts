@@ -43,13 +43,15 @@ export function projectWcPlayerFixture(
     (home ? 1.05 : 1.35) *
     1.2;
 
-  const hasSeasonMinutes = player.minutes > 0;
-  const mins = Math.min(90, Math.max(60, hasSeasonMinutes ? 78 : 65));
-  const pPlay = hasSeasonMinutes ? (mins >= 60 ? 0.88 : 0.75) : 0.72;
-  const appearance = hasSeasonMinutes ? (mins >= 60 ? 2 : 1) : 1;
+  const isProvisional = player.provisional === true;
+  const hasFplSeason = player.minutes > 0 && !isProvisional;
+  const mins = Math.min(90, Math.max(60, player.minutes > 0 ? 78 : 65));
+  const pPlay = hasFplSeason ? (mins >= 60 ? 0.88 : 0.75) : isProvisional ? 0.82 : 0.72;
+  const appearance = hasFplSeason ? (mins >= 60 ? 2 : 1) : isProvisional ? 1.85 : 1;
 
-  const xg90 = per90(player.xg, player.minutes);
-  const xa90 = per90(player.xa, player.minutes);
+  const rateMins = player.minutes > 0 ? player.minutes : 1;
+  const xg90 = per90(player.xg, rateMins);
+  const xa90 = per90(player.xa, rateMins);
   const formBoost = 1 + Math.min(Math.max(player.form, 0), 10) * 0.015;
 
   const xgExp = (xg90 / 90) * mins * (lambdaFor / 1.2) * formBoost;
@@ -59,7 +61,13 @@ export function projectWcPlayerFixture(
   const pAssist = Math.min(0.45, xaExp * 0.7);
   const csBase =
     player.position === "MID" ? 0.28 : player.position === "GKP" ? 0.32 : 0.38;
-  const csScale = hasSeasonMinutes ? 1 : 0.55;
+  let csScale = 1;
+  if (!hasFplSeason && !isProvisional) csScale = 0.55;
+  else if (isProvisional) {
+    if (player.position === "GKP") csScale = 0.68;
+    else if (player.position === "DEF") csScale = 0.75;
+    else if (player.position === "MID") csScale = 0.88;
+  }
   const pCs =
     player.position === "FWD"
       ? 0
@@ -72,7 +80,7 @@ export function projectWcPlayerFixture(
     pCs * csPts(player.position);
 
   if (player.position === "GKP") {
-    const saveScale = hasSeasonMinutes ? 0.65 : 0.35;
+    const saveScale = hasFplSeason ? 0.65 : isProvisional ? 0.5 : 0.35;
     xp += Math.min(2, lambdaAgainst * saveScale);
   }
 

@@ -1,7 +1,11 @@
 import type { WcPlayer } from "@/lib/wc/types";
 
+/** Reference minutes so per-90 math treats prior xG/xA as season-style totals. */
+const PRIOR_REF_MINUTES = 810;
+
 function hasSeasonStats(p: WcPlayer): boolean {
   return (
+    !p.provisional &&
     p.minutes > 0 &&
     (p.xg > 0.01 || p.xa > 0.01 || p.form > 0.01 || p.goals > 0 || p.assists > 0)
   );
@@ -14,48 +18,52 @@ export function applyProvisionalWcPriors(p: WcPlayer): WcPlayer {
   const ownBoost = 1 + Math.min(25, sel) * 0.025;
   const att = price / 10;
 
-  let xg = 0;
-  let xa = 0;
+  let xg90 = 0;
+  let xa90 = 0;
   let form = 2 + att * 2;
 
   switch (p.position) {
     case "FWD":
-      xg = (0.06 + att * 0.14) * ownBoost;
-      xa = (0.03 + att * 0.06) * ownBoost;
+      xg90 = (0.06 + att * 0.14) * ownBoost;
+      xa90 = (0.03 + att * 0.06) * ownBoost;
       form = (3 + att * 4) * ownBoost;
       break;
     case "MID":
-      xg = (0.04 + att * 0.09) * ownBoost;
-      xa = (0.05 + att * 0.09) * ownBoost;
+      xg90 = (0.04 + att * 0.09) * ownBoost;
+      xa90 = (0.05 + att * 0.09) * ownBoost;
       form = (3 + att * 3) * ownBoost;
       break;
     case "DEF":
-      xg = (0.015 + att * 0.03) * ownBoost;
-      xa = (0.02 + att * 0.04) * ownBoost;
+      xg90 = (0.015 + att * 0.03) * ownBoost;
+      xa90 = (0.02 + att * 0.04) * ownBoost;
       form = (2 + att * 2) * ownBoost;
       break;
     case "GKP":
-      xg = 0;
-      xa = 0;
+      xg90 = 0;
+      xa90 = 0;
       form = (2 + att * 1.5) * ownBoost;
       break;
     default:
-      xg = 0.04 * ownBoost;
-      xa = 0.04 * ownBoost;
+      xg90 = 0.04 * ownBoost;
+      xa90 = 0.04 * ownBoost;
   }
+
+  const toSeason = (per90: number) =>
+    Math.round(((per90 * PRIOR_REF_MINUTES) / 90) * 1000) / 1000;
 
   return {
     ...p,
-    xg: Math.round(xg * 100) / 100,
-    xa: Math.round(xa * 100) / 100,
+    xg: toSeason(xg90),
+    xa: toSeason(xa90),
     form: Math.round(form * 100) / 100,
-    minutes: 0,
+    minutes: PRIOR_REF_MINUTES,
+    provisional: true,
   };
 }
 
 /** Ensure xP / radar have usable inputs (FPL season data or FIFA price priors). */
 export function hydrateWcPlayer(p: WcPlayer): WcPlayer {
-  if (hasSeasonStats(p)) return p;
+  if (hasSeasonStats(p)) return { ...p, provisional: false };
   return applyProvisionalWcPriors(p);
 }
 

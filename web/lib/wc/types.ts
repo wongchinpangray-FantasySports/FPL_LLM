@@ -38,6 +38,8 @@ export type WcPlayer = {
   season_club?: string | null;
   season_league?: string | null;
   club_source?: string | null;
+  /** FIFA price/ownership priors — not full FPL season minutes. */
+  provisional?: boolean;
 };
 
 export type WcFixtureXp = {
