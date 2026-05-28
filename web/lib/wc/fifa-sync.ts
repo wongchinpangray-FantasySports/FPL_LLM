@@ -255,14 +255,24 @@ export async function syncWcPlayersFromFifa(): Promise<{
     };
   }
 
-  const { error } = await supa.from("wc_players").upsert(rows, {
-    onConflict: "fifa_element_id",
-  });
-  if (error) throw new Error(error.message);
+  const deduped = [
+    ...new Map(
+      rows.map((r) => [r!.fifa_element_id as number, r!]),
+    ).values(),
+  ];
 
-  if (rows.length >= FIFA_POOL_OK) {
+  await supa.from("wc_players").delete().eq("source", "fifa");
+
+  const BATCH = 200;
+  for (let i = 0; i < deduped.length; i += BATCH) {
+    const chunk = deduped.slice(i, i + BATCH);
+    const { error } = await supa.from("wc_players").insert(chunk);
+    if (error) throw new Error(`Insert batch ${i}: ${error.message}`);
+  }
+
+  if (deduped.length >= FIFA_POOL_OK) {
     await supa.from("wc_players").delete().in("source", ["fpl", "seed"]);
   }
 
-  return { synced: rows.length, skipped: false };
+  return { synced: deduped.length, skipped: false };
 }

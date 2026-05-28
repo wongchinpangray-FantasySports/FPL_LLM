@@ -73,13 +73,18 @@ export async function refreshWcPlayerPool(
       !force && Date.now() - lastFifaSyncAt < FIFA_COOLDOWN_MS;
     if (!cooledOff) {
       lastFifaSyncAt = Date.now();
-      const fifa = await syncWcPlayersFromFifa();
-      fifaReason = fifa.reason;
-      if (fifa.debug && fifa.reason) {
-        const tries = fifa.debug.urls_tried
-          .map((u) => `${u.status}@${u.url} (${u.parsed_players} players)`)
-          .join("; ");
-        fifaReason = `${fifa.reason} [${tries}]`;
+      try {
+        const fifa = await syncWcPlayersFromFifa();
+        fifaReason = fifa.skipped ? fifa.reason : undefined;
+        if (fifa.debug && fifa.reason) {
+          const tries = fifa.debug.urls_tried
+            .map((u) => `${u.status} (${u.parsed_players} parsed)`)
+            .join("; ");
+          fifaReason = `${fifa.reason} [${tries}]`;
+        }
+      } catch (e) {
+        fifaReason =
+          e instanceof Error ? e.message : "FIFA DB sync failed";
       }
       fifaCount = await countBySource(supa, "fifa");
       fplCount = await countBySource(supa, "fpl");
