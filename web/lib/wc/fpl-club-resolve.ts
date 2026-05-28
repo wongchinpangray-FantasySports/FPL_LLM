@@ -19,6 +19,31 @@ export type FplPlayerIndex = {
   byFplId: Map<number, FplSeasonProfile>;
 };
 
+/** O(1) name lookups — avoids scanning all FPL players per WC row (Worker CPU timeout). */
+export type FplNameIndexes = {
+  byFplId: Map<number, FplSeasonProfile>;
+  byNormPos: Map<string, FplSeasonProfile>;
+  byLastPos: Map<string, FplSeasonProfile[]>;
+};
+
+export function buildFplNameIndexes(index: FplPlayerIndex): FplNameIndexes {
+  const byNormPos = new Map<string, FplSeasonProfile>();
+  const byLastPos = new Map<string, FplSeasonProfile[]>();
+
+  for (const p of index.byFplId.values()) {
+    const labels = [p.full_name, p.web_name].filter(Boolean) as string[];
+    for (const label of labels) {
+      byNormPos.set(`${normName(label)}|${p.position}`, p);
+      const lk = `${normName(lastName(label))}|${p.position}`;
+      const list = byLastPos.get(lk) ?? [];
+      if (!list.includes(p)) list.push(p);
+      byLastPos.set(lk, list);
+    }
+  }
+
+  return { byFplId: index.byFplId, byNormPos, byLastPos };
+}
+
 function normName(s: string): string {
   return s
     .normalize("NFD")
@@ -83,52 +108,43 @@ export function buildFplPlayerIndex(
   return { byFplId };
 }
 
-function uniqueByPosition(
-  entries: FplSeasonProfile[],
-  position: string,
+function pickUnique(
+  list: FplSeasonProfile[] | undefined,
 ): FplSeasonProfile | null {
-  const same = entries.filter((e) => e.position === position);
-  if (same.length === 1) return same[0]!;
-  return null;
+  if (!list || list.length !== 1) return null;
+  return list[0]!;
 }
 
 /** Resolve a WC player to their FPL / Premier League season club (if any). */
 export function resolveFplSeasonProfile(
   player: WcPlayer,
-  index: FplPlayerIndex,
+  indexes: FplNameIndexes,
 ): FplSeasonProfile | null {
   if (player.fpl_id != null) {
-    return index.byFplId.get(player.fpl_id) ?? null;
+    return indexes.byFplId.get(player.fpl_id) ?? null;
   }
 
-  const profiles = [...index.byFplId.values()];
   const wcNorm = normName(player.name);
-  const wcLast = normName(lastName(player.name));
+  const pos = player.position;
 
-  const byFull = profiles.filter((p) => {
-    const labels = [p.full_name, p.web_name].filter(Boolean) as string[];
-    return labels.some((l) => normName(l) === wcNorm);
-  });
-  const fullHit = uniqueByPosition(byFull, player.position);
+  const fullHit = indexes.byNormPos.get(`${wcNorm}|${pos}`);
   if (fullHit) return fullHit;
 
-  const byLast = profiles.filter((p) => {
-    const labels = [p.full_name, p.web_name].filter(Boolean) as string[];
-    return labels.some((l) => normName(lastName(l)) === wcLast);
-  });
-  const lastHit = uniqueByPosition(byLast, player.position);
+  const wcLast = normName(lastName(player.name));
+  const lastHit = pickUnique(indexes.byLastPos.get(`${wcLast}|${pos}`));
   if (lastHit) return lastHit;
 
-  const byWeb = profiles.filter(
-    (p) => p.web_name != null && wcNorm.includes(normName(p.web_name)),
-  );
-  const webHit = uniqueByPosition(byWeb, player.position);
-  if (webHit) return webHit;
+  for (const p of indexes.byLastPos.get(`${wcLast}|${pos}`) ?? []) {
+    if (p.web_name && wcNorm.includes(normName(p.web_name))) return p;
+  }
 
-  const byWebInWc = profiles.filter(
-    (p) => p.web_name != null && normName(p.web_name).length >= 4 && wcNorm.includes(normName(p.web_name)),
-  );
-  return uniqueByPosition(byWebInWc, player.position);
+  for (const [key, p] of indexes.byNormPos) {
+    if (!key.endsWith(`|${pos}`)) continue;
+    const web = p.web_name;
+    if (web && normName(web).length >= 4 && wcNorm.includes(normName(web))) return p;
+  }
+
+  return null;
 }
 
 /** Any FPL `players_static` row is a Premier League club player. */

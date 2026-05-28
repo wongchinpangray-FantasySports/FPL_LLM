@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   buildWcFdrGrid,
+  buildWcScouting,
   buildWcXpRows,
   getWcPoolStatus,
   listWcPlayers,
@@ -13,8 +14,18 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const position = url.searchParams.get("position") ?? "ALL";
+    const scoutingOnly = url.searchParams.get("scouting") === "1";
 
     await ensureWcSeeded();
+
+    if (scoutingOnly) {
+      const scouting = await buildWcScouting();
+      return NextResponse.json({
+        scouting,
+        disclaimer:
+          "Gem scores blend projected group-stage xP, FIFA % selected, and price. Excludes Premier League club players (FPL-linked) and spotlight clubs (Real Madrid, Barcelona, Bayern, PSG).",
+      });
+    }
 
     const [fdrGrid, xp, players, pool] = await Promise.all([
       buildWcFdrGrid(),

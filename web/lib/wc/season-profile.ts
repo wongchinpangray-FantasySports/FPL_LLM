@@ -1,4 +1,4 @@
-import type { FplPlayerIndex, FplSeasonProfile } from "@/lib/wc/fpl-club-resolve";
+import type { FplNameIndexes, FplSeasonProfile } from "@/lib/wc/fpl-club-resolve";
 import { resolveFplSeasonProfile } from "@/lib/wc/fpl-club-resolve";
 import type { WcPlayer } from "@/lib/wc/types";
 
@@ -82,9 +82,9 @@ function fromFifaOnly(player: WcPlayer): WcSeasonProfile {
 /** FPL first, then persisted Wikidata / football-data club on wc_players. */
 export function resolveWcSeasonProfile(
   player: WcPlayer,
-  fplIndex: FplPlayerIndex,
+  fplIndexes: FplNameIndexes,
 ): WcSeasonProfile {
-  const fpl = resolveFplSeasonProfile(player, fplIndex);
+  const fpl = resolveFplSeasonProfile(player, fplIndexes);
   if (fpl) return fromFpl(fpl);
 
   const stored = fromStored(player);

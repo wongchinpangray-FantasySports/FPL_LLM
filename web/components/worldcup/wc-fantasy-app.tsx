@@ -22,6 +22,24 @@ type ContextPayload = {
 
 type ScoutingPayload = WcScoutingReport & { disclaimer?: string };
 
+async function readApiJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    const snippet = text.trim().slice(0, 120).replace(/\s+/g, " ");
+    throw new Error(
+      res.ok
+        ? "Server returned non-JSON response"
+        : `HTTP ${res.status}: ${snippet || "request failed"}`,
+    );
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("Invalid JSON from server");
+  }
+}
+
 export function WcFantasyApp() {
   const t = useTranslations("worldcup");
   const [tab, setTab] = useState<Tab>("fdr");
@@ -40,7 +58,7 @@ export function WcFantasyApp() {
       const res = await fetch(
         `/api/worldcup/context?position=${encodeURIComponent(pos)}`,
       );
-      const data = (await res.json()) as ContextPayload & { error?: string };
+      const data = await readApiJson<ContextPayload & { error?: string }>(res);
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setCtx(data);
     } catch (e) {
@@ -59,11 +77,21 @@ export function WcFantasyApp() {
     let cancelled = false;
     setScoutingLoading(true);
     setScoutingError(null);
-    fetch("/api/worldcup/scouting")
+    fetch("/api/worldcup/context?scouting=1")
       .then(async (res) => {
-        const data = (await res.json()) as ScoutingPayload & { error?: string };
+        const data = await readApiJson<{
+          scouting?: ScoutingPayload;
+          disclaimer?: string;
+          error?: string;
+        }>(res);
         if (!res.ok) throw new Error(data.error ?? "Scouting failed");
-        if (!cancelled) setScouting(data);
+        if (!data.scouting) throw new Error("Scouting data missing");
+        if (!cancelled) {
+          setScouting({
+            ...data.scouting,
+            disclaimer: data.disclaimer ?? data.scouting.disclaimer,
+          });
+        }
       })
       .catch((e) => {
         if (!cancelled) {

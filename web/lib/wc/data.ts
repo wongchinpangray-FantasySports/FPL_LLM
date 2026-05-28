@@ -6,11 +6,13 @@ import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import {
+  buildFplNameIndexes,
   buildFplPlayerIndex,
   type FplPlayerIndex,
 } from "@/lib/wc/fpl-club-resolve";
 import {
   buildWcScoutingReport,
+  type ScoutingXpSnap,
   type WcScoutingReport,
 } from "@/lib/wc/scouting";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
@@ -350,12 +352,32 @@ export async function loadFplPlayerIndex(): Promise<FplPlayerIndex> {
   );
 }
 
+async function buildWcScoutingXpSnaps(
+  players: WcPlayer[],
+): Promise<Map<number, ScoutingXpSnap>> {
+  const teams = await loadTeams();
+  const fixtures = await loadFixtures();
+  const fdrLookup = buildWcFdrLookup(teams, fixtures);
+  const projections = projectWcPlayers(players, teams, fixtures, fdrLookup);
+  const map = new Map<number, ScoutingXpSnap>();
+  for (const p of projections) {
+    const fdrs = p.fixtures.map((f) => f.fdr);
+    const avg_fdr =
+      fdrs.length > 0
+        ? fdrs.reduce((s, f) => s + f, 0) / fdrs.length
+        : 3;
+    map.set(p.player.id, { xp_total: p.xp_total, avg_fdr });
+  }
+  return map;
+}
+
 export async function buildWcScouting(): Promise<WcScoutingReport> {
   await ensureWcSeeded();
   const [players, fplIndex] = await Promise.all([
     loadPlayers({ readOnly: true }),
     loadFplPlayerIndex(),
   ]);
-  const { rows: xpRows } = await buildWcXpRowsFromPlayers(players);
-  return buildWcScoutingReport(players, xpRows, fplIndex);
+  const fplIndexes = buildFplNameIndexes(fplIndex);
+  const xpById = await buildWcScoutingXpSnaps(players);
+  return buildWcScoutingReport(players, xpById, fplIndexes);
 }

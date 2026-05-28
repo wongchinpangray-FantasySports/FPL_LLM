@@ -1,5 +1,4 @@
-import type { WcXpRow } from "@/lib/wc/data";
-import type { FplPlayerIndex } from "@/lib/wc/fpl-club-resolve";
+import type { FplNameIndexes } from "@/lib/wc/fpl-club-resolve";
 import {
   isPremierLeagueSeasonProfile,
   resolveFplSeasonProfile,
@@ -69,22 +68,21 @@ export type WcScoutingReport = {
   excluded_popular: number;
 };
 
-function avgFixtureFdr(byMd: WcXpRow["byMd"]): number {
-  const cells = Object.values(byMd);
-  if (cells.length === 0) return 3;
-  return cells.reduce((s, c) => s + c.fdr, 0) / cells.length;
-}
+export type ScoutingXpSnap = {
+  xp_total: number;
+  avg_fdr: number;
+};
 
 function gemScore(
   player: WcPlayer,
-  xp: WcXpRow,
+  xp: ScoutingXpSnap,
 ): number {
   const sel = player.selection_pct;
   const price = player.price ?? 5.5;
   const ownershipEdge = Math.max(0, (MAX_SELECTION_PCT - sel) / MAX_SELECTION_PCT);
   const valueEdge = Math.max(0, (7 - Math.min(7, price)) / 7);
   const xpEdge = xp.xp_total / 12;
-  const fdr = avgFixtureFdr(xp.byMd);
+  const fdr = xp.avg_fdr;
   const fixtureEdge = Math.max(0, (5 - fdr) / 4);
 
   let score =
@@ -110,10 +108,10 @@ function gemScore(
   return Math.round(score * 100) / 100;
 }
 
-function buildInsight(player: WcPlayer, xp: WcXpRow): string {
+function buildInsight(player: WcPlayer, xp: ScoutingXpSnap): string {
   const sel = player.selection_pct;
   const price = player.price ?? 0;
-  const fdr = avgFixtureFdr(xp.byMd).toFixed(1);
+  const fdr = xp.avg_fdr.toFixed(1);
   const parts: string[] = [];
 
   if (sel < 2) parts.push("under 2% owned");
@@ -137,11 +135,15 @@ function buildInsight(player: WcPlayer, xp: WcXpRow): string {
 
 export function buildWcScoutingReport(
   players: WcPlayer[],
-  xpRows: WcXpRow[],
-  fplIndex: FplPlayerIndex,
+  xpById: Map<number, ScoutingXpSnap>,
+  fplIndexes: FplNameIndexes,
 ): WcScoutingReport {
-  const xpById = new Map(xpRows.map((r) => [r.id, r]));
-  const candidates: { player: WcPlayer; xp: WcXpRow; score: number }[] = [];
+  const candidates: {
+    player: WcPlayer;
+    xp: ScoutingXpSnap;
+    score: number;
+    season: ReturnType<typeof resolveWcSeasonProfile>;
+  }[] = [];
 
   let excluded_spotlight = 0;
   let excluded_popular = 0;
@@ -150,8 +152,10 @@ export function buildWcScoutingReport(
     const xp = xpById.get(player.id);
     if (!xp) continue;
 
-    const fplProfile = resolveFplSeasonProfile(player, fplIndex);
-    const club_name = fplProfile?.club_name ?? null;
+    const season = resolveWcSeasonProfile(player, fplIndexes);
+    const fplProfile = resolveFplSeasonProfile(player, fplIndexes);
+    const club_name =
+      fplProfile?.club_name ?? player.season_club ?? null;
     const epl_club = isPremierLeagueSeasonProfile(fplProfile);
 
     if (
@@ -171,7 +175,7 @@ export function buildWcScoutingReport(
     }
 
     const score = gemScore(player, xp);
-    candidates.push({ player, xp, score });
+    candidates.push({ player, xp, score, season });
   }
 
   const picks = {} as Record<WcScoutArchetype, WcScoutPick[]>;
@@ -181,8 +185,7 @@ export function buildWcScoutingReport(
       .filter((c) => c.player.position === pos)
       .sort((a, b) => b.score - a.score)
       .slice(0, TOP_N)
-      .map(({ player, xp, score }) => {
-        const season = resolveWcSeasonProfile(player, fplIndex);
+      .map(({ player, xp, score, season }) => {
         return {
           id: player.id,
           name: player.name,
