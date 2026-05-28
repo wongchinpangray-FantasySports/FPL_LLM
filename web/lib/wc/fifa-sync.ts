@@ -1,5 +1,11 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { getFifaAuthCookie } from "@/lib/wc/fifa-auth";
+import {
+  companionFifaFeedUrls,
+  parseFifaPlayerFeed,
+  type FifaBootstrap,
+  type FifaElement,
+} from "@/lib/wc/fifa-parse";
 import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
 
 const FIFA_PROXY =
@@ -13,28 +19,6 @@ export const WC_MIN_PLAYER_POOL = 200;
 
 /** Mapped FIFA elements required to prefer official pool over FPL fallback. */
 export const FIFA_POOL_OK = 30;
-
-type FifaElement = {
-  id: number;
-  web_name?: string;
-  first_name?: string;
-  second_name?: string;
-  team?: number;
-  element_type?: number;
-  now_cost?: number;
-  form?: string | number;
-  goals_scored?: number;
-  assists?: number;
-  expected_goals?: string | number;
-  expected_assists?: string | number;
-  minutes?: number;
-};
-
-type FifaBootstrap = {
-  elements?: FifaElement[];
-  teams?: { id: number; code?: number | string; name?: string; short_name?: string }[];
-  element_types?: { id: number; singular_name_short?: string }[];
-};
 
 const POSITION_BY_TYPE: Record<number, string> = {
   1: "GKP",
@@ -55,28 +39,53 @@ export function isFifaFantasyConfigured(): boolean {
   );
 }
 
-function resolveBootstrapPath(): string {
+async function readBootstrapPathFromMeta(): Promise<string> {
+  try {
+    const supa = getServerSupabase();
+    const { data } = await supa
+      .from("fpl_meta")
+      .select("value")
+      .eq("key", "fifa_fantasy_bootstrap_path")
+      .maybeSingle();
+    return (data?.value as string)?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
+async function resolveBootstrapPath(): Promise<string> {
   if (FIFA_BOOTSTRAP_PATH.trim()) return FIFA_BOOTSTRAP_PATH.trim();
+  const fromMeta = await readBootstrapPathFromMeta();
+  if (fromMeta) return fromMeta;
   const id = FIFA_GAME_ID.trim();
   if (!id) return "";
   return `games/${id}/bootstrap-static`;
 }
 
-function mapPosition(el: FifaElement, bootstrap: FifaBootstrap): string {
-  const fromType = POSITION_BY_TYPE[el.element_type ?? 0];
-  if (fromType) return fromType;
-  const label = bootstrap.element_types?.find((et) => et.id === el.element_type)
-    ?.singular_name_short;
-  if (!label) return "MID";
-  const u = label.toUpperCase();
-  if (u.startsWith("GK")) return "GKP";
-  if (u.startsWith("D")) return "DEF";
-  if (u.startsWith("M")) return "MID";
-  if (u.startsWith("F")) return "FWD";
-  return "MID";
+function resolveFetchUrl(path: string): string {
+  const p = path.replace(/^\//, "");
+  if (path.startsWith("http")) return path;
+  // play.fifa.com gamezone JSON (e.g. json/.../players.json) is not under /api/
+  if (p.startsWith("json/")) return `https://play.fifa.com/${p}`;
+  return `${FIFA_PROXY.replace(/\/$/, "")}/${p}`;
 }
 
-async function fetchFifaJson(url: string, cookie: string): Promise<unknown | null> {
+function mapPosition(el: FifaElement, bootstrap: FifaBootstrap): string {
+  if (el.position_label) {
+    const u = el.position_label.toUpperCase();
+    if (u.includes("GK")) return "GKP";
+    if (u.startsWith("D")) return "DEF";
+    if (u.startsWith("M")) return "MID";
+    if (u.startsWith("F")) return "FWD";
+  }
+  const fromType = POSITION_BY_TYPE[el.element_type ?? 0];
+  return fromType ?? "MID";
+}
+
+async function fetchFifaJson(
+  url: string,
+  cookie: string,
+): Promise<{ data: unknown | null; status: number }> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     Origin: "https://fantasy.fifa.com",
@@ -85,28 +94,70 @@ async function fetchFifaJson(url: string, cookie: string): Promise<unknown | nul
   if (cookie) headers.Cookie = cookie;
 
   const res = await fetch(url, { headers, cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json();
+  if (!res.ok) return { data: null, status: res.status };
+  try {
+    return { data: await res.json(), status: res.status };
+  } catch {
+    return { data: null, status: res.status };
+  }
 }
 
-export async function fetchFifaBootstrap(): Promise<FifaBootstrap | null> {
-  const path = resolveBootstrapPath();
-  if (!path) return null;
-
-  const url = path.startsWith("http")
-    ? path
-    : `${FIFA_PROXY.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
-
-  let raw = await fetchFifaJson(url, "");
-  if (!raw) {
-    const cookie = await getFifaAuthCookie();
-    if (cookie) raw = await fetchFifaJson(url, cookie);
+function mergeBootstraps(
+  a: FifaBootstrap | null,
+  b: FifaBootstrap | null,
+): FifaBootstrap | null {
+  if (!a && !b) return null;
+  const teamById = new Map<number, FifaBootstrap["teams"][0]>();
+  for (const t of [...(a?.teams ?? []), ...(b?.teams ?? [])]) {
+    teamById.set(t.id, t);
   }
-  if (!raw) return null;
+  const elById = new Map<number, FifaElement>();
+  for (const e of [...(a?.elements ?? []), ...(b?.elements ?? [])]) {
+    elById.set(e.id, e);
+  }
+  const merged = {
+    teams: [...teamById.values()],
+    elements: [...elById.values()],
+  };
+  return merged.elements.length > 0 ? merged : null;
+}
 
-  const data = raw as FifaBootstrap | { data?: FifaBootstrap };
-  if ("data" in data && data.data) return data.data;
-  return data as FifaBootstrap;
+export async function fetchFifaBootstrap(): Promise<{
+  bootstrap: FifaBootstrap | null;
+  fetchError?: string;
+}> {
+  const path = await resolveBootstrapPath();
+  if (!path) return { bootstrap: null };
+
+  const primaryUrl = resolveFetchUrl(path);
+  const urls = companionFifaFeedUrls(primaryUrl);
+
+  const cookie = await getFifaAuthCookie();
+  let merged: FifaBootstrap | null = null;
+  let lastStatus = 0;
+
+  for (const url of urls) {
+    let { data, status } = await fetchFifaJson(url, "");
+    lastStatus = status;
+    if (!data && cookie) {
+      const retry = await fetchFifaJson(url, cookie);
+      data = retry.data;
+      lastStatus = retry.status;
+    }
+    if (!data) continue;
+    merged = mergeBootstraps(merged, parseFifaPlayerFeed(data));
+  }
+
+  if (!merged?.elements.length) {
+    return {
+      bootstrap: null,
+      fetchError: cookie
+        ? `FIFA feed returned no players (HTTP ${lastStatus || "error"}). Check FIFA_FANTASY_BOOTSTRAP_PATH is the full players.json Request URL.`
+        : `FIFA feed returned no players (HTTP ${lastStatus || "error"}). Add cookie in Supabase fpl_meta or FIFA_FANTASY_AUTH_COOKIE if required.`,
+    };
+  }
+
+  return { bootstrap: merged };
 }
 
 export async function syncWcPlayersFromFifa(): Promise<{
@@ -114,13 +165,14 @@ export async function syncWcPlayersFromFifa(): Promise<{
   skipped: boolean;
   reason?: string;
 }> {
-  const bootstrap = await fetchFifaBootstrap();
-  if (!bootstrap?.elements?.length) {
+  const { bootstrap, fetchError } = await fetchFifaBootstrap();
+  if (!bootstrap?.elements.length) {
     return {
       synced: 0,
       skipped: true,
       reason: isFifaFantasyConfigured()
-        ? "FIFA bootstrap fetch failed or returned no elements — check path/cookie on Vercel"
+        ? fetchError ??
+          "FIFA fetch failed — use the full players.json URL from DevTools (not /api/bootstrap-static unless that is what Network shows)"
         : "Set FIFA_FANTASY_BOOTSTRAP_PATH or FIFA_FANTASY_GAME_ID to sync the official player pool",
     };
   }
@@ -136,7 +188,7 @@ export async function syncWcPlayersFromFifa(): Promise<{
   );
   const fifaTeamToWc = new Map<number, string>();
   let unmappedTeams = 0;
-  for (const t of bootstrap.teams ?? []) {
+  for (const t of bootstrap.teams) {
     const code = fifaTeamToWcCode(t);
     if (code) fifaTeamToWc.set(t.id, code);
     else unmappedTeams++;
@@ -144,7 +196,10 @@ export async function syncWcPlayersFromFifa(): Promise<{
 
   const rows = bootstrap.elements
     .map((el) => {
-      const wcCode = fifaTeamToWc.get(el.team ?? -1);
+      let wcCode = el.team_code ?? null;
+      if (!wcCode && el.team != null) {
+        wcCode = fifaTeamToWc.get(el.team) ?? null;
+      }
       if (!wcCode) return null;
       const wc_team_id = wcTeamByCode.get(wcCode);
       if (wc_team_id == null) return null;
@@ -176,7 +231,7 @@ export async function syncWcPlayersFromFifa(): Promise<{
     return {
       synced: 0,
       skipped: true,
-      reason: `No FIFA elements mapped to WC teams (${unmappedTeams} FIFA teams unmapped)`,
+      reason: `No FIFA players mapped to WC teams (${unmappedTeams} FIFA teams unmapped, ${bootstrap.elements.length} raw players)`,
     };
   }
 

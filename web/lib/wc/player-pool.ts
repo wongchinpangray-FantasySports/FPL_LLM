@@ -7,7 +7,10 @@ import {
   syncWcPlayersFromFifa,
   WC_MIN_PLAYER_POOL,
 } from "@/lib/wc/fifa-sync";
-import { replaceExpandedWcPlayers } from "@/lib/wc/fpl-wc-pool";
+import {
+  purgeInvalidFplWcPlayers,
+  replaceExpandedWcPlayers,
+} from "@/lib/wc/fpl-wc-pool";
 
 let poolLock: Promise<WcPoolStatus> | null = null;
 let lastFifaSyncAt = 0;
@@ -77,8 +80,15 @@ export async function refreshWcPlayerPool(
     }
   }
 
+  const purged = await purgeInvalidFplWcPlayers(supa);
+  if (purged > 0) fplCount = await countBySource(supa, "fpl");
+
   const total = await totalPlayers(supa);
-  if (total < WC_MIN_PLAYER_POOL && fifaCount < FIFA_POOL_OK) {
+  const needsCuratedFallback =
+    fifaCount < FIFA_POOL_OK &&
+    (total < WC_MIN_PLAYER_POOL || fplCount > 45 || purged > 0);
+
+  if (needsCuratedFallback) {
     await replaceExpandedWcPlayers(supa, teamByCode, validCodes);
     fplCount = await countBySource(supa, "fpl");
   }

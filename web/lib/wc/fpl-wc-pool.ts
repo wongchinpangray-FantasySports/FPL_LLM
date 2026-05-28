@@ -12,6 +12,8 @@ export const FPL_ID_TO_WC_TEAM: Record<number, string> = Object.fromEntries(
   ]),
 );
 
+const VALID_FPL_IDS = new Set(Object.keys(FPL_ID_TO_WC_TEAM).map(Number));
+
 type PlayerRow = {
   wc_team_id: number;
   name: string;
@@ -32,6 +34,30 @@ function num(v: unknown, fallback = 0): number {
   if (v == null || v === "") return fallback;
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/** Remove legacy fuzzy-matched FPL rows (wrong nation assignments). */
+export async function purgeInvalidFplWcPlayers(
+  supa: SupabaseClient,
+): Promise<number> {
+  const { data, error } = await supa
+    .from("wc_players")
+    .select("id,fpl_id")
+    .eq("source", "fpl");
+  if (error) throw new Error(error.message);
+
+  const ids = (data ?? [])
+    .filter(
+      (r) =>
+        r.fpl_id == null ||
+        !VALID_FPL_IDS.has(r.fpl_id as number),
+    )
+    .map((r) => r.id as number);
+
+  if (ids.length === 0) return 0;
+  const { error: delErr } = await supa.from("wc_players").delete().in("id", ids);
+  if (delErr) throw new Error(delErr.message);
+  return ids.length;
 }
 
 export async function buildExpandedWcPlayerRows(
