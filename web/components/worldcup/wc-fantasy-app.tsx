@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
+import type { WcScoutingReport } from "@/lib/wc/scouting";
+import type { WcScoutArchetype } from "@/lib/wc/scouting";
 import { WcFdrGrid } from "@/components/worldcup/wc-fdr-grid";
 import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
-import { WcRadarChart } from "@/components/worldcup/wc-radar-chart";
-import type { WcComparePlayer } from "@/lib/wc/radar";
+import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
 
-type Tab = "fdr" | "xp" | "compare";
+type Tab = "fdr" | "xp" | "scouting";
 
 type ContextPayload = {
   fdrGrid: WcFdrRow[];
@@ -19,103 +20,7 @@ type ContextPayload = {
   pool_note?: string;
 };
 
-type ComparePayload = {
-  a: WcComparePlayer;
-  b: WcComparePlayer;
-  labels: string[];
-};
-
-function PlayerMeta({
-  p,
-  labels,
-}: {
-  p: WcComparePlayer;
-  labels: {
-    price: string;
-    selected: string;
-    xp: string;
-    source: string;
-    fpl: string;
-    fifa: string;
-  };
-}) {
-  return (
-    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-400">
-      <dt>{labels.price}</dt>
-      <dd className="text-right text-white">
-        {p.price != null ? `$${p.price.toFixed(1)}m` : "—"}
-      </dd>
-      <dt>{labels.selected}</dt>
-      <dd className="text-right text-white">{p.selection_pct.toFixed(1)}%</dd>
-      <dt>{labels.xp}</dt>
-      <dd className="text-right font-medium text-brand-accent">
-        {p.xp_total.toFixed(1)}
-      </dd>
-      <dt>{labels.source}</dt>
-      <dd className="text-right text-slate-300">
-        {p.fpl_linked ? labels.fpl : labels.fifa}
-      </dd>
-    </dl>
-  );
-}
-
-function PlayerPicker({
-  label,
-  players,
-  value,
-  onChange,
-  excludeId,
-}: {
-  label: string;
-  players: WcPlayerListItem[];
-  value: number | null;
-  onChange: (id: number | null) => void;
-  excludeId?: number | null;
-}) {
-  const filtered = useMemo(
-    () => players.filter((p) => p.id !== excludeId),
-    [players, excludeId],
-  );
-
-  return (
-    <label className="flex flex-col gap-1 text-xs text-slate-400">
-      <span>{label}</span>
-      <select
-        value={value ?? ""}
-        onChange={(e) => {
-          const v = e.target.value;
-          onChange(v ? Number(v) : null);
-        }}
-        className="rounded-md border border-white/10 bg-slate-900/80 px-2 py-2 text-sm text-white"
-      >
-        <option value="">—</option>
-        {filtered.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name} ({p.team_name} · {p.position})
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function StatRow({
-  label,
-  a,
-  b,
-}: {
-  label: string;
-  a: number;
-  b: number;
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2 border-t border-white/5 py-1.5 text-xs">
-      <span className="text-right font-medium text-brand-accent">{a.toFixed(2)}</span>
-      <span className="text-center text-slate-500">{label}</span>
-      <span className="font-medium text-amber-300">{b.toFixed(2)}</span>
-    </div>
-  );
-}
+type ScoutingPayload = WcScoutingReport & { disclaimer?: string };
 
 export function WcFantasyApp() {
   const t = useTranslations("worldcup");
@@ -124,17 +29,17 @@ export function WcFantasyApp() {
   const [error, setError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<ContextPayload | null>(null);
   const [position, setPosition] = useState("ALL");
-  const [playerA, setPlayerA] = useState<number | null>(null);
-  const [playerB, setPlayerB] = useState<number | null>(null);
-  const [compare, setCompare] = useState<ComparePayload | null>(null);
-  const [compareLoading, setCompareLoading] = useState(false);
-  const [compareError, setCompareError] = useState<string | null>(null);
+  const [scouting, setScouting] = useState<ScoutingPayload | null>(null);
+  const [scoutingLoading, setScoutingLoading] = useState(false);
+  const [scoutingError, setScoutingError] = useState<string | null>(null);
 
   const loadContext = useCallback(async (pos: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/worldcup/context?position=${encodeURIComponent(pos)}`);
+      const res = await fetch(
+        `/api/worldcup/context?position=${encodeURIComponent(pos)}`,
+      );
       const data = (await res.json()) as ContextPayload & { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setCtx(data);
@@ -150,57 +55,36 @@ export function WcFantasyApp() {
   }, [loadContext, position]);
 
   useEffect(() => {
-    if (playerA == null || playerA <= 0) {
-      setCompare(null);
-      setCompareError(null);
-      return;
-    }
+    if (tab !== "scouting" || scouting != null) return;
     let cancelled = false;
-    setCompareLoading(true);
-    setCompareError(null);
-    const q =
-      playerB != null && playerB > 0
-        ? `?a=${playerA}&b=${playerB}`
-        : `?a=${playerA}`;
-    fetch(`/api/worldcup/compare${q}`)
+    setScoutingLoading(true);
+    setScoutingError(null);
+    fetch("/api/worldcup/scouting")
       .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Compare failed");
-        if (cancelled) return;
-        if (playerB != null && playerB > 0) {
-          setCompare(data as ComparePayload);
-        } else {
-          const single = data as {
-            player: ComparePayload["a"];
-            labels: string[];
-          };
-          setCompare({
-            a: single.player,
-            b: single.player,
-            labels: single.labels,
-          });
-        }
+        const data = (await res.json()) as ScoutingPayload & { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Scouting failed");
+        if (!cancelled) setScouting(data);
       })
       .catch((e) => {
         if (!cancelled) {
-          setCompare(null);
-          setCompareError(
-            e instanceof Error ? e.message : "Compare failed",
+          setScouting(null);
+          setScoutingError(
+            e instanceof Error ? e.message : "Scouting failed",
           );
         }
       })
       .finally(() => {
-        if (!cancelled) setCompareLoading(false);
+        if (!cancelled) setScoutingLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [playerA, playerB]);
+  }, [tab, scouting]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "fdr", label: t("tabFdr") },
     { id: "xp", label: t("tabXp") },
-    { id: "compare", label: t("tabCompare") },
+    { id: "scouting", label: t("tabScouting") },
   ];
 
   const positionOptions = [
@@ -212,6 +96,25 @@ export function WcFantasyApp() {
   ];
 
   const matchdays = ctx?.xp.matchdays ?? [1, 2, 3];
+
+  const archetypeLabels = {
+    hidden_killer: {
+      title: t("scoutHiddenKiller"),
+      tagline: t("scoutHiddenKillerHint"),
+    },
+    unsung_hero: {
+      title: t("scoutUnsungHero"),
+      tagline: t("scoutUnsungHeroHint"),
+    },
+    silent_wall: {
+      title: t("scoutSilentWall"),
+      tagline: t("scoutSilentWallHint"),
+    },
+    indestructible_gate: {
+      title: t("scoutIndestructibleGate"),
+      tagline: t("scoutIndestructibleGateHint"),
+    },
+  } satisfies Record<WcScoutArchetype, { title: string; tagline: string }>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -279,106 +182,45 @@ export function WcFantasyApp() {
         />
       ) : null}
 
-      {ctx && tab === "compare" ? (
-        <section className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
-              {t("compareTitle")}
-            </h2>
-            <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-400">
-              {t("compareHint")}
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PlayerPicker
-              label={t("playerA")}
-              players={ctx.players}
-              value={playerA}
-              onChange={setPlayerA}
-              excludeId={playerB}
-            />
-            <PlayerPicker
-              label={t("playerB")}
-              players={ctx.players}
-              value={playerB}
-              onChange={setPlayerB}
-              excludeId={playerA}
-            />
-          </div>
-          {compareError ? (
+      {tab === "scouting" ? (
+        <>
+          {scoutingError ? (
             <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-              {compareError}
+              {scoutingError}
             </p>
           ) : null}
-          {compareLoading ? (
+          {scoutingLoading && !scouting ? (
             <p className="text-sm text-slate-400">{t("loading")}</p>
           ) : null}
-          {compare && playerA != null ? (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                <WcRadarChart
-                  values={compare.a.values}
-                  labels={compare.labels}
-                  caption={`${compare.a.name} (${compare.a.team_code})`}
-                  compare={
-                    playerB != null && compare.b.id !== compare.a.id
-                      ? {
-                          values: compare.b.values,
-                          name: compare.b.name,
-                        }
-                      : undefined
-                  }
-                />
-                <PlayerMeta
-                  p={compare.a}
-                  labels={{
-                    price: t("colPrice"),
-                    selected: t("colSelected"),
-                    xp: t("xpProjected"),
-                    source: "Data",
-                    fpl: t("fplLinked"),
-                    fifa: t("fifaPriors"),
-                  }}
-                />
-                {playerB != null && compare.b.id !== compare.a.id ? (
-                  <PlayerMeta
-                    p={compare.b}
-                    labels={{
-                      price: t("colPrice"),
-                      selected: t("colSelected"),
-                      xp: t("xpProjected"),
-                      source: "Data",
-                      fpl: t("fplLinked"),
-                      fifa: t("fifaPriors"),
-                    }}
-                  />
-                ) : null}
-              </div>
-              {playerB != null && compare.b.id !== compare.a.id ? (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-white">
-                    {t("rawStats")}
-                  </h3>
-                  <div className="mb-2 grid grid-cols-3 gap-2 text-[10px] uppercase text-slate-500">
-                    <span className="text-right text-brand-accent">{compare.a.name}</span>
-                    <span className="text-center">{t("metric")}</span>
-                    <span className="text-amber-300">{compare.b.name}</span>
-                  </div>
-                  <StatRow label="xG" a={compare.a.raw.xg} b={compare.b.raw.xg} />
-                  <StatRow label="xA" a={compare.a.raw.xa} b={compare.b.raw.xa} />
-                  <StatRow label={t("form")} a={compare.a.raw.form} b={compare.b.raw.form} />
-                  <StatRow label={t("goals")} a={compare.a.raw.goals} b={compare.b.raw.goals} />
-                  <StatRow
-                    label={t("assists")}
-                    a={compare.a.raw.assists}
-                    b={compare.b.raw.assists}
-                  />
-                  <p className="mt-3 text-[11px] text-slate-500">{t("radarNote")}</p>
-                </div>
+          {scouting ? (
+            <>
+              {scouting.disclaimer ? (
+                <p className="text-xs leading-relaxed text-slate-500">
+                  {scouting.disclaimer}
+                </p>
               ) : null}
-            </div>
+              <WcScoutingPanel
+                report={scouting}
+                labels={{
+                  title: t("scoutingTitle"),
+                  hint: t("scoutingHint"),
+                  meta: t("scoutingMeta"),
+                  archetypes: archetypeLabels,
+                  owned: t("colSelected"),
+                  xp: t("xpProjected"),
+                  gem: t("scoutGemScore"),
+                  empty: t("scoutEmpty"),
+                  positions: {
+                    FWD: t("posFwd"),
+                    MID: t("posMid"),
+                    DEF: t("posDef"),
+                    GKP: t("posGkp"),
+                  },
+                }}
+              />
+            </>
           ) : null}
-        </section>
+        </>
       ) : null}
     </div>
   );

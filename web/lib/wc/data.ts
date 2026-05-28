@@ -5,8 +5,14 @@ import { buildWcFdrLookup, lookupWcFdr } from "@/lib/wc/fdr";
 import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
+import {
+  buildWcScoutingReport,
+  type WcScoutingReport,
+} from "@/lib/wc/scouting";
 import type { WcPlayer, WcTeam } from "@/lib/wc/types";
 import { wcTeamFullName } from "@/lib/wc/team-names";
+
+export type { WcScoutingReport, WcScoutPick, WcScoutArchetype } from "@/lib/wc/scouting";
 
 export type WcFdrCell = {
   matchday: number;
@@ -280,4 +286,40 @@ export async function loadAllWcPlayers(): Promise<WcPlayer[]> {
 export async function getWcPoolStatus(): Promise<WcPoolStatus> {
   await ensureWcSeeded();
   return ensureWcPlayerPool();
+}
+
+/** FPL club names for WC players linked via `fpl_id` (Premier League teams table). */
+export async function loadFplClubByPlayerId(): Promise<Map<number, string>> {
+  const supa = getServerSupabase();
+  const { data: teams, error: tErr } = await supa.from("teams").select("id,name");
+  if (tErr) throw new Error(tErr.message);
+
+  const teamName = new Map<number, string>();
+  for (const t of teams ?? []) {
+    teamName.set(t.id as number, t.name as string);
+  }
+
+  const { data, error } = await supa
+    .from("players_static")
+    .select("fpl_id,team_id")
+    .not("fpl_id", "is", null);
+  if (error) throw new Error(error.message);
+
+  const map = new Map<number, string>();
+  for (const r of data ?? []) {
+    const fplId = r.fpl_id as number;
+    const tid = r.team_id as number | null;
+    if (tid != null) map.set(fplId, teamName.get(tid) ?? "");
+  }
+  return map;
+}
+
+export async function buildWcScouting(): Promise<WcScoutingReport> {
+  await ensureWcSeeded();
+  const [players, { rows: xpRows }, clubByFplId] = await Promise.all([
+    loadPlayers(),
+    buildWcXpRows(),
+    loadFplClubByPlayerId(),
+  ]);
+  return buildWcScoutingReport(players, xpRows, clubByFplId);
 }
