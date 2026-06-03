@@ -18,6 +18,7 @@ export async function enrichWcPlayerClubs(
     .from("wc_players")
     .select("id,name,wc_teams(code),season_club")
     .is("season_club", null)
+    .is("club_source", null)
     .eq("source", "fifa")
     .order("id")
     .limit(limit);
@@ -58,6 +59,10 @@ export async function enrichWcPlayerClubs(
     }
 
     if (!club) {
+      await supa
+        .from("wc_players")
+        .update({ club_source: "unresolved" })
+        .eq("id", row.id as number);
       skipped++;
       await sleep(DELAY_MS);
       continue;
