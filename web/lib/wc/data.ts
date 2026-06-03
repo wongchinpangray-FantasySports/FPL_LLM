@@ -123,6 +123,27 @@ type LoadPlayersOptions = {
   readOnly?: boolean;
 };
 
+async function fetchAllWcPlayerRows(
+  supa: ReturnType<typeof getServerSupabase>,
+): Promise<Record<string, unknown>[]> {
+  const select =
+    "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,season_club,season_league,club_source,wc_teams(code,short_name)";
+  const PAGE = 1000;
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supa
+      .from("wc_players")
+      .select(select)
+      .order("name")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const batch = data ?? [];
+    rows.push(...(batch as Record<string, unknown>[]));
+    if (batch.length < PAGE) break;
+  }
+  return rows;
+}
+
 async function loadPlayers(opts?: LoadPlayersOptions): Promise<WcPlayer[]> {
   if (!opts?.readOnly) {
     await ensureWcPlayerPool();
@@ -144,17 +165,10 @@ async function loadPlayers(opts?: LoadPlayersOptions): Promise<WcPlayer[]> {
     }
   }
 
-  const { data, error } = await supa
-    .from("wc_players")
-    .select(
-      "id,wc_team_id,name,fpl_id,position,price,selection_pct,goals,assists,xg,xa,form,minutes,season_club,season_league,club_source,wc_teams(code,short_name)",
-    )
-    .order("name");
-
-  if (error) throw new Error(error.message);
+  const data = await fetchAllWcPlayerRows(supa);
 
   return hydrateWcPlayers(
-    (data ?? []).map((r) => mapWcPlayerRow(r as Record<string, unknown>)),
+    data.map((r) => mapWcPlayerRow(r)),
   );
 }
 

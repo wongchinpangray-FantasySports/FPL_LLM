@@ -36,7 +36,7 @@ export async function GET(req: Request) {
 
     const poolNote =
       pool.source === "fifa"
-        ? "Player list synced from FIFA fantasy (provisional squad)."
+        ? "Player list synced from FIFA fantasy (final squads)."
         : pool.fifa_configured
           ? `FIFA sync pending: ${pool.fifa_last_reason ?? "check Cloudflare env (FIFA_FANTASY_BOOTSTRAP_PATH + cookie) and redeploy"}. Showing curated fallback — not the full FIFA list.`
           : "Set FIFA_FANTASY_BOOTSTRAP_PATH on Cloudflare for the official FIFA player list.";
