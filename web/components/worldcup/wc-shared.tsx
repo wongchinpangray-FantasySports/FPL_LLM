@@ -78,15 +78,14 @@ export function WcPlayerNameRow({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 items-start gap-1.5", className)}>
+    <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
       {rank != null ? (
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-semibold text-slate-400">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-semibold text-slate-400">
           {rank}
         </span>
       ) : null}
       <span
-        className="min-w-0 flex-1 font-semibold leading-snug text-white [overflow-wrap:anywhere]"
-        style={{ fontSize: "clamp(0.75rem, 2.8vw, 0.875rem)" }}
+        className="min-w-0 flex-1 text-sm font-semibold leading-snug text-white [overflow-wrap:anywhere]"
       >
         {name}
       </span>
@@ -94,7 +93,7 @@ export function WcPlayerNameRow({
         name={name}
         copyLabel={copyLabel}
         copiedLabel={copiedLabel}
-        className="mt-0.5"
+        className="mt-0"
       />
     </div>
   );
@@ -110,11 +109,13 @@ export function WcStatChip({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
-      <div className="text-[9px] uppercase tracking-wide text-slate-500">{label}</div>
+    <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5 rounded-md bg-white/[0.04] px-1.5 py-1.5 text-center">
+      <div className="text-[10px] font-medium uppercase leading-none tracking-wide text-slate-500">
+        {label}
+      </div>
       <div
         className={cn(
-          "text-xs font-semibold tabular-nums",
+          "text-sm font-semibold leading-none tabular-nums",
           accent ? "text-brand-accent" : "text-slate-200",
         )}
       >
@@ -151,7 +152,7 @@ export function WcSectionIntro({
               {moreLabel}
             </span>
           </summary>
-          <p className="mt-2 whitespace-pre-line leading-relaxed text-slate-500">
+          <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-slate-500">
             {detail}
           </p>
         </details>

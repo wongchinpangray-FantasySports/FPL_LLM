@@ -77,32 +77,32 @@ function SeasonDetail({
   const s = pick.season_stats;
 
   return (
-    <div className="space-y-3 text-sm">
-      <p className="leading-relaxed text-slate-400">{pick.insight}</p>
+    <div className="space-y-2.5 text-xs">
+      <p className="text-xs leading-relaxed text-slate-400">{pick.insight}</p>
       {pick.season_club || s ? (
-        <dl className="grid gap-2 rounded-lg bg-white/[0.03] p-3 text-xs">
+        <dl className="space-y-2 rounded-lg bg-white/[0.03] p-2.5">
           {pick.season_club ? (
             <>
-              <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">{labels.seasonClub}</dt>
-                <dd className="text-right font-medium text-white">{pick.season_club}</dd>
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="shrink-0 text-slate-500">{labels.seasonClub}</dt>
+                <dd className="text-right text-sm font-medium text-white">{pick.season_club}</dd>
               </div>
               {pick.season_league ? (
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-500">{labels.seasonLeague}</dt>
-                  <dd className="text-right text-slate-300">{pick.season_league}</dd>
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="shrink-0 text-slate-500">{labels.seasonLeague}</dt>
+                  <dd className="text-right text-sm text-slate-300">{pick.season_league}</dd>
                 </div>
               ) : null}
               {sourceNote ? (
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-500">Source</dt>
-                  <dd className="text-right text-slate-400">{sourceNote}</dd>
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="shrink-0 text-slate-500">Source</dt>
+                  <dd className="text-right text-sm text-slate-400">{sourceNote}</dd>
                 </div>
               ) : null}
               {pick.fpl_web_name ? (
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-500">{labels.fplName}</dt>
-                  <dd className="text-right text-slate-300">{pick.fpl_web_name}</dd>
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="shrink-0 text-slate-500">{labels.fplName}</dt>
+                  <dd className="text-right text-sm text-slate-300">{pick.fpl_web_name}</dd>
                 </div>
               ) : null}
             </>
@@ -110,31 +110,22 @@ function SeasonDetail({
             <p className="text-slate-500">{labels.noClub}</p>
           )}
           {s ? (
-            <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-2">
-              <div>
-                <dt className="text-slate-600">{labels.goals}</dt>
-                <dd className="font-medium text-slate-200">{s.goals}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-600">{labels.assists}</dt>
-                <dd className="font-medium text-slate-200">{s.assists}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-600">{labels.minutes}</dt>
-                <dd className="font-medium text-slate-200">{s.minutes}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-600">{labels.xg}</dt>
-                <dd className="font-medium text-slate-200">{s.xg.toFixed(2)}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-600">{labels.xa}</dt>
-                <dd className="font-medium text-slate-200">{s.xa.toFixed(2)}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-600">{labels.form}</dt>
-                <dd className="font-medium text-slate-200">{s.form.toFixed(1)}</dd>
-              </div>
+            <div className="grid grid-cols-3 gap-x-2 gap-y-2 border-t border-white/5 pt-2">
+              {(
+                [
+                  [labels.goals, String(s.goals)],
+                  [labels.assists, String(s.assists)],
+                  [labels.minutes, String(s.minutes)],
+                  [labels.xg, s.xg.toFixed(2)],
+                  [labels.xa, s.xa.toFixed(2)],
+                  [labels.form, s.form.toFixed(1)],
+                ] as const
+              ).map(([lbl, val]) => (
+                <div key={lbl} className="text-center">
+                  <dt className="text-[10px] text-slate-500">{lbl}</dt>
+                  <dd className="text-sm font-medium tabular-nums text-slate-200">{val}</dd>
+                </div>
+              ))}
             </div>
           ) : null}
         </dl>
@@ -203,10 +194,10 @@ function GemCard({
         copyLabel={labels.copyName}
         copiedLabel={labels.copiedName}
       />
-      <p className="mt-1.5 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-slate-500">
         {pick.team_name} · {pick.position}
       </p>
-      <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
         <WcStatChip label={labels.owned} value={`${pick.selection_pct.toFixed(1)}%`} />
         <WcStatChip
           label={labels.xp}
@@ -216,7 +207,7 @@ function GemCard({
         <WcStatChip label={labels.gem} value={pick.gem_score.toFixed(1)} />
       </div>
       {!expanded ? (
-        <p className="mt-2 text-[10px] text-slate-600">{labels.expandHint}</p>
+        <p className="mt-2 text-center text-xs text-slate-500">{labels.expandHint}</p>
       ) : (
         <div
           className="mt-3 border-t border-white/10 pt-3"
@@ -286,14 +277,14 @@ function ArchetypeColumn({
             <h3 className="text-sm font-semibold text-white">{title}</h3>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ring-1",
+                "rounded-full px-2 py-0.5 text-xs font-medium uppercase ring-1",
                 style.badge,
               )}
             >
               {position}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">{tagline}</p>
+          <p className="mt-1 text-xs leading-snug text-slate-500">{tagline}</p>
         </header>
         <div className="flex flex-col gap-2 p-2.5">
           {picks.length === 0 ? (
@@ -356,17 +347,16 @@ export function WcScoutingPanel({
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const metaDetail = labels.meta
-    .replace("{scanned}", String(report.scanned))
-    .replace("{spotlight}", String(report.excluded_spotlight))
-    .replace("{popular}", String(report.excluded_popular));
-
   return (
     <section className="flex flex-col gap-5">
       <WcSectionIntro
         title={labels.title}
         summary={labels.summary}
-        detail={`${labels.detail}\n\n${metaDetail}`}
+        detail={
+          labels.meta
+            ? `${labels.detail}\n\n${labels.meta}`
+            : labels.detail
+        }
         moreLabel={labels.moreDetail}
       />
       <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">

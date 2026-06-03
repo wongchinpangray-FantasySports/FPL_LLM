@@ -556,6 +556,8 @@
     "scoutIndestructibleGate": "Indestructible Gate",
     "scoutIndestructibleGateHint": "Goalkeepers with stable fixture paths and differential pick rates.",
     "scoutGemScore": "Gem score",
+    "scoutXpShort": "Proj. xP",
+    "scoutGemShort": "Gem",
     "scoutEmpty": "No gems in this bucket with current filters.",
     "expandHint": "Tap for details",
     "copyName": "Copy player name",
