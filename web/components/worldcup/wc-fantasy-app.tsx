@@ -11,7 +11,9 @@ import { WcFdrGrid } from "@/components/worldcup/wc-fdr-grid";
 import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
 import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
 
-type Tab = "fdr" | "xp" | "scouting";
+import { WcMatchesPanel } from "@/components/worldcup/wc-matches-panel";
+
+type Tab = "fdr" | "xp" | "scouting" | "matches";
 
 type ContextPayload = {
   fdrGrid: WcFdrRow[];
@@ -114,6 +116,7 @@ export function WcFantasyApp() {
     { id: "fdr", label: t("tabFdr") },
     { id: "xp", label: t("tabXp") },
     { id: "scouting", label: t("tabScouting") },
+    { id: "matches", label: t("tabMatches") },
   ];
 
   const positionOptions = [
@@ -171,6 +174,7 @@ export function WcFantasyApp() {
         scoutingNote={
           tab === "scouting" ? scouting?.disclaimer : undefined
         }
+        matchesNote={tab === "matches" ? t("matchesDisclaimer") : undefined}
         moreLabel={t("aboutNotes")}
       />
 
@@ -280,6 +284,32 @@ export function WcFantasyApp() {
             />
           ) : null}
         </>
+      ) : null}
+
+      {tab === "matches" ? (
+        <WcMatchesPanel
+          title={t("matchesTitle")}
+          summary={t("matchesSummary")}
+          detail={t("matchesDetail")}
+          moreLabel={t("moreDetail")}
+          labels={{
+            filterRound: t("matchesFilterRound"),
+            roundAll: t("matchesRoundAll"),
+            expandHint: t("expandHint"),
+            venue: t("matchesVenue"),
+            scorers: t("matchesScorers"),
+            noStats: t("matchesNoStats"),
+            statsPending: t("matchesStatsPending"),
+            xg: t("matchesXg"),
+            shots: t("matchesShots"),
+            shotsOn: t("matchesShotsOn"),
+            possession: t("matchesPossession"),
+            corners: t("matchesCorners"),
+            fouls: t("matchesFouls"),
+            loading: t("loading"),
+            empty: t("matchesEmpty"),
+          }}
+        />
       ) : null}
     </div>
   );

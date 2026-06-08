@@ -165,14 +165,16 @@ export function WcAboutPanel({
   poolNote,
   disclaimer,
   scoutingNote,
+  matchesNote,
   moreLabel,
 }: {
   poolNote?: string;
   disclaimer?: string;
   scoutingNote?: string;
+  matchesNote?: string;
   moreLabel: string;
 }) {
-  if (!poolNote && !disclaimer && !scoutingNote) return null;
+  if (!poolNote && !disclaimer && !scoutingNote && !matchesNote) return null;
 
   return (
     <details className="rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-sm">
@@ -183,6 +185,7 @@ export function WcAboutPanel({
         {poolNote ? <p className="text-amber-200/90">{poolNote}</p> : null}
         {disclaimer ? <p>{disclaimer}</p> : null}
         {scoutingNote ? <p>{scoutingNote}</p> : null}
+        {matchesNote ? <p>{matchesNote}</p> : null}
       </div>
     </details>
   );
