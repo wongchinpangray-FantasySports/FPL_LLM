@@ -572,6 +572,8 @@
     "matchesDisclaimer": "Opta is FIFA's official statistics partner. This app uses FIFA public feeds plus optional API-Football — not a licensed Opta feed.",
     "matchesFilterRound": "Round",
     "matchesRoundAll": "All rounds",
+    "matchesFullTime": "Full Time",
+    "matchesAssist": "Assist",
     "matchesVenue": "Venue",
     "matchesScorers": "Goal scorers",
     "matchesNoStats": "Team stats available after kickoff when configured.",

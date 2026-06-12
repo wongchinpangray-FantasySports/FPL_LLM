@@ -571,6 +571,8 @@
     "matchesDisclaimer": "Opta 为 FIFA 官方数据合作伙伴。本应用使用 FIFA 公开源及可选 API-Football，非商业 Opta 授权数据。",
     "matchesFilterRound": "轮次",
     "matchesRoundAll": "全部轮次",
+    "matchesFullTime": "全场",
+    "matchesAssist": "助攻",
     "matchesVenue": "球场",
     "matchesScorers": "进球者",
     "matchesNoStats": "开赛后且已配置数据源时显示球队数据。",

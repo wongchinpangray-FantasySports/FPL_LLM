@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { WcMatchRow, WcTeamMatchStats } from "@/lib/wc/fifa-rounds";
+import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
+import { WcMatchDetail } from "@/components/worldcup/wc-match-detail";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
+import { wcTeamFlag } from "@/lib/wc/wc-team-flags";
 
 function fmtKickoff(iso: string | null): string {
   if (!iso) return "—";
@@ -28,99 +30,6 @@ function statusLabel(status: string, period: string | null, minutes: number): st
   return status.replace(/_/g, " ");
 }
 
-function StatCompare({
-  label,
-  home,
-  away,
-  suffix = "",
-}: {
-  label: string;
-  home: number | null;
-  away: number | null;
-  suffix?: string;
-}) {
-  if (home == null && away == null) return null;
-  const h = home ?? 0;
-  const a = away ?? 0;
-  const total = h + a || 1;
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs tabular-nums text-slate-300">
-        <span>{home != null ? `${h}${suffix}` : "—"}</span>
-        <span className="text-[10px] uppercase text-slate-500">{label}</span>
-        <span>{away != null ? `${a}${suffix}` : "—"}</span>
-      </div>
-      <div className="flex h-1 overflow-hidden rounded-full bg-white/5">
-        <div
-          className="bg-brand-accent/70"
-          style={{ width: `${(h / total) * 100}%` }}
-        />
-        <div
-          className="bg-slate-500/50"
-          style={{ width: `${(a / total) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function StatsBlock({
-  homeStats,
-  awayStats,
-  labels,
-}: {
-  homeStats: WcTeamMatchStats;
-  awayStats: WcTeamMatchStats;
-  labels: {
-    xg: string;
-    shots: string;
-    shotsOn: string;
-    possession: string;
-    corners: string;
-    fouls: string;
-    noStats: string;
-  };
-}) {
-  const hasAny =
-    homeStats.xg != null ||
-    homeStats.shots != null ||
-    homeStats.possession != null;
-  if (!hasAny) {
-    return <p className="text-xs text-slate-500">{labels.noStats}</p>;
-  }
-  return (
-    <div className="space-y-2.5">
-      <StatCompare label={labels.xg} home={homeStats.xg} away={awayStats.xg} />
-      <StatCompare
-        label={labels.shots}
-        home={homeStats.shots}
-        away={awayStats.shots}
-      />
-      <StatCompare
-        label={labels.shotsOn}
-        home={homeStats.shots_on_target}
-        away={awayStats.shots_on_target}
-      />
-      <StatCompare
-        label={labels.possession}
-        home={homeStats.possession}
-        away={awayStats.possession}
-        suffix="%"
-      />
-      <StatCompare
-        label={labels.corners}
-        home={homeStats.corners}
-        away={awayStats.corners}
-      />
-      <StatCompare
-        label={labels.fouls}
-        home={homeStats.fouls}
-        away={awayStats.fouls}
-      />
-    </div>
-  );
-}
-
 function MatchCard({
   match,
   expanded,
@@ -134,21 +43,22 @@ function MatchCard({
   statsLoading: boolean;
   labels: {
     expandHint: string;
-    venue: string;
-    scorers: string;
+    fullTime: string;
+    assist: string;
     noStats: string;
+    statsPending: string;
     xg: string;
     shots: string;
     shotsOn: string;
     possession: string;
     corners: string;
     fouls: string;
-    statsPending: string;
   };
 }) {
   const live =
-    match.status !== "scheduled" &&
-    match.status !== "finished" &&
+    match.status.toLowerCase() !== "scheduled" &&
+    match.status.toLowerCase() !== "finished" &&
+    match.status.toLowerCase() !== "complete" &&
     match.minutes > 0;
   const finished =
     match.status.toLowerCase() === "finished" ||
@@ -167,95 +77,67 @@ function MatchCard({
         }
       }}
       className={cn(
-        "cursor-pointer rounded-lg border p-3 transition-colors",
+        "cursor-pointer rounded-lg border transition-colors",
         expanded
-          ? "border-brand-accent/30 bg-white/[0.05]"
-          : "border-white/[0.06] bg-slate-950/40 hover:border-white/12",
+          ? "border-brand-accent/30 bg-white/[0.05] p-2 sm:p-3"
+          : "border-white/[0.06] bg-slate-950/40 p-3 hover:border-white/12",
       )}
     >
-      <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
-        <span>{match.round_label}</span>
-        <span
-          className={cn(
-            live && "font-medium text-brand-accent",
-            finished && "text-slate-400",
-          )}
-        >
-          {statusLabel(match.status, match.period, match.minutes)}
-        </span>
-      </div>
-
-      <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <div className="min-w-0 text-right">
-          <div className="truncate text-sm font-semibold text-white">
-            {match.home_name}
-          </div>
-          <div className="text-[10px] text-slate-500">{match.home_code}</div>
-        </div>
-        <div className="px-2 text-center">
-          {finished ? (
-            <div className="text-lg font-bold tabular-nums text-white">
-              {match.home_score ?? 0}
-              <span className="mx-1 text-slate-500">–</span>
-              {match.away_score ?? 0}
-            </div>
-          ) : (
-            <div className="text-xs text-slate-500">vs</div>
-          )}
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-white">
-            {match.away_name}
-          </div>
-          <div className="text-[10px] text-slate-500">{match.away_code}</div>
-        </div>
-      </div>
-
-      <p className="mt-2 text-xs text-slate-500">
-        {fmtKickoff(match.kickoff)}
-        {match.venue ? ` · ${match.venue}` : ""}
-      </p>
-
       {!expanded ? (
-        <p className="mt-2 text-center text-xs text-slate-600">
-          {labels.expandHint}
-        </p>
-      ) : (
-        <div
-          className="mt-3 space-y-3 border-t border-white/10 pt-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {match.home_scorers || match.away_scorers ? (
-            <div className="space-y-1 text-xs text-slate-400">
-              <div className="text-[10px] uppercase text-slate-500">
-                {labels.scorers}
-              </div>
-              {match.home_scorers ? (
-                <p>
-                  <span className="text-slate-500">{match.home_code}:</span>{" "}
-                  {match.home_scorers}
-                </p>
-              ) : null}
-              {match.away_scorers ? (
-                <p>
-                  <span className="text-slate-500">{match.away_code}:</span>{" "}
-                  {match.away_scorers}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+        <>
+          <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+            <span>{match.round_label}</span>
+            <span
+              className={cn(
+                live && "font-medium text-brand-accent",
+                finished && "text-slate-400",
+              )}
+            >
+              {statusLabel(match.status, match.period, match.minutes)}
+            </span>
+          </div>
 
-          {match.stats_available && match.home_stats && match.away_stats ? (
-            <StatsBlock
-              homeStats={match.home_stats}
-              awayStats={match.away_stats}
-              labels={labels}
-            />
-          ) : statsLoading ? (
-            <p className="text-xs text-slate-500">{labels.statsPending}</p>
-          ) : (
-            <p className="text-xs text-slate-500">{labels.noStats}</p>
-          )}
+          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="flex min-w-0 items-center justify-end gap-1.5">
+              <span className="truncate text-right text-sm font-semibold text-white">
+                {match.home_name}
+              </span>
+              <span className="text-base">{wcTeamFlag(match.home_code)}</span>
+            </div>
+            <div className="px-2 text-center">
+              {finished ? (
+                <div className="text-lg font-bold tabular-nums text-white">
+                  {match.home_score ?? 0}
+                  <span className="mx-1 text-slate-500">–</span>
+                  {match.away_score ?? 0}
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500">vs</div>
+              )}
+            </div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-base">{wcTeamFlag(match.away_code)}</span>
+              <span className="truncate text-sm font-semibold text-white">
+                {match.away_name}
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-2 text-xs text-slate-500">
+            {fmtKickoff(match.kickoff)}
+            {match.venue ? ` · ${match.venue}` : ""}
+          </p>
+          <p className="mt-2 text-center text-xs text-slate-600">
+            {labels.expandHint}
+          </p>
+        </>
+      ) : (
+        <div onClick={(e) => e.stopPropagation()}>
+          <WcMatchDetail
+            match={match}
+            statsLoading={statsLoading}
+            labels={labels}
+          />
         </div>
       )}
     </article>
@@ -286,8 +168,8 @@ export function WcMatchesPanel({
     filterRound: string;
     roundAll: string;
     expandHint: string;
-    venue: string;
-    scorers: string;
+    fullTime: string;
+    assist: string;
     noStats: string;
     statsPending: string;
     xg: string;
@@ -333,23 +215,20 @@ export function WcMatchesPanel({
     void load(round);
   }, [load, round]);
 
-  const loadStats = useCallback(
-    async (id: number) => {
-      setStatsLoadingId(id);
-      try {
-        const res = await fetch(
-          `/api/worldcup/matches?statsFor=${encodeURIComponent(String(id))}`,
-        );
-        const json = (await res.json()) as MatchesPayload;
-        if (json.stats_for) {
-          setStatsById((prev) => new Map(prev).set(id, json.stats_for!));
-        }
-      } finally {
-        setStatsLoadingId(null);
+  const loadStats = useCallback(async (id: number) => {
+    setStatsLoadingId(id);
+    try {
+      const res = await fetch(
+        `/api/worldcup/matches?statsFor=${encodeURIComponent(String(id))}`,
+      );
+      const json = (await res.json()) as MatchesPayload;
+      if (json.stats_for) {
+        setStatsById((prev) => new Map(prev).set(id, json.stats_for!));
       }
-    },
-    [],
-  );
+    } finally {
+      setStatsLoadingId(null);
+    }
+  }, []);
 
   const matches = (data?.matches ?? []).map(
     (m) => statsById.get(m.id) ?? m,
@@ -401,7 +280,12 @@ export function WcMatchesPanel({
         <p className="text-sm text-slate-500">{labels.empty}</p>
       ) : null}
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        className={cn(
+          "grid gap-2",
+          expandedId != null ? "grid-cols-1" : "sm:grid-cols-2 xl:grid-cols-3",
+        )}
+      >
         {matches.map((m) => (
           <MatchCard
             key={m.id}

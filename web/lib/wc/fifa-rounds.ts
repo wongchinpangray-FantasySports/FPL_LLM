@@ -51,6 +51,23 @@ export type WcTeamMatchStats = {
   fouls: number | null;
 };
 
+export type WcMatchGoal = {
+  minute: string | null;
+  sort_key: number;
+  scorer: string;
+  scorer_display: string;
+  assist: string | null;
+  assist_display: string | null;
+};
+
+export type WcMatchCardEvent = {
+  minute: string | null;
+  sort_key: number;
+  player: string;
+  player_display: string;
+  card: "yellow" | "red";
+};
+
 export type WcMatchRow = {
   id: number;
   round_id: number;
@@ -68,8 +85,13 @@ export type WcMatchRow = {
   away_name: string;
   home_score: number | null;
   away_score: number | null;
+  /** @deprecated plain-text fallback */
   home_scorers: string | null;
   away_scorers: string | null;
+  home_goals: WcMatchGoal[];
+  away_goals: WcMatchGoal[];
+  home_cards: WcMatchCardEvent[];
+  away_cards: WcMatchCardEvent[];
   stats_available: boolean;
   home_stats: WcTeamMatchStats | null;
   away_stats: WcTeamMatchStats | null;
@@ -94,6 +116,49 @@ function roundLabel(id: number): string {
 
 function playerLabel(id: number, names: Map<number, string>): string {
   return names.get(id) ?? `Player ${id}`;
+}
+
+/** FIFA-style display: last name in uppercase (e.g. Raul JIMENEZ). */
+export function formatFifaPlayerDisplay(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return name;
+  if (parts.length === 1) return parts[0]!.toUpperCase();
+  const last = parts.pop()!.toUpperCase();
+  return [...parts, last].join(" ");
+}
+
+export function minuteToSortKey(minute: string | null, fallback: number): number {
+  if (!minute) return fallback;
+  const m = minute.match(/^(\d+)(?:\+(\d+))?/);
+  if (!m) return fallback;
+  const base = Number(m[1]) * 100;
+  const extra = m[2] ? Number(m[2]) : 0;
+  return base + extra;
+}
+
+export function parseFifaGoals(
+  raw: unknown,
+  names: Map<number, string>,
+): WcMatchGoal[] {
+  if (raw == null || !Array.isArray(raw)) return [];
+  const goals: WcMatchGoal[] = [];
+  raw.forEach((item, idx) => {
+    if (!item || typeof item !== "object") return;
+    const entry = item as GoalScorerEntry;
+    if (entry.playerId == null) return;
+    const scorer = playerLabel(entry.playerId, names);
+    const assist =
+      entry.assistId != null ? playerLabel(entry.assistId, names) : null;
+    goals.push({
+      minute: null,
+      sort_key: idx,
+      scorer,
+      scorer_display: formatFifaPlayerDisplay(scorer),
+      assist,
+      assist_display: assist ? formatFifaPlayerDisplay(assist) : null,
+    });
+  });
+  return goals.reverse();
 }
 
 /** FIFA returns goal scorers as string, array of {playerId, assistId}, or null. */
@@ -206,6 +271,10 @@ export function parseFifaRoundsToMatches(
           m.awayGoalScorersAssists,
           playerNames,
         ),
+        home_goals: parseFifaGoals(m.homeGoalScorersAssists, playerNames),
+        away_goals: parseFifaGoals(m.awayGoalScorersAssists, playerNames),
+        home_cards: [],
+        away_cards: [],
         stats_available: false,
         home_stats: null,
         away_stats: null,
@@ -253,4 +322,51 @@ export function normalizeTeamMatchStats(
     corners: num(o.corners),
     fouls: num(o.fouls),
   };
+}
+
+export function normalizeMatchGoals(raw: unknown): WcMatchGoal[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item, idx) => {
+      if (!item || typeof item !== "object") return null;
+      const g = item as Record<string, unknown>;
+      const scorer = String(g.scorer ?? "");
+      if (!scorer) return null;
+      const assist = g.assist != null ? String(g.assist) : null;
+      const minute = g.minute != null ? String(g.minute) : null;
+      return {
+        minute,
+        sort_key: Number(g.sort_key ?? minuteToSortKey(minute, idx)),
+        scorer,
+        scorer_display: String(g.scorer_display ?? formatFifaPlayerDisplay(scorer)),
+        assist,
+        assist_display: assist
+          ? String(g.assist_display ?? formatFifaPlayerDisplay(assist))
+          : null,
+      } satisfies WcMatchGoal;
+    })
+    .filter(Boolean) as WcMatchGoal[];
+}
+
+export function normalizeMatchCards(raw: unknown): WcMatchCardEvent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item, idx) => {
+      if (!item || typeof item !== "object") return null;
+      const c = item as Record<string, unknown>;
+      const player = String(c.player ?? "");
+      if (!player) return null;
+      const card = c.card === "yellow" ? "yellow" : "red";
+      const minute = c.minute != null ? String(c.minute) : null;
+      return {
+        minute,
+        sort_key: Number(c.sort_key ?? minuteToSortKey(minute, idx)),
+        player,
+        player_display: String(
+          c.player_display ?? formatFifaPlayerDisplay(player),
+        ),
+        card,
+      } satisfies WcMatchCardEvent;
+    })
+    .filter(Boolean) as WcMatchCardEvent[];
 }

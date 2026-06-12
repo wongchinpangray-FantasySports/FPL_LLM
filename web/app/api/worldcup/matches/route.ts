@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         statsFor =
           base.stats_available && base.home_stats && base.away_stats
             ? base
-            : await fetchAndCacheMatchStats(base);
+            : (await fetchAndCacheMatchStats(base)) ?? base;
       }
     }
 

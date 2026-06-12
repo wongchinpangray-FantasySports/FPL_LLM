@@ -1,11 +1,14 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
   fetchMatchOptaStats,
+  fetchMatchEvents,
   isApiFootballConfigured,
 } from "@/lib/wc/api-football-stats";
 import {
   buildWcMatchSchedule,
   isWcMatchFinished,
+  normalizeMatchCards,
+  normalizeMatchGoals,
   normalizeTeamMatchStats,
   type WcMatchRow,
   type WcTeamMatchStats,
@@ -16,6 +19,10 @@ type StatsRow = {
   home_stats: WcTeamMatchStats | null;
   away_stats: WcTeamMatchStats | null;
   stats_source: string | null;
+  home_goals: WcMatchRow["home_goals"];
+  away_goals: WcMatchRow["away_goals"];
+  home_cards: WcMatchRow["home_cards"];
+  away_cards: WcMatchRow["away_cards"];
 };
 
 function isFinished(m: WcMatchRow): boolean {
@@ -26,7 +33,9 @@ export async function loadCachedMatchStats(): Promise<Map<number, StatsRow>> {
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("wc_match_stats")
-    .select("fifa_tournament_id, home_stats, away_stats, stats_source");
+    .select(
+      "fifa_tournament_id, home_stats, away_stats, stats_source, home_goals, away_goals, home_cards, away_cards",
+    );
   if (error) throw new Error(error.message);
 
   const map = new Map<number, StatsRow>();
@@ -36,6 +45,10 @@ export async function loadCachedMatchStats(): Promise<Map<number, StatsRow>> {
       home_stats: normalizeTeamMatchStats(row.home_stats),
       away_stats: normalizeTeamMatchStats(row.away_stats),
       stats_source: (row.stats_source as string | null) ?? null,
+      home_goals: normalizeMatchGoals(row.home_goals),
+      away_goals: normalizeMatchGoals(row.away_goals),
+      home_cards: normalizeMatchCards(row.home_cards),
+      away_cards: normalizeMatchCards(row.away_cards),
     });
   }
   return map;
@@ -47,12 +60,23 @@ export function mergeCachedStats(
 ): WcMatchRow[] {
   return matches.map((m) => {
     const hit = cached.get(m.id);
-    if (!hit?.home_stats || !hit?.away_stats) return m;
+    if (!hit) return m;
+    const hasStats = hit.home_stats && hit.away_stats;
+    const hasGoals =
+      hit.home_goals.length > 0 ||
+      hit.away_goals.length > 0 ||
+      hit.home_cards.length > 0 ||
+      hit.away_cards.length > 0;
+    if (!hasStats && !hasGoals) return m;
     return {
       ...m,
-      stats_available: true,
-      home_stats: hit.home_stats,
-      away_stats: hit.away_stats,
+      stats_available: Boolean(hasStats),
+      home_stats: hit.home_stats ?? m.home_stats,
+      away_stats: hit.away_stats ?? m.away_stats,
+      home_goals: hit.home_goals.length > 0 ? hit.home_goals : m.home_goals,
+      away_goals: hit.away_goals.length > 0 ? hit.away_goals : m.away_goals,
+      home_cards: hit.home_cards.length > 0 ? hit.home_cards : m.home_cards,
+      away_cards: hit.away_cards.length > 0 ? hit.away_cards : m.away_cards,
     };
   });
 }
@@ -159,17 +183,32 @@ export async function syncWcMatchStats(opts?: {
     }
 
     const stats = await fetchMatchOptaStats(base);
-    if (!stats) {
+    const events = await fetchMatchEvents(base);
+
+    if (!stats && !events) {
       stats_skipped++;
       continue;
     }
 
+    const home_goals =
+      events && events.home_goals.length > 0
+        ? events.home_goals
+        : base.home_goals;
+    const away_goals =
+      events && events.away_goals.length > 0
+        ? events.away_goals
+        : base.away_goals;
+
     const { error } = await supa
       .from("wc_match_stats")
       .update({
-        home_stats: stats.home,
-        away_stats: stats.away,
-        stats_source: "api-football",
+        home_stats: stats?.home ?? null,
+        away_stats: stats?.away ?? null,
+        home_goals,
+        away_goals,
+        home_cards: events?.home_cards ?? [],
+        away_cards: events?.away_cards ?? [],
+        stats_source: stats || events ? "api-football" : null,
         updated_at: new Date().toISOString(),
       })
       .eq("fifa_tournament_id", id);
@@ -196,12 +235,26 @@ export async function fetchAndCacheMatchStats(
       stats_available: true,
       home_stats: hit.home_stats,
       away_stats: hit.away_stats,
+      home_goals: hit.home_goals.length > 0 ? hit.home_goals : match.home_goals,
+      away_goals: hit.away_goals.length > 0 ? hit.away_goals : match.away_goals,
+      home_cards: hit.home_cards.length > 0 ? hit.home_cards : match.home_cards,
+      away_cards: hit.away_cards.length > 0 ? hit.away_cards : match.away_cards,
     };
   }
 
   if (!isApiFootballConfigured()) return null;
-  const stats = await fetchMatchOptaStats(match);
-  if (!stats) return null;
+
+  const [stats, events] = await Promise.all([
+    fetchMatchOptaStats(match),
+    fetchMatchEvents(match),
+  ]);
+
+  const home_goals =
+    events && events.home_goals.length > 0 ? events.home_goals : match.home_goals;
+  const away_goals =
+    events && events.away_goals.length > 0 ? events.away_goals : match.away_goals;
+  const home_cards = events?.home_cards ?? match.home_cards;
+  const away_cards = events?.away_cards ?? match.away_cards;
 
   const supa = getServerSupabase();
   await supa.from("wc_match_stats").upsert(
@@ -223,9 +276,13 @@ export async function fetchAndCacheMatchStats(
       away_score: match.away_score,
       home_scorers: match.home_scorers,
       away_scorers: match.away_scorers,
-      home_stats: stats.home,
-      away_stats: stats.away,
-      stats_source: "api-football",
+      home_goals,
+      away_goals,
+      home_cards,
+      away_cards,
+      home_stats: stats?.home ?? null,
+      away_stats: stats?.away ?? null,
+      stats_source: stats || events ? "api-football" : null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "fifa_tournament_id" },
@@ -233,8 +290,12 @@ export async function fetchAndCacheMatchStats(
 
   return {
     ...match,
-    stats_available: true,
-    home_stats: stats.home,
-    away_stats: stats.away,
+    stats_available: Boolean(stats),
+    home_stats: stats?.home ?? null,
+    away_stats: stats?.away ?? null,
+    home_goals,
+    away_goals,
+    home_cards,
+    away_cards,
   };
 }
