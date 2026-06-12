@@ -43,6 +43,7 @@ function MatchCard({
   statsLoading: boolean;
   labels: {
     expandHint: string;
+    collapseHint: string;
     fullTime: string;
     assist: string;
     noStats: string;
@@ -53,6 +54,22 @@ function MatchCard({
     possession: string;
     corners: string;
     fouls: string;
+    playerStatsTitle: string;
+    playerStatsLoading: string;
+    playerStatsNone: string;
+    playerStatsNotConfigured: string;
+    playerMinutes: string;
+    playerRating: string;
+    playerGoals: string;
+    playerAssists: string;
+    playerShots: string;
+    playerShotsOn: string;
+    playerKeyPasses: string;
+    playerPassAcc: string;
+    playerTackles: string;
+    playerYellow: string;
+    playerRed: string;
+    playerSaves: string;
   };
 }) {
   const live =
@@ -132,13 +149,11 @@ function MatchCard({
           </p>
         </>
       ) : (
-        <div onClick={(e) => e.stopPropagation()}>
-          <WcMatchDetail
-            match={match}
-            statsLoading={statsLoading}
-            labels={labels}
-          />
-        </div>
+        <WcMatchDetail
+          match={match}
+          statsLoading={statsLoading}
+          labels={labels}
+        />
       )}
     </article>
   );
@@ -168,6 +183,7 @@ export function WcMatchesPanel({
     filterRound: string;
     roundAll: string;
     expandHint: string;
+    collapseHint: string;
     fullTime: string;
     assist: string;
     noStats: string;
@@ -180,6 +196,22 @@ export function WcMatchesPanel({
     fouls: string;
     loading: string;
     empty: string;
+    playerStatsTitle: string;
+    playerStatsLoading: string;
+    playerStatsNone: string;
+    playerStatsNotConfigured: string;
+    playerMinutes: string;
+    playerRating: string;
+    playerGoals: string;
+    playerAssists: string;
+    playerShots: string;
+    playerShotsOn: string;
+    playerKeyPasses: string;
+    playerPassAcc: string;
+    playerTackles: string;
+    playerYellow: string;
+    playerRed: string;
+    playerSaves: string;
   };
 }) {
   const [round, setRound] = useState("ALL");

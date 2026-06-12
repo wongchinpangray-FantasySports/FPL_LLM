@@ -258,3 +258,124 @@ export async function fetchMatchEvents(
 
   return { home_goals, away_goals, home_cards, away_cards };
 }
+
+export type WcPlayerMatchStats = {
+  player_name: string;
+  team_name: string;
+  minutes: number | null;
+  rating: number | null;
+  position: string | null;
+  goals: number | null;
+  assists: number | null;
+  shots_total: number | null;
+  shots_on: number | null;
+  passes_key: number | null;
+  passes_accuracy: number | null;
+  tackles: number | null;
+  yellow_cards: number | null;
+  red_cards: number | null;
+  saves: number | null;
+};
+
+type ApiPlayerStatBlock = {
+  games?: {
+    minutes?: number | null;
+    rating?: string | number | null;
+    position?: string | null;
+  };
+  shots?: { total?: number | null; on?: number | null };
+  goals?: {
+    total?: number | null;
+    assists?: number | null;
+    saves?: number | null;
+  };
+  passes?: { key?: number | null; accuracy?: string | number | null };
+  tackles?: { total?: number | null };
+  cards?: { yellow?: number | null; red?: number | null };
+};
+
+type ApiFixturePlayerRow = {
+  player: { name: string };
+  statistics: ApiPlayerStatBlock[];
+};
+
+function normPlayerName(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function playerNamesMatch(query: string, candidate: string): boolean {
+  const q = normPlayerName(query);
+  const c = normPlayerName(candidate);
+  if (!q || !c) return false;
+  if (q === c) return true;
+  if (c.includes(q) || q.includes(c)) return true;
+  const qParts = q.split(" ").filter(Boolean);
+  const cParts = c.split(" ").filter(Boolean);
+  const qLast = qParts[qParts.length - 1] ?? "";
+  const cLast = cParts[cParts.length - 1] ?? "";
+  return qLast.length > 2 && qLast === cLast;
+}
+
+function numStat(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(String(v).replace("%", "").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function mapPlayerStats(
+  playerName: string,
+  teamName: string,
+  block: ApiPlayerStatBlock,
+): WcPlayerMatchStats {
+  const accuracy = block.passes?.accuracy;
+  return {
+    player_name: playerName,
+    team_name: teamName,
+    minutes: numStat(block.games?.minutes),
+    rating: numStat(block.games?.rating),
+    position: block.games?.position?.trim() || null,
+    goals: numStat(block.goals?.total),
+    assists: numStat(block.goals?.assists),
+    shots_total: numStat(block.shots?.total),
+    shots_on: numStat(block.shots?.on),
+    passes_key: numStat(block.passes?.key),
+    passes_accuracy:
+      typeof accuracy === "string" && accuracy.includes("%")
+        ? numStat(accuracy)
+        : numStat(accuracy),
+    tackles: numStat(block.tackles?.total),
+    yellow_cards: numStat(block.cards?.yellow),
+    red_cards: numStat(block.cards?.red),
+    saves: numStat(block.goals?.saves),
+  };
+}
+
+export async function fetchPlayerMatchStats(
+  match: WcMatchRow,
+  playerName: string,
+): Promise<WcPlayerMatchStats | null> {
+  if (!apiKey()) return null;
+  const fx = await resolveFixture(match);
+  if (!fx) return null;
+
+  const teams = await apiFetch<
+    { team: { name: string }; players: ApiFixturePlayerRow[] }[]
+  >(`/fixtures/players?fixture=${fx.fixture.id}`);
+
+  for (const teamRow of teams ?? []) {
+    for (const row of teamRow.players ?? []) {
+      const name = row.player?.name?.trim();
+      if (!name || !playerNamesMatch(playerName, name)) continue;
+      const block = row.statistics?.[0];
+      if (!block) continue;
+      return mapPlayerStats(name, teamRow.team.name, block);
+    }
+  }
+  return null;
+}
