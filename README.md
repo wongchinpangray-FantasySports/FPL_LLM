@@ -137,7 +137,7 @@ and builds a player pool automatically:
 
 To reload the player pool manually: `POST /api/worldcup/sync` (FIFA first when env vars are set).
 
-**Match stats tab:** run migration **0014**, then `POST /api/worldcup/sync-matches` (daily cron recommended) to cache FIFA schedules and optional API-Football team stats when `API_FOOTBALL_KEY` is set.
+**Match stats tab:** run migration **0014**, then `POST /api/worldcup/sync-matches` (daily cron recommended) to cache FIFA schedules and scores in Supabase.
 
 #### Full official FIFA fantasy player list (optional)
 

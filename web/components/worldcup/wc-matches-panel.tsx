@@ -34,42 +34,16 @@ function MatchCard({
   match,
   expanded,
   onToggle,
-  statsLoading,
   labels,
 }: {
   match: WcMatchRow;
   expanded: boolean;
   onToggle: () => void;
-  statsLoading: boolean;
   labels: {
     expandHint: string;
     collapseHint: string;
     fullTime: string;
     assist: string;
-    noStats: string;
-    statsPending: string;
-    xg: string;
-    shots: string;
-    shotsOn: string;
-    possession: string;
-    corners: string;
-    fouls: string;
-    playerStatsTitle: string;
-    playerStatsLoading: string;
-    playerStatsNone: string;
-    playerStatsNotConfigured: string;
-    playerMinutes: string;
-    playerRating: string;
-    playerGoals: string;
-    playerAssists: string;
-    playerShots: string;
-    playerShotsOn: string;
-    playerKeyPasses: string;
-    playerPassAcc: string;
-    playerTackles: string;
-    playerYellow: string;
-    playerRed: string;
-    playerSaves: string;
   };
 }) {
   const live =
@@ -149,11 +123,7 @@ function MatchCard({
           </p>
         </>
       ) : (
-        <WcMatchDetail
-          match={match}
-          statsLoading={statsLoading}
-          labels={labels}
-        />
+        <WcMatchDetail match={match} labels={labels} />
       )}
     </article>
   );
@@ -162,8 +132,6 @@ function MatchCard({
 type MatchesPayload = {
   rounds: number[];
   matches: WcMatchRow[];
-  stats_for: WcMatchRow | null;
-  stats_provider: string | null;
   disclaimer: string;
   error?: string;
 };
@@ -186,32 +154,8 @@ export function WcMatchesPanel({
     collapseHint: string;
     fullTime: string;
     assist: string;
-    noStats: string;
-    statsPending: string;
-    xg: string;
-    shots: string;
-    shotsOn: string;
-    possession: string;
-    corners: string;
-    fouls: string;
     loading: string;
     empty: string;
-    playerStatsTitle: string;
-    playerStatsLoading: string;
-    playerStatsNone: string;
-    playerStatsNotConfigured: string;
-    playerMinutes: string;
-    playerRating: string;
-    playerGoals: string;
-    playerAssists: string;
-    playerShots: string;
-    playerShotsOn: string;
-    playerKeyPasses: string;
-    playerPassAcc: string;
-    playerTackles: string;
-    playerYellow: string;
-    playerRed: string;
-    playerSaves: string;
   };
 }) {
   const [round, setRound] = useState("ALL");
@@ -219,10 +163,6 @@ export function WcMatchesPanel({
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MatchesPayload | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [statsLoadingId, setStatsLoadingId] = useState<number | null>(null);
-  const [statsById, setStatsById] = useState<Map<number, WcMatchRow>>(
-    () => new Map(),
-  );
 
   const load = useCallback(async (roundFilter: string) => {
     setLoading(true);
@@ -247,24 +187,7 @@ export function WcMatchesPanel({
     void load(round);
   }, [load, round]);
 
-  const loadStats = useCallback(async (id: number) => {
-    setStatsLoadingId(id);
-    try {
-      const res = await fetch(
-        `/api/worldcup/matches?statsFor=${encodeURIComponent(String(id))}`,
-      );
-      const json = (await res.json()) as MatchesPayload;
-      if (json.stats_for) {
-        setStatsById((prev) => new Map(prev).set(id, json.stats_for!));
-      }
-    } finally {
-      setStatsLoadingId(null);
-    }
-  }, []);
-
-  const matches = (data?.matches ?? []).map(
-    (m) => statsById.get(m.id) ?? m,
-  );
+  const matches = data?.matches ?? [];
 
   const roundOptions = [
     { value: "ALL", label: labels.roundAll },
@@ -323,20 +246,9 @@ export function WcMatchesPanel({
             key={m.id}
             match={m}
             expanded={expandedId === m.id}
-            onToggle={() => {
-              const next = expandedId === m.id ? null : m.id;
-              setExpandedId(next);
-              if (
-                next === m.id &&
-                !m.stats_available &&
-                (m.status.toLowerCase() === "finished" ||
-                  m.status.toLowerCase() === "complete" ||
-                  m.home_score != null)
-              ) {
-                void loadStats(m.id);
-              }
-            }}
-            statsLoading={statsLoadingId === m.id}
+            onToggle={() =>
+              setExpandedId(expandedId === m.id ? null : m.id)
+            }
             labels={labels}
           />
         ))}
