@@ -5,6 +5,8 @@ import {
 } from "@/lib/wc/api-football-stats";
 import {
   buildWcMatchSchedule,
+  isWcMatchFinished,
+  normalizeTeamMatchStats,
   type WcMatchRow,
   type WcTeamMatchStats,
 } from "@/lib/wc/fifa-rounds";
@@ -17,7 +19,7 @@ type StatsRow = {
 };
 
 function isFinished(m: WcMatchRow): boolean {
-  return m.status === "finished" || m.home_score != null;
+  return isWcMatchFinished(m);
 }
 
 export async function loadCachedMatchStats(): Promise<Map<number, StatsRow>> {
@@ -31,8 +33,8 @@ export async function loadCachedMatchStats(): Promise<Map<number, StatsRow>> {
   for (const row of data ?? []) {
     map.set(row.fifa_tournament_id as number, {
       fifa_tournament_id: row.fifa_tournament_id as number,
-      home_stats: row.home_stats as WcTeamMatchStats | null,
-      away_stats: row.away_stats as WcTeamMatchStats | null,
+      home_stats: normalizeTeamMatchStats(row.home_stats),
+      away_stats: normalizeTeamMatchStats(row.away_stats),
       stats_source: (row.stats_source as string | null) ?? null,
     });
   }

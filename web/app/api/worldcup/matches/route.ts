@@ -5,7 +5,6 @@ import {
   buildWcMatchesWithStats,
   fetchAndCacheMatchStats,
 } from "@/lib/wc/match-stats-store";
-import { buildWcMatchSchedule } from "@/lib/wc/fifa-rounds";
 
 export const dynamic = "force-dynamic";
 

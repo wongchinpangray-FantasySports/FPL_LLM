@@ -21,8 +21,9 @@ function fmtKickoff(iso: string | null): string {
 }
 
 function statusLabel(status: string, period: string | null, minutes: number): string {
-  if (status === "finished") return "FT";
-  if (status === "scheduled") return "Scheduled";
+  const s = status.toLowerCase();
+  if (s === "finished" || s === "complete") return "FT";
+  if (s === "scheduled") return "Scheduled";
   if (period && minutes > 0) return `${minutes}'`;
   return status.replace(/_/g, " ");
 }
@@ -149,7 +150,10 @@ function MatchCard({
     match.status !== "scheduled" &&
     match.status !== "finished" &&
     match.minutes > 0;
-  const finished = match.status === "finished" || match.home_score != null;
+  const finished =
+    match.status.toLowerCase() === "finished" ||
+    match.status.toLowerCase() === "complete" ||
+    match.home_score != null;
 
   return (
     <article
@@ -409,7 +413,9 @@ export function WcMatchesPanel({
               if (
                 next === m.id &&
                 !m.stats_available &&
-                (m.status === "finished" || m.home_score != null)
+                (m.status.toLowerCase() === "finished" ||
+                  m.status.toLowerCase() === "complete" ||
+                  m.home_score != null)
               ) {
                 void loadStats(m.id);
               }
