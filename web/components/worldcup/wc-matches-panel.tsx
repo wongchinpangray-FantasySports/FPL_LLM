@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { WcMatchDetail } from "@/components/worldcup/wc-match-detail";
@@ -34,16 +35,27 @@ function MatchCard({
   match,
   expanded,
   onToggle,
+  locale,
   labels,
 }: {
   match: WcMatchRow;
   expanded: boolean;
   onToggle: () => void;
+  locale: string;
   labels: {
     expandHint: string;
     collapseHint: string;
     fullTime: string;
     assist: string;
+    summaryButton: string;
+    summaryTitle: string;
+    summaryLoading: string;
+    summaryError: string;
+    summaryListen: string;
+    summaryPause: string;
+    summaryResume: string;
+    summaryStop: string;
+    summaryClose: string;
   };
 }) {
   const live =
@@ -123,7 +135,7 @@ function MatchCard({
           </p>
         </>
       ) : (
-        <WcMatchDetail match={match} labels={labels} />
+        <WcMatchDetail match={match} locale={locale} labels={labels} />
       )}
     </article>
   );
@@ -156,8 +168,18 @@ export function WcMatchesPanel({
     assist: string;
     loading: string;
     empty: string;
+    summaryButton: string;
+    summaryTitle: string;
+    summaryLoading: string;
+    summaryError: string;
+    summaryListen: string;
+    summaryPause: string;
+    summaryResume: string;
+    summaryStop: string;
+    summaryClose: string;
   };
 }) {
+  const locale = useLocale();
   const [round, setRound] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -249,6 +271,7 @@ export function WcMatchesPanel({
             onToggle={() =>
               setExpandedId(expandedId === m.id ? null : m.id)
             }
+            locale={locale}
             labels={labels}
           />
         ))}

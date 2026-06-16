@@ -301,6 +301,15 @@ export function WcFantasyApp() {
             assist: t("matchesAssist"),
             loading: t("loading"),
             empty: t("matchesEmpty"),
+            summaryButton: t("matchesSummaryButton"),
+            summaryTitle: t("matchesSummaryTitle"),
+            summaryLoading: t("matchesSummaryLoading"),
+            summaryError: t("matchesSummaryError"),
+            summaryListen: t("matchesSummaryListen"),
+            summaryPause: t("matchesSummaryPause"),
+            summaryResume: t("matchesSummaryResume"),
+            summaryStop: t("matchesSummaryStop"),
+            summaryClose: t("matchesSummaryClose"),
           }}
         />
       ) : null}
