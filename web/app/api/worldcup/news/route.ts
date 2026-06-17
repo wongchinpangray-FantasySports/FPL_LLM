@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       Math.max(10, Number(url.searchParams.get("limit") ?? "80")),
     );
 
-    const { items, cached, fetched_at } = await getCachedWcNews({
+    const { items, cached, fetched_at, max_age_hours } = await getCachedWcNews({
       limit: 150,
       editorialOnly,
       refresh,
@@ -41,6 +41,7 @@ export async function GET(req: Request) {
       editorial_only: editorialOnly,
       cached,
       fetched_at,
+      max_age_hours,
       disclaimer:
         "Headlines and links from third-party RSS feeds (Google News and publishers). We do not host article text; open links for full editorials.",
     });
