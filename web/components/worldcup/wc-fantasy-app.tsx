@@ -311,7 +311,6 @@ export function WcFantasyApp() {
             summaryResume: t("matchesSummaryResume"),
             summaryStop: t("matchesSummaryStop"),
             summaryClose: t("matchesSummaryClose"),
-            eventsLoading: t("matchesEventsLoading"),
           }}
         />
       ) : null}

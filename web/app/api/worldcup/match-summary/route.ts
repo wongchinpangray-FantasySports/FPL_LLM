@@ -1,21 +1,11 @@
 import { NextResponse } from "next/server";
-import {
-  buildWcMatchesWithStats,
-  fetchAndCacheMatchEvents,
-} from "@/lib/wc/match-stats-store";
+import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import {
   canSummarizeMatch,
   getOrCreateMatchSummary,
 } from "@/lib/wc/match-summary";
-import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 
 export const dynamic = "force-dynamic";
-
-function hasEventTimeline(match: WcMatchRow): boolean {
-  const goals = [...match.home_goals, ...match.away_goals];
-  const cards = [...match.home_cards, ...match.away_cards];
-  return goals.some((g) => g.minute) || cards.length > 0;
-}
 
 export async function GET(req: Request) {
   try {
@@ -28,7 +18,7 @@ export async function GET(req: Request) {
     }
 
     const { matches } = await buildWcMatchesWithStats();
-    let match = matches.find((m) => m.id === matchId);
+    const match = matches.find((m) => m.id === matchId);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
@@ -38,10 +28,6 @@ export async function GET(req: Request) {
         { error: "Summary available after full time" },
         { status: 400 },
       );
-    }
-
-    if (!hasEventTimeline(match)) {
-      match = (await fetchAndCacheMatchEvents(match)) ?? match;
     }
 
     const { summary, source } = await getOrCreateMatchSummary(

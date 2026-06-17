@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   isWcMatchFinished,
@@ -129,14 +129,14 @@ function AwayCardRow({ event }: { event: WcMatchCardEvent }) {
   );
 }
 
-function hasEventTimeline(match: WcMatchRow): boolean {
+function hasEventsList(match: WcMatchRow): boolean {
   const goals = [...(match.home_goals ?? []), ...(match.away_goals ?? [])];
   const cards = [...(match.home_cards ?? []), ...(match.away_cards ?? [])];
-  return goals.some((g) => g.minute) || cards.length > 0;
+  return goals.length > 0 || cards.length > 0;
 }
 
 export function WcMatchDetail({
-  match: initialMatch,
+  match,
   locale,
   labels,
 }: {
@@ -156,42 +156,10 @@ export function WcMatchDetail({
     summaryResume: string;
     summaryStop: string;
     summaryClose: string;
-    eventsLoading?: string;
   };
 }) {
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [match, setMatch] = useState(initialMatch);
-  const [eventsLoading, setEventsLoading] = useState(false);
-
-  useEffect(() => {
-    setMatch(initialMatch);
-  }, [initialMatch]);
-
   const finished = isWcMatchFinished(match);
-
-  useEffect(() => {
-    if (!finished || hasEventTimeline(match)) return;
-
-    let cancelled = false;
-    setEventsLoading(true);
-    fetch(`/api/worldcup/match-events?matchId=${match.id}`)
-      .then(async (res) => {
-        const json = (await res.json()) as {
-          match?: WcMatchRow;
-          error?: string;
-        };
-        if (!res.ok || !json.match) return;
-        if (!cancelled) setMatch(json.match);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setEventsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [match.id, finished]);
 
   const homeGoals = match.home_goals ?? [];
   const awayGoals = match.away_goals ?? [];
@@ -208,7 +176,7 @@ export function WcMatchDetail({
     ...awayCards.map((c) => ({ kind: "card" as const, sort: c.sort_key, c })),
   ].sort((a, b) => b.sort - a.sort);
 
-  const hasEvents = homeEvents.length > 0 || awayEvents.length > 0;
+  const hasEvents = hasEventsList(match);
 
   const summaryTitle = labels.summaryTitle
     .replace("{home}", match.home_name)
@@ -250,12 +218,6 @@ export function WcMatchDetail({
               </span>
             </div>
           </div>
-
-          {eventsLoading && !hasEvents ? (
-            <p className="mt-4 border-t border-white/[0.06] pt-3 text-center text-xs text-slate-500">
-              {labels.eventsLoading ?? "Loading timeline…"}
-            </p>
-          ) : null}
 
           {hasEvents ? (
             <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-white/[0.06] pt-3">

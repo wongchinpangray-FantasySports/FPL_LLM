@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildWcMatchSchedule } from "@/lib/wc/fifa-rounds";
+import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import {
   canSummarizeMatch,
   getOrCreateMatchSummary,
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing matchId" }, { status: 400 });
     }
 
-    const { matches } = await buildWcMatchSchedule();
+    const { matches } = await buildWcMatchesWithStats();
     const match = matches.find((m) => m.id === matchId);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
@@ -31,7 +31,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const summaryResult = await getOrCreateMatchSummary(match, locale);
+    const summaryResult = await getOrCreateMatchSummary(
+      match,
+      locale,
+      matches,
+    );
     const audio = await getOrCreateMatchSummaryAudio(
       match,
       summaryResult,
@@ -40,7 +44,7 @@ export async function GET(req: Request) {
 
     if (!audio) {
       return NextResponse.json(
-        { error: "TTS unavailable", fallback: "browser" },
+        { error: "Gemini TTS unavailable", fallback: "browser" },
         { status: 503 },
       );
     }

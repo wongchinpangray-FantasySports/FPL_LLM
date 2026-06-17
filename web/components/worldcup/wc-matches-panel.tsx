@@ -57,7 +57,6 @@ function MatchCard({
     summaryResume: string;
     summaryStop: string;
     summaryClose: string;
-    eventsLoading?: string;
   };
 }) {
   const live =
@@ -180,7 +179,6 @@ export function WcMatchesPanel({
     summaryResume: string;
     summaryStop: string;
     summaryClose: string;
-    eventsLoading?: string;
   };
 }) {
   const locale = useLocale();

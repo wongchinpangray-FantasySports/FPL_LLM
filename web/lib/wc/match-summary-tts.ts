@@ -1,9 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { getGenAI } from "@/lib/llm";
-import {
-  matchSummaryFingerprint,
-  type MatchSummaryResult,
-} from "@/lib/wc/match-summary";
+import type { MatchSummaryResult } from "@/lib/wc/match-summary";
 import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 
 const TTS_MODELS = [
@@ -167,31 +164,42 @@ async function saveCachedAudio(
       [locale]: encodeBase64(wav),
     };
 
-    await supa.from("wc_match_stats").upsert(
-      {
-        fifa_tournament_id: match.id,
-        round_id: match.round_id,
-        kickoff: match.kickoff,
-        venue: match.venue,
-        venue_city: match.venue_city,
-        status: match.status,
-        period: match.period,
-        minutes: match.minutes,
-        extra_minutes: match.extra_minutes,
-        home_code: match.home_code,
-        away_code: match.away_code,
-        home_name: match.home_name,
-        away_name: match.away_name,
-        home_score: match.home_score,
-        away_score: match.away_score,
-        home_scorers: match.home_scorers,
-        away_scorers: match.away_scorers,
+    const { error } = await supa
+      .from("wc_match_stats")
+      .update({
         summary_audio_json,
         summary_fingerprint: fingerprint,
         updated_at: new Date().toISOString(),
-      },
-      { onConflict: "fifa_tournament_id" },
-    );
+      })
+      .eq("fifa_tournament_id", match.id);
+
+    if (error) {
+      await supa.from("wc_match_stats").upsert(
+        {
+          fifa_tournament_id: match.id,
+          round_id: match.round_id,
+          kickoff: match.kickoff,
+          venue: match.venue,
+          venue_city: match.venue_city,
+          status: match.status,
+          period: match.period,
+          minutes: match.minutes,
+          extra_minutes: match.extra_minutes,
+          home_code: match.home_code,
+          away_code: match.away_code,
+          home_name: match.home_name,
+          away_name: match.away_name,
+          home_score: match.home_score,
+          away_score: match.away_score,
+          home_scorers: match.home_scorers,
+          away_scorers: match.away_scorers,
+          summary_audio_json,
+          summary_fingerprint: fingerprint,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "fifa_tournament_id" },
+      );
+    }
   } catch {
     /* optional cache */
   }
@@ -208,7 +216,7 @@ export async function getOrCreateMatchSummaryAudio(
   localeInput: string,
 ): Promise<MatchSummaryAudioResult | null> {
   const locale = normalizeLocale(localeInput);
-  const fingerprint = matchSummaryFingerprint(match);
+  const fingerprint = summaryResult.fingerprint;
 
   const cached = await loadCachedAudio(match.id, locale, fingerprint);
   if (cached) return { wav: cached, source: "cache" };

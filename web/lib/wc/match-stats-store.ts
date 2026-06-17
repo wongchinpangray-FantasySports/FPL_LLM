@@ -160,16 +160,20 @@ export async function fetchAndCacheMatchEvents(
     return null;
   }
 
-  const cached = await loadCachedMatchEvents();
-  const hit = cached.get(match.id);
-  if (hit && hasTimeline({ ...match, ...hit })) {
-    return mergeCachedEvents([match], cached)[0] ?? match;
+  try {
+    const cached = await loadCachedMatchEvents();
+    const hit = cached.get(match.id);
+    if (hit && hasTimeline({ ...match, ...hit })) {
+      return mergeCachedEvents([match], cached)[0] ?? match;
+    }
+
+    const events = await fetchMatchEvents(match);
+    if (!events) return null;
+
+    return persistMatchEvents(match, events);
+  } catch {
+    return null;
   }
-
-  const events = await fetchMatchEvents(match);
-  if (!events) return null;
-
-  return persistMatchEvents(match, events);
 }
 
 /** Cache FIFA schedule/scores; enrich finished matches with goal/card timeline. */

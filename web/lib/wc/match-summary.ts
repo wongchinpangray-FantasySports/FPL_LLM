@@ -17,6 +17,7 @@ import {
 export type MatchSummaryResult = {
   summary: string;
   source: "cache" | "gemini" | "template";
+  fingerprint: string;
 };
 
 function normalizeLocale(locale: string): "en" | "zh" {
@@ -299,18 +300,18 @@ export async function getOrCreateMatchSummary(
 
   const cached = await loadCachedSummary(match.id, locale, fingerprint);
   if (cached) {
-    return { summary: cached, source: "cache" };
+    return { summary: cached, source: "cache", fingerprint };
   }
 
   const gemini = await generateWithGemini(match, enrichment, locale);
   if (gemini) {
     await saveCachedSummary(match, locale, gemini, fingerprint);
-    return { summary: gemini, source: "gemini" };
+    return { summary: gemini, source: "gemini", fingerprint };
   }
 
   const template = templateSummary(match, locale);
   await saveCachedSummary(match, locale, template, fingerprint);
-  return { summary: template, source: "template" };
+  return { summary: template, source: "template", fingerprint };
 }
 
 export function canSummarizeMatch(match: WcMatchRow): boolean {

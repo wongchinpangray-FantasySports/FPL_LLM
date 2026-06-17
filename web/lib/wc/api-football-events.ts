@@ -145,56 +145,60 @@ export async function fetchMatchEvents(
     return null;
   }
 
-  const fx = await resolveFixture(match);
-  if (!fx) return null;
+  try {
+    const fx = await resolveFixture(match);
+    if (!fx) return null;
 
-  const events = await apiFetch<ApiEvent[]>(
-    `/fixtures/events?fixture=${fx.fixture.id}`,
-  );
-  if (!events?.length) return null;
+    const events = await apiFetch<ApiEvent[]>(
+      `/fixtures/events?fixture=${fx.fixture.id}`,
+    );
+    if (!events?.length) return null;
 
-  const homeApi = normTeam(apiTeamName(match.home_name));
-  const home_goals: WcMatchGoal[] = [];
-  const away_goals: WcMatchGoal[] = [];
-  const home_cards: WcMatchCardEvent[] = [];
-  const away_cards: WcMatchCardEvent[] = [];
+    const homeApi = normTeam(apiTeamName(match.home_name));
+    const home_goals: WcMatchGoal[] = [];
+    const away_goals: WcMatchGoal[] = [];
+    const home_cards: WcMatchCardEvent[] = [];
+    const away_cards: WcMatchCardEvent[] = [];
 
-  events.forEach((ev, idx) => {
-    const isHome = normTeam(ev.team.name) === homeApi;
-    const minute = formatApiMinute(ev.time.elapsed, ev.time.extra);
-    const sort_key = minuteToSortKey(minute, idx);
-    const playerName = ev.player?.name?.trim();
-    if (!playerName) return;
+    events.forEach((ev, idx) => {
+      const isHome = normTeam(ev.team.name) === homeApi;
+      const minute = formatApiMinute(ev.time.elapsed, ev.time.extra);
+      const sort_key = minuteToSortKey(minute, idx);
+      const playerName = ev.player?.name?.trim();
+      if (!playerName) return;
 
-    if (ev.type === "Goal") {
-      const assistName = ev.assist?.name?.trim() ?? null;
-      const goal: WcMatchGoal = {
-        minute,
-        sort_key,
-        scorer: playerName,
-        scorer_display: formatFifaPlayerDisplay(playerName),
-        assist: assistName,
-        assist_display: assistName
-          ? formatFifaPlayerDisplay(assistName)
-          : null,
-      };
-      (isHome ? home_goals : away_goals).push(goal);
-      return;
-    }
+      if (ev.type === "Goal") {
+        const assistName = ev.assist?.name?.trim() ?? null;
+        const goal: WcMatchGoal = {
+          minute,
+          sort_key,
+          scorer: playerName,
+          scorer_display: formatFifaPlayerDisplay(playerName),
+          assist: assistName,
+          assist_display: assistName
+            ? formatFifaPlayerDisplay(assistName)
+            : null,
+        };
+        (isHome ? home_goals : away_goals).push(goal);
+        return;
+      }
 
-    if (ev.type === "Card") {
-      const card: WcMatchCardEvent = {
-        minute,
-        sort_key,
-        player: playerName,
-        player_display: formatFifaPlayerDisplay(playerName),
-        card: ev.detail.toLowerCase().includes("yellow") ? "yellow" : "red",
-      };
-      (isHome ? home_cards : away_cards).push(card);
-    }
-  });
+      if (ev.type === "Card") {
+        const card: WcMatchCardEvent = {
+          minute,
+          sort_key,
+          player: playerName,
+          player_display: formatFifaPlayerDisplay(playerName),
+          card: ev.detail.toLowerCase().includes("yellow") ? "yellow" : "red",
+        };
+        (isHome ? home_cards : away_cards).push(card);
+      }
+    });
 
-  return { home_goals, away_goals, home_cards, away_cards };
+    return { home_goals, away_goals, home_cards, away_cards };
+  } catch {
+    return null;
+  }
 }
 
 export function eventsHaveTimeline(events: MatchEventsPayload): boolean {
