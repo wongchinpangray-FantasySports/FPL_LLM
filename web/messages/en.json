@@ -580,6 +580,7 @@
     "matchesNoStats": "Team stats available after kickoff when configured.",
     "matchesStatsPending": "Loading team stats…",
     "matchesEmpty": "No matches for this round.",
+    "matchesEventsLoading": "Loading goal & card timeline…",
     "matchesSummaryButton": "Match summary",
     "matchesSummaryTitle": "{home} vs {away}",
     "matchesSummaryLoading": "Writing match summary…",

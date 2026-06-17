@@ -1,6 +1,14 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { DEFAULT_MODEL, getGenAI } from "@/lib/llm";
 import {
+  buildMatchEnrichment,
+  formatEnrichmentFacts,
+  formatMatchTimeline,
+  MATCH_ENRICHMENT_VERSION,
+  type MatchEnrichment,
+} from "@/lib/wc/match-enrichment";
+import {
+  buildWcMatchSchedule,
   isWcMatchFinished,
   type WcMatchGoal,
   type WcMatchRow,
@@ -15,33 +23,59 @@ function normalizeLocale(locale: string): "en" | "zh" {
   return locale.toLowerCase().startsWith("zh") ? "zh" : "en";
 }
 
-export function matchSummaryFingerprint(match: WcMatchRow): string {
+export function matchSummaryFingerprint(
+  match: WcMatchRow,
+  enrichment?: MatchEnrichment,
+): string {
   const goals = [...(match.home_goals ?? []), ...(match.away_goals ?? [])]
-    .map((g) => `${g.scorer}:${g.assist ?? ""}`)
+    .map(
+      (g) =>
+        `${g.minute ?? ""}:${g.scorer}:${g.assist ?? ""}:${g.fifa_player_id ?? ""}`,
+    )
+    .join("|");
+  const cards = [...(match.home_cards ?? []), ...(match.away_cards ?? [])]
+    .map((c) => `${c.minute ?? ""}:${c.player}:${c.card}`)
     .join("|");
   return [
+    MATCH_ENRICHMENT_VERSION,
     match.status,
     match.home_score ?? "",
     match.away_score ?? "",
+    match.home_penalty_score ?? "",
+    match.away_penalty_score ?? "",
     goals,
+    cards,
+    enrichment?.fingerprintExtra ?? "",
   ].join(":");
 }
 
 function formatGoalLine(g: WcMatchGoal, assistWord: string): string {
+  const min = g.minute ? `${g.minute}' ` : "";
   if (g.assist_display) {
-    return `${g.scorer_display} (${assistWord}: ${g.assist_display})`;
+    return `${min}${g.scorer_display} (${assistWord}: ${g.assist_display})`;
   }
-  return g.scorer_display;
+  return `${min}${g.scorer_display}`;
 }
 
-function buildFactsBlock(match: WcMatchRow): string {
-  const lines = [
+function buildFactsBlock(
+  match: WcMatchRow,
+  enrichment: MatchEnrichment,
+): string {
+  const timeline = formatMatchTimeline(match);
+  const lines: string[] = [];
+
+  if (timeline) {
+    lines.push("Match timeline (goals and cards, newest first):", timeline, "");
+  }
+
+  lines.push(
     `Round: ${match.round_label}`,
     `Venue: ${match.venue ?? "TBC"}${match.venue_city ? `, ${match.venue_city}` : ""}`,
     `Kickoff: ${match.kickoff ?? "TBC"}`,
     `Status: ${match.status}`,
     `Score: ${match.home_name} ${match.home_score ?? 0} - ${match.away_score ?? 0} ${match.away_name}`,
-  ];
+  );
+
   const homeGoals = match.home_goals ?? [];
   const awayGoals = match.away_goals ?? [];
   if (homeGoals.length) {
@@ -54,6 +88,27 @@ function buildFactsBlock(match: WcMatchRow): string {
       `${match.away_name} goals: ${awayGoals.map((g) => formatGoalLine(g, "assist")).join("; ")}`,
     );
   }
+
+  const homeCards = match.home_cards ?? [];
+  const awayCards = match.away_cards ?? [];
+  if (homeCards.length || awayCards.length) {
+    const cardLines: string[] = [];
+    for (const c of homeCards) {
+      const min = c.minute ? `${c.minute}' ` : "";
+      cardLines.push(
+        `${min}${c.player_display} ${c.card} card (${match.home_name})`,
+      );
+    }
+    for (const c of awayCards) {
+      const min = c.minute ? `${c.minute}' ` : "";
+      cardLines.push(
+        `${min}${c.player_display} ${c.card} card (${match.away_name})`,
+      );
+    }
+    lines.push(`Cards: ${cardLines.join("; ")}`);
+  }
+
+  lines.push("", "Additional context:", formatEnrichmentFacts(match, enrichment));
   return lines.join("\n");
 }
 
@@ -193,6 +248,7 @@ async function saveCachedSummary(
 
 async function generateWithGemini(
   match: WcMatchRow,
+  enrichment: MatchEnrichment,
   locale: "en" | "zh",
 ): Promise<string | null> {
   try {
@@ -202,13 +258,16 @@ async function generateWithGemini(
         ? "Write in 中文. Use a clear, engaging broadcast tone."
         : "Write in English. Use a clear, engaging broadcast tone.";
 
-    const prompt = `Write a short World Cup match summary (2 short paragraphs, under 120 words total).
-Use ONLY these facts — do not invent players, scores, or events:
+    const prompt = `Write a World Cup match summary (2–3 short paragraphs, under 180 words total).
+Use ONLY these facts — do not invent players, scores, minutes, or events:
 
-${buildFactsBlock(match)}
+${buildFactsBlock(match, enrichment)}
 
 ${langRule}
-Mention the final score, key goal scorers and assists, and one line on what the result means for the group stage if obvious.
+Open with the result and stage context. Lead with the goal and card timeline when minutes are listed.
+Cover key goal scorers and assists (mention club/position when provided).
+Include one paragraph on group standings or knockout implications when context is given.
+If a team had prior results listed, weave that form into the narrative.
 No bullet points. Plain prose only.`;
 
     const resp = await ai.models.generateContent({
@@ -230,16 +289,20 @@ No bullet points. Plain prose only.`;
 export async function getOrCreateMatchSummary(
   match: WcMatchRow,
   localeInput: string,
+  allMatches?: WcMatchRow[],
 ): Promise<MatchSummaryResult> {
   const locale = normalizeLocale(localeInput);
-  const fingerprint = matchSummaryFingerprint(match);
+  const schedule: WcMatchRow[] =
+    allMatches ?? (await buildWcMatchSchedule()).matches;
+  const enrichment = await buildMatchEnrichment(match, schedule);
+  const fingerprint = matchSummaryFingerprint(match, enrichment);
 
   const cached = await loadCachedSummary(match.id, locale, fingerprint);
   if (cached) {
     return { summary: cached, source: "cache" };
   }
 
-  const gemini = await generateWithGemini(match, locale);
+  const gemini = await generateWithGemini(match, enrichment, locale);
   if (gemini) {
     await saveCachedSummary(match, locale, gemini, fingerprint);
     return { summary: gemini, source: "gemini" };

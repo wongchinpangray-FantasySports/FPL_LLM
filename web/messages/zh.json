@@ -579,6 +579,7 @@
     "matchesNoStats": "开赛后且已配置数据源时显示球队数据。",
     "matchesStatsPending": "正在加载球队数据…",
     "matchesEmpty": "该轮次暂无比赛。",
+    "matchesEventsLoading": "加载进球与红黄牌时间线…",
     "matchesSummaryButton": "比赛战报",
     "matchesSummaryTitle": "{home} 对 {away}",
     "matchesSummaryLoading": "正在生成战报…",

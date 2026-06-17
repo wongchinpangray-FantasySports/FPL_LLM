@@ -30,6 +30,8 @@ export type FifaTournamentRow = {
   awaySquadAbbr: string;
   homeScore: number | null;
   awayScore: number | null;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
   homeGoalScorersAssists: unknown;
   awayGoalScorersAssists: unknown;
 };
@@ -37,6 +39,7 @@ export type FifaTournamentRow = {
 export type FifaRoundRow = {
   id: number;
   status: string;
+  stage?: string | null;
   startDate: string | null;
   endDate: string | null;
   tournaments: FifaTournamentRow[];
@@ -58,6 +61,8 @@ export type WcMatchGoal = {
   scorer_display: string;
   assist: string | null;
   assist_display: string | null;
+  fifa_player_id?: number;
+  fifa_assist_id?: number | null;
 };
 
 export type WcMatchCardEvent = {
@@ -72,6 +77,7 @@ export type WcMatchRow = {
   id: number;
   round_id: number;
   round_label: string;
+  round_stage: string | null;
   kickoff: string | null;
   venue: string | null;
   venue_city: string | null;
@@ -79,12 +85,16 @@ export type WcMatchRow = {
   period: string | null;
   minutes: number;
   extra_minutes: number;
+  home_squad_id: number;
+  away_squad_id: number;
   home_code: string;
   away_code: string;
   home_name: string;
   away_name: string;
   home_score: number | null;
   away_score: number | null;
+  home_penalty_score: number | null;
+  away_penalty_score: number | null;
   /** @deprecated plain-text fallback */
   home_scorers: string | null;
   away_scorers: string | null;
@@ -156,6 +166,8 @@ export function parseFifaGoals(
       scorer_display: formatFifaPlayerDisplay(scorer),
       assist,
       assist_display: assist ? formatFifaPlayerDisplay(assist) : null,
+      fifa_player_id: entry.playerId,
+      fifa_assist_id: entry.assistId ?? null,
     });
   });
   return goals.reverse();
@@ -250,6 +262,7 @@ export function parseFifaRoundsToMatches(
         id: m.id,
         round_id: round.id,
         round_label: roundLabel(round.id),
+        round_stage: round.stage ?? null,
         kickoff: m.date,
         venue: m.venueName,
         venue_city: m.venueCity,
@@ -257,12 +270,16 @@ export function parseFifaRoundsToMatches(
         period: m.period,
         minutes: m.minutes ?? 0,
         extra_minutes: m.extraMinutes ?? 0,
+        home_squad_id: m.homeSquadId,
+        away_squad_id: m.awaySquadId,
         home_code: squadAbbrToCode(m.homeSquadAbbr, m.homeSquadName),
         away_code: squadAbbrToCode(m.awaySquadAbbr, m.awaySquadName),
         home_name: m.homeSquadName,
         away_name: m.awaySquadName,
         home_score: m.homeScore,
         away_score: m.awayScore,
+        home_penalty_score: m.homePenaltyScore ?? null,
+        away_penalty_score: m.awayPenaltyScore ?? null,
         home_scorers: formatGoalScorersAssists(
           m.homeGoalScorersAssists,
           playerNames,

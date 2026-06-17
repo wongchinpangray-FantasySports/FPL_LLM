@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       rounds,
       matches: filtered,
       disclaimer:
-        "Match schedule, scores, and goal scorers from FIFA fantasy public feeds.",
+        "Schedule and scores from FIFA. Goal/card minutes from API-Football when configured.",
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load matches";

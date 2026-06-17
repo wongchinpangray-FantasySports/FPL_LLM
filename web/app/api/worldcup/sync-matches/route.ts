@@ -11,7 +11,7 @@ export async function POST() {
     const result = await syncWcMatchStats();
     return NextResponse.json({
       ...result,
-      hint: "Schedule and scores from FIFA rounds.json. Run daily during the tournament.",
+      hint: "FIFA schedule/scores plus goal & card minutes from API-Football when API_FOOTBALL_KEY is set.",
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Match sync failed";
