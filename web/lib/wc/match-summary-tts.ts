@@ -22,8 +22,10 @@ function ttsVoice(locale: "en" | "zh"): string {
 function ttsPrompt(summary: string, locale: "en" | "zh"): string {
   if (locale === "zh") {
     return (
-      "用专业、沉稳的足球评论员口吻，清晰自然地朗读以下世界杯比赛小结。" +
-      "语速适中，像在电台赛后总结，不要添加原文没有的内容：\n\n" +
+      "请用专业、沉稳的中文足球评论员口吻，完整朗读以下世界杯比赛战报。" +
+      "全文使用普通话，语速适中，像在电台赛后总结。" +
+      "不要添加原文没有的内容，不要改用英文：" +
+      "\n\n" +
       summary
     );
   }

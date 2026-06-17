@@ -5,7 +5,9 @@ import {
   formatEnrichmentFacts,
   formatMatchTimeline,
   MATCH_ENRICHMENT_VERSION,
+  roundLabelForLocale,
   type MatchEnrichment,
+  type SummaryLocale,
 } from "@/lib/wc/match-enrichment";
 import {
   buildWcMatchSchedule,
@@ -50,10 +52,16 @@ export function matchSummaryFingerprint(
   ].join(":");
 }
 
-function formatGoalLine(g: WcMatchGoal, assistWord: string): string {
+function formatGoalLine(
+  g: WcMatchGoal,
+  assistWord: string,
+  locale: SummaryLocale,
+): string {
   const min = g.minute ? `${g.minute}' ` : "";
   if (g.assist_display) {
-    return `${min}${g.scorer_display} (${assistWord}: ${g.assist_display})`;
+    return locale === "zh"
+      ? `${min}${g.scorer_display}（${assistWord}：${g.assist_display}）`
+      : `${min}${g.scorer_display} (${assistWord}: ${g.assist_display})`;
   }
   return `${min}${g.scorer_display}`;
 }
@@ -61,16 +69,67 @@ function formatGoalLine(g: WcMatchGoal, assistWord: string): string {
 function buildFactsBlock(
   match: WcMatchRow,
   enrichment: MatchEnrichment,
+  locale: SummaryLocale,
 ): string {
-  const timeline = formatMatchTimeline(match);
+  const timeline = formatMatchTimeline(match, locale);
   const lines: string[] = [];
+  const roundLabel = roundLabelForLocale(match, locale);
 
   if (timeline) {
-    lines.push("Match timeline (goals and cards, newest first):", timeline, "");
+    lines.push(
+      locale === "zh"
+        ? "比赛时间线（进球与红黄牌，由新到旧）："
+        : "Match timeline (goals and cards, newest first):",
+      timeline,
+      "",
+    );
+  }
+
+  if (locale === "zh") {
+    lines.push(
+      `轮次：${roundLabel}`,
+      `球场：${match.venue ?? "待定"}${match.venue_city ? `，${match.venue_city}` : ""}`,
+      `开球时间：${match.kickoff ?? "待定"}`,
+      `状态：${match.status === "complete" || match.status === "finished" ? "已结束" : match.status}`,
+      `比分：${match.home_name} ${match.home_score ?? 0} - ${match.away_score ?? 0} ${match.away_name}`,
+    );
+
+    const homeGoals = match.home_goals ?? [];
+    const awayGoals = match.away_goals ?? [];
+    if (homeGoals.length) {
+      lines.push(
+        `${match.home_name} 进球：${homeGoals.map((g) => formatGoalLine(g, "助攻", locale)).join("；")}`,
+      );
+    }
+    if (awayGoals.length) {
+      lines.push(
+        `${match.away_name} 进球：${awayGoals.map((g) => formatGoalLine(g, "助攻", locale)).join("；")}`,
+      );
+    }
+
+    const homeCards = match.home_cards ?? [];
+    const awayCards = match.away_cards ?? [];
+    if (homeCards.length || awayCards.length) {
+      const cardLines: string[] = [];
+      for (const c of homeCards) {
+        const min = c.minute ? `${c.minute}' ` : "";
+        const cardLabel = c.card === "red" ? "红牌" : "黄牌";
+        cardLines.push(`${min}${c.player_display} ${cardLabel}（${match.home_name}）`);
+      }
+      for (const c of awayCards) {
+        const min = c.minute ? `${c.minute}' ` : "";
+        const cardLabel = c.card === "red" ? "红牌" : "黄牌";
+        cardLines.push(`${min}${c.player_display} ${cardLabel}（${match.away_name}）`);
+      }
+      lines.push(`红黄牌：${cardLines.join("；")}`);
+    }
+
+    lines.push("", "补充背景：", formatEnrichmentFacts(match, enrichment, locale));
+    return lines.join("\n");
   }
 
   lines.push(
-    `Round: ${match.round_label}`,
+    `Round: ${roundLabel}`,
     `Venue: ${match.venue ?? "TBC"}${match.venue_city ? `, ${match.venue_city}` : ""}`,
     `Kickoff: ${match.kickoff ?? "TBC"}`,
     `Status: ${match.status}`,
@@ -81,12 +140,12 @@ function buildFactsBlock(
   const awayGoals = match.away_goals ?? [];
   if (homeGoals.length) {
     lines.push(
-      `${match.home_name} goals: ${homeGoals.map((g) => formatGoalLine(g, "assist")).join("; ")}`,
+      `${match.home_name} goals: ${homeGoals.map((g) => formatGoalLine(g, "assist", locale)).join("; ")}`,
     );
   }
   if (awayGoals.length) {
     lines.push(
-      `${match.away_name} goals: ${awayGoals.map((g) => formatGoalLine(g, "assist")).join("; ")}`,
+      `${match.away_name} goals: ${awayGoals.map((g) => formatGoalLine(g, "assist", locale)).join("; ")}`,
     );
   }
 
@@ -109,7 +168,7 @@ function buildFactsBlock(
     lines.push(`Cards: ${cardLines.join("; ")}`);
   }
 
-  lines.push("", "Additional context:", formatEnrichmentFacts(match, enrichment));
+  lines.push("", "Additional context:", formatEnrichmentFacts(match, enrichment, locale));
   return lines.join("\n");
 }
 
@@ -127,7 +186,7 @@ function templateSummary(match: WcMatchRow, locale: "en" | "zh"): string {
     else outcome = `${home} 与 ${away} ${hs}-${as} 战平`;
 
     const parts: string[] = [
-      `${match.round_label}，${outcome}${venue ? `（${match.venue}）` : ""}。`,
+      `${roundLabelForLocale(match, "zh")}，${outcome}${venue ? `（${match.venue}）` : ""}。`,
     ];
     const goalBits: string[] = [];
     for (const g of match.home_goals ?? []) {
@@ -250,21 +309,32 @@ async function saveCachedSummary(
 async function generateWithGemini(
   match: WcMatchRow,
   enrichment: MatchEnrichment,
-  locale: "en" | "zh",
+  locale: SummaryLocale,
 ): Promise<string | null> {
   try {
     const ai = await getGenAI();
-    const langRule =
-      locale === "zh"
-        ? "Write in 中文. Use a clear, engaging broadcast tone."
-        : "Write in English. Use a clear, engaging broadcast tone.";
+    const facts = buildFactsBlock(match, enrichment, locale);
 
-    const prompt = `Write a World Cup match summary (2–3 short paragraphs, under 180 words total).
+    const prompt =
+      locale === "zh"
+        ? `请根据以下素材撰写世界杯比赛战报（2–3 段，全文不超过 220 字）。
+仅使用所给事实，不得编造球员、比分、时间或事件。
+
+${facts}
+
+写作要求：
+- 全文必须使用简体中文，采用专业、流畅的赛后播报/战报语气
+- 除球员姓名、球队名、球场名等专有名词外，不得出现任何英文单词、英文缩写或英文句式
+- 开篇点明比分与比赛阶段；如有进球时间线，按叙事需要提及关键进球与助攻
+- 若素材中有小组积分或淘汰赛形势，用一段交代其影响
+- 若素材中有球队此前战绩，自然融入叙述
+- 不要使用项目符号或列表，只用连贯的散文段落`
+        : `Write a World Cup match summary (2–3 short paragraphs, under 180 words total).
 Use ONLY these facts — do not invent players, scores, minutes, or events:
 
-${buildFactsBlock(match, enrichment)}
+${facts}
 
-${langRule}
+Write in English. Use a clear, engaging broadcast tone.
 Open with the result and stage context. Lead with the goal and card timeline when minutes are listed.
 Cover key goal scorers and assists (mention club/position when provided).
 Include one paragraph on group standings or knockout implications when context is given.
@@ -274,7 +344,7 @@ No bullet points. Plain prose only.`;
     const resp = await ai.models.generateContent({
       model: DEFAULT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { temperature: 0.5 },
+      config: { temperature: locale === "zh" ? 0.35 : 0.5 },
     });
 
     const text = (resp.candidates?.[0]?.content?.parts ?? [])
@@ -295,7 +365,7 @@ export async function getOrCreateMatchSummary(
   const locale = normalizeLocale(localeInput);
   const schedule: WcMatchRow[] =
     allMatches ?? (await buildWcMatchSchedule()).matches;
-  const enrichment = await buildMatchEnrichment(match, schedule);
+  const enrichment = await buildMatchEnrichment(match, schedule, locale);
   const fingerprint = matchSummaryFingerprint(match, enrichment);
 
   const cached = await loadCachedSummary(match.id, locale, fingerprint);
