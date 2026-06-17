@@ -305,6 +305,7 @@ export function WcFantasyApp() {
             summaryTitle: t("matchesSummaryTitle"),
             summaryLoading: t("matchesSummaryLoading"),
             summaryError: t("matchesSummaryError"),
+            summaryAudioLoading: t("matchesSummaryAudioLoading"),
             summaryListen: t("matchesSummaryListen"),
             summaryPause: t("matchesSummaryPause"),
             summaryResume: t("matchesSummaryResume"),

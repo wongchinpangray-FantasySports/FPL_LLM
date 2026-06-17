@@ -1,12 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-function speechLang(locale: string): string {
-  return locale.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
-}
+import { useMatchSummarySpeech } from "@/lib/wc/use-match-summary-speech";
 
 export function WcMatchSummaryModal({
   open,
@@ -23,6 +20,7 @@ export function WcMatchSummaryModal({
   labels: {
     loading: string;
     error: string;
+    audioLoading: string;
     listen: string;
     pause: string;
     resume: string;
@@ -34,22 +32,12 @@ export function WcMatchSummaryModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
-  const [speaking, setSpeaking] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  const stopSpeech = useCallback(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    utteranceRef.current = null;
-    setSpeaking(false);
-    setPaused(false);
-  }, []);
+  const { speaking, paused, audioLoading, play, stop, togglePause } =
+    useMatchSummarySpeech(locale);
 
   useEffect(() => {
     if (!open) {
-      stopSpeech();
+      stop();
       return;
     }
 
@@ -92,44 +80,14 @@ export function WcMatchSummaryModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  useEffect(() => () => stopSpeech(), [stopSpeech]);
-
-  const startSpeech = useCallback(() => {
-    if (!summary || typeof window === "undefined" || !window.speechSynthesis) {
-      return;
-    }
-    stopSpeech();
-    const utterance = new SpeechSynthesisUtterance(summary);
-    utterance.lang = speechLang(locale);
-    utterance.rate = 0.95;
-    utterance.onend = () => {
-      setSpeaking(false);
-      setPaused(false);
-      utteranceRef.current = null;
-    };
-    utterance.onerror = () => {
-      setSpeaking(false);
-      setPaused(false);
-      utteranceRef.current = null;
-    };
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-    setSpeaking(true);
-    setPaused(false);
-  }, [summary, locale, stopSpeech]);
-
-  const togglePause = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    if (paused) {
-      window.speechSynthesis.resume();
-      setPaused(false);
-    } else {
-      window.speechSynthesis.pause();
-      setPaused(true);
-    }
-  }, [paused]);
+  const handleClose = useCallback(() => {
+    stop();
+    onClose();
+  }, [stop, onClose]);
 
   if (!open) return null;
+
+  const listenDisabled = loading || audioLoading || !summary;
 
   return (
     <div
@@ -142,10 +100,7 @@ export function WcMatchSummaryModal({
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label={labels.close}
-        onClick={() => {
-          stopSpeech();
-          onClose();
-        }}
+        onClick={handleClose}
       />
       <div
         className={cn(
@@ -175,13 +130,21 @@ export function WcMatchSummaryModal({
               {summary}
             </p>
           ) : null}
+          {audioLoading ? (
+            <p className="mt-3 text-xs text-brand-accent">{labels.audioLoading}</p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-4 py-3 sm:px-5">
           {summary ? (
             <>
               {!speaking ? (
-                <Button type="button" variant="secondary" onClick={startSpeech}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={listenDisabled}
+                  onClick={() => void play(summary, matchId)}
+                >
                   {labels.listen}
                 </Button>
               ) : (
@@ -189,20 +152,14 @@ export function WcMatchSummaryModal({
                   <Button type="button" variant="secondary" onClick={togglePause}>
                     {paused ? labels.resume : labels.pause}
                   </Button>
-                  <Button type="button" variant="secondary" onClick={stopSpeech}>
+                  <Button type="button" variant="secondary" onClick={stop}>
                     {labels.stop}
                   </Button>
                 </>
               )}
             </>
           ) : null}
-          <Button
-            type="button"
-            onClick={() => {
-              stopSpeech();
-              onClose();
-            }}
-          >
+          <Button type="button" onClick={handleClose}>
             {labels.close}
           </Button>
         </div>

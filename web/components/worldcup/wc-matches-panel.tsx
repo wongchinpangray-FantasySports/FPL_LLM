@@ -51,6 +51,7 @@ function MatchCard({
     summaryTitle: string;
     summaryLoading: string;
     summaryError: string;
+    summaryAudioLoading: string;
     summaryListen: string;
     summaryPause: string;
     summaryResume: string;
@@ -172,6 +173,7 @@ export function WcMatchesPanel({
     summaryTitle: string;
     summaryLoading: string;
     summaryError: string;
+    summaryAudioLoading: string;
     summaryListen: string;
     summaryPause: string;
     summaryResume: string;

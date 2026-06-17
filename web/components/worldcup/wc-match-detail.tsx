@@ -80,6 +80,7 @@ export function WcMatchDetail({
     summaryTitle: string;
     summaryLoading: string;
     summaryError: string;
+    summaryAudioLoading: string;
     summaryListen: string;
     summaryPause: string;
     summaryResume: string;
@@ -187,6 +188,7 @@ export function WcMatchDetail({
         labels={{
           loading: labels.summaryLoading,
           error: labels.summaryError,
+          audioLoading: labels.summaryAudioLoading,
           listen: labels.summaryListen,
           pause: labels.summaryPause,
           resume: labels.summaryResume,
