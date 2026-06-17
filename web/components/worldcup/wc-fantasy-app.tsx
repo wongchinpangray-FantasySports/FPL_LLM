@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
 import type { WcScoutingReport } from "@/lib/wc/scouting";
@@ -12,8 +12,9 @@ import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
 import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
 
 import { WcMatchesPanel } from "@/components/worldcup/wc-matches-panel";
+import { WcNewsPanel } from "@/components/worldcup/wc-news-panel";
 
-type Tab = "fdr" | "xp" | "scouting" | "matches";
+type Tab = "fdr" | "xp" | "scouting" | "matches" | "news";
 
 type ContextPayload = {
   fdrGrid: WcFdrRow[];
@@ -45,6 +46,7 @@ async function readApiJson<T>(res: Response): Promise<T> {
 
 export function WcFantasyApp() {
   const t = useTranslations("worldcup");
+  const locale = useLocale();
   const [tab, setTab] = useState<Tab>("fdr");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +119,7 @@ export function WcFantasyApp() {
     { id: "xp", label: t("tabXp") },
     { id: "scouting", label: t("tabScouting") },
     { id: "matches", label: t("tabMatches") },
+    { id: "news", label: t("tabNews") },
   ];
 
   const positionOptions = [
@@ -175,6 +178,7 @@ export function WcFantasyApp() {
           tab === "scouting" ? scouting?.disclaimer : undefined
         }
         matchesNote={tab === "matches" ? t("matchesDisclaimer") : undefined}
+        newsNote={tab === "news" ? t("newsDisclaimer") : undefined}
         moreLabel={t("aboutNotes")}
       />
 
@@ -311,6 +315,35 @@ export function WcFantasyApp() {
             summaryResume: t("matchesSummaryResume"),
             summaryStop: t("matchesSummaryStop"),
             summaryClose: t("matchesSummaryClose"),
+          }}
+        />
+      ) : null}
+
+      {tab === "news" ? (
+        <WcNewsPanel
+          locale={locale}
+          title={t("newsTitle")}
+          summary={t("newsSummary")}
+          detail={t("newsDetail")}
+          moreLabel={t("moreDetail")}
+          labels={{
+            filterRegion: t("newsFilterRegion"),
+            regionAll: t("newsRegionAll"),
+            editorialOnly: t("newsEditorialOnly"),
+            editorialBadge: t("newsEditorialBadge"),
+            readMore: t("newsReadMore"),
+            loading: t("loading"),
+            empty: t("newsEmpty"),
+            refresh: t("newsRefresh"),
+            count: t("newsCount"),
+            regions: {
+              US: t("newsRegionUs"),
+              UK: t("newsRegionUk"),
+              EU: t("newsRegionEu"),
+              LATAM: t("newsRegionLatam"),
+              APAC: t("newsRegionApac"),
+              GLOBAL: t("newsRegionGlobal"),
+            },
           }}
         />
       ) : null}
