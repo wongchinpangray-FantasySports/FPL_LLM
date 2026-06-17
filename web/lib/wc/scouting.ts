@@ -71,6 +71,7 @@ export type WcScoutingReport = {
 export type ScoutingXpSnap = {
   xp_total: number;
   avg_fdr: number;
+  remaining_mds?: number;
 };
 
 function gemScore(
@@ -81,7 +82,7 @@ function gemScore(
   const price = player.price ?? 5.5;
   const ownershipEdge = Math.max(0, (MAX_SELECTION_PCT - sel) / MAX_SELECTION_PCT);
   const valueEdge = Math.max(0, (7 - Math.min(7, price)) / 7);
-  const xpEdge = xp.xp_total / 12;
+  const xpEdge = xp.xp_total / Math.max(4, (xp.remaining_mds ?? 3) * 4);
   const fdr = xp.avg_fdr;
   const fixtureEdge = Math.max(0, (5 - fdr) / 4);
 
@@ -122,10 +123,17 @@ function buildInsight(player: WcPlayer, xp: ScoutingXpSnap): string {
   else if (price > 0) parts.push(`$${price.toFixed(1)}m`);
 
   parts.push(`${xp.xp_total.toFixed(1)} proj. xP`);
+  if (xp.remaining_mds != null && xp.remaining_mds < 3) {
+    parts.push(`${xp.remaining_mds} MD${xp.remaining_mds === 1 ? "" : "s"} left`);
+  }
   parts.push(`avg FDR ${fdr}`);
 
   if (player.fpl_id != null && (player.xg > 0.1 || player.minutes > 0)) {
-    parts.push("FPL form backed");
+    parts.push(
+      player.minutes > 0 && player.minutes < 500
+        ? "WC form backed"
+        : "FPL form backed",
+    );
   } else {
     parts.push("FIFA pool differential");
   }

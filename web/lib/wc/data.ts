@@ -6,6 +6,12 @@ import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import {
+  buildWcProjectionMeta,
+  filterFixturesForProjection,
+  syncWcFixtureStatus,
+  type WcProjectionMeta,
+} from "@/lib/wc/projection-context";
+import {
   buildFplNameIndexes,
   buildFplPlayerIndex,
   type FplPlayerIndex,
@@ -83,11 +89,31 @@ async function loadFixtures() {
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("wc_fixtures")
-    .select("id,matchday,home_team_id,away_team_id")
+    .select("id,matchday,home_team_id,away_team_id,finished,home_score,away_score")
     .order("matchday");
 
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+async function loadProjectionInputs(): Promise<{
+  teams: Map<number, WcTeam>;
+  fixtures: Awaited<ReturnType<typeof loadFixtures>>;
+  projectionFixtures: Awaited<ReturnType<typeof loadFixtures>>;
+  projection: WcProjectionMeta;
+}> {
+  try {
+    await syncWcFixtureStatus();
+  } catch {
+    /* non-fatal — projections still work from stale fixture flags */
+  }
+
+  const teams = await loadTeams();
+  const fixtures = await loadFixtures();
+  const projection = buildWcProjectionMeta(fixtures);
+  const projectionFixtures = filterFixturesForProjection(fixtures, projection);
+
+  return { teams, fixtures, projectionFixtures, projection };
 }
 
 function mapWcPlayerRow(r: Record<string, unknown>): WcPlayer {
@@ -215,11 +241,20 @@ export async function buildWcFdrGrid(): Promise<WcFdrRow[]> {
 
 async function buildWcXpRowsFromPlayers(
   players: WcPlayer[],
-): Promise<{ matchdays: number[]; rows: WcXpRow[] }> {
-  const teams = await loadTeams();
-  const fixtures = await loadFixtures();
+): Promise<{
+  matchdays: number[];
+  rows: WcXpRow[];
+  projection: WcProjectionMeta;
+}> {
+  const { teams, fixtures, projectionFixtures, projection } =
+    await loadProjectionInputs();
   const fdrLookup = buildWcFdrLookup(teams, fixtures);
-  const projections = projectWcPlayers(players, teams, fixtures, fdrLookup);
+  const projections = projectWcPlayers(
+    players,
+    teams,
+    projectionFixtures,
+    fdrLookup,
+  );
   const matchdays = [...new Set(fixtures.map((f) => f.matchday as number))].sort(
     (a, b) => a - b,
   );
@@ -246,12 +281,13 @@ async function buildWcXpRowsFromPlayers(
     };
   });
 
-  return { matchdays, rows };
+  return { matchdays, rows, projection };
 }
 
 export async function buildWcXpRows(position?: string): Promise<{
   matchdays: number[];
   rows: WcXpRow[];
+  projection: WcProjectionMeta;
 }> {
   await ensureWcSeeded();
   let players = await loadPlayers();
@@ -298,13 +334,12 @@ export async function xpTotalForPlayer(
   playerId: number,
   players?: WcPlayer[],
 ): Promise<number> {
-  const teams = await loadTeams();
-  const fixtures = await loadFixtures();
+  const { teams, fixtures, projectionFixtures } = await loadProjectionInputs();
   const fdrLookup = buildWcFdrLookup(teams, fixtures);
   const pool = players ?? (await loadPlayers());
   const player = pool.find((p) => p.id === playerId);
   if (!player) return 0;
-  const [proj] = projectWcPlayers([player], teams, fixtures, fdrLookup);
+  const [proj] = projectWcPlayers([player], teams, projectionFixtures, fdrLookup);
   return proj?.xp_total ?? 0;
 }
 
@@ -368,30 +403,47 @@ export async function loadFplPlayerIndex(): Promise<FplPlayerIndex> {
 
 async function buildWcScoutingXpSnaps(
   players: WcPlayer[],
-): Promise<Map<number, ScoutingXpSnap>> {
-  const teams = await loadTeams();
-  const fixtures = await loadFixtures();
+): Promise<{ snaps: Map<number, ScoutingXpSnap>; projection: WcProjectionMeta }> {
+  const { teams, fixtures, projectionFixtures, projection } =
+    await loadProjectionInputs();
   const fdrLookup = buildWcFdrLookup(teams, fixtures);
-  const projections = projectWcPlayers(players, teams, fixtures, fdrLookup);
+  const projections = projectWcPlayers(
+    players,
+    teams,
+    projectionFixtures,
+    fdrLookup,
+  );
   const map = new Map<number, ScoutingXpSnap>();
+  const remainingMds = Math.max(1, projection.remaining_matchdays.length);
   for (const p of projections) {
     const fdrs = p.fixtures.map((f) => f.fdr);
     const avg_fdr =
       fdrs.length > 0
         ? fdrs.reduce((s, f) => s + f, 0) / fdrs.length
         : 3;
-    map.set(p.player.id, { xp_total: p.xp_total, avg_fdr });
+    map.set(p.player.id, {
+      xp_total: p.xp_total,
+      avg_fdr,
+      remaining_mds: remainingMds,
+    });
   }
-  return map;
+  return { snaps: map, projection };
 }
 
-export async function buildWcScouting(): Promise<WcScoutingReport> {
+export async function buildWcScouting(): Promise<{
+  report: WcScoutingReport;
+  projection: WcProjectionMeta;
+}> {
   await ensureWcSeeded();
+  await ensureWcPlayerPool();
   const [players, fplIndex] = await Promise.all([
     loadPlayers({ readOnly: true }),
     loadFplPlayerIndex(),
   ]);
   const fplIndexes = buildFplNameIndexes(fplIndex);
-  const xpById = await buildWcScoutingXpSnaps(players);
-  return buildWcScoutingReport(players, xpById, fplIndexes);
+  const { snaps: xpById, projection } = await buildWcScoutingXpSnaps(players);
+  return {
+    report: buildWcScoutingReport(players, xpById, fplIndexes),
+    projection,
+  };
 }

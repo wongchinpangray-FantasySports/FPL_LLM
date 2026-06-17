@@ -23,7 +23,7 @@ export async function enrichWcPlayersFromFpl(
 ): Promise<{ matched: number }> {
   const { data: wcRows, error: wErr } = await supa
     .from("wc_players")
-    .select("id,name,fpl_id,source")
+    .select("id,name,fpl_id,source,minutes,goals,assists")
     .eq("source", "fifa");
   if (wErr) throw new Error(wErr.message);
 
@@ -47,6 +47,7 @@ export async function enrichWcPlayersFromFpl(
   const pending: {
     id: number;
     fpl_id: number;
+    hasTournamentStats: boolean;
     goals: number;
     assists: number;
     xg: number;
@@ -62,9 +63,12 @@ export async function enrichWcPlayersFromFpl(
     if (!hits || hits.length !== 1) continue;
 
     const f = hits[0]!;
+    const hasTournamentStats =
+      num(w.minutes) > 0 || num(w.goals) > 0 || num(w.assists) > 0;
     pending.push({
       id: w.id as number,
       fpl_id: f.fpl_id as number,
+      hasTournamentStats,
       goals: num(f.goals_scored),
       assists: num(f.assists),
       xg: num(f.expected_goals),
@@ -80,15 +84,19 @@ export async function enrichWcPlayersFromFpl(
     for (const row of chunk) {
       const { error } = await supa
         .from("wc_players")
-        .update({
-          fpl_id: row.fpl_id,
-          goals: row.goals,
-          assists: row.assists,
-          xg: row.xg,
-          xa: row.xa,
-          form: row.form,
-          minutes: row.minutes,
-        })
+        .update(
+          row.hasTournamentStats
+            ? { fpl_id: row.fpl_id }
+            : {
+                fpl_id: row.fpl_id,
+                goals: row.goals,
+                assists: row.assists,
+                xg: row.xg,
+                xa: row.xa,
+                form: row.form,
+                minutes: row.minutes,
+              },
+        )
         .eq("id", row.id);
       if (error) throw new Error(error.message);
     }

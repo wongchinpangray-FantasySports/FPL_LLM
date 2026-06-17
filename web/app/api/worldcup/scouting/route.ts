@@ -7,11 +7,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     await ensureWcSeeded();
-    const report = await buildWcScouting();
+    const { report, projection } = await buildWcScouting();
     return NextResponse.json({
       ...report,
+      projection,
       disclaimer:
-        "Gem scores blend projected group-stage xP, FIFA % selected, and price. Excludes Premier League club players (FPL-linked) and spotlight clubs (Real Madrid, Barcelona, Bayern, PSG).",
+        "Gem scores blend projected remaining group xP, FIFA % selected, and price. Tournament stats from FIFA fantasy when available. Excludes Premier League club players (FPL-linked) and spotlight clubs (Real Madrid, Barcelona, Bayern, PSG).",
     });
   } catch (e) {
     const message =

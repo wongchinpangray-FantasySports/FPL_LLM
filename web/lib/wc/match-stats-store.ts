@@ -11,6 +11,7 @@ import {
   type WcMatchGoal,
   type WcMatchRow,
 } from "@/lib/wc/fifa-rounds";
+import { syncWcFixtureStatus } from "@/lib/wc/projection-context";
 
 type EventsRow = {
   fifa_tournament_id: number;
@@ -183,6 +184,7 @@ export async function syncWcMatchStats(opts?: {
   schedule_upserted: number;
   events_enriched: number;
   events_skipped: number;
+  fixtures_updated: number;
 }> {
   const limit = Math.min(12, Math.max(0, opts?.eventsLimit ?? 8));
   const { matches } = await buildWcMatchSchedule();
@@ -220,12 +222,19 @@ export async function syncWcMatchStats(opts?: {
 
   let events_enriched = 0;
   let events_skipped = 0;
+  let fixtures_updated = 0;
+  try {
+    fixtures_updated = await syncWcFixtureStatus();
+  } catch {
+    /* non-fatal */
+  }
 
   if (!isApiFootballConfigured() || limit === 0) {
     return {
       schedule_upserted: scheduleRows.length,
       events_enriched: 0,
       events_skipped: 0,
+      fixtures_updated,
     };
   }
 
@@ -235,6 +244,7 @@ export async function syncWcMatchStats(opts?: {
       schedule_upserted: scheduleRows.length,
       events_enriched: 0,
       events_skipped: 0,
+      fixtures_updated,
     };
   }
 
@@ -258,5 +268,6 @@ export async function syncWcMatchStats(opts?: {
     schedule_upserted: scheduleRows.length,
     events_enriched,
     events_skipped,
+    fixtures_updated,
   };
 }
