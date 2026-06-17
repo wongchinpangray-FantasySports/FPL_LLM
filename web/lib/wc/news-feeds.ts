@@ -31,21 +31,6 @@ export type WcNewsItem = {
   is_editorial: boolean;
 };
 
-/** Only include articles published within this window (72 hours). */
-export const WC_NEWS_MAX_AGE_MS = 72 * 60 * 60 * 1000;
-export const WC_NEWS_MAX_AGE_HOURS = 72;
-
-function isWithinNewsWindow(
-  publishedAt: string | null,
-  nowMs: number,
-  maxAgeMs: number,
-): boolean {
-  if (!publishedAt) return false;
-  const ts = Date.parse(publishedAt);
-  if (!Number.isFinite(ts)) return false;
-  return nowMs - ts <= maxAgeMs && ts <= nowMs + 60_000;
-}
-
 /** Google News + major outlets — editorial / analysis bias where possible. */
 export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
   {
@@ -54,7 +39,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "US",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial+OR+column+OR+analysis)+when:3d&hl=en-US&gl=US&ceid=US:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial+OR+column+OR+analysis)&hl=en-US&gl=US&ceid=US:en",
   },
   {
     id: "gn-uk-editorial",
@@ -62,7 +47,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "UK",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial+OR+comment)+when:3d&hl=en-GB&gl=GB&ceid=GB:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial+OR+comment)&hl=en-GB&gl=GB&ceid=GB:en",
   },
   {
     id: "gn-au-editorial",
@@ -70,7 +55,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "APAC",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+analysis)+when:3d&hl=en-AU&gl=AU&ceid=AU:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+analysis)&hl=en-AU&gl=AU&ceid=AU:en",
   },
   {
     id: "gn-ca-editorial",
@@ -78,7 +63,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "US",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial)+when:3d&hl=en-CA&gl=CA&ceid=CA:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(opinion+OR+editorial)&hl=en-CA&gl=CA&ceid=CA:en",
   },
   {
     id: "gn-de-kommentar",
@@ -86,7 +71,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "EU",
     lang: "de",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=WM+2026+(Kommentar+OR+Analyse+OR+Meinung)+when:3d&hl=de&gl=DE&ceid=DE:de",
+    url: "https://news.google.com/rss/search?q=WM+2026+(Kommentar+OR+Analyse+OR+Meinung)&hl=de&gl=DE&ceid=DE:de",
   },
   {
     id: "gn-es-opinion",
@@ -94,7 +79,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "EU",
     lang: "es",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis+OR+columna)+when:3d&hl=es&gl=ES&ceid=ES:es",
+    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis+OR+columna)&hl=es&gl=ES&ceid=ES:es",
   },
   {
     id: "gn-fr-editorial",
@@ -102,7 +87,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "EU",
     lang: "fr",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Coupe+du+monde+2026+(opinion+OR+analyse+OR+%C3%A9ditorial)+when:3d&hl=fr&gl=FR&ceid=FR:fr",
+    url: "https://news.google.com/rss/search?q=Coupe+du+monde+2026+(opinion+OR+analyse+OR+%C3%A9ditorial)&hl=fr&gl=FR&ceid=FR:fr",
   },
   {
     id: "gn-it-editorial",
@@ -110,7 +95,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "EU",
     lang: "it",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Mondiale+2026+(opinione+OR+editoriale+OR+analisi)+when:3d&hl=it&gl=IT&ceid=IT:it",
+    url: "https://news.google.com/rss/search?q=Mondiale+2026+(opinione+OR+editoriale+OR+analisi)&hl=it&gl=IT&ceid=IT:it",
   },
   {
     id: "gn-br-opiniao",
@@ -118,7 +103,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "LATAM",
     lang: "pt",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Copa+do+Mundo+2026+(opini%C3%A3o+OR+an%C3%A1lise+OR+coluna)+when:3d&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+    url: "https://news.google.com/rss/search?q=Copa+do+Mundo+2026+(opini%C3%A3o+OR+an%C3%A1lise+OR+coluna)&hl=pt-BR&gl=BR&ceid=BR:pt-419",
   },
   {
     id: "gn-mx-editorial",
@@ -126,7 +111,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "LATAM",
     lang: "es",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis)+when:3d&hl=es-419&gl=MX&ceid=MX:es-419",
+    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis)&hl=es-419&gl=MX&ceid=MX:es-419",
   },
   {
     id: "gn-ar-editorial",
@@ -134,7 +119,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "LATAM",
     lang: "es",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis)+when:3d&hl=es-419&gl=AR&ceid=AR:es-419",
+    url: "https://news.google.com/rss/search?q=Mundial+2026+(opini%C3%B3n+OR+an%C3%A1lisis)&hl=es-419&gl=AR&ceid=AR:es-419",
   },
   {
     id: "gn-zh-comment",
@@ -142,7 +127,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "APAC",
     lang: "zh",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=%E4%B8%96%E7%95%8C%E6%9D%AF+2026+(%E8%AF%84%E8%AE%BA+OR+%E4%B8%93%E6%A0%8F+OR+%E7%82%B9%E8%AF%84)+when:3d&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
+    url: "https://news.google.com/rss/search?q=%E4%B8%96%E7%95%8C%E6%9D%AF+2026+(%E8%AF%84%E8%AE%BA+OR+%E4%B8%93%E6%A0%8F+OR+%E7%82%B9%E8%AF%84)&hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
   },
   {
     id: "gn-jp-editorial",
@@ -150,7 +135,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "APAC",
     lang: "ja",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=%E3%83%AF%E3%83%BC%E3%83%AB%E3%83%89%E3%82%AB%E3%83%83%E3%83%97+2026+%E8%A7%A3%E8%AA%AC+when:3d&hl=ja&gl=JP&ceid=JP:ja",
+    url: "https://news.google.com/rss/search?q=%E3%83%AF%E3%83%BC%E3%83%AB%E3%83%89%E3%82%AB%E3%83%83%E3%83%97+2026+%E8%A7%A3%E8%AA%AC&hl=ja&gl=JP&ceid=JP:ja",
   },
   {
     id: "gn-in-analysis",
@@ -158,7 +143,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "APAC",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion+OR+column)+when:3d&hl=en-IN&gl=IN&ceid=IN:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion+OR+column)&hl=en-IN&gl=IN&ceid=IN:en",
   },
   {
     id: "gn-ng-analysis",
@@ -166,7 +151,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "GLOBAL",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion)+when:3d&hl=en-NG&gl=NG&ceid=NG:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion)&hl=en-NG&gl=NG&ceid=NG:en",
   },
   {
     id: "gn-za-analysis",
@@ -174,7 +159,7 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     region: "GLOBAL",
     lang: "en",
     editorialBias: true,
-    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion)+when:3d&hl=en-ZA&gl=ZA&ceid=ZA:en",
+    url: "https://news.google.com/rss/search?q=World+Cup+2026+(analysis+OR+opinion)&hl=en-ZA&gl=ZA&ceid=ZA:en",
   },
   {
     id: "guardian-wc2026",
@@ -218,8 +203,11 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
 ];
 
 const FETCH_HEADERS = {
-  Accept: "application/rss+xml, application/xml, text/xml, */*",
-  "User-Agent": "FPL-LLM/1.0 (+https://faleague-ai.com; World Cup news aggregator)",
+  Accept:
+    "application/rss+xml, application/xml, text/xml, application/atom+xml, */*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 };
 
 const EDITORIAL_RE =
@@ -365,30 +353,51 @@ function dedupeKey(title: string, url: string): string {
 
 async function fetchFeedXml(url: string): Promise<string | null> {
   try {
+    const headers: Record<string, string> = { ...FETCH_HEADERS };
+    if (url.includes("news.google.com")) {
+      headers.Referer = "https://news.google.com/";
+    }
     const res = await fetch(url, {
-      headers: FETCH_HEADERS,
+      headers,
       cache: "no-store",
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return null;
-    return await res.text();
+    const text = await res.text();
+    if (!/<rss|<feed/i.test(text)) return null;
+    return text;
   } catch {
     return null;
   }
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency = 6,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, worker),
+  );
+  return results;
+}
+
 export async function fetchWcNewsItems(opts?: {
   limit?: number;
   editorialOnly?: boolean;
-  maxAgeMs?: number;
 }): Promise<WcNewsItem[]> {
   const limit = Math.min(150, Math.max(20, opts?.limit ?? 100));
   const editorialOnly = opts?.editorialOnly ?? false;
-  const maxAgeMs = opts?.maxAgeMs ?? WC_NEWS_MAX_AGE_MS;
-  const nowMs = Date.now();
 
-  const batches = await Promise.all(
-    WC_NEWS_FEEDS.map(async (feed) => {
+  const batches = await mapWithConcurrency(WC_NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
       if (!xml) return [] as WcNewsItem[];
 
@@ -396,8 +405,6 @@ export async function fetchWcNewsItems(opts?: {
       const out: WcNewsItem[] = [];
 
       for (const row of parsed) {
-        if (!isWithinNewsWindow(row.published_at, nowMs, maxAgeMs)) continue;
-
         const text = `${row.title} ${row.summary}`;
         if (feed.filter && !feed.filter.test(text)) continue;
         if (!feed.filter && !feed.editorialBias && !WC_RE.test(text)) continue;
@@ -421,8 +428,7 @@ export async function fetchWcNewsItems(opts?: {
         });
       }
       return out;
-    }),
-  );
+  });
 
   const seen = new Set<string>();
   const merged: WcNewsItem[] = [];
@@ -443,54 +449,4 @@ export async function fetchWcNewsItems(opts?: {
   });
 
   return merged.slice(0, limit);
-}
-
-let cache: { at: number; items: WcNewsItem[]; editorialOnly: boolean } | null =
-  null;
-const CACHE_MS = 20 * 60 * 1000;
-
-export async function getCachedWcNews(opts?: {
-  limit?: number;
-  editorialOnly?: boolean;
-  refresh?: boolean;
-  maxAgeMs?: number;
-}): Promise<{
-  items: WcNewsItem[];
-  cached: boolean;
-  fetched_at: string;
-  max_age_hours: number;
-}> {
-  const editorialOnly = opts?.editorialOnly ?? false;
-  const maxAgeMs = opts?.maxAgeMs ?? WC_NEWS_MAX_AGE_MS;
-  const now = Date.now();
-
-  if (
-    !opts?.refresh &&
-    cache &&
-    cache.editorialOnly === editorialOnly &&
-    now - cache.at < CACHE_MS
-  ) {
-    const limit = opts?.limit ?? 100;
-    return {
-      items: cache.items.slice(0, limit),
-      cached: true,
-      fetched_at: new Date(cache.at).toISOString(),
-      max_age_hours: WC_NEWS_MAX_AGE_HOURS,
-    };
-  }
-
-  const items = await fetchWcNewsItems({
-    limit: 150,
-    editorialOnly,
-    maxAgeMs,
-  });
-  cache = { at: now, items, editorialOnly };
-
-  const limit = opts?.limit ?? 100;
-  return {
-    items: items.slice(0, limit),
-    cached: false,
-    fetched_at: new Date(now).toISOString(),
-    max_age_hours: WC_NEWS_MAX_AGE_HOURS,
-  };
 }
