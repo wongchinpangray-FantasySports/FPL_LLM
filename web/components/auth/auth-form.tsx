@@ -3,12 +3,26 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Mode = "login" | "signup";
+
+async function authRequest(
+  mode: Mode,
+  email: string,
+  password: string,
+): Promise<{ error?: string }> {
+  const res = await fetch(`/api/auth/${mode === "signup" ? "signup" : "login"}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = (await res.json()) as { error?: string };
+  if (!res.ok) return { error: data.error ?? "Request failed" };
+  return {};
+}
 
 export function AuthForm({
   mode,
@@ -40,22 +54,14 @@ export function AuthForm({
 
     setLoading(true);
     try {
-      const supa = await createSupabaseBrowserClient();
+      const trimmed = email.trim();
+      const result = await authRequest(mode, trimmed, password);
+      if (result.error) throw new Error(result.error);
+
       if (mode === "signup") {
-        const { error: signUpError } = await supa.auth.signUp({
-          email: email.trim(),
-          password,
-        });
-        if (signUpError) throw signUpError;
         router.push("/onboarding");
         return;
       }
-
-      const { error: signInError } = await supa.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) throw signInError;
 
       const meRes = await fetch("/api/account/me");
       const me = (await meRes.json()) as {
