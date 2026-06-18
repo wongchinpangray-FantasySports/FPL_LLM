@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LocaleHtmlLang } from "@/components/locale-html-lang";
+import { AuthNav } from "@/components/auth/auth-nav";
 
 type Props = {
   children: React.ReactNode;
@@ -57,6 +58,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <SiteNav />
           </div>
           <LanguageSwitcher />
+          <AuthNav />
         </div>
       </header>
       <main className="container flex w-full flex-1 flex-col py-8 md:py-10 lg:py-12">
