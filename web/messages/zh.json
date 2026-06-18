@@ -727,6 +727,8 @@
   "account": {
     "title": "你的账户",
     "loading": "加载中…",
+    "loadError": "无法加载账户信息。",
+    "themeError": "无法更新主题。",
     "signedOut": "你尚未登录。",
     "signIn": "登录",
     "email": "邮箱",
@@ -734,6 +736,22 @@
     "onboarding": "个性化设置",
     "complete": "已完成",
     "incomplete": "未完成",
-    "finishOnboarding": "完成个性化设置"
+    "finishOnboarding": "完成个性化设置",
+    "editPreferences": "编辑偏好",
+    "loginDays": "登录天数",
+    "pageTheme": "页面主题",
+    "pageThemeHint": "用你喜爱的俱乐部或国家队配色装饰账户页。",
+    "themeClub": "俱乐部",
+    "themeNational": "国家队",
+    "yourPreferences": "你的偏好",
+    "noPreferences": "尚未保存偏好。",
+    "nationalTeam": "国家队",
+    "leagues": "赛事",
+    "leagueEpl": "英超",
+    "leagueWc": "世界杯",
+    "fplClub": "喜爱俱乐部",
+    "players": "关注球员",
+    "newsRegions": "新闻地区",
+    "notSet": "未设置"
   }
 }

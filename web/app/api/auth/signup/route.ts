@@ -3,6 +3,7 @@ import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { confirmUserEmail } from "@/lib/auth/confirm-user";
+import { recordLoginDay } from "@/lib/auth/record-login-day";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,11 @@ export async function POST(req: Request) {
     });
     if (signInErr) {
       return NextResponse.json({ error: signInErr.message }, { status: 400 });
+    }
+
+    const { data: sessionData } = await supa.auth.getUser();
+    if (sessionData.user) {
+      await recordLoginDay(sessionData.user.id);
     }
 
     return NextResponse.json({ ok: true });

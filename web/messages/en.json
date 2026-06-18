@@ -728,6 +728,8 @@
   "account": {
     "title": "Your account",
     "loading": "Loading…",
+    "loadError": "Could not load your account.",
+    "themeError": "Could not update theme.",
     "signedOut": "You are not signed in.",
     "signIn": "Sign in",
     "email": "Email",
@@ -735,6 +737,22 @@
     "onboarding": "Onboarding",
     "complete": "Complete",
     "incomplete": "Not finished",
-    "finishOnboarding": "Finish personalisation"
+    "finishOnboarding": "Finish personalisation",
+    "editPreferences": "Edit preferences",
+    "loginDays": "login days",
+    "pageTheme": "Page theme",
+    "pageThemeHint": "Decorate your account with your favourite club or national team colours.",
+    "themeClub": "Club",
+    "themeNational": "National team",
+    "yourPreferences": "Your preferences",
+    "noPreferences": "No preferences saved yet.",
+    "nationalTeam": "National team",
+    "leagues": "Leagues",
+    "leagueEpl": "Premier League",
+    "leagueWc": "World Cup",
+    "fplClub": "Favourite club",
+    "players": "Followed players",
+    "newsRegions": "News regions",
+    "notSet": "Not set"
   }
 }
