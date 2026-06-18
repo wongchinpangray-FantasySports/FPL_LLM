@@ -21,6 +21,63 @@ export type WcFixtureRow = {
   away_score?: number | null;
 };
 
+export function applyMatchStatsToFixtures<
+  T extends {
+    id: number;
+    matchday: number;
+    home_team_id: number;
+    away_team_id: number;
+    finished?: boolean;
+    home_score?: number | null;
+    away_score?: number | null;
+  },
+>(
+  fixtures: T[],
+  codeToId: Map<string, number>,
+  stats: Array<{
+    home_code: string;
+    away_code: string;
+    round_id: number;
+    status: string;
+    home_score: number | null;
+    away_score: number | null;
+  }>,
+): T[] {
+  const finishedByKey = new Map<
+    string,
+    { finished: boolean; home_score: number | null; away_score: number | null }
+  >();
+
+  for (const row of stats) {
+    const md = row.round_id;
+    if (md < 1 || md > 3) continue;
+    const homeId = codeToId.get(row.home_code);
+    const awayId = codeToId.get(row.away_code);
+    if (!homeId || !awayId) continue;
+    finishedByKey.set(`${md}:${homeId}:${awayId}`, {
+      finished: isWcMatchFinished({
+        status: row.status,
+        home_score: row.home_score,
+      }),
+      home_score: row.home_score,
+      away_score: row.away_score,
+    });
+  }
+
+  return fixtures.map((fx) => {
+    const hit = finishedByKey.get(
+      `${fx.matchday}:${fx.home_team_id}:${fx.away_team_id}`,
+    );
+    if (!hit) return fx;
+    return {
+      ...fx,
+      finished: hit.finished || fx.finished === true,
+      home_score: hit.home_score ?? fx.home_score ?? null,
+      away_score: hit.away_score ?? fx.away_score ?? null,
+    };
+  });
+}
+
 /** Mark group fixtures finished from cached FIFA scores in wc_match_stats. */
 export async function syncWcFixtureStatus(): Promise<number> {
   const supa = getServerSupabase();
@@ -51,6 +108,13 @@ export async function syncWcFixtureStatus(): Promise<number> {
   }
 
   let updated = 0;
+  const pending: Array<{
+    id: number;
+    finished: boolean;
+    home_score: number | null;
+    away_score: number | null;
+  }> = [];
+
   for (const row of stats ?? []) {
     const md = row.round_id as number;
     if (md < 1 || md > 3) continue;
@@ -77,21 +141,31 @@ export async function syncWcFixtureStatus(): Promise<number> {
       continue;
     }
 
-    const { error } = await supa
-      .from("wc_fixtures")
-      .update({
-        finished,
-        home_score,
-        away_score,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", fx.id);
-    if (error) throw new Error(error.message);
-
+    pending.push({ id: fx.id, finished, home_score, away_score });
     fx.finished = finished;
     fx.home_score = home_score;
     fx.away_score = away_score;
-    updated++;
+  }
+
+  const BATCH = 12;
+  for (let i = 0; i < pending.length; i += BATCH) {
+    const chunk = pending.slice(i, i + BATCH);
+    const results = await Promise.all(
+      chunk.map((row) =>
+        supa
+          .from("wc_fixtures")
+          .update({
+            finished: row.finished,
+            home_score: row.home_score,
+            away_score: row.away_score,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", row.id),
+      ),
+    );
+    const err = results.find((r) => r.error)?.error;
+    if (err) throw new Error(err.message);
+    updated += chunk.length;
   }
 
   await refreshWcMatchdayFlags(fixtures ?? []);
@@ -121,16 +195,15 @@ async function refreshWcMatchdayFlags(
   const next = remaining[1] ?? null;
   const supa = getServerSupabase();
 
-  for (const md of GROUP_MDS) {
-    const { error } = await supa
-      .from("wc_matchdays")
-      .update({
-        is_current: md === current,
-        is_next: md === next,
-      })
-      .eq("id", md);
-    if (error) throw new Error(error.message);
-  }
+  const { error } = await supa.from("wc_matchdays").upsert(
+    GROUP_MDS.map((md) => ({
+      id: md,
+      is_current: md === current,
+      is_next: md === next,
+    })),
+    { onConflict: "id" },
+  );
+  if (error) throw new Error(error.message);
 }
 
 export function buildWcProjectionMeta(

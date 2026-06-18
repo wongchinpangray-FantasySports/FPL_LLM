@@ -6,9 +6,9 @@ import { enrichWcPlayersFromFpl } from "@/lib/wc/fpl-enrich";
 import { hydrateWcPlayer, hydrateWcPlayers } from "@/lib/wc/player-priors";
 import { projectWcPlayers } from "@/lib/wc/xp";
 import {
+  applyMatchStatsToFixtures,
   buildWcProjectionMeta,
   filterFixturesForProjection,
-  syncWcFixtureStatus,
   type WcProjectionMeta,
 } from "@/lib/wc/projection-context";
 import {
@@ -102,14 +102,33 @@ async function loadProjectionInputs(): Promise<{
   projectionFixtures: Awaited<ReturnType<typeof loadFixtures>>;
   projection: WcProjectionMeta;
 }> {
-  try {
-    await syncWcFixtureStatus();
-  } catch {
-    /* non-fatal — projections still work from stale fixture flags */
-  }
+  const supa = getServerSupabase();
+  const [teams, rawFixtures, statsRes] = await Promise.all([
+    loadTeams(),
+    loadFixtures(),
+    supa
+      .from("wc_match_stats")
+      .select("home_code,away_code,round_id,status,home_score,away_score")
+      .lte("round_id", 3),
+  ]);
 
-  const teams = await loadTeams();
-  const fixtures = await loadFixtures();
+  if (statsRes.error) throw new Error(statsRes.error.message);
+
+  const codeToId = new Map<string, number>();
+  for (const [id, team] of teams) codeToId.set(team.code, id);
+
+  const fixtures = applyMatchStatsToFixtures(
+    rawFixtures,
+    codeToId,
+    (statsRes.data ?? []) as Array<{
+      home_code: string;
+      away_code: string;
+      round_id: number;
+      status: string;
+      home_score: number | null;
+      away_score: number | null;
+    }>,
+  );
   const projection = buildWcProjectionMeta(fixtures);
   const projectionFixtures = filterFixturesForProjection(fixtures, projection);
 
@@ -435,7 +454,6 @@ export async function buildWcScouting(): Promise<{
   projection: WcProjectionMeta;
 }> {
   await ensureWcSeeded();
-  await ensureWcPlayerPool();
   const [players, fplIndex] = await Promise.all([
     loadPlayers({ readOnly: true }),
     loadFplPlayerIndex(),

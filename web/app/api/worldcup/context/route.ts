@@ -31,8 +31,6 @@ export async function GET(req: Request) {
     const position = url.searchParams.get("position") ?? "ALL";
     const scoutingOnly = url.searchParams.get("scouting") === "1";
 
-    await ensureWcSeeded();
-
     if (scoutingOnly) {
       const { report, projection } = await buildWcScouting();
       return NextResponse.json({
