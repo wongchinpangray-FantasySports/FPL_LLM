@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServerSupabase } from "@/lib/supabase";
+import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    if (!getSupabaseAuthEnv()) {
+      return NextResponse.json({
+        user: null,
+        profile: null,
+        unread_count: 0,
+      });
+    }
+
     const supa = createSupabaseServerClient();
     const { data: authData, error: authError } = await supa.auth.getUser();
     if (authError || !authData.user) {

@@ -59,16 +59,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setEntryId]);
 
   useEffect(() => {
-    const supa = createSupabaseBrowserClient();
+    let subscription: { unsubscribe: () => void } | undefined;
+
+    try {
+      const supa = createSupabaseBrowserClient();
+      const { data } = supa.auth.onAuthStateChange(() => {
+        void refresh();
+      });
+      subscription = data.subscription;
+    } catch {
+      /* auth env not configured — anonymous mode only */
+    }
+
     void refresh().finally(() => setLoading(false));
 
-    const {
-      data: { subscription },
-    } = supa.auth.onAuthStateChange(() => {
-      void refresh();
-    });
-
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [refresh]);
 
   const signOut = useCallback(async () => {
