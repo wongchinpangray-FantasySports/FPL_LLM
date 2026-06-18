@@ -1,6 +1,12 @@
+function readSupabaseUrl(): string | undefined {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  )?.trim();
+}
+
 /** Validated public Supabase auth env — avoids crashing the app when misconfigured. */
 export function getSupabaseAuthEnv(): { url: string; key: string } | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const url = readSupabaseUrl();
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !key) return null;
 

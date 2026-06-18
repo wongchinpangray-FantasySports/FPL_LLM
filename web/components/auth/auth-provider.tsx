@@ -60,24 +60,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | undefined;
+    let cancelled = false;
 
-    try {
-      const supa = createSupabaseBrowserClient();
-      const { data } = supa.auth.onAuthStateChange(() => {
-        void refresh();
-      });
-      subscription = data.subscription;
-    } catch {
-      /* auth env not configured — anonymous mode only */
-    }
+    void (async () => {
+      try {
+        const supa = await createSupabaseBrowserClient();
+        if (cancelled) return;
+        const { data } = supa.auth.onAuthStateChange(() => {
+          void refresh();
+        });
+        subscription = data.subscription;
+      } catch {
+        /* auth env not configured — anonymous mode only */
+      } finally {
+        if (!cancelled) {
+          await refresh();
+          setLoading(false);
+        }
+      }
+    })();
 
-    void refresh().finally(() => setLoading(false));
-
-    return () => subscription?.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
+    };
   }, [refresh]);
 
   const signOut = useCallback(async () => {
-    const supa = createSupabaseBrowserClient();
+    const supa = await createSupabaseBrowserClient();
     await supa.auth.signOut();
     setUser(null);
     setProfile(null);

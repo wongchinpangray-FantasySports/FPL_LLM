@@ -40,7 +40,7 @@ export function AuthForm({
 
     setLoading(true);
     try {
-      const supa = createSupabaseBrowserClient();
+      const supa = await createSupabaseBrowserClient();
       if (mode === "signup") {
         const { error: signUpError } = await supa.auth.signUp({
           email: email.trim(),
