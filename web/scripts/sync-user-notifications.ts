@@ -1,6 +1,6 @@
 /**
- * Match wc_news_cache articles to user_preferences and insert user_notifications.
- * Run from GitHub Actions after news sync (service-role Supabase).
+ * Daily inbox push: match wc_news_cache + match results to user_preferences.
+ * Intended for GitHub Actions at 07:00 Asia/Shanghai (23:00 UTC).
  */
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -10,9 +10,24 @@ import type { WcNewsItem } from "../lib/wc/news-feeds";
 import {
   buildNotificationRow,
   newsMatchesUser,
-  type MatchContext,
   type UserPrefRow,
 } from "../lib/notifications/match-news";
+import {
+  buildFplMatchNotification,
+  buildWcMatchNotification,
+  fplMatchMatchesUser,
+  notificationDedupeKey,
+  wcMatchMatchesUser,
+  type FplMatchResultRow,
+  type WcMatchResultRow,
+} from "../lib/notifications/match-results";
+import {
+  insertNotifications,
+  loadMatchContext,
+  loadRecentDedupeKeys,
+  loadUserPreferences,
+  type NotificationInsert,
+} from "../lib/notifications/shared";
 
 function loadEnvLocal(): void {
   const envPath = join(process.cwd(), ".env.local");
@@ -36,43 +51,12 @@ function loadEnvLocal(): void {
 
 loadEnvLocal();
 
-const RECENT_MS = 72 * 60 * 60 * 1000;
-const DEDUPE_MS = 24 * 60 * 60 * 1000;
-
-async function loadMatchContext(admin: ReturnType<typeof getServerSupabase>): Promise<MatchContext> {
-  const [{ data: wcTeams }, { data: fplTeams }, { data: fplPlayers }, { data: wcPlayers }] =
-    await Promise.all([
-      admin.from("wc_teams").select("code,name,short_name"),
-      admin.from("teams").select("id,name,short_name"),
-      admin.from("players_static").select("fpl_id,web_name,name"),
-      admin.from("wc_players").select("id,name"),
-    ]);
-
-  const wcTeamsByCode = new Map<string, { name: string; short_name: string }>();
-  for (const t of wcTeams ?? []) {
-    wcTeamsByCode.set(t.code, { name: t.name, short_name: t.short_name });
-  }
-
-  const fplTeamsById = new Map<number, { name: string; short_name: string }>();
-  for (const t of fplTeams ?? []) {
-    fplTeamsById.set(t.id, { name: t.name, short_name: t.short_name });
-  }
-
-  const fplPlayersById = new Map<number, { web_name: string | null; name: string }>();
-  for (const p of fplPlayers ?? []) {
-    fplPlayersById.set(p.fpl_id, { web_name: p.web_name, name: p.name });
-  }
-
-  const wcPlayersById = new Map<number, { name: string }>();
-  for (const p of wcPlayers ?? []) {
-    wcPlayersById.set(p.id, { name: p.name });
-  }
-
-  return { wcTeamsByCode, fplTeamsById, fplPlayersById, wcPlayersById };
-}
+const NEWS_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MATCH_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DEDUPE_MS = 36 * 60 * 60 * 1000;
 
 function recentNews(items: WcNewsItem[]): WcNewsItem[] {
-  const cutoff = Date.now() - RECENT_MS;
+  const cutoff = Date.now() - NEWS_WINDOW_MS;
   return items.filter((item) => {
     if (!item.published_at) return true;
     const ts = Date.parse(item.published_at);
@@ -80,63 +64,207 @@ function recentNews(items: WcNewsItem[]): WcNewsItem[] {
   });
 }
 
-async function main() {
+function isFinishedWcStatus(status: string): boolean {
+  const s = status.toLowerCase();
+  return (
+    s.includes("finish") ||
+    s.includes("complete") ||
+    s.includes("played") ||
+    s === "ft"
+  );
+}
+
+async function loadRecentWcMatches(
+  sinceIso: string,
+): Promise<WcMatchResultRow[]> {
   const admin = getServerSupabase();
-  const { items } = await loadWcNewsFromDb();
-  const news = recentNews(items);
-  if (news.length === 0) {
-    console.log("No recent news items in cache — nothing to match.");
-    return;
+  const { data, error } = await admin
+    .from("wc_match_stats")
+    .select(
+      "fifa_tournament_id,home_code,away_code,home_name,away_name,home_score,away_score,home_scorers,away_scorers,kickoff,updated_at,status,summary_json",
+    )
+    .not("home_score", "is", null)
+    .not("away_score", "is", null)
+    .gte("updated_at", sinceIso);
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? [])
+    .filter((row) => isFinishedWcStatus(String(row.status ?? "")))
+    .map((row) => ({
+      id: row.fifa_tournament_id as number,
+      home_code: row.home_code as string,
+      away_code: row.away_code as string,
+      home_name: row.home_name as string,
+      away_name: row.away_name as string,
+      home_score: row.home_score as number,
+      away_score: row.away_score as number,
+      home_scorers: (row.home_scorers as string | null) ?? null,
+      away_scorers: (row.away_scorers as string | null) ?? null,
+      kickoff: (row.kickoff as string | null) ?? null,
+      updated_at: (row.updated_at as string | null) ?? null,
+      summary_json: (row.summary_json as Record<string, string> | null) ?? null,
+    }));
+}
+
+async function loadRecentFplFixtures(
+  sinceIso: string,
+): Promise<FplMatchResultRow[]> {
+  const admin = getServerSupabase();
+  const { data, error } = await admin
+    .from("fixtures")
+    .select(
+      "id,home_team_id,away_team_id,home_team_score,away_team_score,kickoff_time,finished,home:teams!fixtures_home_team_id_fkey(name,short_name),away:teams!fixtures_away_team_id_fkey(name,short_name)",
+    )
+    .eq("finished", true)
+    .gte("kickoff_time", sinceIso);
+
+  if (error) {
+    // Fallback without explicit FK names (Supabase join alias varies)
+    const fallback = await admin
+      .from("fixtures")
+      .select(
+        "id,home_team_id,away_team_id,home_team_score,away_team_score,kickoff_time,finished",
+      )
+      .eq("finished", true)
+      .gte("kickoff_time", sinceIso);
+    if (fallback.error) throw new Error(fallback.error.message);
+
+    const teamIds = new Set<number>();
+    for (const row of fallback.data ?? []) {
+      teamIds.add(row.home_team_id as number);
+      teamIds.add(row.away_team_id as number);
+    }
+    const { data: teams } = await admin
+      .from("teams")
+      .select("id,name,short_name")
+      .in("id", [...teamIds]);
+    const byId = new Map(
+      (teams ?? []).map((t) => [
+        t.id as number,
+        { name: t.name as string, short_name: t.short_name as string },
+      ]),
+    );
+
+    return (fallback.data ?? [])
+      .filter(
+        (row) =>
+          row.home_team_score != null && row.away_team_score != null,
+      )
+      .map((row) => {
+        const home = byId.get(row.home_team_id as number);
+        const away = byId.get(row.away_team_id as number);
+        return {
+          id: row.id as number,
+          home_team_id: row.home_team_id as number,
+          away_team_id: row.away_team_id as number,
+          home_name: home?.name ?? "Home",
+          away_name: away?.name ?? "Away",
+          home_short: home?.short_name ?? "HOM",
+          away_short: away?.short_name ?? "AWY",
+          home_score: row.home_team_score as number,
+          away_score: row.away_team_score as number,
+          kickoff_time: (row.kickoff_time as string | null) ?? null,
+        };
+      });
   }
 
-  const { data: prefs, error: prefErr } = await admin
-    .from("user_preferences")
-    .select(
-      "user_id,national_team_code,favorite_leagues,fpl_team_id,followed_fpl_player_ids,followed_wc_player_ids,news_regions",
-    );
-  if (prefErr) throw new Error(prefErr.message);
-  if (!prefs?.length) {
+  return (data ?? [])
+    .filter(
+      (row) => row.home_team_score != null && row.away_team_score != null,
+    )
+    .map((row) => {
+      const homeRaw = row.home as
+        | { name: string; short_name: string }
+        | { name: string; short_name: string }[]
+        | null;
+      const awayRaw = row.away as
+        | { name: string; short_name: string }
+        | { name: string; short_name: string }[]
+        | null;
+      const home = Array.isArray(homeRaw) ? homeRaw[0] : homeRaw;
+      const away = Array.isArray(awayRaw) ? awayRaw[0] : awayRaw;
+      return {
+        id: row.id as number,
+        home_team_id: row.home_team_id as number,
+        away_team_id: row.away_team_id as number,
+        home_name: home?.name ?? "Home",
+        away_name: away?.name ?? "Away",
+        home_short: home?.short_name ?? "HOM",
+        away_short: away?.short_name ?? "AWY",
+        home_score: row.home_team_score as number,
+        away_score: row.away_team_score as number,
+        kickoff_time: (row.kickoff_time as string | null) ?? null,
+      };
+    });
+}
+
+function trackSeen(seen: Set<string>, userId: string, href: string): boolean {
+  const key = notificationDedupeKey(userId, href);
+  if (!key || seen.has(key)) return false;
+  seen.add(key);
+  return true;
+}
+
+async function main() {
+  const admin = getServerSupabase();
+  const since = new Date(Date.now() - MATCH_WINDOW_MS).toISOString();
+  const dedupeSince = new Date(Date.now() - DEDUPE_MS).toISOString();
+
+  const prefs = await loadUserPreferences(admin);
+  if (!prefs.length) {
     console.log("No user preferences — skipping.");
     return;
   }
 
   const ctx = await loadMatchContext(admin);
-  const since = new Date(Date.now() - DEDUPE_MS).toISOString();
+  const seen = await loadRecentDedupeKeys(admin, dedupeSince, [
+    "news",
+    "match_result",
+  ]);
 
-  const { data: recentNotifs, error: recentErr } = await admin
-    .from("user_notifications")
-    .select("user_id,href")
-    .gte("created_at", since)
-    .eq("type", "news");
-  if (recentErr) throw new Error(recentErr.message);
+  const toInsert: NotificationInsert[] = [];
 
-  const seen = new Set<string>();
-  for (const n of recentNotifs ?? []) {
-    if (n.href) seen.add(`${n.user_id}::${n.href}`);
-  }
-
-  const toInsert: ReturnType<typeof buildNotificationRow>[] = [];
-
+  const { items } = await loadWcNewsFromDb();
+  const news = recentNews(items);
   for (const pref of prefs as UserPrefRow[]) {
     for (const item of news) {
       if (!newsMatchesUser(item, pref, ctx)) continue;
-      const key = `${pref.user_id}::${item.url}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (!trackSeen(seen, pref.user_id, item.url)) continue;
       toInsert.push(buildNotificationRow(pref.user_id, item));
     }
   }
 
+  const wcMatches = await loadRecentWcMatches(since);
+  for (const pref of prefs as UserPrefRow[]) {
+    for (const match of wcMatches) {
+      if (!wcMatchMatchesUser(match, pref, ctx)) continue;
+      const row = buildWcMatchNotification(pref.user_id, match);
+      if (!trackSeen(seen, pref.user_id, row.href)) continue;
+      toInsert.push(row);
+    }
+  }
+
+  const fplMatches = await loadRecentFplFixtures(since);
+  for (const pref of prefs as UserPrefRow[]) {
+    for (const match of fplMatches) {
+      if (!fplMatchMatchesUser(match, pref)) continue;
+      const row = buildFplMatchNotification(pref.user_id, match);
+      if (!trackSeen(seen, pref.user_id, row.href)) continue;
+      toInsert.push(row);
+    }
+  }
+
   if (toInsert.length === 0) {
-    console.log(`Checked ${news.length} articles for ${prefs.length} users — no new matches.`);
+    console.log(
+      `Daily push: ${news.length} news, ${wcMatches.length} WC + ${fplMatches.length} FPL results — no new matches for ${prefs.length} users.`,
+    );
     return;
   }
 
-  const { error: insertErr } = await admin.from("user_notifications").insert(toInsert);
-  if (insertErr) throw new Error(insertErr.message);
-
+  const inserted = await insertNotifications(admin, toInsert);
   console.log(
-    `Inserted ${toInsert.length} notification(s) from ${news.length} articles for ${prefs.length} users.`,
+    `Daily push: inserted ${inserted} notification(s) for ${prefs.length} users (${news.length} news, ${wcMatches.length} WC, ${fplMatches.length} FPL in window).`,
   );
 }
 

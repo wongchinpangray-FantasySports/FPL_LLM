@@ -1,0 +1,66 @@
+name: Daily user inbox push
+
+# 07:00 Asia/Shanghai (Beijing) = 23:00 UTC previous calendar day in UTC terms.
+on:
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-user-inbox
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Set FPL season year
+        run: |
+          MONTH=$(date -u +%m)
+          YEAR=$(date -u +%Y)
+          if [ "$MONTH" -lt "8" ]; then
+            SEASON=$((YEAR - 1))
+          else
+            SEASON=$YEAR
+          fi
+          echo "FPL_CURRENT_SEASON=$SEASON" >> "$GITHUB_ENV"
+          echo "Using FPL_CURRENT_SEASON=$SEASON"
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Sync FPL fixtures (scores)
+        run: python -m data_sync.sync_fpl_players && python -m data_sync.sync_fpl_fixtures
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Sync World Cup news RSS
+        working-directory: web
+        run: npx tsx scripts/sync-wc-news.ts
+
+      - name: Sync World Cup match results
+        working-directory: web
+        run: npx tsx scripts/sync-wc-matches.ts
+
+      - name: Push news and match results to user inboxes
+        working-directory: web
+        run: npx tsx scripts/sync-user-notifications.ts

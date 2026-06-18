@@ -1,8 +1,7 @@
 name: User notification sync
 
+# Superseded by daily-user-inbox.yml (07:00 Beijing). Kept for manual runs only.
 on:
-  schedule:
-    - cron: "15,45 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -29,6 +28,6 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Match news to user preferences
+      - name: Match news and results to user preferences
         working-directory: web
         run: npx tsx scripts/sync-user-notifications.ts
