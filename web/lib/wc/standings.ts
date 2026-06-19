@@ -1,9 +1,13 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
+import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import {
-  applyMatchStatsToFixtures,
-  type WcFixtureRow,
-} from "@/lib/wc/projection-context";
+  buildGroupTablesFromFifaMatches,
+  buildLeaderboardsFromFifaMatches,
+  buildTeamResultsFromFifa,
+  loadTeamsByCode,
+} from "@/lib/wc/fifa-standings";
+import type { WcFixtureRow } from "@/lib/wc/projection-context";
 import type { WcTeam } from "@/lib/wc/types";
 
 export type GroupStandingRow = {
@@ -67,7 +71,7 @@ export type TeamDetail = {
   }>;
 };
 
-function emptyStanding(team: WcTeam): Omit<GroupStandingRow, "rank"> {
+export function emptyStanding(team: WcTeam): Omit<GroupStandingRow, "rank"> {
   return {
     team_id: team.id,
     code: team.code,
@@ -85,7 +89,7 @@ function emptyStanding(team: WcTeam): Omit<GroupStandingRow, "rank"> {
   };
 }
 
-function applyResult(
+export function applyResult(
   row: Omit<GroupStandingRow, "rank">,
   gf: number,
   ga: number,
@@ -105,7 +109,7 @@ function applyResult(
   }
 }
 
-function sortStandings(rows: Omit<GroupStandingRow, "rank">[]): GroupStandingRow[] {
+export function sortStandings(rows: Omit<GroupStandingRow, "rank">[]): GroupStandingRow[] {
   return [...rows]
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
@@ -241,63 +245,36 @@ export async function loadWcTablesData(): Promise<{
   assists: LeaderboardRow[];
   teams: Record<string, TeamDetail>;
 }> {
-  const supa = getServerSupabase();
-
-  const [{ data: teamRows }, { data: fixtureRows }, { data: statsRows }, { data: playerRows }] =
-    await Promise.all([
-      supa
-        .from("wc_teams")
-        .select("id,code,name,short_name,group_letter,attack_strength,defence_strength")
-        .order("group_letter")
-        .order("short_name"),
-      supa
-        .from("wc_fixtures")
-        .select("id,matchday,home_team_id,away_team_id,finished,home_score,away_score")
-        .lte("matchday", 3),
-      supa
-        .from("wc_match_stats")
-        .select("home_code,away_code,round_id,status,home_score,away_score")
-        .lte("round_id", 3),
-      supa
-        .from("wc_players")
-        .select("id,name,position,goals,assists,minutes,wc_team_id,wc_teams(code,name,short_name)")
-        .order("goals", { ascending: false }),
-    ]);
+  const [matches, teamsByCode, playerRows] = await Promise.all([
+    buildWcMatchesWithStats().then((r) => r.matches),
+    loadTeamsByCode(),
+    getServerSupabase()
+      .from("wc_players")
+      .select(
+        "id,name,position,goals,assists,minutes,wc_team_id,wc_teams(code,name,short_name)",
+      )
+      .order("goals", { ascending: false }),
+  ]);
 
   const teams = new Map<number, WcTeam>();
-  for (const r of teamRows ?? []) {
-    teams.set(r.id as number, r as WcTeam);
+  for (const t of teamsByCode.values()) {
+    teams.set(t.id, t);
   }
 
-  const codeToId = new Map<string, number>();
-  for (const [id, t] of teams) codeToId.set(t.code, id);
+  const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
+  const { scorers, assists } = buildLeaderboardsFromFifaMatches(
+    teamsByCode,
+    matches,
+  );
 
-  let fixtures = (fixtureRows ?? []) as WcFixtureRow[];
-  fixtures = applyMatchStatsToFixtures(fixtures, codeToId, statsRows ?? []);
-
-  for (const fx of fixtures) {
-    if (
-      fx.home_score != null &&
-      fx.away_score != null &&
-      isWcMatchFinished({
-        status: "finished",
-        home_score: fx.home_score,
-      })
-    ) {
-      fx.finished = true;
-    }
-  }
-
-  const groups = buildGroupTables(teams, fixtures);
-
-  const standingByTeamId = new Map<number, GroupStandingRow>();
+  const standingByCode = new Map<string, GroupStandingRow>();
   for (const g of groups) {
     for (const row of g.rows) {
-      standingByTeamId.set(row.team_id, row);
+      standingByCode.set(row.code, row);
     }
   }
 
-  const playersForBoard = (playerRows ?? []).map((r) => {
+  const playersForBoard = (playerRows.data ?? []).map((r) => {
     const teamRaw = r.wc_teams as
       | { code: string; name: string; short_name: string }
       | { code: string; name: string; short_name: string }[]
@@ -314,8 +291,6 @@ export async function loadWcTablesData(): Promise<{
       team_name: team?.short_name ?? team?.name ?? "???",
     };
   });
-
-  const { scorers, assists } = buildLeaderboards(playersForBoard);
 
   const playersByTeam = new Map<number, TeamDetail["players"]>();
   for (const p of playersForBoard) {
@@ -343,8 +318,8 @@ export async function loadWcTablesData(): Promise<{
       group_letter: team.group_letter,
       attack_strength: team.attack_strength,
       defence_strength: team.defence_strength,
-      standing: standingByTeamId.get(team.id) ?? null,
-      results: buildTeamResults(team.id, teams, fixtures),
+      standing: standingByCode.get(team.code) ?? null,
+      results: buildTeamResultsFromFifa(team.code, teamsByCode, matches),
       players: (playersByTeam.get(team.id) ?? []).sort(
         (a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name),
       ),

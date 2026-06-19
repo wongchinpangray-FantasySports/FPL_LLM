@@ -10,7 +10,8 @@ import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
 import { PitchView } from "@/components/planner/pitch-view";
 import type { HomeBestXi } from "@/lib/home/best-xi-showcase";
-import type { HomeHubData, HomeMatchSnippet } from "@/lib/home/hub-data";
+import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
+import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
 import { wcTeamFlag } from "@/lib/wc/wc-team-flags";
@@ -106,90 +107,84 @@ function fmtKickoff(iso: string | null, locale: string): string {
   }
 }
 
-function TodayStrip({
-  data,
+function TodayTicker({
+  items,
+  fpl,
   locale,
   labels,
 }: {
-  data: HomeHubData["today"];
+  items: TodayTickerItem[];
+  fpl: HomeHubData["today"]["fpl"];
   locale: string;
   labels: {
-    wcNext: string;
+    result: string;
+    upcoming: string;
     fplDeadline: string;
     fplGw: string;
-    headline: string;
     noItems: string;
   };
 }) {
-  const items: { key: string; node: React.ReactNode }[] = [];
+  const chips: React.ReactNode[] = [];
 
-  if (data.wcNext) {
-    const m = data.wcNext;
-    items.push({
-      key: "wc",
-      node: (
-        <Link
-          href="/worldcup"
-          className="flex min-w-0 items-center gap-2 text-slate-300 no-underline hover:text-white"
+  for (const item of items) {
+    const m = item.match;
+    const finished =
+      item.kind === "result" &&
+      m.home_score != null &&
+      m.away_score != null;
+
+    chips.push(
+      <Link
+        key={`${item.kind}-${m.id}`}
+        href="/worldcup?tab=matches"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-200 no-underline hover:border-brand-accent/30 hover:text-white"
+      >
+        <span
+          className={cn(
+            "text-[10px] font-semibold uppercase tracking-wide",
+            item.kind === "result" ? "text-brand-accent" : "text-sky-400",
+          )}
         >
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
-            {labels.wcNext}
-          </span>
-          <span className="truncate">
-            {wcTeamFlag(m.home_code)} {m.home_name} vs {m.away_name}{" "}
-            {wcTeamFlag(m.away_code)}
-          </span>
-          <span className="shrink-0 tabular-nums text-slate-500">
+          {item.kind === "result" ? labels.result : labels.upcoming}
+        </span>
+        <span>
+          {wcTeamFlag(m.home_code)} {m.home_name}
+        </span>
+        <span className="tabular-nums text-white">
+          {finished ? `${m.home_score}–${m.away_score}` : "vs"}
+        </span>
+        <span>
+          {m.away_name} {wcTeamFlag(m.away_code)}
+        </span>
+        {!finished && m.kickoff ? (
+          <span className="text-xs text-slate-500">
             {fmtKickoff(m.kickoff, locale)}
           </span>
-        </Link>
-      ),
-    });
+        ) : null}
+        <span className="text-[10px] text-slate-600">{m.round_label}</span>
+      </Link>,
+    );
   }
 
-  if (data.fpl.gw != null) {
-    items.push({
-      key: "fpl",
-      node: (
-        <Link
-          href="/planner"
-          className="flex min-w-0 items-center gap-2 text-slate-300 no-underline hover:text-white"
-        >
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
-            {labels.fplDeadline}
-          </span>
-          <span>
-            {labels.fplGw.replace("{gw}", String(data.fpl.gw))}
-            {data.fpl.deadline
-              ? ` · ${fmtDeadline(data.fpl.deadline, locale)}`
-              : ""}
-          </span>
-        </Link>
-      ),
-    });
+  if (fpl.gw != null) {
+    chips.push(
+      <Link
+        key="fpl"
+        href="/planner"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-slate-200 no-underline hover:border-emerald-400/40"
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+          {labels.fplDeadline}
+        </span>
+        <span>
+          {labels.fplGw.replace("{gw}", String(fpl.gw))}
+          {fpl.deadline ? ` · ${fmtDeadline(fpl.deadline, locale)}` : ""}
+        </span>
+      </Link>,
+    );
   }
 
-  if (data.headline) {
-    items.push({
-      key: "news",
-      node: (
-        <a
-          href={data.headline.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-w-0 items-center gap-2 text-slate-300 no-underline hover:text-white"
-        >
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            {labels.headline}
-          </span>
-          <span className="truncate">{data.headline.title}</span>
-          <span className="shrink-0 text-slate-600">{data.headline.outlet}</span>
-        </a>
-      ),
-    });
-  }
-
-  if (items.length === 0) {
+  if (chips.length === 0) {
     return (
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-slate-500">
         {labels.noItems}
@@ -197,12 +192,16 @@ function TodayStrip({
     );
   }
 
+  const loop = [...chips, ...chips];
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.02]">
-      <div className="flex min-w-max divide-x divide-white/[0.06]">
-        {items.map(({ key, node }) => (
-          <div key={key} className="px-4 py-3 text-sm">
-            {node}
+    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] py-2.5">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-brand-ink to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-brand-ink to-transparent" />
+      <div className="flex w-max animate-[marquee_50s_linear_infinite] gap-3 px-4 hover:[animation-play-state:paused]">
+        {loop.map((chip, i) => (
+          <div key={i} className="pointer-events-auto shrink-0">
+            {chip}
           </div>
         ))}
       </div>
@@ -356,7 +355,7 @@ function WcMatchCard({
 
   return (
     <Link
-      href="/worldcup"
+      href="/worldcup?tab=matches"
       className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-white/[0.04]"
     >
       <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -426,6 +425,7 @@ function WorldCupSection({
     allMatches: string;
     allTables: string;
     scorers: string;
+    assists: string;
     group: string;
     team: string;
     pts: string;
@@ -439,14 +439,15 @@ function WorldCupSection({
       description={labels.description}
       action={
         <div className="flex flex-wrap gap-2">
-          <HubChip href="/worldcup">{labels.allMatches}</HubChip>
-          <HubChip href="/worldcup">{labels.allTables}</HubChip>
+          <HubChip href="/worldcup?tab=matches">{labels.allMatches}</HubChip>
+          <HubChip href="/worldcup?tab=tables">{labels.allTables}</HubChip>
         </div>
       }
     >
       {wc.nextMatches.length === 0 &&
       wc.groupsPreview.length === 0 &&
-      wc.topScorers.length === 0 ? (
+      wc.topScorers.length === 0 &&
+      wc.topAssists.length === 0 ? (
         <p className="text-sm text-slate-500">{labels.empty}</p>
       ) : (
         <div className="flex flex-col gap-5">
@@ -475,29 +476,55 @@ function WorldCupSection({
               </div>
             ) : null}
 
-            {wc.topScorers.length > 0 ? (
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {labels.scorers}
-                </h3>
-                <ol className="space-y-1.5 text-sm">
-                  {wc.topScorers.map((s: LeaderboardRow, i) => (
-                    <li
-                      key={s.player_id}
-                      className="flex justify-between gap-2 text-slate-300"
-                    >
-                      <span>
-                        <span className="mr-2 tabular-nums text-slate-600">
-                          {i + 1}
+            <div className="flex flex-col gap-3">
+              {wc.topScorers.length > 0 ? (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {labels.scorers}
+                  </h3>
+                  <ol className="space-y-1.5 text-sm">
+                    {wc.topScorers.map((s: LeaderboardRow, i) => (
+                      <li
+                        key={s.player_id}
+                        className="flex justify-between gap-2 text-slate-300"
+                      >
+                        <span>
+                          <span className="mr-2 tabular-nums text-slate-600">
+                            {i + 1}
+                          </span>
+                          {s.name}
                         </span>
-                        {s.name}
-                      </span>
-                      <span className="tabular-nums text-white">{s.goals}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
+                        <span className="tabular-nums text-white">{s.goals}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+
+              {wc.topAssists.length > 0 ? (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {labels.assists}
+                  </h3>
+                  <ol className="space-y-1.5 text-sm">
+                    {wc.topAssists.map((s: LeaderboardRow, i) => (
+                      <li
+                        key={`a-${s.player_id}`}
+                        className="flex justify-between gap-2 text-slate-300"
+                      >
+                        <span>
+                          <span className="mr-2 tabular-nums text-slate-600">
+                            {i + 1}
+                          </span>
+                          {s.name}
+                        </span>
+                        <span className="tabular-nums text-white">{s.assists}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       )}
@@ -513,7 +540,8 @@ function HomeNewsCard({
   readMore: string;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const showImage = Boolean(item.image_url) && !imgFailed;
+  const showImage = Boolean(proxiedNewsImageUrl(item.image_url)) && !imgFailed;
+  const imgSrc = proxiedNewsImageUrl(item.image_url);
 
   return (
     <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-colors hover:border-white/[0.14]">
@@ -527,7 +555,7 @@ function HomeNewsCard({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.image_url!}
+              src={imgSrc!}
               alt=""
               loading="lazy"
               decoding="async"
@@ -826,9 +854,9 @@ const EXPLORE_TILES = [
   { href: "/chat", key: "chat" },
   { href: "/mini", key: "mini" },
   { href: "/players", key: "players" },
-  { href: "/worldcup", key: "scouting" },
-  { href: "/worldcup", key: "matches" },
-  { href: "/worldcup", key: "tables" },
+  { href: "/worldcup?tab=scouting", key: "scouting" },
+  { href: "/worldcup?tab=matches", key: "matches" },
+  { href: "/worldcup?tab=tables", key: "tables" },
 ] as const;
 
 function ExploreSection({
@@ -859,11 +887,47 @@ function ExploreSection({
   );
 }
 
-export function HomeHub({ data }: { data: HomeHubData }) {
+export function HomeHub() {
   const t = useTranslations("home");
   const locale = useLocale();
   const { entryId } = useEntryId();
   const fplHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
+  const [data, setData] = useState<HomeHubData | null>(null);
+  const [hubError, setHubError] = useState<string | null>(null);
+  const [hubLoading, setHubLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHubLoading(true);
+    fetch("/api/home/hub")
+      .then(async (res) => {
+        const json = (await res.json()) as HomeHubData & { error?: string };
+        if (!res.ok) throw new Error(json.error ?? "Failed to load");
+        if (!cancelled) setData(json);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setHubError(e instanceof Error ? e.message : "Failed to load");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setHubLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const hub = data ?? {
+    today: { ticker: [], fpl: { gw: null, deadline: null, open: false } },
+    wc: {
+      nextMatches: [],
+      groupsPreview: [],
+      topScorers: [],
+      topAssists: [],
+    },
+    news: [],
+  };
 
   return (
     <div className="flex flex-col gap-12 md:gap-16">
@@ -891,17 +955,24 @@ export function HomeHub({ data }: { data: HomeHubData }) {
       </section>
 
       <HubSection title={t("todayTitle")}>
-        <TodayStrip
-          data={data.today}
-          locale={locale}
-          labels={{
-            wcNext: t("todayWc"),
-            fplDeadline: t("todayFpl"),
-            fplGw: t("todayFplGw"),
-            headline: t("todayHeadline"),
-            noItems: t("todayEmpty"),
-          }}
-        />
+        {hubLoading ? (
+          <div className="h-12 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.03]" />
+        ) : hubError ? (
+          <p className="text-sm text-slate-500">{hubError}</p>
+        ) : (
+          <TodayTicker
+            items={hub.today.ticker}
+            fpl={hub.today.fpl}
+            locale={locale}
+            labels={{
+              result: t("todayResult"),
+              upcoming: t("todayUpcoming"),
+              fplDeadline: t("todayFpl"),
+              fplGw: t("todayFplGw"),
+              noItems: t("todayEmpty"),
+            }}
+          />
+        )}
       </HubSection>
 
       <YourFootballSection
@@ -919,7 +990,7 @@ export function HomeHub({ data }: { data: HomeHubData }) {
       />
 
       <WorldCupSection
-        wc={data.wc}
+        wc={hub.wc}
         locale={locale}
         labels={{
           eyebrow: t("wcEyebrow"),
@@ -928,6 +999,7 @@ export function HomeHub({ data }: { data: HomeHubData }) {
           allMatches: t("wcAllMatches"),
           allTables: t("wcAllTables"),
           scorers: t("wcScorers"),
+          assists: t("wcAssists"),
           group: t("wcGroup"),
           team: t("wcTeam"),
           pts: t("wcPts"),
@@ -936,7 +1008,7 @@ export function HomeHub({ data }: { data: HomeHubData }) {
       />
 
       <NewsSection
-        items={data.news}
+        items={hub.news}
         labels={{
           eyebrow: t("newsEyebrow"),
           title: t("newsTitle"),
@@ -948,7 +1020,7 @@ export function HomeHub({ data }: { data: HomeHubData }) {
       />
 
       <FplSection
-        todayFpl={data.today.fpl}
+        todayFpl={hub.today.fpl}
         locale={locale}
         labels={{
           eyebrow: t("fplEyebrow"),

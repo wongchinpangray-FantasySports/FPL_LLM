@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
@@ -15,6 +16,13 @@ import { WcMatchesPanel } from "@/components/worldcup/wc-matches-panel";
 import { WcTablesPanel } from "@/components/worldcup/wc-tables-panel";
 
 type Tab = "fdr" | "xp" | "scouting" | "matches" | "tables";
+
+const VALID_TABS = new Set<Tab>(["fdr", "xp", "scouting", "matches", "tables"]);
+
+function tabFromParam(raw: string | null): Tab | null {
+  if (!raw || !VALID_TABS.has(raw as Tab)) return null;
+  return raw as Tab;
+}
 
 type ContextPayload = {
   fdrGrid: WcFdrRow[];
@@ -47,7 +55,9 @@ async function readApiJson<T>(res: Response): Promise<T> {
 export function WcFantasyApp() {
   const t = useTranslations("worldcup");
   const locale = useLocale();
-  const [tab, setTab] = useState<Tab>("fdr");
+  const searchParams = useSearchParams();
+  const initialTab = tabFromParam(searchParams.get("tab"));
+  const [tab, setTab] = useState<Tab>(initialTab ?? "fdr");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<ContextPayload | null>(null);
@@ -55,6 +65,11 @@ export function WcFantasyApp() {
   const [scouting, setScouting] = useState<ScoutingPayload | null>(null);
   const [scoutingLoading, setScoutingLoading] = useState(false);
   const [scoutingError, setScoutingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = tabFromParam(searchParams.get("tab"));
+    if (next) setTab(next);
+  }, [searchParams]);
 
   const loadContext = useCallback(async (pos: string) => {
     setLoading(true);

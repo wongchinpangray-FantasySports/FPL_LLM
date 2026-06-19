@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { WcNewsItem, WcNewsRegion } from "@/lib/wc/news-feeds";
+import { proxiedNewsImageUrl } from "@/lib/news-image";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
 
 function fmtDate(iso: string | null, locale: string): string {
@@ -38,7 +39,8 @@ function NewsCard({
   };
 }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const showImage = Boolean(item.image_url) && !imgFailed;
+  const imgSrc = proxiedNewsImageUrl(item.image_url);
+  const showImage = Boolean(imgSrc) && !imgFailed;
 
   return (
     <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-colors hover:border-white/[0.14] hover:bg-white/[0.04]">
@@ -52,7 +54,7 @@ function NewsCard({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.image_url!}
+              src={imgSrc!}
               alt=""
               loading="lazy"
               decoding="async"

@@ -1,29 +1,19 @@
 import { getServerSupabase } from "@/lib/supabase";
 
+/** Single-page lookup — avoids paginated listUsers loops that exceed Worker CPU on Cloudflare. */
 export async function findAuthUserIdByEmail(
   email: string,
 ): Promise<string | null> {
   const admin = getServerSupabase();
   const normalized = email.trim().toLowerCase();
-  let page = 1;
-
-  for (let i = 0; i < 10; i++) {
-    const { data, error } = await admin.auth.admin.listUsers({
-      page,
-      perPage: 200,
-    });
-    if (error || !data.users.length) return null;
-
-    const match = data.users.find(
-      (u) => u.email?.toLowerCase() === normalized,
-    );
-    if (match) return match.id;
-
-    if (!data.nextPage || data.nextPage <= page) return null;
-    page = data.nextPage;
-  }
-
-  return null;
+  const { data, error } = await admin.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+  if (error || !data.users.length) return null;
+  return (
+    data.users.find((u) => u.email?.toLowerCase() === normalized)?.id ?? null
+  );
 }
 
 /** MVP: skip email verification gate — confirm immediately via service role. */

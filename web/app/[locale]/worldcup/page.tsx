@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -30,7 +31,9 @@ export default async function WorldCupPage({
         title={t("title")}
         description={t("description")}
       />
-      <WcFantasyApp />
+      <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+        <WcFantasyApp />
+      </Suspense>
     </div>
   );
 }

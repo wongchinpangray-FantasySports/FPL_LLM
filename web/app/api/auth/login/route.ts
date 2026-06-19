@@ -8,6 +8,7 @@ import {
 import { recordLoginDay } from "@/lib/auth/record-login-day";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type Body = { email?: string; password?: string };
 
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
 
     const { data: sessionData } = await supa.auth.getUser();
     if (sessionData.user) {
-      await recordLoginDay(sessionData.user.id);
+      void recordLoginDay(sessionData.user.id);
     }
 
     return NextResponse.json({ ok: true });

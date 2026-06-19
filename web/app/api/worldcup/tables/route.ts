@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { ensureWcSeeded } from "@/lib/wc/seed";
 import { loadWcTablesData } from "@/lib/wc/standings";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    await ensureWcSeeded();
     const data = await loadWcTablesData();
     return NextResponse.json({
       ...data,
       disclaimer:
-        "Group tables from finished group-stage fixtures (scores synced from FIFA when available). Player goals/assists from the World Cup fantasy pool.",
+        "Group tables and leaderboards from live FIFA match results (scores and goal scorers). Squad lists from the World Cup fantasy pool.",
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load tables";

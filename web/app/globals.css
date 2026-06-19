@@ -23,6 +23,15 @@ body {
   @apply bg-brand-accent/25 text-white;
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 /* Subtle scrollbars (WebKit) */
 * {
   scrollbar-width: thin;

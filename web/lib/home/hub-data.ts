@@ -1,15 +1,15 @@
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
-import { ensureWcSeeded } from "@/lib/wc/seed";
 import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { getWcNewsForApi } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import {
-  loadWcTablesData,
-  type GroupTable,
-  type LeaderboardRow,
-} from "@/lib/wc/standings";
+  buildGroupTablesFromFifaMatches,
+  buildLeaderboardsFromFifaMatches,
+  loadTeamsByCode,
+} from "@/lib/wc/fifa-standings";
+import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
 
 export type HomeMatchSnippet = {
   id: number;
@@ -24,20 +24,25 @@ export type HomeMatchSnippet = {
   round_label: string;
 };
 
+export type TodayTickerItem = {
+  kind: "result" | "upcoming";
+  match: HomeMatchSnippet;
+};
+
 export type HomeHubData = {
   today: {
-    wcNext: HomeMatchSnippet | null;
+    ticker: TodayTickerItem[];
     fpl: {
       gw: number | null;
       deadline: string | null;
       open: boolean;
     };
-    headline: { title: string; url: string; outlet: string } | null;
   };
   wc: {
     nextMatches: HomeMatchSnippet[];
     groupsPreview: GroupTable[];
     topScorers: LeaderboardRow[];
+    topAssists: LeaderboardRow[];
   };
   news: WcNewsItem[];
 };
@@ -58,46 +63,63 @@ function toSnippet(m: WcMatchRow): HomeMatchSnippet {
 }
 
 function isUpcoming(m: WcMatchRow): boolean {
-  const s = m.status.toLowerCase();
-  if (s === "scheduled") return true;
   if (isWcMatchFinished(m)) return false;
-  return m.home_score == null;
+  const s = m.status.toLowerCase();
+  return s === "scheduled" || m.home_score == null;
 }
 
-function sortByKickoff(a: WcMatchRow, b: WcMatchRow): number {
-  const ta = a.kickoff ? new Date(a.kickoff).getTime() : Infinity;
-  const tb = b.kickoff ? new Date(b.kickoff).getTime() : Infinity;
-  return ta - tb;
+function kickoffMs(m: WcMatchRow): number {
+  return m.kickoff ? new Date(m.kickoff).getTime() : 0;
 }
 
-async function loadWcHub(): Promise<{
-  wc: HomeHubData["wc"];
-  wcNext: HomeMatchSnippet | null;
-}> {
-  await ensureWcSeeded();
-  const [{ matches }, tables] = await Promise.all([
+function buildTodayTicker(matches: WcMatchRow[]): TodayTickerItem[] {
+  const finished = matches
+    .filter(
+      (m) =>
+        isWcMatchFinished(m) &&
+        m.home_score != null &&
+        m.away_score != null,
+    )
+    .sort((a, b) => kickoffMs(b) - kickoffMs(a))
+    .slice(0, 10)
+    .map((m) => ({ kind: "result" as const, match: toSnippet(m) }));
+
+  const upcoming = matches
+    .filter(isUpcoming)
+    .sort((a, b) => kickoffMs(a) - kickoffMs(b))
+    .slice(0, 10)
+    .map((m) => ({ kind: "upcoming" as const, match: toSnippet(m) }));
+
+  return [...finished, ...upcoming];
+}
+
+async function loadWcHub(): Promise<HomeHubData["wc"] & { ticker: TodayTickerItem[] }> {
+  const [{ matches }, teamsByCode] = await Promise.all([
     buildWcMatchesWithStats(),
-    loadWcTablesData(),
+    loadTeamsByCode(),
   ]);
 
-  const upcoming = matches.filter(isUpcoming).sort(sortByKickoff);
-  const nextMatches = upcoming.slice(0, 3).map(toSnippet);
-  const wcNext = upcoming[0] ? toSnippet(upcoming[0]) : null;
+  const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
+  const { scorers, assists } = buildLeaderboardsFromFifaMatches(
+    teamsByCode,
+    matches,
+  );
+
+  const upcoming = matches.filter(isUpcoming).sort((a, b) => kickoffMs(a) - kickoffMs(b));
 
   return {
-    wcNext,
-    wc: {
-      nextMatches,
-      groupsPreview: tables.groups.slice(0, 3),
-      topScorers: tables.scorers.slice(0, 5),
-    },
+    ticker: buildTodayTicker(matches),
+    nextMatches: upcoming.slice(0, 3).map(toSnippet),
+    groupsPreview: groups.slice(0, 3),
+    topScorers: scorers.slice(0, 5),
+    topAssists: assists.slice(0, 5),
   };
 }
 
 export async function loadHomeHubData(): Promise<HomeHubData> {
   const [wcResult, newsResult, fplResult] = await Promise.allSettled([
     loadWcHub(),
-    getWcNewsForApi({ limit: 8, editorialOnly: false }),
+    getWcNewsForApi({ limit: 6, editorialOnly: false }),
     getMiniGameweekContext(),
   ]);
 
@@ -105,8 +127,11 @@ export async function loadHomeHubData(): Promise<HomeHubData> {
     wcResult.status === "fulfilled"
       ? wcResult.value
       : {
-          wcNext: null,
-          wc: { nextMatches: [], groupsPreview: [], topScorers: [] },
+          ticker: [],
+          nextMatches: [],
+          groupsPreview: [],
+          topScorers: [],
+          topAssists: [],
         };
 
   const newsItems =
@@ -121,25 +146,21 @@ export async function loadHomeHubData(): Promise<HomeHubData> {
           deadline_time: null,
         };
 
-  const headline = newsItems[0]
-    ? {
-        title: newsItems[0].title,
-        url: newsItems[0].url,
-        outlet: newsItems[0].outlet,
-      }
-    : null;
-
   return {
     today: {
-      wcNext: wcBundle.wcNext,
+      ticker: wcBundle.ticker,
       fpl: {
         gw: fplCtx.submission_gw,
         deadline: fplCtx.deadline_time,
         open: fplCtx.submission_open,
       },
-      headline,
     },
-    wc: wcBundle.wc,
+    wc: {
+      nextMatches: wcBundle.nextMatches,
+      groupsPreview: wcBundle.groupsPreview,
+      topScorers: wcBundle.topScorers,
+      topAssists: wcBundle.topAssists,
+    },
     news: newsItems,
   };
 }
