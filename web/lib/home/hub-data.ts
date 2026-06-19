@@ -9,6 +9,7 @@ import {
   buildLeaderboardsFromFifaMatches,
   loadTeamsByCode,
 } from "@/lib/wc/fifa-standings";
+import { localizeLeaderboardRows } from "@/lib/wc/localize-players";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
 
 export type HomeMatchSnippet = {
@@ -93,7 +94,7 @@ function buildTodayTicker(matches: WcMatchRow[]): TodayTickerItem[] {
   return [...finished, ...upcoming];
 }
 
-async function loadWcHub(): Promise<HomeHubData["wc"] & { ticker: TodayTickerItem[] }> {
+async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: TodayTickerItem[] }> {
   const [{ matches }, teamsByCode] = await Promise.all([
     buildWcMatchesWithStats(),
     loadTeamsByCode(),
@@ -107,18 +108,23 @@ async function loadWcHub(): Promise<HomeHubData["wc"] & { ticker: TodayTickerIte
 
   const upcoming = matches.filter(isUpcoming).sort((a, b) => kickoffMs(a) - kickoffMs(b));
 
+  const [topScorers, topAssists] = await Promise.all([
+    localizeLeaderboardRows(scorers.slice(0, 5), locale),
+    localizeLeaderboardRows(assists.slice(0, 5), locale),
+  ]);
+
   return {
     ticker: buildTodayTicker(matches),
     nextMatches: upcoming.slice(0, 3).map(toSnippet),
     groupsPreview: groups.slice(0, 3),
-    topScorers: scorers.slice(0, 5),
-    topAssists: assists.slice(0, 5),
+    topScorers,
+    topAssists,
   };
 }
 
-export async function loadHomeHubData(): Promise<HomeHubData> {
+export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
   const [wcResult, newsResult, fplResult] = await Promise.allSettled([
-    loadWcHub(),
+    loadWcHub(locale),
     getWcNewsForApi({ limit: 6, editorialOnly: false }),
     getMiniGameweekContext(),
   ]);

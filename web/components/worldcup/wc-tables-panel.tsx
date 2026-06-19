@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
 import type {
@@ -191,17 +192,12 @@ function TeamDetailPanel({
     group: string;
     record: string;
     results: string;
-    squad: string;
-    pos: string;
-    goals: string;
-    assists: string;
     md: string;
     home: string;
     away: string;
     atk: string;
     def: string;
     noResults: string;
-    noPlayers: string;
   };
   onClose: () => void;
 }) {
@@ -259,27 +255,6 @@ function TeamDetailPanel({
           ))}
         </ul>
       )}
-
-      <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        {labels.squad}
-      </h4>
-      {team.players.length === 0 ? (
-        <p className="mt-1 text-sm text-slate-500">{labels.noPlayers}</p>
-      ) : (
-        <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto text-sm">
-          {team.players.map((p) => (
-            <li key={p.id} className="flex justify-between gap-2">
-              <span className="text-white">
-                {p.name}{" "}
-                <span className="text-slate-500">{p.position}</span>
-              </span>
-              <span className="shrink-0 tabular-nums text-slate-400">
-                {p.goals}G {p.assists}A
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
     </aside>
   );
 }
@@ -319,17 +294,15 @@ export function WcTablesPanel({
     close: string;
     record: string;
     results: string;
-    squad: string;
-    pos: string;
     md: string;
     home: string;
     away: string;
     atk: string;
     def: string;
     noResults: string;
-    noPlayers: string;
   };
 }) {
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TablesPayload | null>(null);
@@ -339,7 +312,9 @@ export function WcTablesPanel({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/worldcup/tables");
+      const res = await fetch(
+        `/api/worldcup/tables?locale=${encodeURIComponent(locale)}`,
+      );
       const json = (await res.json()) as TablesPayload;
       if (!res.ok) throw new Error(json.error ?? "Failed to load");
       setData(json);
@@ -348,7 +323,7 @@ export function WcTablesPanel({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void load();

@@ -843,7 +843,7 @@ export function HomeHub() {
   useEffect(() => {
     let cancelled = false;
     setHubLoading(true);
-    fetch("/api/home/hub")
+    fetch(`/api/home/hub?locale=${encodeURIComponent(locale)}`)
       .then(async (res) => {
         const json = (await res.json()) as HomeHubData & { error?: string };
         if (!res.ok) throw new Error(json.error ?? "Failed to load");
@@ -860,7 +860,7 @@ export function HomeHub() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   const hub = data ?? {
     today: { ticker: [], fpl: { gw: null, deadline: null, open: false } },

@@ -192,10 +192,10 @@ export function WcMatchesPanel({
     setLoading(true);
     setError(null);
     try {
-      const q =
-        roundFilter === "ALL"
-          ? ""
-          : `?round=${encodeURIComponent(roundFilter)}`;
+      const params = new URLSearchParams();
+      if (roundFilter !== "ALL") params.set("round", roundFilter);
+      params.set("locale", locale);
+      const q = params.toString() ? `?${params.toString()}` : "";
       const res = await fetch(`/api/worldcup/matches${q}`);
       const json = (await res.json()) as MatchesPayload;
       if (!res.ok) throw new Error(json.error ?? "Failed to load matches");
@@ -205,7 +205,7 @@ export function WcMatchesPanel({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void load(round);

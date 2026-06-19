@@ -1,14 +1,12 @@
-import { getServerSupabase } from "@/lib/supabase";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import {
   buildGroupTablesFromFifaMatches,
   buildLeaderboardsFromFifaMatches,
-  buildPlayerGoalAssistsFromFifaMatches,
   buildTeamResultsFromFifa,
   loadTeamsByCode,
-  lookupPlayerGoalAssists,
 } from "@/lib/wc/fifa-standings";
+import { localizeLeaderboardRows } from "@/lib/wc/localize-players";
 import type { WcFixtureRow } from "@/lib/wc/projection-context";
 import type { WcTeam } from "@/lib/wc/types";
 
@@ -63,14 +61,6 @@ export type TeamDetail = {
   defence_strength: number;
   standing: GroupStandingRow | null;
   results: TeamResultRow[];
-  players: Array<{
-    id: number;
-    name: string;
-    position: string;
-    goals: number;
-    assists: number;
-    minutes: number;
-  }>;
 };
 
 export function emptyStanding(team: WcTeam): Omit<GroupStandingRow, "rank"> {
@@ -241,34 +231,19 @@ export function buildLeaderboards(
   return { scorers, assists };
 }
 
-export async function loadWcTablesData(): Promise<{
+export async function loadWcTablesData(locale = "en"): Promise<{
   groups: GroupTable[];
   scorers: LeaderboardRow[];
   assists: LeaderboardRow[];
   teams: Record<string, TeamDetail>;
 }> {
-  const [matches, teamsByCode, playerRows] = await Promise.all([
+  const [matches, teamsByCode] = await Promise.all([
     buildWcMatchesWithStats().then((r) => r.matches),
     loadTeamsByCode(),
-    getServerSupabase()
-      .from("wc_players")
-      .select(
-        "id,name,position,goals,assists,minutes,fifa_element_id,wc_team_id,wc_teams(code,name,short_name)",
-      )
-      .order("goals", { ascending: false }),
   ]);
-
-  const teams = new Map<number, WcTeam>();
-  for (const t of teamsByCode.values()) {
-    teams.set(t.id, t);
-  }
 
   const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
   const { scorers, assists } = buildLeaderboardsFromFifaMatches(
-    teamsByCode,
-    matches,
-  );
-  const liveStats = buildPlayerGoalAssistsFromFifaMatches(
     teamsByCode,
     matches,
   );
@@ -280,48 +255,8 @@ export async function loadWcTablesData(): Promise<{
     }
   }
 
-  const playersForBoard = (playerRows.data ?? []).map((r) => {
-    const teamRaw = r.wc_teams as
-      | { code: string; name: string; short_name: string }
-      | { code: string; name: string; short_name: string }[]
-      | null;
-    const team = Array.isArray(teamRaw) ? teamRaw[0] : teamRaw;
-    return {
-      id: r.id as number,
-      name: r.name as string,
-      position: r.position as string,
-      goals: Number(r.goals ?? 0),
-      assists: Number(r.assists ?? 0),
-      minutes: Number(r.minutes ?? 0),
-      fifa_element_id: (r.fifa_element_id as number | null) ?? null,
-      team_code: team?.code ?? "???",
-      team_name: team?.short_name ?? team?.name ?? "???",
-    };
-  });
-
-  const playersByTeam = new Map<number, TeamDetail["players"]>();
-  for (const p of playersForBoard) {
-    const team = [...teams.values()].find((t) => t.code === p.team_code);
-    if (!team) continue;
-    const ga = lookupPlayerGoalAssists(liveStats, {
-      fifa_element_id: p.fifa_element_id,
-      name: p.name,
-      team_code: p.team_code,
-    });
-    const list = playersByTeam.get(team.id) ?? [];
-    list.push({
-      id: p.id,
-      name: p.name,
-      position: p.position,
-      goals: ga.goals,
-      assists: ga.assists,
-      minutes: p.minutes,
-    });
-    playersByTeam.set(team.id, list);
-  }
-
   const teamsDetail: Record<string, TeamDetail> = {};
-  for (const team of teams.values()) {
+  for (const team of teamsByCode.values()) {
     teamsDetail[team.code] = {
       team_id: team.id,
       code: team.code,
@@ -332,15 +267,18 @@ export async function loadWcTablesData(): Promise<{
       defence_strength: team.defence_strength,
       standing: standingByCode.get(team.code) ?? null,
       results: buildTeamResultsFromFifa(team.code, teamsByCode, matches),
-      players: (playersByTeam.get(team.id) ?? []).sort(
-        (a, b) =>
-          b.goals + b.assists - (a.goals + a.assists) ||
-          b.goals - a.goals ||
-          b.assists - a.assists ||
-          a.name.localeCompare(b.name),
-      ),
     };
   }
 
-  return { groups, scorers, assists, teams: teamsDetail };
+  const [localizedScorers, localizedAssists] = await Promise.all([
+    localizeLeaderboardRows(scorers, locale),
+    localizeLeaderboardRows(assists, locale),
+  ]);
+
+  return {
+    groups,
+    scorers: localizedScorers,
+    assists: localizedAssists,
+    teams: teamsDetail,
+  };
 }

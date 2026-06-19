@@ -11,6 +11,12 @@ import {
   getWcPlayerById,
   loadAllWcPlayers,
 } from "@/lib/wc/data";
+import { readLocaleFromRequest } from "@/lib/wc/localize-players";
+import {
+  displayPlayerName,
+  isChineseLocale,
+  resolveChinesePlayerNameMap,
+} from "@/lib/wc/player-names-zh";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +47,7 @@ function comparePlayer(
 
 export async function GET(req: Request) {
   try {
+    const locale = readLocaleFromRequest(req);
     const url = new URL(req.url);
     const aId = Number(url.searchParams.get("a"));
     const bId = Number(url.searchParams.get("b"));
@@ -58,8 +65,16 @@ export async function GET(req: Request) {
     }
 
     if (!Number.isFinite(bId) || bId <= 0) {
+      let player = comparePlayer(playerA, pool, xpById);
+      if (isChineseLocale(locale)) {
+        const zhMap = await resolveChinesePlayerNameMap([player.name]);
+        player = {
+          ...player,
+          name: displayPlayerName(player.name, locale, zhMap),
+        };
+      }
       return NextResponse.json({
-        player: comparePlayer(playerA, pool, xpById),
+        player,
         labels: radarLabelsArray(),
       });
     }
@@ -69,7 +84,26 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Compare player not found" }, { status: 404 });
     }
 
-    return NextResponse.json(buildWcCompare(playerA, playerB, pool, xpById));
+    const result = buildWcCompare(playerA, playerB, pool, xpById);
+    if (isChineseLocale(locale)) {
+      const zhMap = await resolveChinesePlayerNameMap([
+        result.playerA.name,
+        result.playerB.name,
+      ]);
+      return NextResponse.json({
+        ...result,
+        playerA: {
+          ...result.playerA,
+          name: displayPlayerName(result.playerA.name, locale, zhMap),
+        },
+        playerB: {
+          ...result.playerB,
+          name: displayPlayerName(result.playerB.name, locale, zhMap),
+        },
+      });
+    }
+
+    return NextResponse.json(result);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Compare failed";
     return NextResponse.json({ error: message }, { status: 500 });

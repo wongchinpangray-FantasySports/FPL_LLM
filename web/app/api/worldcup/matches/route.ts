@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
+import {
+  localizeWcMatches,
+  readLocaleFromRequest,
+} from "@/lib/wc/localize-players";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const locale = readLocaleFromRequest(req);
     const url = new URL(req.url);
     const roundFilter = url.searchParams.get("round");
 
@@ -17,9 +22,11 @@ export async function GET(req: Request) {
       }
     }
 
+    const localized = await localizeWcMatches(filtered, locale);
+
     return NextResponse.json({
       rounds,
-      matches: filtered,
+      matches: localized,
       disclaimer:
         "Schedule and scores from FIFA. Goal/card minutes from API-Football when configured.",
     });

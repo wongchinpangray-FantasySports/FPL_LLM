@@ -6,7 +6,11 @@ import {
   getWcPoolStatus,
   listWcPlayers,
 } from "@/lib/wc/data";
-import { ensureWcSeeded } from "@/lib/wc/seed";
+import {
+  localizeNamedRows,
+  localizeScoutingReport,
+  readLocaleFromRequest,
+} from "@/lib/wc/localize-players";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +31,16 @@ function projectionNote(meta: {
 
 export async function GET(req: Request) {
   try {
+    const locale = readLocaleFromRequest(req);
     const url = new URL(req.url);
     const position = url.searchParams.get("position") ?? "ALL";
     const scoutingOnly = url.searchParams.get("scouting") === "1";
 
     if (scoutingOnly) {
       const { report, projection } = await buildWcScouting();
+      const scouting = await localizeScoutingReport(report, locale);
       return NextResponse.json({
-        scouting: report,
+        scouting,
         projection,
         projection_note: projectionNote(projection),
         disclaimer:
@@ -49,6 +55,9 @@ export async function GET(req: Request) {
       getWcPoolStatus(),
     ]);
 
+    const localizedXpRows = await localizeNamedRows(xp.rows, locale);
+    const localizedPlayers = await localizeNamedRows(players, locale);
+
     const poolNote =
       pool.source === "fifa"
         ? "Player list synced from FIFA fantasy (final squads)."
@@ -58,10 +67,10 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       fdrGrid,
-      xp: { matchdays: xp.matchdays, rows: xp.rows },
+      xp: { matchdays: xp.matchdays, rows: localizedXpRows },
       projection: xp.projection,
       projection_note: projectionNote(xp.projection),
-      players,
+      players: localizedPlayers,
       player_count: players.length,
       pool,
       pool_note: poolNote,

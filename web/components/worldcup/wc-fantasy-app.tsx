@@ -76,7 +76,7 @@ export function WcFantasyApp() {
     setError(null);
     try {
       const res = await fetch(
-        `/api/worldcup/context?position=${encodeURIComponent(pos)}`,
+        `/api/worldcup/context?position=${encodeURIComponent(pos)}&locale=${encodeURIComponent(locale)}`,
       );
       const data = await readApiJson<ContextPayload & { error?: string }>(res);
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
@@ -86,7 +86,7 @@ export function WcFantasyApp() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void loadContext(position);
@@ -97,7 +97,7 @@ export function WcFantasyApp() {
     let cancelled = false;
     setScoutingLoading(true);
     setScoutingError(null);
-    fetch("/api/worldcup/context?scouting=1")
+    fetch(`/api/worldcup/context?scouting=1&locale=${encodeURIComponent(locale)}`)
       .then(async (res) => {
         const data = await readApiJson<{
           scouting?: ScoutingPayload;
@@ -127,7 +127,7 @@ export function WcFantasyApp() {
     return () => {
       cancelled = true;
     };
-  }, [tab, scouting]);
+  }, [tab, scouting, locale]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "fdr", label: t("tabFdr") },
@@ -335,15 +335,12 @@ export function WcFantasyApp() {
             close: t("tablesClose"),
             record: t("tablesRecord"),
             results: t("tablesResults"),
-            squad: t("tablesSquad"),
-            pos: t("colPos"),
             md: t("mdShort"),
             home: t("tablesHome"),
             away: t("tablesAway"),
             atk: t("tablesAtk"),
             def: t("tablesDef"),
             noResults: t("tablesNoResults"),
-            noPlayers: t("tablesNoPlayers"),
           }}
         />
       ) : null}
