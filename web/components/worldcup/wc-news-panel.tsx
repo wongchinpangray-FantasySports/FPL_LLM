@@ -37,54 +37,77 @@ function NewsCard({
     regions: Record<string, string>;
   };
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = Boolean(item.image_url) && !imgFailed;
+
   return (
-    <article className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 transition-colors hover:border-white/[0.14] hover:bg-white/[0.04]">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-          {item.outlet}
-        </span>
-        <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-accent">
-          {regionLabel(item.region, labels.regions)}
-        </span>
-        {item.is_editorial ? (
-          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
-            {labels.editorialBadge}
-          </span>
+    <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-colors hover:border-white/[0.14] hover:bg-white/[0.04]">
+      <div className={cn("flex flex-col", showImage && "sm:flex-row")}>
+        {showImage ? (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative block shrink-0 sm:w-36 md:w-44"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.image_url!}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={() => setImgFailed(true)}
+              className="h-36 w-full object-cover sm:h-full sm:min-h-[8.5rem]"
+            />
+          </a>
         ) : null}
-        <span className="text-[10px] uppercase text-slate-600">{item.lang}</span>
-      </div>
+        <div className="flex min-w-0 flex-1 flex-col p-4">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+              {item.outlet}
+            </span>
+            <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-accent">
+              {regionLabel(item.region, labels.regions)}
+            </span>
+            {item.is_editorial ? (
+              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
+                {labels.editorialBadge}
+              </span>
+            ) : null}
+            <span className="text-[10px] uppercase text-slate-600">{item.lang}</span>
+          </div>
 
-      <h3 className="text-sm font-semibold leading-snug text-white sm:text-base">
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-brand-accent"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {item.title}
-        </a>
-      </h3>
+          <h3 className="text-sm font-semibold leading-snug text-white sm:text-base">
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-brand-accent"
+            >
+              {item.title}
+            </a>
+          </h3>
 
-      {item.summary ? (
-        <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-400">
-          {item.summary}
-        </p>
-      ) : null}
+          {item.summary ? (
+            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-400">
+              {item.summary}
+            </p>
+          ) : null}
 
-      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
-        <time dateTime={item.published_at ?? undefined}>
-          {fmtDate(item.published_at, locale)}
-        </time>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 font-medium text-brand-accent hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {labels.readMore} →
-        </a>
+          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-xs text-slate-500">
+            <time dateTime={item.published_at ?? undefined}>
+              {fmtDate(item.published_at, locale)}
+            </time>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 font-medium text-brand-accent hover:underline"
+            >
+              {labels.readMore} →
+            </a>
+          </div>
+        </div>
       </div>
     </article>
   );
@@ -234,7 +257,7 @@ export function WcNewsPanel({
           <p className="text-xs text-slate-500">
             {labels.count.replace("{n}", String(items.length))}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {items.map((item) => (
               <NewsCard
                 key={item.id}

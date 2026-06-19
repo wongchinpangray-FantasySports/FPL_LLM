@@ -17,6 +17,10 @@ function filterItems(
   return out.slice(0, limit);
 }
 
+function normalizeItem(raw: WcNewsItem): WcNewsItem {
+  return { ...raw, image_url: raw.image_url ?? null };
+}
+
 export async function loadWcNewsFromDb(): Promise<{
   items: WcNewsItem[];
   fetched_at: string | null;
@@ -29,8 +33,9 @@ export async function loadWcNewsFromDb(): Promise<{
       .eq("id", CACHE_ID)
       .maybeSingle();
     if (error || !data) return { items: [], fetched_at: null };
+    const items = ((data.items as WcNewsItem[]) ?? []).map(normalizeItem);
     return {
-      items: (data.items as WcNewsItem[]) ?? [],
+      items,
       fetched_at: (data.fetched_at as string | null) ?? null,
     };
   } catch {

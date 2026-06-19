@@ -22,6 +22,7 @@ export type WcNewsItem = {
   title: string;
   url: string;
   summary: string;
+  image_url: string | null;
   published_at: string | null;
   outlet: string;
   region: WcNewsRegion;
@@ -258,10 +259,32 @@ function extractLink(block: string): string {
   return m?.[1]?.trim() ?? "";
 }
 
+function extractImageUrl(block: string, rawSummary: string): string | null {
+  const thumb = block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+  if (thumb?.[1]?.startsWith("http")) return thumb[1];
+
+  const media = block.match(/<media:content[^>]+url=["']([^"']+)["']/i);
+  if (media?.[1]?.startsWith("http")) return media[1];
+
+  const enclosure = block.match(
+    /<enclosure[^>]+url=["']([^"']+)["'][^>]*(?:type=["']image|medium=["']image)/i,
+  );
+  if (enclosure?.[1]?.startsWith("http")) return enclosure[1];
+
+  const img =
+    rawSummary.match(/<img[^>]+src=["']([^"']+)["']/i) ??
+    block.match(/<img[^>]+src=["']([^"']+)["']/i);
+  const src = img?.[1];
+  if (src?.startsWith("http")) return src;
+
+  return null;
+}
+
 function parseRssItems(xml: string): Array<{
   title: string;
   url: string;
   summary: string;
+  image_url: string | null;
   published_at: string | null;
   outlet: string | null;
 }> {
@@ -269,6 +292,7 @@ function parseRssItems(xml: string): Array<{
     title: string;
     url: string;
     summary: string;
+    image_url: string | null;
     published_at: string | null;
     outlet: string | null;
   }> = [];
@@ -279,11 +303,12 @@ function parseRssItems(xml: string): Array<{
     const url = extractLink(block);
     if (!title || !url) continue;
 
-    const summary = stripHtml(
+    const rawDesc =
       extractTag(block, "description") ||
-        extractTag(block, "summary") ||
-        extractTag(block, "content"),
-    ).slice(0, 400);
+      extractTag(block, "summary") ||
+      extractTag(block, "content");
+    const summary = stripHtml(rawDesc).slice(0, 400);
+    const image_url = extractImageUrl(block, rawDesc);
 
     const pubRaw =
       extractTag(block, "pubDate") ||
@@ -300,7 +325,7 @@ function parseRssItems(xml: string): Array<{
     const sourceTag = extractTag(block, "source");
     const outlet = sourceTag || null;
 
-    items.push({ title, url, summary, published_at, outlet });
+    items.push({ title, url, summary, image_url, published_at, outlet });
   }
 
   if (items.length === 0) {
@@ -311,9 +336,10 @@ function parseRssItems(xml: string): Array<{
         extractLink(block) ||
         extractTag(block, "id").trim();
       if (!title || !url.startsWith("http")) continue;
-      const summary = stripHtml(
-        extractTag(block, "summary") || extractTag(block, "content"),
-      ).slice(0, 400);
+      const rawContent =
+        extractTag(block, "summary") || extractTag(block, "content");
+      const summary = stripHtml(rawContent).slice(0, 400);
+      const image_url = extractImageUrl(block, rawContent);
       const pubRaw =
         extractTag(block, "published") || extractTag(block, "updated");
       let published_at: string | null = null;
@@ -321,7 +347,7 @@ function parseRssItems(xml: string): Array<{
         const ts = Date.parse(pubRaw);
         published_at = Number.isFinite(ts) ? new Date(ts).toISOString() : null;
       }
-      items.push({ title, url, summary, published_at, outlet: null });
+      items.push({ title, url, summary, image_url, published_at, outlet: null });
     }
   }
 
@@ -418,6 +444,7 @@ export async function fetchWcNewsItems(opts?: {
           title: row.title,
           url: row.url,
           summary: row.summary,
+          image_url: row.image_url,
           published_at: row.published_at,
           outlet,
           region: feed.region,

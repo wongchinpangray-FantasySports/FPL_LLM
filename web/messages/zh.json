@@ -6,12 +6,14 @@
   "nav": {
     "home": "首页",
     "chat": "对话",
+    "fpl": "FPL",
     "dashboard": "仪表盘",
     "manager": "经理",
     "planner": "规划",
     "players": "球员",
     "mini": "五人赛",
     "worldcup": "世界杯",
+    "news": "新闻",
     "signIn": "登录",
     "signUp": "注册",
     "inbox": "收件箱",
@@ -753,5 +755,9 @@
     "players": "关注球员",
     "newsRegions": "新闻地区",
     "notSet": "未设置"
+  },
+  "newsIndex": {
+    "title": "新闻",
+    "summary": "来自全球 RSS 的世界杯与足球评论 — 可按地区与编辑质量筛选。"
   }
 }

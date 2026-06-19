@@ -6,12 +6,14 @@
   "nav": {
     "home": "Home",
     "chat": "Chat",
+    "fpl": "FPL",
     "dashboard": "Dashboard",
     "manager": "Manager",
     "planner": "Planner",
     "players": "Players",
     "mini": "Mini 5",
     "worldcup": "World Cup",
+    "news": "News",
     "signIn": "Sign in",
     "signUp": "Sign up",
     "inbox": "Inbox",
@@ -754,5 +756,9 @@
     "players": "Followed players",
     "newsRegions": "News regions",
     "notSet": "Not set"
+  },
+  "newsIndex": {
+    "title": "News",
+    "summary": "World Cup and football editorials from global RSS feeds — filtered by region and editorial quality."
   }
 }
