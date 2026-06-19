@@ -166,6 +166,7 @@ export function WcAboutPanel({
   disclaimer,
   scoutingNote,
   matchesNote,
+  tablesNote,
   newsNote,
   moreLabel,
 }: {
@@ -173,10 +174,18 @@ export function WcAboutPanel({
   disclaimer?: string;
   scoutingNote?: string;
   matchesNote?: string;
+  tablesNote?: string;
   newsNote?: string;
   moreLabel: string;
 }) {
-  if (!poolNote && !disclaimer && !scoutingNote && !matchesNote && !newsNote) {
+  if (
+    !poolNote &&
+    !disclaimer &&
+    !scoutingNote &&
+    !matchesNote &&
+    !tablesNote &&
+    !newsNote
+  ) {
     return null;
   }
 
@@ -190,6 +199,7 @@ export function WcAboutPanel({
         {disclaimer ? <p>{disclaimer}</p> : null}
         {scoutingNote ? <p>{scoutingNote}</p> : null}
         {matchesNote ? <p>{matchesNote}</p> : null}
+        {tablesNote ? <p>{tablesNote}</p> : null}
         {newsNote ? <p>{newsNote}</p> : null}
       </div>
     </details>

@@ -12,8 +12,9 @@ import { WcXpHeatmap } from "@/components/worldcup/wc-xp-heatmap";
 import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
 
 import { WcMatchesPanel } from "@/components/worldcup/wc-matches-panel";
+import { WcTablesPanel } from "@/components/worldcup/wc-tables-panel";
 
-type Tab = "fdr" | "xp" | "scouting" | "matches";
+type Tab = "fdr" | "xp" | "scouting" | "matches" | "tables";
 
 type ContextPayload = {
   fdrGrid: WcFdrRow[];
@@ -118,6 +119,7 @@ export function WcFantasyApp() {
     { id: "xp", label: t("tabXp") },
     { id: "scouting", label: t("tabScouting") },
     { id: "matches", label: t("tabMatches") },
+    { id: "tables", label: t("tabTables") },
   ];
 
   const positionOptions = [
@@ -176,6 +178,7 @@ export function WcFantasyApp() {
           tab === "scouting" ? scouting?.disclaimer : undefined
         }
         matchesNote={tab === "matches" ? t("matchesDisclaimer") : undefined}
+        tablesNote={tab === "tables" ? t("tablesDisclaimer") : undefined}
         moreLabel={t("aboutNotes")}
       />
 
@@ -285,6 +288,49 @@ export function WcFantasyApp() {
             />
           ) : null}
         </>
+      ) : null}
+
+      {tab === "tables" ? (
+        <WcTablesPanel
+          title={t("tablesTitle")}
+          summary={t("tablesSummary")}
+          detail={t("tablesDetail")}
+          moreLabel={t("moreDetail")}
+          labels={{
+            loading: t("loading"),
+            empty: t("tablesEmpty"),
+            group: t("colGroup"),
+            team: t("colTeam"),
+            p: t("tablesColP"),
+            w: t("tablesColW"),
+            d: t("tablesColD"),
+            l: t("tablesColL"),
+            gf: t("tablesColGf"),
+            ga: t("tablesColGa"),
+            gd: t("tablesColGd"),
+            pts: t("tablesColPts"),
+            scorersTitle: t("tablesScorersTitle"),
+            assistsTitle: t("tablesAssistsTitle"),
+            rank: t("tablesColRank"),
+            player: t("colPlayer"),
+            goals: t("goals"),
+            assists: t("assists"),
+            leaderboardEmpty: t("tablesLeaderboardEmpty"),
+            selectTeamHint: t("tablesSelectTeamHint"),
+            close: t("tablesClose"),
+            record: t("tablesRecord"),
+            results: t("tablesResults"),
+            squad: t("tablesSquad"),
+            pos: t("colPos"),
+            md: t("mdShort"),
+            home: t("tablesHome"),
+            away: t("tablesAway"),
+            atk: t("tablesAtk"),
+            def: t("tablesDef"),
+            noResults: t("tablesNoResults"),
+            noPlayers: t("tablesNoPlayers"),
+          }}
+        />
       ) : null}
 
       {tab === "matches" ? (
