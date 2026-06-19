@@ -87,18 +87,18 @@ export async function GET(req: Request) {
     const result = buildWcCompare(playerA, playerB, pool, xpById);
     if (isChineseLocale(locale)) {
       const zhMap = await resolveChinesePlayerNameMap([
-        result.playerA.name,
-        result.playerB.name,
+        result.a.name,
+        result.b.name,
       ]);
       return NextResponse.json({
         ...result,
-        playerA: {
-          ...result.playerA,
-          name: displayPlayerName(result.playerA.name, locale, zhMap),
+        a: {
+          ...result.a,
+          name: displayPlayerName(result.a.name, locale, zhMap),
         },
-        playerB: {
-          ...result.playerB,
-          name: displayPlayerName(result.playerB.name, locale, zhMap),
+        b: {
+          ...result.b,
+          name: displayPlayerName(result.b.name, locale, zhMap),
         },
       });
     }
