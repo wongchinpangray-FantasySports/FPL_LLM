@@ -51,7 +51,9 @@ function toTopRow(p: PlayerProjection, fromGw: number): TopXpPlayerRow {
 export async function computeTopXpByPosition(
   horizonInput: number,
   fromGwOverride?: number,
+  topPerPosition = 3,
 ): Promise<TopXpByPositionResult> {
+  const topN = Math.min(12, Math.max(1, Math.floor(topPerPosition) || 3));
   const window = await resolvePlannerProjectionWindow(
     horizonInput,
     fromGwOverride,
@@ -101,7 +103,7 @@ export async function computeTopXpByPosition(
   for (const pos of POSITIONS) {
     tops[pos] = [...buckets[pos]]
       .sort((a, b) => b.xp_total - a.xp_total)
-      .slice(0, 3);
+      .slice(0, topN);
   }
 
   return { ...window, tops };

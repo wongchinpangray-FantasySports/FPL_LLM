@@ -53,7 +53,10 @@ export default async function LocaleLayout({ children, params }: Props) {
                 className="h-2 w-2 shrink-0 rounded-full bg-brand-accent shadow-[0_0_14px_rgba(0,255,135,0.85)] transition-transform group-hover:scale-110"
                 aria-hidden
               />
-              <span className="text-sm sm:text-base">FALEAGUE AI</span>
+              <span className="text-sm sm:text-base">
+                FALEAGUE
+                <span className="font-normal text-slate-400"> · Football Hub</span>
+              </span>
             </Link>
             <SiteNav />
           </div>
