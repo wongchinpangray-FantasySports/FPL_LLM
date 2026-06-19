@@ -16,7 +16,7 @@ function GoalIcon({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px]",
+        "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px]",
         className,
       )}
       aria-hidden
@@ -53,16 +53,16 @@ function HomeGoalRow({
   return (
     <div className="flex items-start justify-end gap-2">
       <div className="min-w-0 text-right">
-        <div className="text-sm leading-snug text-slate-200">
+        <div className="text-sm leading-snug text-foreground/90">
           {goal.minute ? (
-            <span className="mr-1.5 tabular-nums text-slate-400">
+            <span className="mr-1.5 tabular-nums text-muted-foreground">
               {fmtMinute(goal.minute)}
             </span>
           ) : null}
           <span className="font-medium">{goal.scorer_display}</span>
         </div>
         {goal.assist_display ? (
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             {assistLabel}: {goal.assist_display}
           </p>
         ) : null}
@@ -83,16 +83,16 @@ function AwayGoalRow({
     <div className="flex items-start gap-2">
       <GoalIcon className="mt-0.5" />
       <div className="min-w-0 text-left">
-        <div className="text-sm leading-snug text-slate-200">
+        <div className="text-sm leading-snug text-foreground/90">
           <span className="font-medium">{goal.scorer_display}</span>
           {goal.minute ? (
-            <span className="ml-1.5 tabular-nums text-slate-400">
+            <span className="ml-1.5 tabular-nums text-muted-foreground">
               {fmtMinute(goal.minute)}
             </span>
           ) : null}
         </div>
         {goal.assist_display ? (
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             {assistLabel}: {goal.assist_display}
           </p>
         ) : null}
@@ -103,9 +103,9 @@ function AwayGoalRow({
 
 function HomeCardRow({ event }: { event: WcMatchCardEvent }) {
   return (
-    <div className="flex items-center justify-end gap-2 text-sm text-slate-300">
+    <div className="flex items-center justify-end gap-2 text-sm text-foreground/70">
       {event.minute ? (
-        <span className="tabular-nums text-slate-400">
+        <span className="tabular-nums text-muted-foreground">
           {fmtMinute(event.minute)}
         </span>
       ) : null}
@@ -117,11 +117,11 @@ function HomeCardRow({ event }: { event: WcMatchCardEvent }) {
 
 function AwayCardRow({ event }: { event: WcMatchCardEvent }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-slate-300">
+    <div className="flex items-center gap-2 text-sm text-foreground/70">
       <CardIcon card={event.card} />
       <span className="font-medium">{event.player_display}</span>
       {event.minute ? (
-        <span className="tabular-nums text-slate-400">
+        <span className="tabular-nums text-muted-foreground">
           {fmtMinute(event.minute)}
         </span>
       ) : null}
@@ -185,10 +185,10 @@ export function WcMatchDetail({
   return (
     <>
       <div className="space-y-4">
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-4">
+        <div className="rounded-xl border border-border bg-card/50 px-3 py-4">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center justify-end gap-2">
-              <span className="truncate text-right text-xs font-bold uppercase tracking-wide text-white sm:text-sm">
+              <span className="truncate text-right text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
                 {match.home_name}
               </span>
               <span className="text-lg leading-none">{wcTeamFlag(match.home_code)}</span>
@@ -197,9 +197,9 @@ export function WcMatchDetail({
             <div className="px-2 text-center">
               {finished ? (
                 <>
-                  <div className="text-xl font-bold tabular-nums text-white sm:text-2xl">
+                  <div className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
                     {match.home_score ?? 0}
-                    <span className="mx-1.5 font-normal text-slate-500">-</span>
+                    <span className="mx-1.5 font-normal text-muted-foreground">-</span>
                     {match.away_score ?? 0}
                   </div>
                   <span className="mt-1 inline-block rounded-full bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-900">
@@ -207,20 +207,20 @@ export function WcMatchDetail({
                   </span>
                 </>
               ) : (
-                <div className="text-sm text-slate-500">vs</div>
+                <div className="text-sm text-muted-foreground">vs</div>
               )}
             </div>
 
             <div className="flex min-w-0 items-center gap-2">
               <span className="text-lg leading-none">{wcTeamFlag(match.away_code)}</span>
-              <span className="truncate text-left text-xs font-bold uppercase tracking-wide text-white sm:text-sm">
+              <span className="truncate text-left text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
                 {match.away_name}
               </span>
             </div>
           </div>
 
           {hasEvents ? (
-            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-white/[0.06] pt-3">
+            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3">
               <div className="space-y-2.5">
                 {homeEvents.map((ev, i) =>
                   ev.kind === "goal" ? (
@@ -268,7 +268,7 @@ export function WcMatchDetail({
           </div>
         ) : null}
 
-        <p className="text-center text-xs text-slate-600">{labels.collapseHint}</p>
+        <p className="text-center text-xs text-muted-foreground/80">{labels.collapseHint}</p>
       </div>
 
       <WcMatchSummaryModal

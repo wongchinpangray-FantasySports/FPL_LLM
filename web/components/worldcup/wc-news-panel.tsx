@@ -43,7 +43,7 @@ function NewsCard({
   const showImage = Boolean(imgSrc) && !imgFailed;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-colors hover:border-white/[0.14] hover:bg-white/[0.04]">
+    <article className="overflow-hidden rounded-xl border border-border bg-card/50 transition-colors hover:border-border hover:bg-card">
       <div className={cn("flex flex-col", showImage && "sm:flex-row")}>
         {showImage ? (
           <a
@@ -65,7 +65,7 @@ function NewsCard({
         ) : null}
         <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
               {item.outlet}
             </span>
             <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-accent">
@@ -76,10 +76,10 @@ function NewsCard({
                 {labels.editorialBadge}
               </span>
             ) : null}
-            <span className="text-[10px] uppercase text-slate-600">{item.lang}</span>
+            <span className="text-[10px] uppercase text-muted-foreground/80">{item.lang}</span>
           </div>
 
-          <h3 className="text-sm font-semibold leading-snug text-white sm:text-base">
+          <h3 className="text-sm font-semibold leading-snug text-foreground sm:text-base">
             <a
               href={item.url}
               target="_blank"
@@ -91,12 +91,12 @@ function NewsCard({
           </h3>
 
           {item.summary ? (
-            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-400">
+            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
               {item.summary}
             </p>
           ) : null}
 
-          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-xs text-slate-500">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-xs text-muted-foreground">
             <time dateTime={item.published_at ?? undefined}>
               {fmtDate(item.published_at, locale)}
             </time>
@@ -204,21 +204,21 @@ export function WcNewsPanel({
           moreLabel={moreLabel}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-slate-400">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
               checked={editorialOnly}
               onChange={(e) => setEditorialOnly(e.target.checked)}
-              className="rounded border-white/20 bg-slate-900"
+              className="rounded border-border bg-popover"
             />
             {labels.editorialOnly}
           </label>
-          <label className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+          <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
             <span>{labels.filterRegion}</span>
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="rounded-md border border-white/10 bg-slate-900/80 px-2 py-1.5 text-sm text-white"
+              className="rounded-md border border-border bg-popover/80 px-2 py-1.5 text-sm text-foreground"
             >
               {regionOptions.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -232,8 +232,8 @@ export function WcNewsPanel({
             onClick={() => void load(region, editorialOnly, true)}
             disabled={loading}
             className={cn(
-              "rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition-colors",
-              "hover:border-brand-accent/40 hover:text-white disabled:opacity-50",
+              "rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground/70 transition-colors",
+              "hover:border-brand-accent/40 hover:text-foreground disabled:opacity-50",
             )}
           >
             {labels.refresh}
@@ -242,7 +242,7 @@ export function WcNewsPanel({
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">{labels.loading}</p>
+        <p className="text-sm text-muted-foreground">{labels.loading}</p>
       ) : null}
       {error ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
@@ -251,12 +251,12 @@ export function WcNewsPanel({
       ) : null}
 
       {!loading && !error && items.length === 0 ? (
-        <p className="text-sm text-slate-500">{labels.empty}</p>
+        <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : null}
 
       {!loading && !error && items.length > 0 ? (
         <>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {labels.count.replace("{n}", String(items.length))}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -274,7 +274,7 @@ export function WcNewsPanel({
             ))}
           </div>
           {data?.disclaimer ? (
-            <p className="text-xs leading-relaxed text-slate-600">
+            <p className="text-xs leading-relaxed text-muted-foreground/80">
               {data.disclaimer}
             </p>
           ) : null}

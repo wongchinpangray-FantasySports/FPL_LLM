@@ -105,14 +105,14 @@ export function WcMatchSummaryModal({
       <div
         className={cn(
           "relative z-[101] flex max-h-[85vh] w-full max-w-lg flex-col",
-          "rounded-xl border border-white/10 bg-brand-ink shadow-2xl",
+          "rounded-xl border border-border bg-background shadow-2xl",
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-white/10 px-4 py-3 sm:px-5">
+        <div className="border-b border-border px-4 py-3 sm:px-5">
           <h2
             id="wc-match-summary-title"
-            className="text-base font-semibold text-white sm:text-lg"
+            className="text-base font-semibold text-foreground sm:text-lg"
           >
             {title}
           </h2>
@@ -120,13 +120,13 @@ export function WcMatchSummaryModal({
 
         <div className="overflow-y-auto px-4 py-4 sm:px-5">
           {loading ? (
-            <p className="text-sm text-slate-400">{labels.loading}</p>
+            <p className="text-sm text-muted-foreground">{labels.loading}</p>
           ) : null}
           {error ? (
             <p className="text-sm text-rose-300">{error}</p>
           ) : null}
           {summary ? (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
               {summary}
             </p>
           ) : null}
@@ -135,7 +135,7 @@ export function WcMatchSummaryModal({
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3 sm:px-5">
           {summary ? (
             <>
               {!speaking ? (

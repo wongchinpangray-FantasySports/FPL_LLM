@@ -779,14 +779,14 @@ export function PlannerApp({
               {squadToggle.useFreeHit ? (
                 <Link
                   href={squadToggle.pathBase}
-                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-foreground"
                 >
                   {t("planWithRevert")}
                 </Link>
               ) : (
                 <Link
                   href={`${squadToggle.pathBase}?squad=freehit`}
-                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-white"
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 transition-colors hover:text-foreground"
                 >
                   {t("viewTempFh")}
                 </Link>
@@ -795,16 +795,16 @@ export function PlannerApp({
           ) : null}
         </div>
       ) : null}
-      <section className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] pb-5 sm:gap-6 sm:pb-8">
+      <section className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5 sm:gap-6 sm:pb-8">
         <div className="max-w-2xl">
           <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent sm:mb-2 sm:text-xs">
             {t("eyebrow")}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
             {t("title")}
           </h1>
-          <p className="mt-2 text-xs leading-relaxed text-slate-400 sm:mt-3 sm:text-sm">
-            <span className="text-slate-300">{entryName}</span>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:mt-3 sm:text-sm">
+            <span className="text-foreground/70">{entryName}</span>
             {" · "}
             {t("subtitleSuffix")}
           </p>
@@ -823,7 +823,7 @@ export function PlannerApp({
           </Link>
           <Link
             href={`/dashboard/${entryId}`}
-            className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-slate-300 transition-colors hover:border-brand-accent/30 hover:text-white"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/70 transition-colors hover:border-brand-accent/30 hover:text-foreground"
           >
             {t("dashboard")}
           </Link>
@@ -839,15 +839,15 @@ export function PlannerApp({
       <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
         <div className="grid grid-cols-2 gap-2 sm:contents sm:flex sm:flex-wrap sm:gap-4">
           <div className="min-w-0">
-            <label className="mb-1 block text-[10px] uppercase text-slate-500">
+            <label className="mb-1 block text-[10px] uppercase text-muted-foreground">
               {t("bank")}
             </label>
-            <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-base font-semibold tabular-nums sm:px-3 sm:py-2 sm:text-lg">
+            <div className="rounded-lg border border-border bg-muted px-2 py-1.5 text-base font-semibold tabular-nums sm:px-3 sm:py-2 sm:text-lg">
               £{bank.toFixed(1)}m
             </div>
           </div>
           <div className="min-w-0">
-            <label className="mb-1 block text-[10px] uppercase text-slate-500">
+            <label className="mb-1 block text-[10px] uppercase text-muted-foreground">
               {t("horizon")}
             </label>
             <Input
@@ -885,11 +885,11 @@ export function PlannerApp({
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <label className="text-[10px] uppercase text-slate-500">
+            <label className="text-[10px] uppercase text-muted-foreground">
               {t("captain")}
             </label>
             <select
-              className="h-9 rounded-md border border-white/10 bg-brand-ink px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
+              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
               value={captainId ?? ""}
               onChange={(e) =>
                 setCaptainId(Number(e.target.value) || null)
@@ -905,11 +905,11 @@ export function PlannerApp({
             </select>
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <label className="text-[10px] uppercase text-slate-500">
+            <label className="text-[10px] uppercase text-muted-foreground">
               {t("vice")}
             </label>
             <select
-              className="h-9 rounded-md border border-white/10 bg-brand-ink px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
+              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
               value={viceId ?? ""}
               onChange={(e) =>
                 setViceId(Number(e.target.value) || null)
@@ -977,7 +977,7 @@ export function PlannerApp({
         <div className="min-w-0 flex flex-col gap-5 sm:gap-6">
           <section className="flex flex-col gap-2 sm:gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="max-w-xl space-y-1 text-xs text-slate-500">
+          <div className="max-w-xl space-y-1 text-xs text-muted-foreground">
             <p>
               {t("hintPitchLead")}{" "}
               <strong>{t("hintBoldXi")}</strong>
@@ -985,7 +985,7 @@ export function PlannerApp({
               <strong>{t("hintBoldTransfer")}</strong>
               {t("hintPitchClose")}
             </p>
-            <p className="text-[11px] text-slate-600">{t("hintTapProfile")}</p>
+            <p className="text-[11px] text-muted-foreground/80">{t("hintTapProfile")}</p>
           </div>
           <Button type="button" variant="secondary" size="sm" onClick={resetToFplTeam}>
             {t("resetFpl")}
@@ -1048,9 +1048,9 @@ export function PlannerApp({
       </section>
 
       {projMeta && Object.keys(projById).length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm sm:px-4 sm:py-4">
+        <div className="rounded-xl border border-border bg-card px-3 py-3 text-sm sm:px-4 sm:py-4">
           <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1">
-            <span className="text-slate-500">
+            <span className="text-muted-foreground">
               {t("gwRange", {
                 from: projMeta.fromGw,
                 to: projMeta.toGw,
@@ -1058,16 +1058,16 @@ export function PlannerApp({
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-white/5 bg-black/20 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-border/60 bg-input px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 {t("fplThisPage")}
               </p>
-              <p className="mt-1 text-slate-400">
+              <p className="mt-1 text-muted-foreground">
                 {t("xiXpLine", {
                   value: baselineXiXp.toFixed(1),
                 })}
               </p>
-              <p className="text-slate-400">
+              <p className="text-muted-foreground">
                 {t("benchLine", {
                   value: baselineBenchXp.toFixed(1),
                 })}
@@ -1077,17 +1077,17 @@ export function PlannerApp({
               <p className="text-[10px] uppercase tracking-wide text-brand-accent">
                 {t("planningScenario")}
               </p>
-              <p className="mt-1 text-slate-300">
+              <p className="mt-1 text-foreground/70">
                 {t("xiXpLine", {
                   value: xiXpDisplay.toFixed(1),
                 })}
               </p>
-              <p className="text-slate-400">
+              <p className="text-muted-foreground">
                 {t("benchLine", {
                   value: benchXp.toFixed(1),
                 })}
               </p>
-              <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+              <p className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">
                 {t("deltaXiLabel")}
                 <span
                   className={
@@ -1105,10 +1105,10 @@ export function PlannerApp({
         </div>
       )}
 
-      <section className="overflow-x-auto rounded-lg border border-white/10 bg-white/5 sm:rounded-xl">
+      <section className="overflow-x-auto rounded-lg border border-border bg-muted sm:rounded-xl">
         <table className="w-full text-xs sm:text-sm">
           <thead>
-            <tr className="text-left text-[10px] uppercase text-slate-400 sm:text-xs">
+            <tr className="text-left text-[10px] uppercase text-muted-foreground sm:text-xs">
               <th className="px-2 py-1.5 sm:px-3 sm:py-2">{t("tableSlot")}</th>
               <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tablePlayer")}</th>
               <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("tablePos")}</th>
@@ -1127,7 +1127,7 @@ export function PlannerApp({
                     {t("tableBadgeCaptain")}
                   </span>
                 ) : p.fpl_id === viceId ? (
-                  <span className="ml-1 text-slate-400 text-[10px]">
+                  <span className="ml-1 text-muted-foreground text-[10px]">
                     {t("tableBadgeVice")}
                   </span>
                 ) : null;
@@ -1135,7 +1135,7 @@ export function PlannerApp({
                 <tr
                   key={p.slot}
                   className={cn(
-                    "border-t border-white/5",
+                    "border-t border-border/60",
                     p.is_starter ? "" : "opacity-80",
                     xiBenchMode && xiFirst === p.slot && "bg-sky-500/10",
                   )}
@@ -1143,7 +1143,7 @@ export function PlannerApp({
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     {p.slot}
                     {!p.is_starter && (
-                      <span className="ml-1 text-[10px] text-slate-500">
+                      <span className="ml-1 text-[10px] text-muted-foreground">
                         {t("benchTag")}
                       </span>
                     )}
@@ -1152,8 +1152,8 @@ export function PlannerApp({
                     {p.web_name ?? `#${p.fpl_id}`}
                     {cap}
                   </td>
-                  <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">{p.position}</td>
-                  <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">{p.team}</td>
+                  <td className="px-1.5 py-1.5 text-muted-foreground sm:px-2 sm:py-2">{p.position}</td>
+                  <td className="px-1.5 py-1.5 text-foreground/70 sm:px-2 sm:py-2">{p.team}</td>
                   <td className="px-1.5 py-1.5 sm:px-2 sm:py-2">
                     {p.base_price != null ? p.base_price.toFixed(1) : "–"}
                   </td>
@@ -1162,7 +1162,7 @@ export function PlannerApp({
                       <>
                         {pr.xp_total.toFixed(1)}
                         {p.fpl_id === captainId && (
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             {" "}
                             {t("captainTag", {
                               value: (pr.xp_total * 2).toFixed(1),
@@ -1215,7 +1215,7 @@ export function PlannerApp({
           role="dialog"
           aria-modal="true"
         >
-          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/[0.1] bg-brand-ink p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5">
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">
                 {t("replaceSlot", { slot: swapSlot })}
@@ -1235,7 +1235,7 @@ export function PlannerApp({
               }}
               autoFocus
             />
-            <p className="text-[11px] text-slate-500 mt-2">
+            <p className="text-[11px] text-muted-foreground mt-2">
               {t("searchHint")}
             </p>
             {swapNotice ? (
@@ -1249,18 +1249,18 @@ export function PlannerApp({
             ) : null}
             <ul className="mt-3 flex flex-col gap-1">
               {searching && (
-                <li className="text-sm text-slate-500">{t("searching")}</li>
+                <li className="text-sm text-muted-foreground">{t("searching")}</li>
               )}
               {!searching &&
                 searchHits.map((h) => (
                   <li key={h.fpl_id}>
                     <button
                       type="button"
-                      className="w-full rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-left text-sm hover:bg-white/10"
+                      className="w-full rounded-lg border border-border/60 bg-muted px-3 py-2 text-left text-sm hover:bg-muted"
                       onClick={() => applySwap(swapSlot, h)}
                     >
                       <span className="font-medium">{h.web_name ?? h.name}</span>
-                      <span className="text-slate-400">
+                      <span className="text-muted-foreground">
                         {" · "}
                         {h.team} · {h.position} · £{h.base_price?.toFixed(1) ?? "?"}m
                         {h.total_points != null && (

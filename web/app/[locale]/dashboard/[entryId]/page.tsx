@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 function SlotLabel({ pos }: { pos: string | null }) {
   return (
-    <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
       {pos ?? "?"}
     </span>
   );
@@ -59,7 +59,7 @@ export default async function DashboardPage({
     const show403 = /\b403\b/.test(msg);
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
-        <h1 className="text-xl font-semibold text-white">{dt("errorTitle")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{dt("errorTitle")}</h1>
         <p className="mt-2 text-sm text-rose-100/90">{msg}</p>
         {show403 ? (
           <p className="mt-3 text-xs leading-relaxed text-rose-200/80">
@@ -68,7 +68,7 @@ export default async function DashboardPage({
         ) : null}
         <Link
           href="/"
-          className="mt-6 inline-flex rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-accent hover:bg-white/10"
+          className="mt-6 inline-flex rounded-lg border border-border bg-muted px-4 py-2 text-sm text-brand-accent hover:bg-muted"
         >
           {dt("backHome")}
         </Link>
@@ -205,25 +205,25 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
-      <section className="flex flex-col gap-5 border-b border-white/[0.06] pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
+      <section className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
         <div className="flex max-w-xl flex-col gap-1.5 sm:gap-2">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
             {dt("eyebrow")}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
             {team.entry.name}
           </h1>
-          <p className="text-sm leading-relaxed text-slate-400">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {team.entry.player_first_name} {team.entry.player_last_name} ·{" "}
-            <span className="text-slate-300">
+            <span className="text-foreground/70">
               {team.entry.summary_overall_points.toLocaleString()} {dt("pts")}
             </span>{" "}
             · {dt("overallRank")}{" "}
-            <span className="text-slate-300">
+            <span className="text-foreground/70">
               {team.entry.summary_overall_rank.toLocaleString()}
             </span>
           </p>
-          <p className="text-[11px] leading-relaxed text-slate-500">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
             {freeHitContext && hasRevert && !useFreeHitSquad
               ? dt("squadSubRevert", {
                   longGw: team.long_team_gw ?? "?",
@@ -285,14 +285,14 @@ export default async function DashboardPage({
               {useFreeHitSquad ? (
                 <Link
                   href={dashboardToggleHref(false)}
-                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-foreground"
                 >
                   {dt("freeHitShowRevert")}
                 </Link>
               ) : (
                 <Link
                   href={dashboardToggleHref(true)}
-                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-white"
+                  className="font-medium text-amber-200 underline decoration-amber-500/50 underline-offset-2 hover:text-foreground"
                 >
                   {dt("freeHitViewTemp")}
                 </Link>
@@ -338,7 +338,7 @@ export default async function DashboardPage({
           gwTotalLabel={dt("heatmapGwTotal")}
           benchLabel={dt("heatmapBench")}
         />
-        <div className="flex flex-wrap gap-3 text-[11px] text-slate-400">
+        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
           <Legend
             flagsLabel={dt("xpLegendNote")}
             xpPerFixturePrefix={dt("xpPerFixturePrefix")}
@@ -349,10 +349,10 @@ export default async function DashboardPage({
 
       <section className="space-y-5 md:space-y-8">
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             {dt("squad")}
           </p>
-          <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
             {dt("startingXI")}
           </h2>
         </div>
@@ -381,7 +381,7 @@ export default async function DashboardPage({
           })}
         </div>
         <div className="mt-6 md:mt-10">
-          <h2 className="mb-2 text-lg font-semibold tracking-tight text-white md:mb-3 md:text-xl">
+          <h2 className="mb-2 text-lg font-semibold tracking-tight text-foreground md:mb-3 md:text-xl">
             {dt("bench")}
           </h2>
         </div>
@@ -415,19 +415,19 @@ export default async function DashboardPage({
       <section className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               {dt("fixturesEyebrow")}
             </p>
-            <h2 className="text-xl font-semibold tracking-tight text-white">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
               {dt("fixturesTitle", { horizon })}
             </h2>
           </div>
-          <span className="text-xs text-slate-400">{dt("fixturesHint")}</span>
+          <span className="text-xs text-muted-foreground">{dt("fixturesHint")}</span>
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase text-slate-400">
+              <tr className="text-left text-xs uppercase text-muted-foreground">
                 <th className="px-3 py-2">{dt("fixtureTableTeam")}</th>
                 {gwHeaders.map((g) => (
                   <th key={g} className="px-2 py-2 text-center">
@@ -438,7 +438,7 @@ export default async function DashboardPage({
             </thead>
             <tbody>
               {grid.map((t) => (
-                <tr key={t.team_id} className="border-t border-white/5">
+                <tr key={t.team_id} className="border-t border-border/60">
                   <td className="px-3 py-2 font-medium">{t.short}</td>
                   {gwHeaders.map((g) => {
                     const fs = t.fixtures.filter((x) => x.gw === g);
@@ -449,7 +449,7 @@ export default async function DashboardPage({
                         {fs.length > 0 ? (
                           <div
                             className={cn(
-                              "flex min-h-[2.75rem] flex-col gap-1 rounded-md border border-white/10 px-1.5 py-1 text-center text-xs",
+                              "flex min-h-[2.75rem] flex-col gap-1 rounded-md border border-border px-1.5 py-1 text-center text-xs",
                               isDgw &&
                                 "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]",
                             )}
@@ -466,7 +466,7 @@ export default async function DashboardPage({
                                   {f.opp}
                                   {!f.home ? " (A)" : ""}
                                 </div>
-                                <div className="text-[10px] text-slate-200/70">
+                                <div className="text-[10px] text-foreground/90/70">
                                   FDR {f.fdr ?? "–"}
                                 </div>
                               </div>
@@ -478,7 +478,7 @@ export default async function DashboardPage({
                             ) : null}
                           </div>
                         ) : (
-                          <div className="rounded-md border border-white/5 bg-white/5 px-2 py-1 text-center text-xs text-slate-500">
+                          <div className="rounded-md border border-border/60 bg-muted px-2 py-1 text-center text-xs text-muted-foreground">
                             —
                           </div>
                         )}
@@ -501,8 +501,8 @@ export default async function DashboardPage({
             <p className="text-xs font-medium uppercase tracking-[0.15em] text-brand-accent">
               {dt("assistantEyebrow")}
             </p>
-            <p className="mt-1 font-medium text-white">{dt("assistantTitle")}</p>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 font-medium text-foreground">{dt("assistantTitle")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
               {dt("assistantDesc")}
             </p>
           </div>
@@ -549,13 +549,13 @@ function Stat({
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-white/[0.12] sm:rounded-xl sm:px-3 sm:py-2.5">
-      <div className="text-[9px] font-medium uppercase leading-tight tracking-wider text-slate-500 sm:text-[10px]">
+    <div className="rounded-lg border border-border bg-card px-2 py-2 shadow-[inset_0_0_0_1px_hsl(var(--border)/0.5)] transition-colors hover:border-border sm:rounded-xl sm:px-3 sm:py-2.5">
+      <div className="text-[9px] font-medium uppercase leading-tight tracking-wider text-muted-foreground sm:text-[10px]">
         {label}
       </div>
       <div
         className={cn(
-          "mt-0.5 text-sm font-semibold text-white sm:text-base",
+          "mt-0.5 text-sm font-semibold text-foreground sm:text-base",
           valueClassName ?? "tabular-nums",
         )}
       >
@@ -575,7 +575,7 @@ function Legend({
   injuryLabel?: string;
 }) {
   const buckets: Array<{ label: string; cls: string }> = [
-    { label: "0–1", cls: "bg-slate-700/70 text-slate-200" },
+    { label: "0–1", cls: "bg-slate-700/70 text-foreground/90" },
     { label: "1–2", cls: "bg-sky-900/70 text-sky-100" },
     { label: "2–3", cls: "bg-teal-800/80 text-teal-50" },
     { label: "3–4.5", cls: "bg-emerald-700/85 text-emerald-50" },
@@ -641,7 +641,7 @@ function PlayerCard({
       href={`/player/${p.fpl_id}`}
       aria-label={profileAriaLabel}
       className={cn(
-        "block rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset] transition-colors hover:border-brand-accent/35 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-ink sm:rounded-xl sm:p-3.5",
+        "block rounded-lg border border-border bg-card p-2 shadow-[inset_0_0_0_1px_hsl(var(--border)/0.5)] transition-colors hover:border-brand-accent/35 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:rounded-xl sm:p-3.5",
         p.is_captain && "ring-1 ring-brand-accent/80",
       )}
     >
@@ -653,10 +653,10 @@ function PlayerCard({
               <span className="ml-1 text-brand-accent text-xs">(C)</span>
             )}
             {p.is_vice_captain && (
-              <span className="ml-1 text-slate-300 text-xs">(V)</span>
+              <span className="ml-1 text-foreground/70 text-xs">(V)</span>
             )}
           </div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-muted-foreground">
             {p.team ?? "?"} <SlotLabel pos={p.position} />
           </div>
           {dgwLine ? (
@@ -671,11 +671,11 @@ function PlayerCard({
           ) : null}
         </div>
         <div className="text-right text-xs">
-          <div className="text-slate-300">
+          <div className="text-foreground/70">
             £{p.price !== null ? p.price.toFixed(1) : "?"}m
           </div>
           {!compact && (
-            <div className="text-slate-400">
+            <div className="text-muted-foreground">
               {formLabel} {p.form ?? "–"}
             </div>
           )}

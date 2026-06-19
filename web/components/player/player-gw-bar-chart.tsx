@@ -131,23 +131,23 @@ export function PlayerGwBarChart({ rows, className }: Props) {
 
   if (!rows.length) {
     return (
-      <p className="text-xs leading-relaxed text-slate-500">{t("empty")}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{t("empty")}</p>
     );
   }
 
   return (
-    <div className={cn("rounded-lg border border-white/10 bg-white/[0.03] p-3 sm:rounded-xl", className)}>
+    <div className={cn("rounded-lg border border-border bg-card p-3 sm:rounded-xl", className)}>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {t("sectionTitle")}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="hidden sm:inline">{t("metricLabel")}</span>
             <select
               value={metric}
               onChange={(e) => setMetric(e.target.value as GwChartMetric)}
-              className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/60"
+              className="rounded-md border border-border bg-input px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/60"
               aria-label={t("metricLabel")}
             >
               {METRIC_ORDER.map((m) => (
@@ -157,7 +157,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
               ))}
             </select>
           </label>
-          <div className="flex rounded-md border border-white/10 p-0.5" role="group" aria-label={t("windowLabel")}>
+          <div className="flex rounded-md border border-border p-0.5" role="group" aria-label={t("windowLabel")}>
             <button
               type="button"
               onClick={() => setGwSpan(5)}
@@ -165,7 +165,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
                 "rounded px-2 py-1 text-[11px] font-medium transition-colors",
                 gwSpan === 5
                   ? "bg-brand-accent/25 text-brand-accent"
-                  : "text-slate-400 hover:text-slate-200",
+                  : "text-muted-foreground hover:text-foreground/90",
               )}
             >
               {t("range5")}
@@ -177,7 +177,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
                 "rounded px-2 py-1 text-[11px] font-medium transition-colors",
                 gwSpan === 10
                   ? "bg-brand-accent/25 text-brand-accent"
-                  : "text-slate-400 hover:text-slate-200",
+                  : "text-muted-foreground hover:text-foreground/90",
               )}
             >
               {t("range10")}
@@ -186,7 +186,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
         </div>
       </div>
 
-      <p className="mb-2 text-[10px] text-slate-500">{t("yMax", { v: formatBarLabel(metric, maxVal) })}</p>
+      <p className="mb-2 text-[10px] text-muted-foreground">{t("yMax", { v: formatBarLabel(metric, maxVal) })}</p>
 
       <div className="flex h-36 items-end gap-1 sm:gap-1.5">
         {slice.map((row, i) => {
@@ -198,10 +198,10 @@ export function PlayerGwBarChart({ rows, className }: Props) {
               key={row.gw}
               className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
             >
-              <span className="text-[10px] font-semibold tabular-nums text-slate-200">
+              <span className="text-[10px] font-semibold tabular-nums text-foreground/90">
                 {label}
               </span>
-              <div className="flex h-28 w-full flex-col justify-end rounded-t bg-black/20">
+              <div className="flex h-28 w-full flex-col justify-end rounded-t bg-input">
                 <div
                   className="w-full rounded-t bg-brand-accent/85 transition-all hover:bg-brand-accent"
                   style={{
@@ -210,7 +210,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
                   }}
                 />
               </div>
-              <span className="text-[10px] tabular-nums text-slate-500">
+              <span className="text-[10px] tabular-nums text-muted-foreground">
                 GW{row.gw}
               </span>
             </div>
@@ -218,7 +218,7 @@ export function PlayerGwBarChart({ rows, className }: Props) {
         })}
       </div>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t("footnote")}</p>
+      <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">{t("footnote")}</p>
     </div>
   );
 }

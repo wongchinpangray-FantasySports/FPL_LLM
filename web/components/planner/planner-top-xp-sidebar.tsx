@@ -49,27 +49,27 @@ export function PlannerTopXpSidebar({
 
   return (
     <aside
-      className="rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:p-4"
+      className="rounded-xl border border-border bg-card p-3 sm:p-4"
       aria-labelledby="planner-tops-heading"
     >
       <h2
         id="planner-tops-heading"
-        className="text-xs font-semibold uppercase tracking-wide text-slate-400"
+        className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
       >
         {t("topsTitle")}
       </h2>
-      <p className="mt-1 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
+      <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground sm:text-[11px]">
         {t("topsHint")}
       </p>
       {fromGw != null && toGw != null && horizon != null ? (
-        <p className="mt-1.5 text-[10px] text-slate-600">
+        <p className="mt-1.5 text-[10px] text-muted-foreground/80">
           {t("topsGwRange", { from: fromGw, to: toGw, horizon })}
           {horizon === 1 ? (
-            <span className="mt-0.5 block text-slate-500">
+            <span className="mt-0.5 block text-muted-foreground">
               {t("topsXpPitchAlign", { from: fromGw ?? "–" })}
             </span>
           ) : (
-            <span className="mt-0.5 block text-slate-500">
+            <span className="mt-0.5 block text-muted-foreground">
               {t("topsXpHorizonAlign")}
             </span>
           )}
@@ -77,7 +77,7 @@ export function PlannerTopXpSidebar({
       ) : null}
 
       {loading ? (
-        <p className="mt-4 text-xs text-slate-500">{t("topsLoading")}</p>
+        <p className="mt-4 text-xs text-muted-foreground">{t("topsLoading")}</p>
       ) : null}
 
       {error && !loading ? (
@@ -85,7 +85,7 @@ export function PlannerTopXpSidebar({
       ) : null}
 
       {!loading && !error && tops == null ? (
-        <p className="mt-4 text-xs text-slate-500">{t("topsEmpty")}</p>
+        <p className="mt-4 text-xs text-muted-foreground">{t("topsEmpty")}</p>
       ) : null}
 
       {tops != null ? (
@@ -97,14 +97,14 @@ export function PlannerTopXpSidebar({
               </h3>
               <ul className="space-y-1.5">
                 {tops[pos].length === 0 ? (
-                  <li className="text-[10px] text-slate-600">—</li>
+                  <li className="text-[10px] text-muted-foreground/80">—</li>
                 ) : (
                   tops[pos].map((row, i) => (
                     <li key={row.fpl_id}>
                       <button
                         type="button"
                         onClick={() => onInspectPlayer(row.fpl_id)}
-                        className="group flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border border-transparent px-1 py-0.5 text-left transition-colors hover:border-white/10 hover:bg-white/[0.04]"
+                        className="group flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-md border border-transparent px-1 py-0.5 text-left transition-colors hover:border-border hover:bg-card"
                         aria-label={t("topsInspectAria", {
                           name: row.web_name ?? `#${row.fpl_id}`,
                         })}
@@ -112,16 +112,16 @@ export function PlannerTopXpSidebar({
                         <span className="min-w-0 flex-1">
                           <span
                             className={cn(
-                              "mr-1 inline-block w-3.5 text-[9px] font-bold tabular-nums text-slate-600",
+                              "mr-1 inline-block w-3.5 text-[9px] font-bold tabular-nums text-muted-foreground/80",
                               i === 0 && "text-brand-accent",
                             )}
                           >
                             {i + 1}.
                           </span>
-                          <span className="text-[11px] font-medium text-slate-200 group-hover:text-white">
+                          <span className="text-[11px] font-medium text-foreground/90 group-hover:text-foreground">
                             {row.web_name ?? `#${row.fpl_id}`}
                           </span>
-                          <span className="mt-0.5 block truncate text-[9px] text-slate-500">
+                          <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">
                             {row.team ?? "—"}
                           </span>
                         </span>

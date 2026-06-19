@@ -43,7 +43,7 @@ export function EntryIdForm({
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <label className="flex min-w-[200px] max-w-xs flex-1 flex-col gap-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {t("label")}
           </span>
           <Input

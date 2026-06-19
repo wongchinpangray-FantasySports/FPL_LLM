@@ -29,6 +29,10 @@
     "en": "English",
     "zh": "中文"
   },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
   "home": {
     "badge": "FALEAGUE · Football Hub",
     "titleLead": "All your football.",

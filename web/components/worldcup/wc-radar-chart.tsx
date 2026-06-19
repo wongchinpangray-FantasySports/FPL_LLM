@@ -62,7 +62,7 @@ export function WcRadarChart({
     <figure className="flex flex-col items-center gap-2">
       <svg
         viewBox="0 0 260 260"
-        className="h-64 w-full max-w-[280px] text-slate-400"
+        className="h-64 w-full max-w-[280px] text-muted-foreground"
         role="img"
         aria-label={aria}
       >
@@ -142,7 +142,7 @@ export function WcRadarChart({
           </text>
         ))}
       </svg>
-      <figcaption className="max-w-xs text-center text-[11px] leading-relaxed text-slate-500">
+      <figcaption className="max-w-xs text-center text-[11px] leading-relaxed text-muted-foreground">
         {caption}
       </figcaption>
     </figure>

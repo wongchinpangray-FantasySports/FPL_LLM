@@ -337,7 +337,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+      <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground/70">
         <p>
           {ctx?.submission_open && submissionGw != null
             ? t("statusOpen", {
@@ -346,17 +346,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
               })
             : t("statusClosed", { gw: ctx?.scoring_gw ?? "—" })}
         </p>
-        <p className="mt-1 text-xs text-slate-500">{t("rulesShort")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("rulesShort")}</p>
       </div>
 
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex gap-2 border-b border-border pb-2">
         <button
           type="button"
           onClick={() => setActiveTab("pick")}
           className={`rounded-md px-3 py-1.5 text-sm ${
             activeTab === "pick"
-              ? "bg-white/10 text-white"
-              : "text-slate-400 hover:text-white"
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t("tabPick")}
@@ -366,8 +366,8 @@ export function MiniGameApp({ locale }: { locale: string }) {
           onClick={() => setActiveTab("leaderboard")}
           className={`rounded-md px-3 py-1.5 text-sm ${
             activeTab === "leaderboard"
-              ? "bg-white/10 text-white"
-              : "text-slate-400 hover:text-white"
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t("tabLeaderboard")}
@@ -377,7 +377,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
       {activeTab === "pick" ? (
         <div className="flex flex-col gap-6">
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t("entryLabel")}
             </label>
             <Input
@@ -391,8 +391,8 @@ export function MiniGameApp({ locale }: { locale: string }) {
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-slate-400">{t("pitchHint")}</p>
-            <p className="mb-3 text-xs text-slate-500">
+            <p className="mb-2 text-sm text-muted-foreground">{t("pitchHint")}</p>
+            <p className="mb-3 text-xs text-muted-foreground">
               {t("posCounts", {
                 gkp: posCounts.GKP,
                 def: posCounts.DEF,
@@ -442,13 +442,13 @@ export function MiniGameApp({ locale }: { locale: string }) {
             {submitStatus === "loading" ? t("submitting") : t("submit")}
           </Button>
           {!canSubmit && picks.length < 5 ? (
-            <p className="text-center text-xs text-slate-500">{t("submitLocked")}</p>
+            <p className="text-center text-xs text-muted-foreground">{t("submitLocked")}</p>
           ) : null}
         </div>
       ) : (
         <div>
           <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               <p>
                 {t("leaderboardGw", { gw: lbGw ?? "—" })}
                 {!ctx?.scoring_finished ? (
@@ -461,7 +461,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
               lbMeta.submission_gw != null &&
               lbGw != null &&
               lbMeta.submission_gw !== lbGw ? (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {t("leaderboardNextGw", { gw: lbMeta.submission_gw })}
                 </p>
               ) : null}
@@ -476,14 +476,14 @@ export function MiniGameApp({ locale }: { locale: string }) {
             </Button>
           </div>
           {lbLoading && leaderboard.length === 0 ? (
-            <p className="text-sm text-slate-500">{t("loading")}</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : leaderboard.length === 0 ? (
-            <p className="text-sm text-slate-500">{t("noEntries")}</p>
+            <p className="text-sm text-muted-foreground">{t("noEntries")}</p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/10">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="px-3 py-2">{t("colRank")}</th>
                     <th className="px-3 py-2">{t("colEntry")}</th>
                     <th className="px-3 py-2">{t("colPoints")}</th>
@@ -495,26 +495,26 @@ export function MiniGameApp({ locale }: { locale: string }) {
                   {leaderboard.map((row) => (
                     <tr
                       key={row.entry_id}
-                      className="border-b border-white/5 hover:bg-white/[0.02]"
+                      className="border-b border-border/60 hover:bg-card/50"
                     >
-                      <td className="px-3 py-2 font-medium text-white">
+                      <td className="px-3 py-2 font-medium text-foreground">
                         {row.rank}
                       </td>
                       <td className="px-3 py-2">
-                        <span className="text-white">
+                        <span className="text-foreground">
                           {row.entry_name ?? `#${row.entry_id}`}
                         </span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-xs text-muted-foreground">
                           {row.entry_id}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-semibold text-brand-accent">
                         {row.total_points}
                       </td>
-                      <td className="px-3 py-2 text-slate-300">
+                      <td className="px-3 py-2 text-foreground/70">
                         {row.captain_name ?? "—"}
                       </td>
-                      <td className="px-3 py-2 text-xs text-slate-400">
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
                         {row.picks
                           .map((p) => p.web_name ?? p.fpl_id)
                           .join(", ")}

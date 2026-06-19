@@ -7,8 +7,8 @@ import type { PlayerProjection, FixtureProjection } from "@/lib/xp";
  * 3–4.5 green, 4.5–6 emerald, 6+ lime.
  */
 export function xpCellClass(xp: number): string {
-  if (xp <= 0.01) return "bg-slate-900/60 text-slate-500";
-  if (xp < 1) return "bg-slate-700/70 text-slate-200";
+  if (xp <= 0.01) return "bg-popover/60 text-muted-foreground";
+  if (xp < 1) return "bg-slate-700/70 text-foreground/90";
   if (xp < 2) return "bg-sky-900/70 text-sky-100";
   if (xp < 3) return "bg-teal-800/80 text-teal-50";
   if (xp < 4.5) return "bg-emerald-700/85 text-emerald-50";
@@ -83,7 +83,7 @@ function Cell({
 }) {
   if (!fixtures || fixtures.length === 0) {
     return (
-      <div className="rounded border border-white/5 bg-slate-900/40 px-1 py-0.5 text-center text-[9px] text-slate-600 sm:px-1.5 sm:py-1 sm:text-[10px]">
+      <div className="rounded border border-border/60 bg-popover/40 px-1 py-0.5 text-center text-[9px] text-muted-foreground/80 sm:px-1.5 sm:py-1 sm:text-[10px]">
         —
       </div>
     );
@@ -180,18 +180,18 @@ export function XpHeatmap({
     <div className="flex flex-col gap-1.5 sm:gap-2">
       {title && (
         <div className="flex flex-wrap items-baseline justify-between gap-2 sm:gap-3">
-          <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
             {title}
           </h2>
-          <span className="max-w-xl text-xs leading-relaxed text-slate-400">
+          <span className="max-w-xl text-xs leading-relaxed text-muted-foreground">
             {legendHint}
           </span>
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl">
         <table className="w-full text-[11px] sm:text-xs">
           <thead>
-            <tr className="text-left text-[9px] uppercase text-slate-400 sm:text-[10px]">
+            <tr className="text-left text-[9px] uppercase text-muted-foreground sm:text-[10px]">
               <th className="px-2 py-1.5 sm:px-3 sm:py-2">{columnHeaders.player}</th>
               <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{columnHeaders.team}</th>
               <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{columnHeaders.pos}</th>
@@ -211,8 +211,8 @@ export function XpHeatmap({
                 <tr
                   key={r.fpl_id}
                   className={cn(
-                    "border-t border-white/5 hover:bg-white/5",
-                    showDivider && "border-t-2 border-white/20",
+                    "border-t border-border/60 hover:bg-muted",
+                    showDivider && "border-t-2 border-border",
                   )}
                 >
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
@@ -226,7 +226,7 @@ export function XpHeatmap({
                         </span>
                       )}
                       {r.is_vice_captain && (
-                        <span className="rounded bg-white/10 px-1 text-[9px] text-slate-300">
+                        <span className="rounded bg-muted px-1 text-[9px] text-foreground/70">
                           V
                         </span>
                       )}
@@ -256,13 +256,13 @@ export function XpHeatmap({
                       )}
                     </div>
                     {!r.is_starter && (
-                      <div className="text-[9px] uppercase text-slate-500">
+                      <div className="text-[9px] uppercase text-muted-foreground">
                         {benchLabel}
                       </div>
                     )}
                   </td>
-                  <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">{r.team ?? "–"}</td>
-                  <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
+                  <td className="px-1.5 py-1.5 text-foreground/70 sm:px-2 sm:py-2">{r.team ?? "–"}</td>
+                  <td className="px-1.5 py-1.5 text-muted-foreground sm:px-2 sm:py-2">
                     {r.position ?? "–"}
                   </td>
                   {gws.map((g) => (
@@ -281,8 +281,8 @@ export function XpHeatmap({
                 </tr>
               );
             })}
-            <tr className="border-t-2 border-white/20 bg-white/5">
-              <td className="px-3 py-2 text-xs font-semibold uppercase text-slate-300">
+            <tr className="border-t-2 border-border bg-muted">
+              <td className="px-3 py-2 text-xs font-semibold uppercase text-foreground/70">
                 {gwTotalLabel}
               </td>
               <td />

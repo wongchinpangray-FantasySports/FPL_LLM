@@ -33,23 +33,23 @@ function TeamRow({
       className={cn(
         "cursor-pointer rounded-lg border p-3 transition-colors md:hidden",
         expanded
-          ? "border-brand-accent/30 bg-white/[0.05]"
-          : "border-white/[0.06] bg-slate-950/40",
+          ? "border-brand-accent/30 bg-card"
+          : "border-border bg-card/80",
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <h3
-          className="font-semibold text-white [overflow-wrap:anywhere]"
+          className="font-semibold text-foreground [overflow-wrap:anywhere]"
           style={{ fontSize: "clamp(0.8125rem, 3vw, 0.9375rem)" }}
         >
           {row.name}
         </h3>
-        <span className="shrink-0 rounded bg-white/5 px-2 py-0.5 text-xs text-slate-400">
+        <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {labels.group} {row.group_letter}
         </span>
       </div>
       {!expanded ? (
-        <p className="mt-2 text-[10px] text-slate-600">{labels.expandHint}</p>
+        <p className="mt-2 text-[10px] text-muted-foreground/80">{labels.expandHint}</p>
       ) : (
         <div className="mt-3 grid grid-cols-3 gap-1.5">
           {matchdays.map((md) => {
@@ -69,7 +69,7 @@ function TeamRow({
             ) : (
               <div
                 key={md}
-                className="rounded border border-white/5 px-2 py-1.5 text-center text-slate-600"
+                className="rounded border border-border/60 px-2 py-1.5 text-center text-muted-foreground/80"
               >
                 —
               </div>
@@ -126,10 +126,10 @@ export function WcFdrGrid({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-[10px] uppercase text-slate-500">
+            <tr className="text-left text-[10px] uppercase text-muted-foreground">
               <th className="px-3 py-2">{labels.team}</th>
               <th className="px-2 py-2">{labels.group}</th>
               {matchdays.map((md) => (
@@ -141,9 +141,9 @@ export function WcFdrGrid({
           </thead>
           <tbody>
             {rows.map((t) => (
-              <tr key={t.team_id} className="border-t border-white/5">
-                <td className="px-3 py-2 font-medium text-white">{t.name}</td>
-                <td className="px-2 py-2 text-slate-500">{t.group_letter}</td>
+              <tr key={t.team_id} className="border-t border-border/60">
+                <td className="px-3 py-2 font-medium text-foreground">{t.name}</td>
+                <td className="px-2 py-2 text-muted-foreground">{t.group_letter}</td>
                 {matchdays.map((md) => {
                   const f = t.fixtures.find((x) => x.matchday === md);
                   return (
@@ -160,7 +160,7 @@ export function WcFdrGrid({
                           <div className="text-[10px] opacity-90">FDR {f.fdr}</div>
                         </div>
                       ) : (
-                        <div className="rounded border border-white/5 px-2 py-1 text-center text-slate-600">
+                        <div className="rounded border border-border/60 px-2 py-1 text-center text-muted-foreground/80">
                           —
                         </div>
                       )}

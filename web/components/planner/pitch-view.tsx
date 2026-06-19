@@ -22,7 +22,7 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
   if (shown.length === 0) return null;
   return (
     <div
-      className="mt-0.5 w-full border-t border-white/10 pt-0.5"
+      className="mt-0.5 w-full border-t border-border pt-0.5"
       title={shown
         .map((c) => `GW${c.gw} ${c.opp} ${stripXpLabel(c.xp)} xP`)
         .join(" · ")}
@@ -38,11 +38,11 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
             key={`${c.gw}-${c.opp}`}
             className="flex min-w-0 flex-col items-center justify-start gap-px leading-none"
           >
-            <span className="text-[5px] font-medium text-slate-500 sm:text-[6px]">
+            <span className="text-[5px] font-medium text-muted-foreground sm:text-[6px]">
               {c.gw}
             </span>
             <span
-              className="max-w-full truncate text-[5px] text-slate-400 sm:text-[6px]"
+              className="max-w-full truncate text-[5px] text-muted-foreground sm:text-[6px]"
               title={`GW${c.gw} ${c.opp}`}
             >
               {c.opp}
@@ -113,13 +113,13 @@ function PlayerChip({
 
   const inner = (
     <>
-      <div className="truncate text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
+      <div className="truncate text-[8px] font-semibold leading-tight text-foreground sm:text-[10px]">
         {p.web_name ?? `#${p.fpl_id}`}
       </div>
       {hasStrip && gwStripForDisplay ? (
         <GwStripRow cells={gwStripForDisplay} />
       ) : (
-        <div className="truncate text-[7px] text-slate-400 sm:text-[9px]">
+        <div className="truncate text-[7px] text-muted-foreground sm:text-[9px]">
           {cardSubline ?? p.team ?? "–"}
         </div>
       )}
@@ -129,7 +129,7 @@ function PlayerChip({
             "text-[7px] tabular-nums sm:text-[9px]",
             showNextXp
               ? "font-semibold text-brand-accent/95"
-              : "text-slate-500",
+              : "text-muted-foreground",
           )}
           title={showNextXp ? nextGwXpTitle : undefined}
         >
@@ -143,7 +143,7 @@ function PlayerChip({
           </span>
         )}
         {isV && !isC && (
-          <span className="rounded bg-white/15 px-0.5 text-[7px] text-slate-300 sm:px-1 sm:text-[8px]">
+          <span className="rounded bg-white/15 px-0.5 text-[7px] text-foreground/70 sm:px-1 sm:text-[8px]">
             V
           </span>
         )}
@@ -155,7 +155,7 @@ function PlayerChip({
     "min-w-[44px] max-w-[min(22vw,68px)] shrink rounded-md border px-0.5 py-0.5 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
     hasStrip &&
       "min-w-[52px] max-w-[min(28vw,88px)] sm:min-w-[88px] sm:max-w-[118px]",
-    "border-white/20 bg-black/40 backdrop-blur-sm",
+    "border-border bg-input backdrop-blur-sm",
     highlight &&
       "ring-2 ring-amber-400 ring-offset-1 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)] sm:ring-offset-2",
     selectedForReorder &&
@@ -283,9 +283,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       <div ref={ref} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="text-xs font-semibold text-white sm:text-sm">{title}</h3>
+            <h3 className="text-xs font-semibold text-foreground sm:text-sm">{title}</h3>
             {caption ? (
-              <p className="text-[10px] text-slate-500 sm:text-[11px]">{caption}</p>
+              <p className="text-[10px] text-muted-foreground sm:text-[11px]">{caption}</p>
             ) : null}
           </div>
           {titleAction ? (
@@ -296,8 +296,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
         <div className="overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg sm:rounded-2xl">
           {/* Decorative centre line */}
           <div className="relative aspect-[5/2.55] flex flex-col justify-between px-1 py-1.5 sm:aspect-[5/3.1] sm:px-2 sm:py-3">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-muted" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-border" />
 
             {/* XI rows: GK → DEF → MID → FWD (top to bottom); pass gkAtTop={false} for attack-first. */}
             {(gkAtTop
@@ -332,8 +332,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           </div>
 
           {/* Bench */}
-          <div className="border-t border-white/10 bg-black/25 px-1 py-1 sm:px-2 sm:py-2">
-            <div className="mb-0.5 text-[9px] uppercase tracking-wide text-slate-500 sm:mb-1 sm:text-[10px]">
+          <div className="border-t border-border bg-black/25 px-1 py-1 sm:px-2 sm:py-2">
+            <div className="mb-0.5 text-[9px] uppercase tracking-wide text-muted-foreground sm:mb-1 sm:text-[10px]">
               {benchLabel}
             </div>
             {/*
@@ -343,7 +343,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
             <div className="grid grid-cols-4 items-end justify-items-center gap-0.5 sm:gap-2">
               {benchGk.length > 0 ? (
                 <div className="flex w-full max-w-[min(22vw,68px)] flex-col items-center justify-self-center gap-0.5 sm:max-w-[100px]">
-                  <span className="text-[8px] uppercase tracking-wide text-slate-600 sm:text-[9px]">
+                  <span className="text-[8px] uppercase tracking-wide text-muted-foreground/80 sm:text-[9px]">
                     {benchGkAbbrev}
                   </span>
                   <PlayerChip

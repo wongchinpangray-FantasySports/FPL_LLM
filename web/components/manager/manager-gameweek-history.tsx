@@ -69,7 +69,7 @@ export function ManagerGameweekHistory({
         type="button"
         variant="secondary"
         size="sm"
-        className="shrink-0 border-white/15"
+        className="shrink-0 border-border"
         onClick={() => dialogRef.current?.showModal()}
       >
         {t("gwHistoryButton")}
@@ -84,16 +84,16 @@ export function ManagerGameweekHistory({
         }}
       >
         <div
-          className="flex max-h-[min(85vh,720px)] w-[min(96vw,640px)] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(15,12,22)] text-slate-100 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+          className="flex max-h-[min(85vh,720px)] w-[min(96vw,640px)] flex-col overflow-hidden rounded-xl border border-border bg-[rgb(15,12,22)] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative z-30 flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.08] bg-[rgb(15,12,22)] px-4 py-3 sm:px-5">
-            <h3 id="manager-gw-history-title" className="text-sm font-semibold text-white">
+          <div className="relative z-30 flex shrink-0 items-start justify-between gap-3 border-b border-border bg-[rgb(15,12,22)] px-4 py-3 sm:px-5">
+            <h3 id="manager-gw-history-title" className="text-sm font-semibold text-foreground">
               {t("gwHistoryTitle")}
             </h3>
             <button
               type="button"
-              className="rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={() => dialogRef.current?.close()}
             >
               {t("gwHistoryClose")}
@@ -102,7 +102,7 @@ export function ManagerGameweekHistory({
           <div className="relative isolate min-h-0 flex-1 overflow-auto px-3 pb-4 pt-2 sm:px-5">
             <table className="w-full min-w-[520px] border-collapse text-left text-sm">
               <thead className="sticky top-0 z-20">
-                <tr className="border-b border-white/10 bg-[rgb(15,12,22)] text-[10px] uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-border bg-[rgb(15,12,22)] text-[10px] uppercase tracking-wide text-muted-foreground">
                   <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColGw")}</th>
                   <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColPts")}</th>
                   <th className="bg-[rgb(15,12,22)] py-2 pr-3 font-medium">{t("gwHistoryColOr")}</th>
@@ -126,9 +126,9 @@ export function ManagerGameweekHistory({
                   return (
                     <tr
                       key={r.event}
-                      className="border-t border-white/[0.06] text-slate-200"
+                      className="border-t border-border text-foreground/90"
                     >
-                      <td className="py-2 pr-3 tabular-nums text-white">
+                      <td className="py-2 pr-3 tabular-nums text-foreground">
                         {t("chartAxisGwTick", { gw: String(r.event) })}
                       </td>
                       <td className="py-2 pr-3 tabular-nums">{r.points}</td>
@@ -155,10 +155,10 @@ export function ManagerGameweekHistory({
                           ) : null}
                         </span>
                       </td>
-                      <td className="py-2 pr-3 tabular-nums text-slate-300">
+                      <td className="py-2 pr-3 tabular-nums text-foreground/70">
                         {formatItbTenths(r.bank)}
                       </td>
-                      <td className="max-w-[140px] py-2 text-xs leading-snug text-slate-300 sm:max-w-[180px]">
+                      <td className="max-w-[140px] py-2 text-xs leading-snug text-foreground/70 sm:max-w-[180px]">
                         {chipsLabel}
                       </td>
                     </tr>

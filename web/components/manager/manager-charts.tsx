@@ -130,7 +130,7 @@ export function ManagerOrTrendChart({
 
   if (!rows.length || !layout) {
     return (
-      <p className="text-xs text-slate-500">{t("chartOrEmpty")}</p>
+      <p className="text-xs text-muted-foreground">{t("chartOrEmpty")}</p>
     );
   }
 
@@ -581,7 +581,7 @@ export function ManagerPointsCompareChart({
 
   if (!rows.length || !layout) {
     return (
-      <p className="text-xs text-slate-500">{t("chartPtsEmpty")}</p>
+      <p className="text-xs text-muted-foreground">{t("chartPtsEmpty")}</p>
     );
   }
 
@@ -736,7 +736,7 @@ export function ManagerPointsCompareChart({
               style={{ backgroundColor: s.color }}
               aria-hidden
             />
-            <span className="text-slate-400">{s.label}</span>
+            <span className="text-muted-foreground">{s.label}</span>
           </span>
         ))}
       </div>

@@ -66,7 +66,7 @@ export function PlayerProfileSearch() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label htmlFor="player-search" className="mb-2 block text-sm text-slate-400">
+        <label htmlFor="player-search" className="mb-2 block text-sm text-muted-foreground">
           {t("searchLabel")}
         </label>
         <input
@@ -76,17 +76,17 @@ export function PlayerProfileSearch() {
           placeholder={t("searchPlaceholder")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="w-full max-w-xl rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
+          className="w-full max-w-xl rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
         />
-        <p className="mt-2 text-xs text-slate-500">{t("searchHint")}</p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("searchHint")}</p>
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-500">{t("searching")}</p>
+        <p className="text-sm text-muted-foreground">{t("searching")}</p>
       ) : q.trim().length >= 2 && hits.length === 0 ? (
-        <p className="text-sm text-slate-500">{t("noResults")}</p>
+        <p className="text-sm text-muted-foreground">{t("noResults")}</p>
       ) : hits.length > 0 ? (
-        <ul className="max-w-xl divide-y divide-white/10 rounded-xl border border-white/10 bg-white/[0.03]">
+        <ul className="max-w-xl divide-y divide-white/10 rounded-xl border border-border bg-card">
           {hits.map((p) => {
             const label = p.web_name ?? p.name ?? `#${p.fpl_id}`;
             return (
@@ -94,11 +94,11 @@ export function PlayerProfileSearch() {
                 <button
                   type="button"
                   onClick={() => goToProfile(p.fpl_id)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-white/5"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
                 >
                   <span>
-                    <span className="font-medium text-white">{label}</span>
-                    <span className="ml-2 text-slate-500">
+                    <span className="font-medium text-foreground">{label}</span>
+                    <span className="ml-2 text-muted-foreground">
                       {p.team ?? "—"} · {p.position ?? "—"} · £
                       {p.base_price != null ? p.base_price.toFixed(1) : "?"}m
                       {p.total_points != null && <> · {p.total_points} pts</>}

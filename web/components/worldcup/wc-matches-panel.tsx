@@ -83,18 +83,18 @@ function MatchCard({
       className={cn(
         "cursor-pointer rounded-lg border transition-colors",
         expanded
-          ? "border-brand-accent/30 bg-white/[0.05] p-2 sm:p-3"
-          : "border-white/[0.06] bg-slate-950/40 p-3 hover:border-white/12",
+          ? "border-brand-accent/30 bg-card p-2 sm:p-3"
+          : "border-border bg-card/80 p-3 hover:border-border",
       )}
     >
       {!expanded ? (
         <>
-          <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>{match.round_label}</span>
             <span
               className={cn(
                 live && "font-medium text-brand-accent",
-                finished && "text-slate-400",
+                finished && "text-muted-foreground",
               )}
             >
               {statusLabel(match.status, match.period, match.minutes)}
@@ -103,35 +103,35 @@ function MatchCard({
 
           <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center justify-end gap-1.5">
-              <span className="truncate text-right text-sm font-semibold text-white">
+              <span className="truncate text-right text-sm font-semibold text-foreground">
                 {match.home_name}
               </span>
               <span className="text-base">{wcTeamFlag(match.home_code)}</span>
             </div>
             <div className="px-2 text-center">
               {finished ? (
-                <div className="text-lg font-bold tabular-nums text-white">
+                <div className="text-lg font-bold tabular-nums text-foreground">
                   {match.home_score ?? 0}
-                  <span className="mx-1 text-slate-500">–</span>
+                  <span className="mx-1 text-muted-foreground">–</span>
                   {match.away_score ?? 0}
                 </div>
               ) : (
-                <div className="text-xs text-slate-500">vs</div>
+                <div className="text-xs text-muted-foreground">vs</div>
               )}
             </div>
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="text-base">{wcTeamFlag(match.away_code)}</span>
-              <span className="truncate text-sm font-semibold text-white">
+              <span className="truncate text-sm font-semibold text-foreground">
                 {match.away_name}
               </span>
             </div>
           </div>
 
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             {fmtKickoff(match.kickoff)}
             {match.venue ? ` · ${match.venue}` : ""}
           </p>
-          <p className="mt-2 text-center text-xs text-slate-600">
+          <p className="mt-2 text-center text-xs text-muted-foreground/80">
             {labels.expandHint}
           </p>
         </>
@@ -230,12 +230,12 @@ export function WcMatchesPanel({
           detail={detail}
           moreLabel={moreLabel}
         />
-        <label className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+        <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
           <span>{labels.filterRound}</span>
           <select
             value={round}
             onChange={(e) => setRound(e.target.value)}
-            className="rounded-md border border-white/10 bg-slate-900/80 px-2 py-1.5 text-sm text-white"
+            className="rounded-md border border-border bg-popover/80 px-2 py-1.5 text-sm text-foreground"
           >
             {roundOptions.map((o) => (
               <option key={o.value} value={o.value}>
@@ -247,7 +247,7 @@ export function WcMatchesPanel({
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">{labels.loading}</p>
+        <p className="text-sm text-muted-foreground">{labels.loading}</p>
       ) : null}
       {error ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
@@ -256,7 +256,7 @@ export function WcMatchesPanel({
       ) : null}
 
       {!loading && !error && matches.length === 0 ? (
-        <p className="text-sm text-slate-500">{labels.empty}</p>
+        <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : null}
 
       <div

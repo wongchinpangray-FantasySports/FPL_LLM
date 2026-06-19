@@ -36,7 +36,7 @@ export function WcCopyNameButton({
       type="button"
       onClick={onCopy}
       className={cn(
-        "shrink-0 rounded-md border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/10 hover:text-brand-accent",
+        "shrink-0 rounded-md border border-border bg-muted p-1.5 text-muted-foreground transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/10 hover:text-brand-accent",
         className,
       )}
       aria-label={copyLabel}
@@ -80,12 +80,12 @@ export function WcPlayerNameRow({
   return (
     <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
       {rank != null ? (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-semibold text-slate-400">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
           {rank}
         </span>
       ) : null}
       <span
-        className="min-w-0 flex-1 text-sm font-semibold leading-snug text-white [overflow-wrap:anywhere]"
+        className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
       >
         {name}
       </span>
@@ -109,14 +109,14 @@ export function WcStatChip({
   accent?: boolean;
 }) {
   return (
-    <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5 rounded-md bg-white/[0.04] px-1.5 py-1.5 text-center">
-      <div className="text-[10px] font-medium uppercase leading-none tracking-wide text-slate-500">
+    <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5 rounded-md bg-card px-1.5 py-1.5 text-center">
+      <div className="text-[10px] font-medium uppercase leading-none tracking-wide text-muted-foreground">
         {label}
       </div>
       <div
         className={cn(
           "text-sm font-semibold leading-none tabular-nums",
-          accent ? "text-brand-accent" : "text-slate-200",
+          accent ? "text-brand-accent" : "text-foreground/90",
         )}
       >
         {value}
@@ -138,21 +138,21 @@ export function WcSectionIntro({
 }) {
   return (
     <div className="space-y-2">
-      <h2 className="text-lg font-semibold tracking-tight text-white md:text-xl">
+      <h2 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
         {title}
       </h2>
       {summary ? (
-        <p className="max-w-2xl text-sm text-slate-400">{summary}</p>
+        <p className="max-w-2xl text-sm text-muted-foreground">{summary}</p>
       ) : null}
       {detail ? (
-        <details className="group max-w-2xl text-sm text-slate-500">
-          <summary className="cursor-pointer list-none text-slate-500 transition-colors hover:text-slate-300 [&::-webkit-details-marker]:hidden">
+        <details className="group max-w-2xl text-sm text-muted-foreground">
+          <summary className="cursor-pointer list-none text-muted-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-1">
               <span className="text-brand-accent group-open:rotate-90">›</span>
               {moreLabel}
             </span>
           </summary>
-          <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-slate-500">
+          <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
             {detail}
           </p>
         </details>
@@ -190,11 +190,11 @@ export function WcAboutPanel({
   }
 
   return (
-    <details className="rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-sm">
-      <summary className="cursor-pointer list-none font-medium text-slate-400 [&::-webkit-details-marker]:hidden">
+    <details className="rounded-lg border border-border bg-card/50 px-3 py-2 text-sm">
+      <summary className="cursor-pointer list-none font-medium text-muted-foreground [&::-webkit-details-marker]:hidden">
         {moreLabel}
       </summary>
-      <div className="mt-2 space-y-2 text-xs leading-relaxed text-slate-500">
+      <div className="mt-2 space-y-2 text-xs leading-relaxed text-muted-foreground">
         {poolNote ? <p className="text-amber-200/90">{poolNote}</p> : null}
         {disclaimer ? <p>{disclaimer}</p> : null}
         {scoutingNote ? <p>{scoutingNote}</p> : null}

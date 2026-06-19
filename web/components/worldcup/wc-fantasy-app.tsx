@@ -168,7 +168,7 @@ export function WcFantasyApp() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
         {tabs.map((item) => (
           <button
             key={item.id}
@@ -178,7 +178,7 @@ export function WcFantasyApp() {
               "rounded-md px-3 py-2 text-sm transition-colors",
               tab === item.id
                 ? "bg-brand-accent/15 text-brand-accent"
-                : "text-slate-400 hover:text-white",
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {item.label}
@@ -198,7 +198,7 @@ export function WcFantasyApp() {
       />
 
       {loading && !ctx ? (
-        <p className="text-sm text-slate-400">{t("loading")}</p>
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
       ) : null}
 
       {error ? (
@@ -256,7 +256,7 @@ export function WcFantasyApp() {
             </p>
           ) : null}
           {scoutingLoading && !scouting ? (
-            <p className="text-sm text-slate-400">{t("loading")}</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : null}
           {scouting ? (
             <WcScoutingPanel

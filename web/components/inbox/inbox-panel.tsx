@@ -65,7 +65,7 @@ export function InboxPanel() {
     await refresh();
   }
 
-  if (loading) return <p className="text-sm text-slate-400">{t("loading")}</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
   if (error) {
     return (
       <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
@@ -77,7 +77,7 @@ export function InboxPanel() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-400">{t("subtitle")}</p>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         {items.some((n) => !n.read_at) ? (
           <Button type="button" variant="secondary" size="sm" onClick={() => void markAllRead()}>
             {t("markAllRead")}
@@ -86,17 +86,17 @@ export function InboxPanel() {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-slate-500">{t("empty")}</p>
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((n) => {
             const inner = (
               <>
-                <p className="font-medium text-white">{n.title}</p>
+                <p className="font-medium text-foreground">{n.title}</p>
                 {n.body ? (
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-400">{n.body}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{n.body}</p>
                 ) : null}
-                <time className="mt-2 block text-xs text-slate-600">
+                <time className="mt-2 block text-xs text-muted-foreground/80">
                   {new Date(n.created_at).toLocaleString()}
                 </time>
               </>
@@ -105,7 +105,7 @@ export function InboxPanel() {
             const className = cn(
               "block rounded-xl border p-4 transition-colors",
               n.read_at
-                ? "border-white/[0.06] bg-white/[0.02]"
+                ? "border-border bg-card/50"
                 : "border-brand-accent/20 bg-brand-accent/5",
             );
 

@@ -17,14 +17,14 @@ export function AuthNav() {
       <div className="flex items-center gap-1 sm:gap-2">
         <Link
           href="/auth/login"
-          className="rounded-md px-2 py-1 text-xs text-slate-400 hover:text-white sm:text-sm"
+          className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"
         >
           {t("signIn")}
         </Link>
         <Link
           href="/auth/signup"
           className={cn(
-            "rounded-md px-2 py-1 text-xs text-brand-accent hover:text-white sm:text-sm",
+            "rounded-md px-2 py-1 text-xs text-brand-accent hover:text-foreground sm:text-sm",
           )}
         >
           {t("signUp")}
@@ -37,7 +37,7 @@ export function AuthNav() {
     <div className="flex items-center gap-1 sm:gap-2">
       <Link
         href="/inbox"
-        className="relative rounded-md px-2 py-1 text-xs text-slate-400 hover:text-white sm:text-sm"
+        className="relative rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"
       >
         {t("inbox")}
         {unreadCount > 0 ? (
@@ -48,7 +48,7 @@ export function AuthNav() {
       </Link>
       <Link
         href="/account"
-        className="rounded-md px-2 py-1 text-xs text-slate-400 hover:text-white sm:text-sm"
+        className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"
       >
         {t("account")}
       </Link>
@@ -57,7 +57,7 @@ export function AuthNav() {
         onClick={() => {
           void signOut().then(() => router.push("/"));
         }}
-        className="rounded-md px-2 py-1 text-xs text-slate-500 hover:text-white sm:text-sm"
+        className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"
       >
         {t("signOut")}
       </button>

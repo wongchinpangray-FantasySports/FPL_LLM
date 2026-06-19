@@ -45,8 +45,8 @@ function XpPlayerCard({
       className={cn(
         "cursor-pointer rounded-lg border p-3 transition-colors",
         expanded
-          ? "border-brand-accent/30 bg-white/[0.05]"
-          : "border-white/[0.06] bg-slate-950/40 hover:border-white/12",
+          ? "border-brand-accent/30 bg-card"
+          : "border-border bg-card/80 hover:border-border",
       )}
     >
       <WcPlayerNameRow
@@ -54,13 +54,13 @@ function XpPlayerCard({
         copyLabel={labels.copyName}
         copiedLabel={labels.copiedName}
       />
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         {row.team_name} · {row.position}
       </p>
       <div className="mt-2.5 flex items-center justify-between gap-2">
         <WcStatChip label={labels.total} value={row.xp_total.toFixed(1)} accent />
         {!expanded ? (
-          <span className="text-[10px] text-slate-600">{labels.expandHint}</span>
+          <span className="text-[10px] text-muted-foreground/80">{labels.expandHint}</span>
         ) : null}
       </div>
       {expanded ? (
@@ -76,10 +76,10 @@ function XpPlayerCard({
                 key={md}
                 className={cn(
                   "rounded-md px-2 py-1.5 text-center text-xs",
-                  cell ? xpCellClass(xp) : "border border-white/5 bg-slate-900/40",
+                  cell ? xpCellClass(xp) : "border border-border/60 bg-popover/40",
                 )}
               >
-                <div className="text-[9px] font-medium uppercase text-slate-500">
+                <div className="text-[9px] font-medium uppercase text-muted-foreground">
                   {labels.mdLabel}
                   {md}
                 </div>
@@ -147,12 +147,12 @@ export function WcXpHeatmap({
           detail={detail}
           moreLabel={moreLabel}
         />
-        <label className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+        <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
           <span>{labels.filter}</span>
           <select
             value={positionFilter}
             onChange={(e) => onPositionChange(e.target.value)}
-            className="rounded-md border border-white/10 bg-slate-900/80 px-2 py-1.5 text-sm text-white"
+            className="rounded-md border border-border bg-popover/80 px-2 py-1.5 text-sm text-foreground"
           >
             {positionOptions.map((o) => (
               <option key={o.value} value={o.value}>
@@ -184,10 +184,10 @@ export function WcXpHeatmap({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-[10px] uppercase text-slate-500">
+            <tr className="text-left text-[10px] uppercase text-muted-foreground">
               <th className="min-w-[140px] px-3 py-2">{labels.player}</th>
               <th className="px-2 py-2">{labels.team}</th>
               <th className="px-2 py-2">{labels.pos}</th>
@@ -203,7 +203,7 @@ export function WcXpHeatmap({
             {rows.map((r) => (
               <tr
                 key={r.id}
-                className="border-t border-white/5 hover:bg-white/[0.03]"
+                className="border-t border-border/60 hover:bg-card"
               >
                 <td className="max-w-[200px] px-3 py-2 align-top">
                   <WcPlayerNameRow
@@ -212,8 +212,8 @@ export function WcXpHeatmap({
                     copiedLabel={labels.copiedName}
                   />
                 </td>
-                <td className="px-2 py-2 text-slate-400">{r.team_name}</td>
-                <td className="px-2 py-2 text-slate-500">{r.position}</td>
+                <td className="px-2 py-2 text-muted-foreground">{r.team_name}</td>
+                <td className="px-2 py-2 text-muted-foreground">{r.position}</td>
                 {matchdays.map((md) => {
                   const cell = r.byMd[md];
                   const xp = cell?.xp ?? 0;
@@ -230,7 +230,7 @@ export function WcXpHeatmap({
                           {xp.toFixed(1)}
                         </div>
                       ) : (
-                        <div className="rounded border border-white/5 px-1.5 py-1 text-center text-slate-600">
+                        <div className="rounded border border-border/60 px-1.5 py-1 text-center text-muted-foreground/80">
                           —
                         </div>
                       )}

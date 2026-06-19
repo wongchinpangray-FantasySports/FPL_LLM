@@ -99,7 +99,7 @@ export async function teamsFixtureGrid(
 }
 
 export function fdrClass(fdr: number | null): string {
-  if (fdr === null) return "bg-white/5";
+  if (fdr === null) return "bg-muted";
   if (fdr <= 2) return "bg-emerald-500/30 border-emerald-400/40";
   if (fdr === 3) return "bg-amber-500/25 border-amber-400/40";
   if (fdr === 4) return "bg-orange-500/30 border-orange-400/40";

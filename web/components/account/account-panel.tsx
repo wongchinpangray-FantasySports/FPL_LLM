@@ -95,12 +95,12 @@ export function AccountPanel() {
   }
 
   if (authLoading || loading) {
-    return <p className="text-sm text-slate-400">{t("loading")}</p>;
+    return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
   }
 
   if (!user) {
     return (
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-muted-foreground">
         {t("signedOut")}{" "}
         <Link href="/auth/login" className="text-brand-accent hover:underline">
           {t("signIn")}
@@ -133,7 +133,7 @@ export function AccountPanel() {
   return (
     <section
       style={style}
-      className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-white/[0.08] shadow-xl"
+      className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border shadow-xl"
     >
       <div
         className="relative px-6 py-8"
@@ -147,24 +147,24 @@ export function AccountPanel() {
             background: `radial-gradient(circle at 85% 20%, ${theme.primary}, transparent 45%)`,
           }}
         />
-        <p className="relative text-xs font-medium uppercase tracking-widest text-white/60">
+        <p className="relative text-xs font-medium uppercase tracking-widest text-foreground/60">
           {theme.label}
         </p>
-        <h1 className="relative mt-1 text-2xl font-semibold text-white">
+        <h1 className="relative mt-1 text-2xl font-semibold text-foreground">
           {t("title")}
         </h1>
-        <p className="relative mt-1 text-sm text-white/75">{details.email}</p>
-        <div className="relative mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-3 py-1 text-sm text-white">
+        <p className="relative mt-1 text-sm text-foreground/75">{details.email}</p>
+        <div className="relative mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-input px-3 py-1 text-sm text-foreground">
           <span className="font-semibold tabular-nums">{details.profile.login_days}</span>
-          <span className="text-white/70">{t("loginDays")}</span>
+          <span className="text-foreground/70">{t("loginDays")}</span>
         </div>
       </div>
 
-      <div className="space-y-6 bg-white/[0.03] p-6">
+      <div className="space-y-6 bg-card p-6">
         {(canClubTheme || canNationalTheme) ? (
           <div>
-            <h2 className="text-sm font-medium text-slate-300">{t("pageTheme")}</h2>
-            <p className="mt-1 text-xs text-slate-500">{t("pageThemeHint")}</p>
+            <h2 className="text-sm font-medium text-foreground/70">{t("pageTheme")}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t("pageThemeHint")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -201,9 +201,9 @@ export function AccountPanel() {
         ) : null}
 
         <div>
-          <h2 className="text-sm font-medium text-slate-300">{t("yourPreferences")}</h2>
+          <h2 className="text-sm font-medium text-foreground/70">{t("yourPreferences")}</h2>
           {!prefs ? (
-            <p className="mt-2 text-sm text-slate-500">{t("noPreferences")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("noPreferences")}</p>
           ) : (
             <dl className="mt-3 grid gap-4 sm:grid-cols-2">
               <PrefBlock label={t("nationalTeam")} value={prefs.national_team?.name ?? t("notSet")} />
@@ -246,7 +246,7 @@ export function AccountPanel() {
         ) : (
           <Link
             href="/onboarding"
-            className="inline-block text-sm text-slate-400 hover:text-white"
+            className="inline-block text-sm text-muted-foreground hover:text-foreground"
           >
             {t("editPreferences")}
           </Link>
@@ -268,12 +268,12 @@ function PrefBlock({
   return (
     <div
       className={cn(
-        "rounded-xl border border-white/[0.06] bg-white/[0.02] p-3",
+        "rounded-xl border border-border bg-card/50 p-3",
         className,
       )}
     >
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className="mt-1 text-sm text-white">{value}</dd>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   );
 }

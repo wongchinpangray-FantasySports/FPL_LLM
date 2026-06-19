@@ -29,6 +29,10 @@
     "en": "English",
     "zh": "中文"
   },
+  "theme": {
+    "switchToLight": "切换到浅色模式",
+    "switchToDark": "切换到深色模式"
+  },
   "home": {
     "badge": "FALEAGUE · Football Hub",
     "titleLead": "足球，尽在这里。",

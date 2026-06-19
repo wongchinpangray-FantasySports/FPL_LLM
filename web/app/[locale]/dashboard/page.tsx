@@ -20,7 +20,7 @@ export default function DashboardIndexPage() {
 
   if (entryId) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-slate-400">
+      <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-muted-foreground">
         <p className="text-sm">{t("opening")}</p>
       </div>
     );

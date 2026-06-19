@@ -78,39 +78,39 @@ function SeasonDetail({
 
   return (
     <div className="space-y-2.5 text-xs">
-      <p className="text-xs leading-relaxed text-slate-400">{pick.insight}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{pick.insight}</p>
       {pick.season_club || s ? (
-        <dl className="space-y-2 rounded-lg bg-white/[0.03] p-2.5">
+        <dl className="space-y-2 rounded-lg bg-card p-2.5">
           {pick.season_club ? (
             <>
               <div className="flex items-baseline justify-between gap-2">
-                <dt className="shrink-0 text-slate-500">{labels.seasonClub}</dt>
-                <dd className="text-right text-sm font-medium text-white">{pick.season_club}</dd>
+                <dt className="shrink-0 text-muted-foreground">{labels.seasonClub}</dt>
+                <dd className="text-right text-sm font-medium text-foreground">{pick.season_club}</dd>
               </div>
               {pick.season_league ? (
                 <div className="flex items-baseline justify-between gap-2">
-                  <dt className="shrink-0 text-slate-500">{labels.seasonLeague}</dt>
-                  <dd className="text-right text-sm text-slate-300">{pick.season_league}</dd>
+                  <dt className="shrink-0 text-muted-foreground">{labels.seasonLeague}</dt>
+                  <dd className="text-right text-sm text-foreground/70">{pick.season_league}</dd>
                 </div>
               ) : null}
               {sourceNote ? (
                 <div className="flex items-baseline justify-between gap-2">
-                  <dt className="shrink-0 text-slate-500">Source</dt>
-                  <dd className="text-right text-sm text-slate-400">{sourceNote}</dd>
+                  <dt className="shrink-0 text-muted-foreground">Source</dt>
+                  <dd className="text-right text-sm text-muted-foreground">{sourceNote}</dd>
                 </div>
               ) : null}
               {pick.fpl_web_name ? (
                 <div className="flex items-baseline justify-between gap-2">
-                  <dt className="shrink-0 text-slate-500">{labels.fplName}</dt>
-                  <dd className="text-right text-sm text-slate-300">{pick.fpl_web_name}</dd>
+                  <dt className="shrink-0 text-muted-foreground">{labels.fplName}</dt>
+                  <dd className="text-right text-sm text-foreground/70">{pick.fpl_web_name}</dd>
                 </div>
               ) : null}
             </>
           ) : (
-            <p className="text-slate-500">{labels.noClub}</p>
+            <p className="text-muted-foreground">{labels.noClub}</p>
           )}
           {s ? (
-            <div className="grid grid-cols-3 gap-x-2 gap-y-2 border-t border-white/5 pt-2">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-2 border-t border-border/60 pt-2">
               {(
                 [
                   [labels.goals, String(s.goals)],
@@ -122,15 +122,15 @@ function SeasonDetail({
                 ] as const
               ).map(([lbl, val]) => (
                 <div key={lbl} className="text-center">
-                  <dt className="text-[10px] text-slate-500">{lbl}</dt>
-                  <dd className="text-sm font-medium tabular-nums text-slate-200">{val}</dd>
+                  <dt className="text-[10px] text-muted-foreground">{lbl}</dt>
+                  <dd className="text-sm font-medium tabular-nums text-foreground/90">{val}</dd>
                 </div>
               ))}
             </div>
           ) : null}
         </dl>
       ) : (
-        <p className="text-xs text-slate-500">{labels.noClub}</p>
+        <p className="text-xs text-muted-foreground">{labels.noClub}</p>
       )}
     </div>
   );
@@ -184,8 +184,8 @@ function GemCard({
       className={cn(
         "cursor-pointer rounded-lg border p-3 transition-colors",
         expanded
-          ? "border-brand-accent/30 bg-white/[0.05] ring-1 ring-brand-accent/20"
-          : "border-white/[0.06] bg-slate-950/50 hover:border-white/12 hover:bg-white/[0.04]",
+          ? "border-brand-accent/30 bg-card ring-1 ring-brand-accent/20"
+          : "border-border bg-card/50 hover:border-border hover:bg-card",
       )}
     >
       <WcPlayerNameRow
@@ -194,7 +194,7 @@ function GemCard({
         copyLabel={labels.copyName}
         copiedLabel={labels.copiedName}
       />
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         {pick.team_name} · {pick.position}
       </p>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
@@ -207,10 +207,10 @@ function GemCard({
         <WcStatChip label={labels.gem} value={pick.gem_score.toFixed(1)} />
       </div>
       {!expanded ? (
-        <p className="mt-2 text-center text-xs text-slate-500">{labels.expandHint}</p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">{labels.expandHint}</p>
       ) : (
         <div
-          className="mt-3 border-t border-white/10 pt-3"
+          className="mt-3 border-t border-border pt-3"
           onClick={(e) => e.stopPropagation()}
         >
           <SeasonDetail pick={pick} labels={labels} />
@@ -266,15 +266,15 @@ function ArchetypeColumn({
   return (
     <section
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b p-px",
+        "flex flex-col overflow-hidden rounded-xl border border-border bg-gradient-to-b p-px",
         style.ring,
         style.glow,
       )}
     >
-      <div className="flex flex-1 flex-col rounded-[11px] bg-slate-950/90">
-        <header className="border-b border-white/[0.06] px-3 py-2.5">
+      <div className="flex flex-1 flex-col rounded-[11px] bg-card/90">
+        <header className="border-b border-border px-3 py-2.5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-white">{title}</h3>
+            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-xs font-medium uppercase ring-1",
@@ -284,11 +284,11 @@ function ArchetypeColumn({
               {position}
             </span>
           </div>
-          <p className="mt-1 text-xs leading-snug text-slate-500">{tagline}</p>
+          <p className="mt-1 text-xs leading-snug text-muted-foreground">{tagline}</p>
         </header>
         <div className="flex flex-col gap-2 p-2.5">
           {picks.length === 0 ? (
-            <p className="py-8 text-center text-xs text-slate-500">{labels.empty}</p>
+            <p className="py-8 text-center text-xs text-muted-foreground">{labels.empty}</p>
           ) : (
             picks.map((pick, i) => (
               <GemCard

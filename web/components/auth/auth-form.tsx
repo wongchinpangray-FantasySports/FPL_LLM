@@ -85,20 +85,20 @@ export function AuthForm({
     <form
       onSubmit={(e) => void onSubmit(e)}
       className={cn(
-        "mx-auto w-full max-w-md rounded-xl border border-white/[0.08]",
-        "bg-white/[0.03] p-6 shadow-xl",
+        "mx-auto w-full max-w-md rounded-xl border border-border",
+        "bg-card p-6 shadow-xl",
       )}
     >
-      <h1 className="text-xl font-semibold text-white">
+      <h1 className="text-xl font-semibold text-foreground">
         {mode === "signup" ? t("signupTitle") : t("loginTitle")}
       </h1>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="mt-1 text-sm text-muted-foreground">
         {mode === "signup" ? t("signupSubtitle") : t("loginSubtitle")}
       </p>
 
       <div className="mt-6 flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-slate-400">{t("email")}</span>
+          <span className="text-muted-foreground">{t("email")}</span>
           <Input
             type="email"
             autoComplete="email"
@@ -108,7 +108,7 @@ export function AuthForm({
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-slate-400">{t("password")}</span>
+          <span className="text-muted-foreground">{t("password")}</span>
           <Input
             type="password"
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
@@ -120,7 +120,7 @@ export function AuthForm({
         </label>
         {mode === "signup" ? (
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-slate-400">{t("confirmPassword")}</span>
+            <span className="text-muted-foreground">{t("confirmPassword")}</span>
             <Input
               type="password"
               autoComplete="new-password"

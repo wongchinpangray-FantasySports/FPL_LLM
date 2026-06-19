@@ -42,16 +42,16 @@ function StandingTable({
   selectedCode: string | null;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]">
-      <div className="border-b border-white/[0.06] bg-white/[0.03] px-3 py-2">
-        <h3 className="text-sm font-semibold text-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+      <div className="border-b border-border bg-card px-3 py-2">
+        <h3 className="text-sm font-semibold text-foreground">
           {labels.group} {group.group_letter}
         </h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[280px] text-left text-xs">
           <thead>
-            <tr className="text-slate-500">
+            <tr className="text-muted-foreground">
               <th className="px-2 py-1.5 font-medium">#</th>
               <th className="px-2 py-1.5 font-medium">{labels.team}</th>
               <th className="px-1.5 py-1.5 text-center font-medium">{labels.p}</th>
@@ -73,14 +73,14 @@ function StandingTable({
               <tr
                 key={row.code}
                 className={cn(
-                  "cursor-pointer border-t border-white/[0.04] transition-colors hover:bg-white/[0.04]",
+                  "cursor-pointer border-t border-border/50 transition-colors hover:bg-card",
                   selectedCode === row.code && "bg-brand-accent/10",
-                  row.rank <= 2 && "text-white",
+                  row.rank <= 2 && "text-foreground",
                 )}
                 onClick={() => onSelectTeam(row.code)}
               >
-                <td className="px-2 py-1.5 tabular-nums text-slate-500">{row.rank}</td>
-                <td className="max-w-[5.5rem] truncate px-2 py-1.5 font-medium text-white sm:max-w-none">
+                <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{row.rank}</td>
+                <td className="max-w-[5.5rem] truncate px-2 py-1.5 font-medium text-foreground sm:max-w-none">
                   {row.short_name}
                 </td>
                 <td className="px-1.5 py-1.5 text-center tabular-nums">{row.played}</td>
@@ -125,14 +125,14 @@ function LeaderboardTable({
   onSelectTeam: (code: string) => void;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-slate-500">{labels.empty}</p>;
+    return <p className="text-sm text-muted-foreground">{labels.empty}</p>;
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]">
+    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-white/[0.06] text-slate-500">
+          <tr className="border-b border-border text-muted-foreground">
             <th className="px-3 py-2 font-medium">{labels.rank}</th>
             <th className="px-3 py-2 font-medium">{labels.player}</th>
             <th className="px-3 py-2 font-medium">{labels.team}</th>
@@ -144,10 +144,10 @@ function LeaderboardTable({
           {rows.map((row, i) => (
             <tr
               key={row.player_id}
-              className="border-t border-white/[0.04] hover:bg-white/[0.03]"
+              className="border-t border-border/50 hover:bg-card"
             >
-              <td className="px-3 py-2 tabular-nums text-slate-500">{i + 1}</td>
-              <td className="px-3 py-2 font-medium text-white">{row.name}</td>
+              <td className="px-3 py-2 tabular-nums text-muted-foreground">{i + 1}</td>
+              <td className="px-3 py-2 font-medium text-foreground">{row.name}</td>
               <td className="px-3 py-2">
                 <button
                   type="button"
@@ -160,7 +160,7 @@ function LeaderboardTable({
               <td
                 className={cn(
                   "px-3 py-2 text-center tabular-nums",
-                  stat === "goals" && row.goals > 0 && "font-semibold text-white",
+                  stat === "goals" && row.goals > 0 && "font-semibold text-foreground",
                 )}
               >
                 {row.goals}
@@ -168,7 +168,7 @@ function LeaderboardTable({
               <td
                 className={cn(
                   "px-3 py-2 text-center tabular-nums",
-                  stat === "assists" && row.assists > 0 && "font-semibold text-white",
+                  stat === "assists" && row.assists > 0 && "font-semibold text-foreground",
                 )}
               >
                 {row.assists}
@@ -207,45 +207,45 @@ function TeamDetailPanel({
     <aside className="rounded-xl border border-brand-accent/25 bg-brand-accent/5 p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-lg font-semibold text-white">{team.name}</h3>
-          <p className="text-sm text-slate-400">
+          <h3 className="text-lg font-semibold text-foreground">{team.name}</h3>
+          <p className="text-sm text-muted-foreground">
             {labels.group} {team.group_letter} · {team.code}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-slate-400 hover:text-white"
+          className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
         >
           {labels.close}
         </button>
       </div>
 
       {s ? (
-        <p className="mt-3 text-sm text-slate-300">
+        <p className="mt-3 text-sm text-foreground/70">
           {labels.record}: {s.won}W {s.drawn}D {s.lost}L · {s.gf}–{s.ga} ({s.gd >= 0 ? "+" : ""}
           {s.gd}) · <span className="font-semibold text-brand-accent">{s.points} pts</span>
         </p>
       ) : null}
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted-foreground">
         {labels.atk} {team.attack_strength} · {labels.def} {team.defence_strength}
       </p>
 
-      <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {labels.results}
       </h4>
       {team.results.length === 0 ? (
-        <p className="mt-1 text-sm text-slate-500">{labels.noResults}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{labels.noResults}</p>
       ) : (
         <ul className="mt-2 space-y-1 text-sm">
           {team.results.map((r) => (
             <li key={`${r.matchday}-${r.opponent_code}`} className="flex justify-between gap-2">
-              <span className="text-slate-400">
+              <span className="text-muted-foreground">
                 {labels.md}
                 {r.matchday} · {r.home ? labels.home : labels.away} {r.opponent_name}
               </span>
-              <span className="tabular-nums text-white">
+              <span className="tabular-nums text-foreground">
                 {r.score ?? "—"}
                 {r.points != null ? (
                   <span className="ml-1 text-brand-accent">({r.points}p)</span>
@@ -341,7 +341,7 @@ export function WcTablesPanel({
         moreLabel={moreLabel}
       />
 
-      {loading ? <p className="text-sm text-slate-400">{labels.loading}</p> : null}
+      {loading ? <p className="text-sm text-muted-foreground">{labels.loading}</p> : null}
       {error ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
           {error}
@@ -350,7 +350,7 @@ export function WcTablesPanel({
 
       {data && !loading && !error ? (
         <>
-          <p className="text-xs text-slate-500">{labels.selectTeamHint}</p>
+          <p className="text-xs text-muted-foreground">{labels.selectTeamHint}</p>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_minmax(16rem,22rem)]">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -372,7 +372,7 @@ export function WcTablesPanel({
                 onClose={() => setSelectedCode(null)}
               />
             ) : (
-              <div className="hidden rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500 lg:block">
+              <div className="hidden rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground lg:block">
                 {labels.selectTeamHint}
               </div>
             )}
@@ -390,7 +390,7 @@ export function WcTablesPanel({
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-white">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">
                 {labels.scorersTitle}
               </h3>
               <LeaderboardTable
@@ -408,7 +408,7 @@ export function WcTablesPanel({
               />
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-white">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">
                 {labels.assistsTitle}
               </h3>
               <LeaderboardTable
@@ -428,7 +428,7 @@ export function WcTablesPanel({
           </div>
 
           {data.disclaimer ? (
-            <p className="text-xs leading-relaxed text-slate-600">{data.disclaimer}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground/80">{data.disclaimer}</p>
           ) : null}
         </>
       ) : null}

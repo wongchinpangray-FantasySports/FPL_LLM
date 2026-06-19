@@ -36,11 +36,11 @@ function HubSection({
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {title}
           </h2>
           {description ? (
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-400">
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {description}
             </p>
           ) : null}
@@ -68,7 +68,7 @@ function HubChip({
         "inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors no-underline",
         variant === "accent"
           ? "border-brand-accent/35 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/15"
-          : "border-white/10 bg-white/[0.04] text-slate-200 hover:border-white/20 hover:bg-white/[0.07]",
+          : "border-border bg-card text-foreground/90 hover:border-border hover:bg-muted",
       )}
     >
       {children}
@@ -135,7 +135,7 @@ function TodayTicker({
       <Link
         key={`${item.kind}-${m.id}`}
         href="/worldcup?tab=matches"
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-200 no-underline hover:border-brand-accent/30 hover:text-white"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground/90 no-underline hover:border-brand-accent/30 hover:text-foreground"
       >
         <span
           className={cn(
@@ -148,18 +148,18 @@ function TodayTicker({
         <span>
           {wcTeamFlag(m.home_code)} {m.home_name}
         </span>
-        <span className="tabular-nums text-white">
+        <span className="tabular-nums text-foreground">
           {finished ? `${m.home_score}–${m.away_score}` : "vs"}
         </span>
         <span>
           {m.away_name} {wcTeamFlag(m.away_code)}
         </span>
         {!finished && m.kickoff ? (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted-foreground">
             {fmtKickoff(m.kickoff, locale)}
           </span>
         ) : null}
-        <span className="text-[10px] text-slate-600">{m.round_label}</span>
+        <span className="text-[10px] text-muted-foreground/80">{m.round_label}</span>
       </Link>,
     );
   }
@@ -169,7 +169,7 @@ function TodayTicker({
       <Link
         key="fpl"
         href="/planner"
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-slate-200 no-underline hover:border-emerald-400/40"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-foreground/90 no-underline hover:border-emerald-400/40"
       >
         <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
           {labels.fplDeadline}
@@ -184,7 +184,7 @@ function TodayTicker({
 
   if (chips.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-slate-500">
+      <div className="rounded-xl border border-border bg-card/50 px-4 py-3 text-sm text-muted-foreground">
         {labels.noItems}
       </div>
     );
@@ -193,7 +193,7 @@ function TodayTicker({
   const loop = [...chips, ...chips];
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] py-2.5">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card/50 py-2.5">
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-brand-ink to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-brand-ink to-transparent" />
       <div className="flex w-max animate-[marquee_50s_linear_infinite] gap-3 px-4 hover:[animation-play-state:paused]">
@@ -255,7 +255,7 @@ function YourFootballSection({
   if (authLoading) {
     return (
       <HubSection title={labels.title}>
-        <div className="h-24 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.03]" />
+        <div className="h-24 animate-pulse rounded-xl border border-border bg-card" />
       </HubSection>
     );
   }
@@ -293,35 +293,35 @@ function YourFootballSection({
       }
     >
       {loading ? (
-        <p className="text-sm text-slate-400">{labels.loading}</p>
+        <p className="text-sm text-muted-foreground">{labels.loading}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-500">{labels.empty}</p>
+        <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : (
-        <ul className="divide-y divide-white/[0.06] rounded-xl border border-white/[0.08] bg-white/[0.02]">
+        <ul className="divide-y divide-white/[0.06] rounded-xl border border-border bg-card/50">
           {items.map((n) => (
             <li key={n.id}>
               {n.href ? (
                 <Link
                   href={n.href}
-                  className="block px-4 py-3 no-underline hover:bg-white/[0.03]"
+                  className="block px-4 py-3 no-underline hover:bg-card"
                 >
                   <p
                     className={cn(
                       "text-sm",
-                      n.read_at ? "text-slate-400" : "font-medium text-white",
+                      n.read_at ? "text-muted-foreground" : "font-medium text-foreground",
                     )}
                   >
                     {n.title}
                   </p>
                   {n.body ? (
-                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                       {n.body}
                     </p>
                   ) : null}
                 </Link>
               ) : (
                 <div className="px-4 py-3">
-                  <p className="text-sm text-white">{n.title}</p>
+                  <p className="text-sm text-foreground">{n.title}</p>
                 </div>
               )}
             </li>
@@ -354,12 +354,12 @@ function WcMatchCard({
   return (
     <Link
       href="/worldcup?tab=matches"
-      className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-white/[0.04]"
+      className="flex flex-col gap-2 rounded-xl border border-border bg-card/50 p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-card"
     >
-      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {match.round_label} · {fmtKickoff(match.kickoff, locale)}
       </span>
-      <div className="flex items-center justify-between gap-2 text-sm font-medium text-white">
+      <div className="flex items-center justify-between gap-2 text-sm font-medium text-foreground">
         <span className="truncate">
           {wcTeamFlag(match.home_code)} {match.home_name}
         </span>
@@ -384,18 +384,18 @@ function MiniGroupTable({
   labels: { group: string; team: string; pts: string };
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]">
-      <div className="border-b border-white/[0.06] px-3 py-2 text-xs font-semibold text-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+      <div className="border-b border-border px-3 py-2 text-xs font-semibold text-foreground">
         {labels.group} {group.group_letter}
       </div>
       <table className="w-full text-left text-xs">
         <tbody>
           {group.rows.map((row) => (
-            <tr key={row.code} className="border-t border-white/[0.04]">
-              <td className="px-3 py-1.5 tabular-nums text-slate-500">
+            <tr key={row.code} className="border-t border-border/50">
+              <td className="px-3 py-1.5 tabular-nums text-muted-foreground">
                 {row.rank}
               </td>
-              <td className="px-2 py-1.5 font-medium text-white">
+              <td className="px-2 py-1.5 font-medium text-foreground">
                 {row.short_name}
               </td>
               <td className="px-3 py-1.5 text-right tabular-nums text-brand-accent">
@@ -446,7 +446,7 @@ function WorldCupSection({
       wc.groupsPreview.length === 0 &&
       wc.topScorers.length === 0 &&
       wc.topAssists.length === 0 ? (
-        <p className="text-sm text-slate-500">{labels.empty}</p>
+        <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : (
         <div className="flex flex-col gap-5">
           {wc.nextMatches.length > 0 ? (
@@ -476,23 +476,23 @@ function WorldCupSection({
 
             <div className="flex flex-col gap-3">
               {wc.topScorers.length > 0 ? (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-border bg-card/50 p-3">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {labels.scorers}
                   </h3>
                   <ol className="space-y-1.5 text-sm">
                     {wc.topScorers.map((s: LeaderboardRow, i) => (
                       <li
                         key={s.player_id}
-                        className="flex justify-between gap-2 text-slate-300"
+                        className="flex justify-between gap-2 text-foreground/70"
                       >
                         <span>
-                          <span className="mr-2 tabular-nums text-slate-600">
+                          <span className="mr-2 tabular-nums text-muted-foreground/80">
                             {i + 1}
                           </span>
                           {s.name}
                         </span>
-                        <span className="tabular-nums text-white">{s.goals}</span>
+                        <span className="tabular-nums text-foreground">{s.goals}</span>
                       </li>
                     ))}
                   </ol>
@@ -500,23 +500,23 @@ function WorldCupSection({
               ) : null}
 
               {wc.topAssists.length > 0 ? (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-border bg-card/50 p-3">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {labels.assists}
                   </h3>
                   <ol className="space-y-1.5 text-sm">
                     {wc.topAssists.map((s: LeaderboardRow, i) => (
                       <li
                         key={`a-${s.player_id}`}
-                        className="flex justify-between gap-2 text-slate-300"
+                        className="flex justify-between gap-2 text-foreground/70"
                       >
                         <span>
-                          <span className="mr-2 tabular-nums text-slate-600">
+                          <span className="mr-2 tabular-nums text-muted-foreground/80">
                             {i + 1}
                           </span>
                           {s.name}
                         </span>
-                        <span className="tabular-nums text-white">{s.assists}</span>
+                        <span className="tabular-nums text-foreground">{s.assists}</span>
                       </li>
                     ))}
                   </ol>
@@ -542,7 +542,7 @@ function HomeNewsCard({
   const imgSrc = proxiedNewsImageUrl(item.image_url);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] transition-colors hover:border-white/[0.14]">
+    <article className="overflow-hidden rounded-xl border border-border bg-card/50 transition-colors hover:border-border">
       <div className={cn("flex flex-col", showImage && "sm:flex-row")}>
         {showImage ? (
           <a
@@ -563,10 +563,10 @@ function HomeNewsCard({
           </a>
         ) : null}
         <div className="flex min-w-0 flex-1 flex-col p-3">
-          <span className="text-[10px] font-medium uppercase text-slate-500">
+          <span className="text-[10px] font-medium uppercase text-muted-foreground">
             {item.outlet}
           </span>
-          <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-white">
+          <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             <a
               href={item.url}
               target="_blank"
@@ -612,7 +612,7 @@ function NewsSection({
       action={<HubChip href="/news">{labels.allNews}</HubChip>}
     >
       {items.length === 0 ? (
-        <p className="text-sm text-slate-500">{labels.empty}</p>
+        <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
@@ -715,29 +715,29 @@ function FplSection({
     >
       <div className="flex max-w-xl flex-col gap-4">
           {todayFpl.gw != null && todayFpl.deadline ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               {labels.gw.replace("{gw}", String(todayFpl.gw))} ·{" "}
               {labels.deadline}{" "}
-              <span className="text-slate-300">
+              <span className="text-foreground/70">
                 {fmtDeadline(todayFpl.deadline, locale)}
               </span>
             </p>
           ) : null}
 
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+          <div className="rounded-xl border border-border bg-card p-4">
             <EntryIdForm redirectTo={(id) => `/dashboard/${id}`} />
-            <p className="mt-2 text-xs text-slate-500">{labels.entryHint}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{labels.entryHint}</p>
           </div>
 
           {entryId ? (
             snapshotLoading ? (
-              <div className="h-20 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.03]" />
+              <div className="h-20 animate-pulse rounded-xl border border-border bg-card" />
             ) : snapshot ? (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <p className="font-medium text-white">
+                <p className="font-medium text-foreground">
                   {squadDisplayName(snapshot) ?? `#${entryId}`}
                 </p>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {labels.snapshotRank.replace(
                     "{rank}",
                     snapshot.entry?.summary_overall_rank != null
@@ -778,7 +778,7 @@ function FplSection({
           ) : null}
 
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {labels.shortcuts}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -818,12 +818,12 @@ function ExploreSection({
           <Link
             key={key}
             href={href}
-            className="group rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-white/[0.05]"
+            className="group rounded-xl border border-border bg-card p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-card"
           >
-            <h3 className="font-semibold text-white group-hover:text-brand-accent">
+            <h3 className="font-semibold text-foreground group-hover:text-brand-accent">
               {labels.tiles[key].title}
             </h3>
-            <p className="mt-1 text-sm text-slate-400">{labels.tiles[key].body}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{labels.tiles[key].body}</p>
           </Link>
         ))}
       </div>
@@ -879,13 +879,13 @@ export function HomeHub() {
         <span className="rounded-full border border-brand-accent/25 bg-brand-accent/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
           {t("badge")}
         </span>
-        <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl md:leading-[1.05]">
+        <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-4xl md:text-5xl md:leading-[1.05]">
           {t("titleLead")}{" "}
           <span className="bg-gradient-to-r from-brand-accent to-emerald-300 bg-clip-text text-transparent">
             {t("titleAccent")}
           </span>
         </h1>
-        <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+        <p className="max-w-2xl text-base leading-relaxed text-foreground/70 md:text-lg">
           {t("subtitle")}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -900,9 +900,9 @@ export function HomeHub() {
 
       <HubSection title={t("todayTitle")}>
         {hubLoading ? (
-          <div className="h-12 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.03]" />
+          <div className="h-12 animate-pulse rounded-xl border border-border bg-card" />
         ) : hubError ? (
-          <p className="text-sm text-slate-500">{hubError}</p>
+          <p className="text-sm text-muted-foreground">{hubError}</p>
         ) : (
           <TodayTicker
             items={hub.today.ticker}

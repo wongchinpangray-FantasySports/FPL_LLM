@@ -24,8 +24,8 @@ function NavLink({
       className={cn(
         "relative block rounded-md px-2 py-1.5 text-xs transition-colors sm:text-sm",
         active
-          ? "text-white after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
-          : "text-slate-400 hover:text-white",
+          ? "text-foreground after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
+          : "text-muted-foreground hover:text-foreground",
       )}
     >
       {children}
@@ -103,8 +103,8 @@ export function SiteNav() {
           className={cn(
             "relative rounded-md px-1.5 py-1 text-xs transition-colors sm:px-2 sm:py-1.5 sm:text-sm",
             fplActive || fplOpen
-              ? "text-white after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
-              : "text-slate-400 hover:text-white",
+              ? "text-foreground after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {t("fpl")}
@@ -115,8 +115,8 @@ export function SiteNav() {
         {fplOpen ? (
           <div
             className={cn(
-              "absolute left-0 top-full z-50 mt-1 min-w-[10.5rem] rounded-lg border border-white/[0.08]",
-              "bg-brand-ink/95 py-1 shadow-xl backdrop-blur-xl",
+              "absolute left-0 top-full z-50 mt-1 min-w-[10.5rem] rounded-lg border border-border",
+              "bg-popover/95 py-1 shadow-xl backdrop-blur-xl",
             )}
           >
             {fplLinks.map((link) => (

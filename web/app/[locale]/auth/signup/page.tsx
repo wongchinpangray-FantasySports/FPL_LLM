@@ -8,7 +8,7 @@ export default async function SignupPage() {
   return (
     <div className="flex flex-col gap-6">
       <AuthForm mode="signup" />
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-muted-foreground">
         {t("hasAccount")}{" "}
         <Link href="/auth/login" className="text-brand-accent hover:underline">
           {t("loginLink")}

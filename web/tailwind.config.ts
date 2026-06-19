@@ -25,6 +25,17 @@ const config: Config = {
           accent: "#00ff87",
           ink: "#0b0a0f",
         },
+        background: "hsl(var(--background) / <alpha-value>)",
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        muted: {
+          DEFAULT: "hsl(var(--muted) / <alpha-value>)",
+          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
+        },
+        border: "hsl(var(--border) / <alpha-value>)",
+        card: "hsl(var(--card) / <alpha-value>)",
+        input: "hsl(var(--input) / <alpha-value>)",
+        popover: "hsl(var(--popover) / <alpha-value>)",
+        ring: "hsl(var(--ring) / <alpha-value>)",
       },
       fontFamily: {
         sans: [

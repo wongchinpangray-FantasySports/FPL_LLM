@@ -17,11 +17,11 @@ export function PageHeader({
           {eyebrow}
         </p>
       ) : null}
-      <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
         {title}
       </h1>
       {description ? (
-        <p className="mt-2 text-sm leading-relaxed text-slate-400 md:mt-3 md:text-base">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:mt-3 md:text-base">
           {description}
         </p>
       ) : null}

@@ -119,7 +119,7 @@ export function OnboardingWizard() {
   }
 
   if (!options) {
-    return <p className="text-sm text-slate-400">{t("loading")}</p>;
+    return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
   }
 
   return (
@@ -130,21 +130,21 @@ export function OnboardingWizard() {
             key={i}
             className={cn(
               "h-1 flex-1 rounded-full",
-              i <= step ? "bg-brand-accent" : "bg-white/10",
+              i <= step ? "bg-brand-accent" : "bg-muted",
             )}
           />
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-6">
+      <div className="rounded-xl border border-border bg-card p-6">
         {step === 0 ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t("stepNational")}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t("stepNationalHint")}</p>
+            <h2 className="text-lg font-semibold text-foreground">{t("stepNational")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("stepNationalHint")}</p>
             <select
               value={nationalTeam}
               onChange={(e) => setNationalTeam(e.target.value)}
-              className="mt-4 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white"
+              className="mt-4 w-full rounded-lg border border-border bg-popover px-3 py-2 text-sm text-foreground"
             >
               <option value="">{t("skipOption")}</option>
               {options.wc_teams.map((team) => (
@@ -158,7 +158,7 @@ export function OnboardingWizard() {
 
         {step === 1 ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t("stepLeagues")}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("stepLeagues")}</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {options.leagues.map((lg) => (
                 <button
@@ -169,7 +169,7 @@ export function OnboardingWizard() {
                     "rounded-full px-3 py-1.5 text-sm",
                     leagues.includes(lg.id)
                       ? "bg-brand-accent/20 text-brand-accent"
-                      : "bg-white/5 text-slate-400",
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   {lg.id === "epl" ? t("leagueEpl") : t("leagueWc")}
@@ -181,13 +181,13 @@ export function OnboardingWizard() {
 
         {step === 2 ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t("stepClub")}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("stepClub")}</h2>
             <select
               value={fplTeamId}
               onChange={(e) =>
                 setFplTeamId(e.target.value ? Number(e.target.value) : "")
               }
-              className="mt-4 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white"
+              className="mt-4 w-full rounded-lg border border-border bg-popover px-3 py-2 text-sm text-foreground"
             >
               <option value="">{t("skipOption")}</option>
               {options.fpl_teams.map((team) => (
@@ -201,7 +201,7 @@ export function OnboardingWizard() {
 
         {step === 3 ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t("stepPlayers")}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("stepPlayers")}</h2>
             <Input
               className="mt-4"
               placeholder={t("playerSearch")}
@@ -220,7 +220,7 @@ export function OnboardingWizard() {
                         : [...prev, p],
                     )
                   }
-                  className="block w-full rounded px-2 py-1 text-left text-xs text-slate-300 hover:bg-white/5"
+                  className="block w-full rounded px-2 py-1 text-left text-xs text-foreground/70 hover:bg-muted"
                 >
                   {p.web_name ?? p.name} ({p.team}) · FPL
                 </button>
@@ -234,14 +234,14 @@ export function OnboardingWizard() {
                       prev.some((x) => x.id === p.id) ? prev : [...prev, p],
                     )
                   }
-                  className="block w-full rounded px-2 py-1 text-left text-xs text-slate-300 hover:bg-white/5"
+                  className="block w-full rounded px-2 py-1 text-left text-xs text-foreground/70 hover:bg-muted"
                 >
                   {p.name} ({p.team_code}) · WC
                 </button>
               ))}
             </div>
             {(followedFpl.length > 0 || followedWc.length > 0) ? (
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {t("selectedCount", {
                   n: followedFpl.length + followedWc.length,
                 })}
@@ -252,8 +252,8 @@ export function OnboardingWizard() {
 
         {step === 4 ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t("stepEntry")}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t("stepEntryHint")}</p>
+            <h2 className="text-lg font-semibold text-foreground">{t("stepEntry")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("stepEntryHint")}</p>
             <Input
               className="mt-4"
               inputMode="numeric"
@@ -262,7 +262,7 @@ export function OnboardingWizard() {
               onChange={(e) => setEntryIdLocal(e.target.value)}
             />
             <div className="mt-4">
-              <p className="text-sm text-slate-400">{t("stepRegions")}</p>
+              <p className="text-sm text-muted-foreground">{t("stepRegions")}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {options.news_regions.map((r) => (
                   <button
@@ -273,7 +273,7 @@ export function OnboardingWizard() {
                       "rounded-full px-2 py-1 text-xs",
                       regions.includes(r)
                         ? "bg-brand-accent/20 text-brand-accent"
-                        : "bg-white/5 text-slate-500",
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
                     {r}

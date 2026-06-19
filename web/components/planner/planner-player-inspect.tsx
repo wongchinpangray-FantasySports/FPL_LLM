@@ -112,20 +112,20 @@ export function PlannerPlayerInspectSheet({
       onClick={onClose}
     >
       <div
-        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/[0.1] bg-brand-ink p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5"
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="planner-inspect-title"
-              className="text-base font-semibold text-white sm:text-lg"
+              className="text-base font-semibold text-foreground sm:text-lg"
             >
               {loading ? t("inspectLoadingTitle") : name}
             </h2>
             {detail ? (
               <>
-                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                   {detail.profile.team ?? "—"} ·{" "}
                   {detail.profile.position ?? "—"} · £
                   {detail.profile.price != null
@@ -154,26 +154,26 @@ export function PlannerPlayerInspectSheet({
         ) : null}
 
         {loading && !detail ? (
-          <p className="text-sm text-slate-400">{t("inspectLoadingBody")}</p>
+          <p className="text-sm text-muted-foreground">{t("inspectLoadingBody")}</p>
         ) : null}
 
         {detail ? (
           <div className="flex flex-col gap-4 text-sm sm:gap-5">
-            <section className="rounded-lg border border-white/10 bg-white/[0.03] p-3 sm:rounded-xl">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+            <section className="rounded-lg border border-border bg-card p-3 sm:rounded-xl">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {t("inspectSeasonSection")}
               </p>
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-slate-300">
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-foreground/70">
                 <div>
-                  <dt className="text-slate-500">{t("inspectForm")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectForm")}</dt>
                   <dd>{detail.profile.form ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectTotalPoints")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectTotalPoints")}</dt>
                   <dd>{detail.profile.total_points ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectOwnership")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectOwnership")}</dt>
                   <dd>
                     {detail.profile.ownership != null
                       ? `${detail.profile.ownership.toFixed(1)}%`
@@ -181,18 +181,18 @@ export function PlannerPlayerInspectSheet({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectSeasonMins")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectSeasonMins")}</dt>
                   <dd>{detail.profile.minutes_season ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectGoalsAssists")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectGoalsAssists")}</dt>
                   <dd>
                     {detail.profile.goals_scored ?? 0} /{" "}
                     {detail.profile.assists ?? 0}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectTransfersNet")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectTransfersNet")}</dt>
                   <dd>
                     {detail.profile.transfers_in_event != null &&
                     detail.profile.transfers_out_event != null
@@ -202,7 +202,7 @@ export function PlannerPlayerInspectSheet({
                 </div>
               </dl>
               {detail.profile.news ? (
-                <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-relaxed text-amber-100/90">
+                <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-amber-100/90">
                   {detail.profile.news}
                 </p>
               ) : null}
@@ -214,38 +214,38 @@ export function PlannerPlayerInspectSheet({
               ) : null}
             </section>
 
-            <section className="rounded-lg border border-white/10 bg-white/[0.03] p-3 sm:rounded-xl">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+            <section className="rounded-lg border border-border bg-card p-3 sm:rounded-xl">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {t("inspectRollingSection", { gws: detail.rolling.window_gws })}
               </p>
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-slate-300 sm:grid-cols-3">
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-foreground/70 sm:grid-cols-3">
                 <div>
-                  <dt className="text-slate-500">{t("inspectPts")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectPts")}</dt>
                   <dd>{detail.rolling.points}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectMinsRoll")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectMinsRoll")}</dt>
                   <dd>{detail.rolling.minutes}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectXgxa")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectXgxa")}</dt>
                   <dd>
                     {detail.rolling.xg.toFixed(2)} /{" "}
                     {detail.rolling.xa.toFixed(2)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectGA")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectGA")}</dt>
                   <dd>
                     {detail.rolling.goals} / {detail.rolling.assists}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectStarts")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectStarts")}</dt>
                   <dd>{detail.rolling.starts}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">{t("inspectDcPts")}</dt>
+                  <dt className="text-muted-foreground">{t("inspectDcPts")}</dt>
                   <dd>{detail.rolling.dc_points}</dd>
                 </div>
               </dl>
@@ -255,18 +255,18 @@ export function PlannerPlayerInspectSheet({
 
             <section>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {t("inspectFixturesSection")}
                 </p>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground">
                   GW{detail.fromGw}–{detail.toGw} · Σ {detail.xp_total.toFixed(1)}{" "}
                   xP ({detail.xp_per_game.toFixed(2)}/{t("inspectPerGwShort")})
                 </span>
               </div>
-              <div className="overflow-x-auto rounded-lg border border-white/10 sm:rounded-xl">
+              <div className="overflow-x-auto rounded-lg border border-border sm:rounded-xl">
                 <table className="w-full text-[11px] sm:text-xs">
                   <thead>
-                    <tr className="text-left text-[9px] uppercase text-slate-400 sm:text-[10px]">
+                    <tr className="text-left text-[9px] uppercase text-muted-foreground sm:text-[10px]">
                       <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblGw")}</th>
                       <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblOpp")}</th>
                       <th className="px-1.5 py-1.5 sm:px-2 sm:py-2">{t("inspectTblFdr")}</th>
@@ -277,18 +277,18 @@ export function PlannerPlayerInspectSheet({
                     {detail.fixtures.map((fx) => (
                       <tr
                         key={`${fx.gw}-${fx.opp_short}-${fx.home}`}
-                        className="border-t border-white/5"
+                        className="border-t border-border/60"
                       >
-                        <td className="px-1.5 py-1.5 text-slate-300 sm:px-2 sm:py-2">
+                        <td className="px-1.5 py-1.5 text-foreground/70 sm:px-2 sm:py-2">
                           {fx.gw}
                         </td>
-                        <td className="px-1.5 py-1.5 font-medium text-slate-200 sm:px-2 sm:py-2">
+                        <td className="px-1.5 py-1.5 font-medium text-foreground/90 sm:px-2 sm:py-2">
                           {fx.opp_short}
-                          <span className="text-slate-500">
+                          <span className="text-muted-foreground">
                             {fx.home ? " (H)" : " (A)"}
                           </span>
                         </td>
-                        <td className="px-1.5 py-1.5 text-slate-400 sm:px-2 sm:py-2">
+                        <td className="px-1.5 py-1.5 text-muted-foreground sm:px-2 sm:py-2">
                           {fx.fdr ?? "—"}
                         </td>
                         <td className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">
@@ -306,7 +306,7 @@ export function PlannerPlayerInspectSheet({
                   </tbody>
                 </table>
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
                 {t("inspectFixtureHint")}
               </p>
             </section>

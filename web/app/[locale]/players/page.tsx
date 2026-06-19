@@ -20,7 +20,7 @@ export default async function PlayersSearchPage({
       <div>
         <Link
           href="/"
-          className="text-sm text-slate-400 transition-colors hover:text-brand-accent"
+          className="text-sm text-muted-foreground transition-colors hover:text-brand-accent"
         >
           {t("backHome")}
         </Link>

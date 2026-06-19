@@ -43,18 +43,18 @@ export function MiniModal({
       />
       <div
         className={cn(
-          "relative z-[101] w-full max-w-md rounded-xl border border-white/10",
-          "bg-brand-ink p-5 shadow-2xl",
+          "relative z-[101] w-full max-w-md rounded-xl border border-border",
+          "bg-background p-5 shadow-2xl",
         )}
       >
         <h2
           id="mini-modal-title"
-          className="text-base font-semibold text-white sm:text-lg"
+          className="text-base font-semibold text-foreground sm:text-lg"
         >
           {title}
         </h2>
         {children ? (
-          <div className="mt-3 text-sm leading-relaxed text-slate-300">
+          <div className="mt-3 text-sm leading-relaxed text-foreground/70">
             {children}
           </div>
         ) : null}

@@ -13,8 +13,8 @@ export function LanguageSwitcher() {
 
   return (
     <div className="flex flex-wrap items-center gap-1 text-xs">
-      <span className="text-slate-500">{t("label")}</span>
-      <span className="text-slate-600">·</span>
+      <span className="text-muted-foreground">{t("label")}</span>
+      <span className="text-muted-foreground/80">·</span>
       {routing.locales.map((loc) => (
         <button
           key={loc}
@@ -23,8 +23,8 @@ export function LanguageSwitcher() {
           className={cn(
             "rounded px-1.5 py-0.5 transition-colors",
             locale === loc
-              ? "bg-white/10 font-medium text-white"
-              : "text-slate-400 hover:text-white",
+              ? "bg-muted font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {loc === "en" ? t("en") : t("zh")}
