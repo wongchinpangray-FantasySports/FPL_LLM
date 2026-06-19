@@ -74,7 +74,7 @@
     "newsEmpty": "暂无缓存头条 —— 请访问新闻页。",
     "fplEyebrow": "英超范特西 FPL",
     "fplTitle": "你的 FPL 赛季",
-    "fplDescription": "绑定球队使用阵容工具，或查看模型推荐的下轮最佳首发。",
+    "fplDescription": "绑定球队，使用仪表盘、规划器等阵容工具。",
     "entryHint": "Entry ID 见 fantasy.premierleague.com 积分页 URL",
     "fplDeadline": "截止",
     "fplGw": "第{gw}轮",
@@ -84,8 +84,6 @@
     "fplSnapshotGw": "规划第{gw}轮",
     "fplOpenDashboard": "仪表盘",
     "fplOpenPlanner": "规划器",
-    "showcaseLoading": "生成最佳阵容…",
-    "showcaseError": "最佳阵容暂不可用 —— 请打开规划器查看完整预测。",
     "fplShortcuts": "快捷入口",
     "exploreTitle": "玩一玩 & 探索",
     "exploreChatTitle": "AI 对话",
@@ -110,14 +108,7 @@
     "feature3Body": "输入 Entry ID → 首发、预算、芯片 —— 结合上下文的建议。",
     "playersCardTitle": "球员资料",
     "playersCardBody": "搜索任意球员 —— FPL 数据、xP 展望、以及与同位置对比的雷达图。",
-    "playersCardCta": "浏览球员",
-    "showcase": {
-      "title": "第{gw}轮最佳阵容",
-      "subtitle": "与规划器使用相同的下一轮 xP 模型。在每条线前列球员短名单（约 22 人）中搜索合法首发 11 人，使「总分 + 队内最高 xP」（即队长戴在 xP 最高者）最大，再补四名替补凑满 15 人（每队最多 3 人、不设预算）。输入 Entry ID 可在规划页针对你自己的阵容。",
-      "pitchTitle": "下一轮",
-      "pitchCaption": "下一轮首发得分（含最优队长）{xi} · 约 £{cost}m 阵容",
-      "ctaPlanner": "打开规划"
-    }
+    "playersCardCta": "浏览球员"
   },
   "entryForm": {
     "label": "Entry ID",

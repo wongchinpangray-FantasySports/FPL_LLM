@@ -8,8 +8,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
-import { PitchView } from "@/components/planner/pitch-view";
-import type { HomeBestXi } from "@/lib/home/best-xi-showcase";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
@@ -669,45 +667,13 @@ function FplSection({
     snapshotGw: string;
     openDashboard: string;
     openPlanner: string;
-    showcaseLoading: string;
-    showcaseError: string;
-    showcaseCaption: string;
-    showcaseCta: string;
     shortcuts: string;
   };
 }) {
   const { entryId } = useEntryId();
   const [snapshot, setSnapshot] = useState<SquadSnapshot | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
-  const [bestXi, setBestXi] = useState<HomeBestXi | null>(null);
-  const [bestXiLoading, setBestXiLoading] = useState(true);
-  const [bestXiError, setBestXiError] = useState<string | null>(null);
   const tNav = useTranslations("nav");
-
-  useEffect(() => {
-    let cancelled = false;
-    setBestXiLoading(true);
-    fetch("/api/home/best-xi")
-      .then(async (res) => {
-        const data = (await res.json()) as {
-          bestXi?: HomeBestXi | null;
-          error?: string;
-        };
-        if (!res.ok) throw new Error(data.error ?? "Failed");
-        if (!cancelled) setBestXi(data.bestXi ?? null);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setBestXiError(e instanceof Error ? e.message : "Failed");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setBestXiLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (!entryId) {
@@ -747,8 +713,7 @@ function FplSection({
       title={labels.title}
       description={labels.description}
     >
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="flex flex-col gap-4">
+      <div className="flex max-w-xl flex-col gap-4">
           {todayFpl.gw != null && todayFpl.deadline ? (
             <p className="text-sm text-slate-400">
               {labels.gw.replace("{gw}", String(todayFpl.gw))} ·{" "}
@@ -824,27 +789,6 @@ function FplSection({
               ))}
             </div>
           </div>
-        </div>
-
-        <div>
-          {bestXiLoading ? (
-            <div className="aspect-[5/3] animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.03]" />
-          ) : bestXiError ? (
-            <p className="text-sm text-slate-500">{labels.showcaseError}</p>
-          ) : bestXi ? (
-            <PitchView
-              picks={bestXi.picks}
-              title={labels.showcaseCta.replace("{gw}", String(bestXi.gw))}
-              caption={labels.showcaseCaption
-                .replace("{xi}", String(bestXi.score))
-                .replace("{cost}", String(bestXi.cost))}
-              captainId={bestXi.captainId}
-              viceId={null}
-              interactive={false}
-              gkAtTop
-            />
-          ) : null}
-        </div>
       </div>
     </HubSection>
   );
@@ -1035,10 +979,6 @@ export function HomeHub() {
           snapshotGw: t("fplSnapshotGw"),
           openDashboard: t("fplOpenDashboard"),
           openPlanner: t("fplOpenPlanner"),
-          showcaseLoading: t("showcaseLoading"),
-          showcaseError: t("showcaseError"),
-          showcaseCaption: t("showcase.pitchCaption"),
-          showcaseCta: t("showcase.title"),
           shortcuts: t("fplShortcuts"),
         }}
       />

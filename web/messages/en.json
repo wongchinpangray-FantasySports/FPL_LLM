@@ -74,7 +74,7 @@
     "newsEmpty": "No headlines cached yet — try the full news page.",
     "fplEyebrow": "Fantasy Premier League",
     "fplTitle": "Your FPL season",
-    "fplDescription": "Connect your team for squad tools, or browse the model Best XI for the next gameweek.",
+    "fplDescription": "Connect your team for squad tools, planner, and dashboard.",
     "entryHint": "Entry ID from your Points page on fantasy.premierleague.com",
     "fplDeadline": "Deadline",
     "fplGw": "GW{gw}",
@@ -84,8 +84,6 @@
     "fplSnapshotGw": "Planning GW{gw}",
     "fplOpenDashboard": "Dashboard",
     "fplOpenPlanner": "Planner",
-    "showcaseLoading": "Building Best XI…",
-    "showcaseError": "Best XI unavailable — open Planner for full projections.",
     "fplShortcuts": "Quick links",
     "exploreTitle": "Play & explore",
     "exploreChatTitle": "AI Chat",
@@ -110,14 +108,7 @@
     "feature3Body": "Entry ID → XI, bank, chips — advice in context.",
     "playersCardTitle": "Player profiles",
     "playersCardBody": "Search any asset — FPL stats, xP outlook, and a radar vs same-position peers.",
-    "playersCardCta": "Browse players",
-    "showcase": {
-      "title": "Best XI for GW{gw}",
-      "subtitle": "Same next-GW xP engine as Planner. We search a shortlist (~22 players / line) for the legal XI that maximises FPL score with the armband on the best starter (`sum + max` xP), then add four bench fillers (max three per club, no budget cap). Open Planner with your Entry ID for your own squad.",
-      "pitchTitle": "Next GW",
-      "pitchCaption": "XI score (next GW, optimal captain) {xi} · ~£{cost}m squad",
-      "ctaPlanner": "Open planner"
-    }
+    "playersCardCta": "Browse players"
   },
   "entryForm": {
     "label": "Entry ID",
