@@ -1,6 +1,6 @@
 import type { PlannerPickPayload } from "@/components/planner/types";
 import { findBestStartingElevenFromPool } from "@/lib/planner/optimize-xi";
-import { computeTopXpByPosition } from "@/lib/planner/top-xp-by-position";
+import { computeTopXpByPositionForShowcase } from "@/lib/planner/top-xp-by-position";
 import { getServerSupabase } from "@/lib/supabase";
 
 export type HomeBestXi = {
@@ -55,7 +55,7 @@ function assignXiSlots(
 }
 
 export async function computeHomeBestXiShowcase(): Promise<HomeBestXi | null> {
-  const tops = await computeTopXpByPosition(1, undefined, 6);
+  const tops = await computeTopXpByPositionForShowcase(1, undefined, 6);
   const poolRows = [
     ...tops.tops.GKP,
     ...tops.tops.DEF,

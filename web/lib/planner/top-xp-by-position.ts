@@ -26,6 +26,62 @@ export type TopXpByPositionResult = PlannerProjectionWindow & {
 
 const LEAGUE_PROJ_CHUNK = 80;
 
+/** Per-line caps for home Best XI — full-league projection exceeds Worker CPU. */
+const SHOWCASE_PROJ_CAP: Record<PlannerTopPosition, number> = {
+  GKP: 12,
+  DEF: 32,
+  MID: 32,
+  FWD: 26,
+};
+
+type StaticProjRow = {
+  fpl_id: number;
+  team_id: number | null;
+  position: string | null;
+  form: string | null;
+  points_per_game: string | null;
+  total_points: number | null;
+};
+
+function staticFormScore(r: StaticProjRow): number {
+  const form = Number.parseFloat(String(r.form ?? ""));
+  if (Number.isFinite(form) && form > 0) return form;
+  const ppg = Number.parseFloat(String(r.points_per_game ?? ""));
+  if (Number.isFinite(ppg) && ppg > 0) return ppg * 0.45;
+  const tp = r.total_points != null ? Number(r.total_points) : 0;
+  if (Number.isFinite(tp) && tp > 0) return tp / 38;
+  return 0;
+}
+
+function pickShowcaseProjectionIds(rows: StaticProjRow[]): number[] {
+  const byPos: Record<PlannerTopPosition, StaticProjRow[]> = {
+    GKP: [],
+    DEF: [],
+    MID: [],
+    FWD: [],
+  };
+  for (const r of rows) {
+    if (r.team_id == null) continue;
+    const pos = r.position as PlannerTopPosition;
+    if (!byPos[pos]) continue;
+    byPos[pos].push(r);
+  }
+  const seen = new Set<number>();
+  const ids: number[] = [];
+  for (const pos of POSITIONS) {
+    const sorted = [...byPos[pos]].sort(
+      (a, b) => staticFormScore(b) - staticFormScore(a),
+    );
+    for (const r of sorted.slice(0, SHOWCASE_PROJ_CAP[pos])) {
+      const id = Number(r.fpl_id);
+      if (!Number.isFinite(id) || id <= 0 || seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 function xpNextGw(p: PlayerProjection, fromGw: number): number {
   const raw = p.fixtures
     .filter((f) => f.gw === fromGw)
@@ -85,6 +141,65 @@ export async function computeTopXpByPosition(
     const partial = await projectPlayers(chunk, opts);
     for (const [id, row] of partial) proj.set(id, row);
   }
+
+  const buckets: Record<string, TopXpPlayerRow[]> = {
+    GKP: [],
+    DEF: [],
+    MID: [],
+    FWD: [],
+  };
+
+  for (const p of proj.values()) {
+    const pos = (p.position ?? "MID") as string;
+    if (!buckets[pos]) continue;
+    buckets[pos].push(toTopRow(p, fromGw));
+  }
+
+  const tops = {} as Record<PlannerTopPosition, TopXpPlayerRow[]>;
+  for (const pos of POSITIONS) {
+    tops[pos] = [...buckets[pos]]
+      .sort((a, b) => b.xp_total - a.xp_total)
+      .slice(0, topN);
+  }
+
+  return { ...window, tops };
+}
+
+/**
+ * Same output shape as `computeTopXpByPosition`, but xP-projects only a
+ * form-ranked subset (~100 players) so Cloudflare Workers stay under CPU limits.
+ */
+export async function computeTopXpByPositionForShowcase(
+  horizonInput: number,
+  fromGwOverride?: number,
+  topPerPosition = 6,
+): Promise<TopXpByPositionResult> {
+  const topN = Math.min(12, Math.max(1, Math.floor(topPerPosition) || 6));
+  const window = await resolvePlannerProjectionWindow(
+    horizonInput,
+    fromGwOverride,
+  );
+  const { currentGw, fromGw, toGw } = window;
+
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("players_static")
+    .select(
+      "fpl_id, team_id, position, form, points_per_game, total_points",
+    )
+    .not("team_id", "is", null)
+    .in("position", [...POSITIONS]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const ids = pickShowcaseProjectionIds((data ?? []) as StaticProjRow[]);
+  if (ids.length < 24) {
+    throw new Error("Not enough players for showcase projection.");
+  }
+
+  const proj = await projectPlayers(ids, { currentGw, fromGw, toGw });
 
   const buckets: Record<string, TopXpPlayerRow[]> = {
     GKP: [],
