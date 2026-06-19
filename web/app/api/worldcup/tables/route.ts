@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({
       ...data,
       disclaimer:
-        "Group tables and leaderboards from live FIFA match results (scores and goal scorers). Squad lists from the World Cup fantasy pool.",
+        "Group tables and leaderboards from live FIFA match results (scores and goal scorers). Squad G/A from the same live match events.",
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load tables";

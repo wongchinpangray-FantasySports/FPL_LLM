@@ -4,8 +4,10 @@ import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import {
   buildGroupTablesFromFifaMatches,
   buildLeaderboardsFromFifaMatches,
+  buildPlayerGoalAssistsFromFifaMatches,
   buildTeamResultsFromFifa,
   loadTeamsByCode,
+  lookupPlayerGoalAssists,
 } from "@/lib/wc/fifa-standings";
 import type { WcFixtureRow } from "@/lib/wc/projection-context";
 import type { WcTeam } from "@/lib/wc/types";
@@ -251,7 +253,7 @@ export async function loadWcTablesData(): Promise<{
     getServerSupabase()
       .from("wc_players")
       .select(
-        "id,name,position,goals,assists,minutes,wc_team_id,wc_teams(code,name,short_name)",
+        "id,name,position,goals,assists,minutes,fifa_element_id,wc_team_id,wc_teams(code,name,short_name)",
       )
       .order("goals", { ascending: false }),
   ]);
@@ -263,6 +265,10 @@ export async function loadWcTablesData(): Promise<{
 
   const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
   const { scorers, assists } = buildLeaderboardsFromFifaMatches(
+    teamsByCode,
+    matches,
+  );
+  const liveStats = buildPlayerGoalAssistsFromFifaMatches(
     teamsByCode,
     matches,
   );
@@ -287,6 +293,7 @@ export async function loadWcTablesData(): Promise<{
       goals: Number(r.goals ?? 0),
       assists: Number(r.assists ?? 0),
       minutes: Number(r.minutes ?? 0),
+      fifa_element_id: (r.fifa_element_id as number | null) ?? null,
       team_code: team?.code ?? "???",
       team_name: team?.short_name ?? team?.name ?? "???",
     };
@@ -296,13 +303,18 @@ export async function loadWcTablesData(): Promise<{
   for (const p of playersForBoard) {
     const team = [...teams.values()].find((t) => t.code === p.team_code);
     if (!team) continue;
+    const ga = lookupPlayerGoalAssists(liveStats, {
+      fifa_element_id: p.fifa_element_id,
+      name: p.name,
+      team_code: p.team_code,
+    });
     const list = playersByTeam.get(team.id) ?? [];
     list.push({
       id: p.id,
       name: p.name,
       position: p.position,
-      goals: p.goals,
-      assists: p.assists,
+      goals: ga.goals,
+      assists: ga.assists,
       minutes: p.minutes,
     });
     playersByTeam.set(team.id, list);
@@ -321,7 +333,11 @@ export async function loadWcTablesData(): Promise<{
       standing: standingByCode.get(team.code) ?? null,
       results: buildTeamResultsFromFifa(team.code, teamsByCode, matches),
       players: (playersByTeam.get(team.id) ?? []).sort(
-        (a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name),
+        (a, b) =>
+          b.goals + b.assists - (a.goals + a.assists) ||
+          b.goals - a.goals ||
+          b.assists - a.assists ||
+          a.name.localeCompare(b.name),
       ),
     };
   }
