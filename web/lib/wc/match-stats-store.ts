@@ -186,7 +186,11 @@ export async function syncWcMatchStats(opts?: {
   events_skipped: number;
   fixtures_updated: number;
 }> {
-  const limit = Math.min(12, Math.max(0, opts?.eventsLimit ?? 8));
+  const envLimit = Number(process.env.WC_MATCH_EVENTS_LIMIT ?? "8");
+  const limit = Math.min(
+    128,
+    Math.max(0, opts?.eventsLimit ?? envLimit),
+  );
   const { matches } = await buildWcMatchSchedule();
   const supa = getServerSupabase();
 
@@ -208,6 +212,8 @@ export async function syncWcMatchStats(opts?: {
     away_score: m.away_score,
     home_scorers: m.home_scorers,
     away_scorers: m.away_scorers,
+    home_goals: m.home_goals.length > 0 ? m.home_goals : null,
+    away_goals: m.away_goals.length > 0 ? m.away_goals : null,
     updated_at: new Date().toISOString(),
   }));
 

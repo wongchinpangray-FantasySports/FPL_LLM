@@ -32,7 +32,13 @@ async function main() {
   await ensureWcSeeded();
   const result = await syncWcMatchStats();
   console.log(
-    `WC match sync: schedule_upserted=${result.schedule_upserted}, fixtures_updated=${result.fixtures_updated}, events_enriched=${result.events_enriched}.`,
+    [
+      `WC match sync complete.`,
+      `schedule_upserted=${result.schedule_upserted}`,
+      `fixtures_updated=${result.fixtures_updated}`,
+      `events_enriched=${result.events_enriched}`,
+      `events_skipped=${result.events_skipped}`,
+    ].join(" "),
   );
 }
 

@@ -137,7 +137,9 @@ and builds a player pool automatically:
 
 To reload the player pool manually: `POST /api/worldcup/sync` (FIFA first when env vars are set).
 
-**Match stats tab:** run migrations **0014**, **0016**, and **0017**, then `POST /api/worldcup/sync-matches` (daily cron recommended) to cache FIFA schedules and scores in Supabase. Finished matches offer AI text summaries (Gemini) with Gemini TTS listen-aloud (cached WAV).
+**Match stats tab:** run migrations **0014**, **0015**, **0016**, and **0017**, then `POST /api/worldcup/sync-matches` to cache FIFA schedules and scores in Supabase. Finished matches offer AI text summaries (Gemini) with Gemini TTS listen-aloud (cached WAV).
+
+**Daily auto-sync:** GitHub Actions workflow `sync-wc-matches.yml` runs at **15:00 Beijing time** (07:00 UTC) and refreshes all match rows plus scorer/assist data from FIFA (and API-Football goal timelines when `API_FOOTBALL_KEY` is set in repo secrets). Trigger manually from the Actions tab via **workflow_dispatch** if needed.
 
 #### Full official FIFA fantasy player list (optional)
 

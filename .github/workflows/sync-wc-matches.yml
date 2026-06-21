@@ -1,0 +1,38 @@
+name: World Cup match sync
+
+# 15:00 Asia/Shanghai (Beijing) = 07:00 UTC
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: wc-match-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      # Enrich all finished matches missing goal/card timelines (full tournament ≤104 games)
+      WC_MATCH_EVENTS_LIMIT: "128"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Sync FIFA schedules, scores, scorers and assists
+        working-directory: web
+        run: npx tsx scripts/sync-wc-matches.ts
