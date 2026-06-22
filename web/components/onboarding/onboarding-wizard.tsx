@@ -98,7 +98,7 @@ export function OnboardingWizard() {
 
       if (fplEntry) setEntryId(String(fplEntry));
       await refresh();
-      router.push(fplEntry ? `/dashboard/${fplEntry}` : "/inbox");
+      router.push("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("saveError"));
     } finally {

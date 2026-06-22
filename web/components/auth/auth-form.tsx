@@ -63,16 +63,22 @@ export function AuthForm({
         return;
       }
 
-      const meRes = await fetch("/api/account/me");
+      await new Promise((r) => setTimeout(r, 200));
+      let meRes = await fetch("/api/account/me");
+      if (!meRes.ok) {
+        await new Promise((r) => setTimeout(r, 300));
+        meRes = await fetch("/api/account/me");
+      }
       const me = (await meRes.json()) as {
+        user?: { id: string } | null;
         profile?: { onboarding_completed_at?: string | null } | null;
       };
-      if (!me.profile?.onboarding_completed_at) {
+      if (me.user && !me.profile?.onboarding_completed_at) {
         router.push("/onboarding");
         return;
       }
 
-      const dest = nextPath?.startsWith("/") ? nextPath : "/dashboard";
+      const dest = nextPath?.startsWith("/") ? nextPath : "/";
       router.push(dest);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("genericError"));

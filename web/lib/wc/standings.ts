@@ -1,5 +1,5 @@
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
-import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
+import { loadWcMatchesForDisplay } from "@/lib/wc/match-stats-store";
 import {
   buildGroupTablesFromFifaMatches,
   buildLeaderboardsFromFifaMatches,
@@ -9,6 +9,7 @@ import {
 import { localizeLeaderboardRows } from "@/lib/wc/localize-players";
 import type { WcFixtureRow } from "@/lib/wc/projection-context";
 import type { WcTeam } from "@/lib/wc/types";
+import { unstable_cache } from "next/cache";
 
 export type GroupStandingRow = {
   team_id: number;
@@ -238,7 +239,7 @@ export async function loadWcTablesData(locale = "en"): Promise<{
   teams: Record<string, TeamDetail>;
 }> {
   const [matches, teamsByCode] = await Promise.all([
-    buildWcMatchesWithStats().then((r) => r.matches),
+    loadWcMatchesForDisplay(),
     loadTeamsByCode(),
   ]);
 
@@ -281,4 +282,17 @@ export async function loadWcTablesData(locale = "en"): Promise<{
     assists: localizedAssists,
     teams: teamsDetail,
   };
+}
+
+export function loadWcTablesDataCached(locale: string): Promise<{
+  groups: GroupTable[];
+  scorers: LeaderboardRow[];
+  assists: LeaderboardRow[];
+  teams: Record<string, TeamDetail>;
+}> {
+  return unstable_cache(
+    () => loadWcTablesData(locale),
+    ["wc-tables", locale],
+    { revalidate: 90 },
+  )();
 }

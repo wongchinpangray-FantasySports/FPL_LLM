@@ -194,14 +194,16 @@ function TodayTicker({
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card/50 py-2.5">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-brand-ink to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-brand-ink to-transparent" />
-      <div className="flex w-max animate-[marquee_50s_linear_infinite] gap-3 px-4 hover:[animation-play-state:paused]">
-        {loop.map((chip, i) => (
-          <div key={i} className="pointer-events-auto shrink-0">
-            {chip}
-          </div>
-        ))}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-background to-transparent" />
+      <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:overflow-hidden [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max gap-3 px-4 md:animate-[marquee_50s_linear_infinite] md:hover:[animation-play-state:paused] motion-reduce:md:animate-none">
+          {loop.map((chip, i) => (
+            <div key={i} className="shrink-0">
+              {chip}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -831,35 +833,50 @@ function ExploreSection({
   );
 }
 
-export function HomeHub() {
+export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
   const { entryId } = useEntryId();
   const fplHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
-  const [data, setData] = useState<HomeHubData | null>(null);
+  const [data, setData] = useState<HomeHubData | null>(initialData ?? null);
   const [hubError, setHubError] = useState<string | null>(null);
-  const [hubLoading, setHubLoading] = useState(true);
+  const [hubLoading, setHubLoading] = useState(!initialData);
 
   useEffect(() => {
     let cancelled = false;
-    setHubLoading(true);
-    fetch(`/api/home/hub?locale=${encodeURIComponent(locale)}`)
-      .then(async (res) => {
+
+    async function fetchHub(attempt = 0): Promise<void> {
+      if (attempt === 0) {
+        setHubError(null);
+        if (!data) setHubLoading(true);
+      }
+      try {
+        const res = await fetch(`/api/home/hub?locale=${encodeURIComponent(locale)}`);
         const json = (await res.json()) as HomeHubData & { error?: string };
         if (!res.ok) throw new Error(json.error ?? "Failed to load");
-        if (!cancelled) setData(json);
-      })
-      .catch((e) => {
+        if (!cancelled) {
+          setData(json);
+          setHubError(null);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+          return fetchHub(attempt + 1);
+        }
         if (!cancelled) {
           setHubError(e instanceof Error ? e.message : "Failed to load");
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setHubLoading(false);
-      });
+      }
+    }
+
+    void fetchHub();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when locale changes
   }, [locale]);
 
   const hub = data ?? {
@@ -899,23 +916,26 @@ export function HomeHub() {
       </section>
 
       <HubSection title={t("todayTitle")}>
-        {hubLoading ? (
+        {hubLoading && !data ? (
           <div className="h-12 animate-pulse rounded-xl border border-border bg-card" />
-        ) : hubError ? (
-          <p className="text-sm text-muted-foreground">{hubError}</p>
         ) : (
-          <TodayTicker
-            items={hub.today.ticker}
-            fpl={hub.today.fpl}
-            locale={locale}
-            labels={{
-              result: t("todayResult"),
-              upcoming: t("todayUpcoming"),
-              fplDeadline: t("todayFpl"),
-              fplGw: t("todayFplGw"),
-              noItems: t("todayEmpty"),
-            }}
-          />
+          <>
+            <TodayTicker
+              items={hub.today.ticker}
+              fpl={hub.today.fpl}
+              locale={locale}
+              labels={{
+                result: t("todayResult"),
+                upcoming: t("todayUpcoming"),
+                fplDeadline: t("todayFpl"),
+                fplGw: t("todayFplGw"),
+                noItems: t("todayEmpty"),
+              }}
+            />
+            {hubError ? (
+              <p className="mt-2 text-xs text-muted-foreground">{hubError}</p>
+            ) : null}
+          </>
         )}
       </HubSection>
 

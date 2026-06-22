@@ -124,6 +124,10 @@ function roundLabel(id: number): string {
   return `R${id}`;
 }
 
+export function wcRoundLabel(id: number): string {
+  return roundLabel(id);
+}
+
 function playerLabel(id: number, names: Map<number, string>): string {
   return names.get(id) ?? `Player ${id}`;
 }

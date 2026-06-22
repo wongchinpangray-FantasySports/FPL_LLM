@@ -1,5 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
-import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
+import {
+  loadWcMatchesForDisplay,
+} from "@/lib/wc/match-stats-store";
 import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { getWcNewsForApi } from "@/lib/wc/news-store";
@@ -66,14 +69,18 @@ function toSnippet(m: WcMatchRow): HomeMatchSnippet {
 function isUpcoming(m: WcMatchRow): boolean {
   if (isWcMatchFinished(m)) return false;
   const s = m.status.toLowerCase();
-  return s === "scheduled" || m.home_score == null;
+  return (
+    s === "scheduled" ||
+    s === "not started" ||
+    m.home_score == null
+  );
 }
 
 function kickoffMs(m: WcMatchRow): number {
   return m.kickoff ? new Date(m.kickoff).getTime() : 0;
 }
 
-function buildTodayTicker(matches: WcMatchRow[]): TodayTickerItem[] {
+export function buildTodayTicker(matches: WcMatchRow[]): TodayTickerItem[] {
   const finished = matches
     .filter(
       (m) =>
@@ -95,8 +102,8 @@ function buildTodayTicker(matches: WcMatchRow[]): TodayTickerItem[] {
 }
 
 async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: TodayTickerItem[] }> {
-  const [{ matches }, teamsByCode] = await Promise.all([
-    buildWcMatchesWithStats(),
+  const [matches, teamsByCode] = await Promise.all([
+    loadWcMatchesForDisplay(),
     loadTeamsByCode(),
   ]);
 
@@ -169,4 +176,12 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
     },
     news: newsItems,
   };
+}
+
+export function loadHomeHubDataCached(locale: string): Promise<HomeHubData> {
+  return unstable_cache(
+    () => loadHomeHubData(locale),
+    ["home-hub", locale],
+    { revalidate: 90 },
+  )();
 }

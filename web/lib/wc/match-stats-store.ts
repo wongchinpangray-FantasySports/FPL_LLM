@@ -8,6 +8,7 @@ import {
   isWcMatchFinished,
   normalizeMatchCards,
   normalizeMatchGoals,
+  wcRoundLabel,
   type WcMatchGoal,
   type WcMatchRow,
 } from "@/lib/wc/fifa-rounds";
@@ -49,6 +50,54 @@ export async function loadCachedMatchEvents(): Promise<Map<number, EventsRow>> {
     });
   }
   return map;
+}
+
+/** Supabase fallback when live FIFA rounds.json is unavailable. */
+export async function loadScheduleMatchesFromCache(): Promise<WcMatchRow[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("wc_match_stats")
+    .select(
+      "fifa_tournament_id, round_id, kickoff, venue, venue_city, status, period, minutes, extra_minutes, home_code, away_code, home_name, away_name, home_score, away_score, home_scorers, away_scorers, home_goals, away_goals, home_cards, away_cards",
+    )
+    .order("kickoff", { ascending: true, nullsFirst: false });
+  if (error || !data?.length) return [];
+
+  return data.map((row) => {
+    const roundId = row.round_id as number;
+    return {
+      id: row.fifa_tournament_id as number,
+      round_id: roundId,
+      round_label: wcRoundLabel(roundId),
+      round_stage: null,
+      kickoff: (row.kickoff as string | null) ?? null,
+      venue: (row.venue as string | null) ?? null,
+      venue_city: (row.venue_city as string | null) ?? null,
+      status: (row.status as string) ?? "scheduled",
+      period: (row.period as string | null) ?? null,
+      minutes: Number(row.minutes ?? 0),
+      extra_minutes: Number(row.extra_minutes ?? 0),
+      home_squad_id: 0,
+      away_squad_id: 0,
+      home_code: row.home_code as string,
+      away_code: row.away_code as string,
+      home_name: row.home_name as string,
+      away_name: row.away_name as string,
+      home_score: row.home_score as number | null,
+      away_score: row.away_score as number | null,
+      home_penalty_score: null,
+      away_penalty_score: null,
+      home_scorers: (row.home_scorers as string | null) ?? null,
+      away_scorers: (row.away_scorers as string | null) ?? null,
+      home_goals: normalizeMatchGoals(row.home_goals),
+      away_goals: normalizeMatchGoals(row.away_goals),
+      home_cards: normalizeMatchCards(row.home_cards),
+      away_cards: normalizeMatchCards(row.away_cards),
+      stats_available: false,
+      home_stats: null,
+      away_stats: null,
+    } satisfies WcMatchRow;
+  });
 }
 
 export function mergeCachedEvents(
@@ -95,6 +144,21 @@ export async function buildWcMatchesWithStats(): Promise<{
           ? "api-football"
           : null,
   };
+}
+
+/** Live FIFA schedule with Supabase fallback (retries on transient failures). */
+export async function loadWcMatchesForDisplay(): Promise<WcMatchRow[]> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { matches } = await buildWcMatchesWithStats();
+      if (matches.length > 0) return matches;
+    } catch {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 350 * (attempt + 1)));
+      }
+    }
+  }
+  return loadScheduleMatchesFromCache();
 }
 
 function pickGoals(

@@ -366,11 +366,13 @@ export function WcTablesPanel({
             </div>
 
             {selectedTeam ? (
-              <TeamDetailPanel
-                team={selectedTeam}
-                labels={labels}
-                onClose={() => setSelectedCode(null)}
-              />
+              <div className="hidden lg:block">
+                <TeamDetailPanel
+                  team={selectedTeam}
+                  labels={labels}
+                  onClose={() => setSelectedCode(null)}
+                />
+              </div>
             ) : (
               <div className="hidden rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground lg:block">
                 {labels.selectTeamHint}
