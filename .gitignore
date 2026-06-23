@@ -31,3 +31,6 @@ Thumbs.db
 
 # Cursor / local
 *.local
+
+# Generated Supabase seeds (see web/scripts/seed-wc-news-sql.ts)
+supabase/seed_wc_news_cache.sql
