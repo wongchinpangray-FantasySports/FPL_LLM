@@ -1,3 +1,9 @@
+import {
+  attackRateFromStrength,
+  defWeaknessFromStrength,
+  strengthForCode,
+  type TeamFplStrength,
+} from "@/lib/fpl/strength";
 import { getServerSupabase } from "@/lib/supabase";
 
 export type H2HBucket = {
@@ -14,15 +20,26 @@ const pairKey = (team: string, opp: string) => `${team}:${opp}`;
 const HOME_BASE = 1.45;
 const AWAY_BASE = 1.15;
 
-/** Cap opponent defensive weakness — elite sides cannot look artificially easy. */
-const ELITE_DEF_WEAKNESS_CAP: Record<string, number> = {
-  MCI: 0.65,
-  LIV: 0.7,
-  CHE: 0.72,
-  ARS: 0.75,
-  MUN: 0.8,
-  NEW: 0.85,
-  TOT: 0.88,
+/** Blend FPL strength more heavily — historical venue rates mis-rank these sides. */
+const FPL_STRENGTH_ANCHOR = new Set([
+  "BOU",
+  "CHE",
+  "CRY",
+  "EVE",
+  "SUN",
+  "TOT",
+]);
+
+const DEFAULT_FPL_BLEND = 0.55;
+const ANCHOR_FPL_BLEND = 0.75;
+
+/** Floor on historical defensive weakness for top sides (before FPL blend). */
+const ELITE_HIST_DEF_CAP: Record<string, { home: number; away: number }> = {
+  MCI: { home: 0.62, away: 0.65 },
+  LIV: { home: 0.68, away: 0.7 },
+  ARS: { home: 0.72, away: 0.75 },
+  CHE: { home: 0.74, away: 0.72 },
+  NEW: { home: 0.82, away: 0.85 },
 };
 
 /** H2H + venue strength keyed by FPL-style club codes (ARS, COV, …). */
@@ -128,12 +145,54 @@ export class H2HStore {
     return this.rate(this.awayProfile, team, "goalsAgainst", this.leagueAwayGpgConceded);
   }
 
-  opponentDefWeakness(opp: string, home: boolean): number {
-    let w = home ? this.getAwayDefWeakness(opp) : this.getHomeDefWeakness(opp);
-    const cap = ELITE_DEF_WEAKNESS_CAP[opp];
-    if (cap != null) w = Math.min(w, cap);
-    return w;
+  historicalDefWeakness(opp: string, home: boolean): number {
+    return home ? this.getAwayDefWeakness(opp) : this.getHomeDefWeakness(opp);
   }
+}
+
+function fplBlendWeight(code: string): number {
+  return FPL_STRENGTH_ANCHOR.has(code) ? ANCHOR_FPL_BLEND : DEFAULT_FPL_BLEND;
+}
+
+function capHistoricalDefWeakness(
+  opp: string,
+  home: boolean,
+  weakness: number,
+): number {
+  const cap = ELITE_HIST_DEF_CAP[opp];
+  if (!cap) return weakness;
+  const maxW = home ? cap.away : cap.home;
+  return Math.min(weakness, maxW);
+}
+
+function blendDefWeakness(
+  opp: string,
+  home: boolean,
+  store: H2HStore,
+  strengths: Map<string, TeamFplStrength>,
+): number {
+  const fpl = defWeaknessFromStrength(strengthForCode(strengths, opp), home);
+  const hist = capHistoricalDefWeakness(
+    opp,
+    home,
+    store.historicalDefWeakness(opp, home),
+  );
+  const w = fplBlendWeight(opp);
+  return w * fpl + (1 - w) * hist;
+}
+
+function blendAttackRate(
+  team: string,
+  home: boolean,
+  store: H2HStore,
+  strengths: Map<string, TeamFplStrength>,
+): number {
+  const fpl = attackRateFromStrength(strengthForCode(strengths, team), home);
+  const hist = home
+    ? store.getHomeAttackRate(team)
+    : store.getAwayAttackRate(team);
+  const w = fplBlendWeight(team);
+  return w * fpl + (1 - w) * hist;
 }
 
 async function loadFplTeamCodeMap(): Promise<Map<number, string>> {
@@ -380,12 +439,11 @@ export function modelAttackEase(
   opp: string,
   home: boolean,
   store: H2HStore,
+  strengths: Map<string, TeamFplStrength>,
 ): number {
-  const oppDef = store.opponentDefWeakness(opp, home);
-  if (home) {
-    return HOME_BASE * store.getHomeAttackRate(team) * oppDef;
-  }
-  return AWAY_BASE * store.getAwayAttackRate(team) * oppDef;
+  const oppDef = blendDefWeakness(opp, home, store, strengths);
+  const atk = blendAttackRate(team, home, store, strengths);
+  return (home ? HOME_BASE : AWAY_BASE) * atk * oppDef;
 }
 
 function h2hGoalDelta(
@@ -425,8 +483,9 @@ export function projectH2HAttackEase(
   opp: string,
   home: boolean,
   store: H2HStore,
+  strengths: Map<string, TeamFplStrength>,
 ): number {
-  const model = modelAttackEase(team, opp, home, store);
+  const model = modelAttackEase(team, opp, home, store, strengths);
   const delta = h2hGoalDelta(team, opp, home, store, model);
   return clamp(model + delta, 0.35, 2.6);
 }

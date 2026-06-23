@@ -893,7 +893,7 @@
     "miniBody": "每轮选五名球员。",
     "fixturesEyebrow": "赛程",
     "fixturesTitle": "Faleague FDR · {season} · 全赛季",
-    "fixturesDetail": "赛程来自 2026/27 英超官方发布。FDR 按主客场攻防状态与有上限的历史交锋估算预期进球，再用固定区间映射为 1–5（1 最易）。此为 FALEAGUE 自研模型，非 FPL 官方赛程难度。",
+    "fixturesDetail": "赛程来自 2026/27 英超官方发布。FDR 结合 FPL 实力评分、主客场状态与有上限的历史交锋估算预期进球，再用固定区间映射为 1–5（1 最易）。此为 FALEAGUE 自研模型，非 FPL 官方赛程难度。",
     "fixturesMore": "FDR 如何计算",
     "fixturesHint": "绿色 = 容易 · 红色 = 困难。黄圈 = 双赛周。",
     "fixturesExpandHint": "点击球队查看对手与 FDR。",

@@ -3,6 +3,10 @@ import {
   projectH2HAttackEase,
   type H2HStore,
 } from "@/lib/fpl/h2h";
+import {
+  loadTeamStrengthByCode,
+  type TeamFplStrength,
+} from "@/lib/fpl/strength";
 
 /**
  * Map expected goals-for to FDR 1–5 using fixed PL-calibrated bands.
@@ -23,12 +27,25 @@ export function buildFplFdrLookup(
     away: string;
   }[],
   store: H2HStore,
+  strengths: Map<string, TeamFplStrength>,
 ): Map<string, number> {
   const out = new Map<string, number>();
 
   for (const fx of fixtures) {
-    const homeEase = projectH2HAttackEase(fx.home, fx.away, true, store);
-    const awayEase = projectH2HAttackEase(fx.away, fx.home, false, store);
+    const homeEase = projectH2HAttackEase(
+      fx.home,
+      fx.away,
+      true,
+      store,
+      strengths,
+    );
+    const awayEase = projectH2HAttackEase(
+      fx.away,
+      fx.home,
+      false,
+      store,
+      strengths,
+    );
     out.set(`${fx.home}:${fx.id}`, easeToFdr(homeEase));
     out.set(`${fx.away}:${fx.id}`, easeToFdr(awayEase));
   }
@@ -53,4 +70,4 @@ export function fdrClass(fdr: number | null): string {
   return "bg-rose-600/40 border-rose-400/50";
 }
 
-export { buildH2HStore };
+export { buildH2HStore, loadTeamStrengthByCode };

@@ -1,4 +1,9 @@
-import { buildFplFdrLookup, buildH2HStore, lookupFplFdr } from "@/lib/fpl/fdr";
+import {
+  buildFplFdrLookup,
+  buildH2HStore,
+  loadTeamStrengthByCode,
+  lookupFplFdr,
+} from "@/lib/fpl/fdr";
 import {
   getEpl2627Fixtures,
   getEpl2627Season,
@@ -88,7 +93,10 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
     (teams.get(a)?.short ?? "").localeCompare(teams.get(b)?.short ?? ""),
   );
 
-  const h2hStore = await buildH2HStore();
+  const [h2hStore, strengths] = await Promise.all([
+    buildH2HStore(),
+    loadTeamStrengthByCode(),
+  ]);
   const fdrLookup = buildFplFdrLookup(
     fixtures.map((f) => ({
       id: f.id,
@@ -96,6 +104,7 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
       away: teams.get(f.away_team_id)!.code,
     })),
     h2hStore,
+    strengths,
   );
 
   const dgwKeys = buildDoubleGameweekKeys(fixtures, teamIds, startGw, endGw);
