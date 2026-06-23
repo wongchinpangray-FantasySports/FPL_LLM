@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { isAdminEmail } from "@/lib/auth/admin";
+import { recordLoginDay } from "@/lib/auth/record-login-day";
 
 export const dynamic = "force-dynamic";
 
@@ -27,12 +28,16 @@ export async function GET() {
     }
 
     const userId = authData.user.id;
+    await recordLoginDay(userId);
+
     const admin = getServerSupabase();
 
     const [{ data: profile }, { count: unread }] = await Promise.all([
       admin
         .from("profiles")
-        .select("id,display_name,fpl_entry_id,onboarding_completed_at,locale")
+        .select(
+          "id,display_name,fpl_entry_id,onboarding_completed_at,locale,login_days",
+        )
         .eq("id", userId)
         .maybeSingle(),
       admin

@@ -16,17 +16,22 @@ export async function recordLoginDay(userId: string): Promise<void> {
       id: userId,
       login_days: 1,
       last_login_date: today,
+      updated_at: new Date().toISOString(),
     });
     return;
   }
 
-  if (profile.last_login_date === today) return;
+  const lastDate = profile.last_login_date
+    ? String(profile.last_login_date).slice(0, 10)
+    : null;
+  if (lastDate === today) return;
 
   await admin
     .from("profiles")
     .update({
-      login_days: (profile.login_days as number) + 1,
+      login_days: ((profile.login_days as number) || 0) + 1,
       last_login_date: today,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
 }

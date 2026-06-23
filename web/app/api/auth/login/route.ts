@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
     const { data: sessionData } = await supa.auth.getUser();
     if (sessionData.user) {
-      void recordLoginDay(sessionData.user.id);
+      await recordLoginDay(sessionData.user.id);
     }
 
     return NextResponse.json({ ok: true });

@@ -3,6 +3,7 @@ import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { resolveAccountTheme } from "@/lib/team-themes";
+import { recordLoginDay } from "@/lib/auth/record-login-day";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ export async function GET() {
     }
 
     const userId = authData.user.id;
+    await recordLoginDay(userId);
+
     const admin = getServerSupabase();
 
     const [{ data: profile }, { data: prefs }] = await Promise.all([
