@@ -1,45 +1,35 @@
-import type { TeamStrength } from "@/lib/xp";
+import { buildH2HStore, projectH2HAttackEase, type H2HStore } from "@/lib/fpl/h2h";
 
-const HOME_ATTACK = 1.45;
-const AWAY_ATTACK = 1.15;
-const STRENGTH_BASELINE = 1100;
-
-/** Higher = easier attacking fixture for the player's team. */
-export function projectFplAttackEase(
-  team: TeamStrength,
-  opponent: TeamStrength,
-  home: boolean,
-): number {
-  const base = home ? HOME_ATTACK : AWAY_ATTACK;
-  const atk = home ? team.attack_home : team.attack_away;
-  const def = home ? opponent.defence_away : opponent.defence_home;
-  return base * (atk / STRENGTH_BASELINE) * (STRENGTH_BASELINE / def);
-}
-
-/** Map attack-ease scores to FDR 1–5 using quintiles (1 = easiest). */
+/** Map H2H attack-ease scores to FDR 1–5 using quintiles (1 = easiest). */
 export function buildFplFdrLookup(
-  teams: Map<number, TeamStrength>,
   fixtures: {
     id: number;
     home_team_id: number;
     away_team_id: number;
   }[],
+  store: H2HStore,
 ): Map<string, number> {
   type Cell = { key: string; ease: number };
   const cells: Cell[] = [];
 
   for (const fx of fixtures) {
-    const home = teams.get(fx.home_team_id);
-    const away = teams.get(fx.away_team_id);
-    if (!home || !away) continue;
-
     cells.push({
       key: `${fx.home_team_id}:${fx.id}`,
-      ease: projectFplAttackEase(home, away, true),
+      ease: projectH2HAttackEase(
+        fx.home_team_id,
+        fx.away_team_id,
+        true,
+        store,
+      ),
     });
     cells.push({
       key: `${fx.away_team_id}:${fx.id}`,
-      ease: projectFplAttackEase(away, home, false),
+      ease: projectH2HAttackEase(
+        fx.away_team_id,
+        fx.home_team_id,
+        false,
+        store,
+      ),
     });
   }
 
@@ -77,3 +67,5 @@ export function fdrClass(fdr: number | null): string {
   if (fdr === 4) return "bg-orange-500/30 border-orange-400/40";
   return "bg-rose-600/40 border-rose-400/50";
 }
+
+export { buildH2HStore };

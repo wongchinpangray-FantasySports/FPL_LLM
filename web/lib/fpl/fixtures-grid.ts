@@ -1,9 +1,6 @@
 import { fplGet } from "@/lib/fpl";
-import type { TeamStrength } from "@/lib/xp";
-import { buildFplFdrLookup, lookupFplFdr } from "@/lib/fpl/fdr";
+import { buildFplFdrLookup, buildH2HStore, lookupFplFdr } from "@/lib/fpl/fdr";
 import { FPL_LAST_SEASON_GW } from "@/lib/dashboard";
-
-const STRENGTH_BASELINE = 1100;
 
 export type FplFdrCell = {
   fixture_id: number;
@@ -21,14 +18,30 @@ export type FplFdrRow = {
   fixtures: FplFdrCell[];
 };
 
+export type FplGwBlock = {
+  fromGw: number;
+  toGw: number;
+  label: string;
+};
+
 export type FplFixtureGrid = {
   startGw: number;
-  horizon: number;
+  endGw: number;
   gwHeaders: number[];
+  gwBlocks: FplGwBlock[];
   rows: FplFdrRow[];
   dgwKeys: string[];
   fplSeason: string;
 };
+
+export const FPL_GW_BLOCK_RANGES: [number, number][] = [
+  [1, 6],
+  [7, 12],
+  [13, 18],
+  [19, 24],
+  [25, 30],
+  [31, 38],
+];
 
 type FplEvent = {
   id: number;
@@ -42,10 +55,6 @@ type FplBootstrapTeam = {
   id: number;
   name: string;
   short_name: string;
-  strength_attack_home?: number;
-  strength_attack_away?: number;
-  strength_defence_home?: number;
-  strength_defence_away?: number;
 };
 
 type FplBootstrap = {
@@ -58,6 +67,8 @@ type FplApiFixture = {
   event: number | null;
   team_h: number;
   team_a: number;
+  team_h_score?: number | null;
+  team_a_score?: number | null;
   finished?: boolean;
   kickoff_time?: string | null;
 };
@@ -83,37 +94,12 @@ export function resolveSeasonFromEvents(events: FplEvent[]): string {
   return String(new Date().getFullYear());
 }
 
-export function resolveFixtureGridStartGw(events: FplEvent[]): number {
-  if (events.length === 0) return 1;
-
-  const allFinished = events.every((e) => e.finished);
-  if (allFinished) return 1;
-
-  const current = events.find((e) => e.is_current);
-  const next = events.find((e) => e.is_next);
-
-  if (current && !current.finished) return current.id;
-  if (next) return next.id;
-  if (current) return Math.min(current.id + 1, FPL_LAST_SEASON_GW);
-  return 1;
-}
-
-function teamsMapFromBootstrap(
-  teams: FplBootstrapTeam[],
-): Map<number, TeamStrength> {
-  const out = new Map<number, TeamStrength>();
-  for (const t of teams) {
-    out.set(t.id, {
-      id: t.id,
-      short: t.short_name,
-      name: t.name,
-      attack_home: t.strength_attack_home || STRENGTH_BASELINE,
-      attack_away: t.strength_attack_away || STRENGTH_BASELINE,
-      defence_home: t.strength_defence_home || STRENGTH_BASELINE,
-      defence_away: t.strength_defence_away || STRENGTH_BASELINE,
-    });
-  }
-  return out;
+function buildGwBlocks(): FplGwBlock[] {
+  return FPL_GW_BLOCK_RANGES.map(([fromGw, toGw]) => ({
+    fromGw,
+    toGw,
+    label: `GW${fromGw}–${toGw}`,
+  }));
 }
 
 function buildDoubleGameweekKeys(
@@ -138,50 +124,57 @@ function buildDoubleGameweekKeys(
   return [...counts.entries()].filter(([, n]) => n >= 2).map(([k]) => k);
 }
 
-export async function buildFplFixtureGrid(
-  horizonInput = 6,
-): Promise<FplFixtureGrid> {
+export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
   const [bootstrap, fixtures] = await Promise.all([
     fplGet<FplBootstrap>("/bootstrap-static/"),
     fplGet<FplApiFixture[]>("/fixtures/"),
   ]);
 
   const events = bootstrap.events ?? [];
-  const startGw = resolveFixtureGridStartGw(events);
-  const horizon = Math.max(
-    1,
-    Math.min(horizonInput, FPL_LAST_SEASON_GW - startGw + 1),
-  );
-  const endGw = startGw + horizon - 1;
+  const startGw = 1;
+  const endGw = FPL_LAST_SEASON_GW;
   const fplSeason = resolveSeasonFromEvents(events);
-  const teams = teamsMapFromBootstrap(bootstrap.teams ?? []);
+  const teams = new Map(
+    (bootstrap.teams ?? []).map((t) => [
+      t.id,
+      { id: t.id, short: t.short_name, name: t.name },
+    ]),
+  );
   const teamIds = [...teams.keys()].sort((a, b) =>
     (teams.get(a)?.short ?? "").localeCompare(teams.get(b)?.short ?? ""),
   );
 
-  const windowFx = fixtures.filter(
+  const seasonFx = fixtures.filter(
     (f) => f.event != null && f.event >= startGw && f.event <= endGw,
   );
-  const fdrPool = fixtures.filter(
-    (f) => f.event != null && f.event >= startGw && !f.finished,
-  );
+
+  const h2hStore = await buildH2HStore(fixtures);
   const fdrLookup = buildFplFdrLookup(
-    teams,
-    fdrPool.map((f) => ({
+    seasonFx.map((f) => ({
       id: f.id,
       home_team_id: f.team_h,
       away_team_id: f.team_a,
     })),
+    h2hStore,
   );
-  const dgwKeys = buildDoubleGameweekKeys(fixtures, teamIds, startGw, endGw);
-  const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
+
+  const dgwKeys = buildDoubleGameweekKeys(
+    fixtures,
+    teamIds,
+    startGw,
+    endGw,
+  );
+  const gwHeaders = Array.from(
+    { length: endGw - startGw + 1 },
+    (_, i) => startGw + i,
+  );
 
   const rows: FplFdrRow[] = [];
   for (const teamId of teamIds) {
     const team = teams.get(teamId);
     const cells: FplFdrCell[] = [];
 
-    for (const fx of windowFx) {
+    for (const fx of seasonFx) {
       const isHome = fx.team_h === teamId;
       const isAway = fx.team_a === teamId;
       if (!isHome && !isAway) continue;
@@ -208,8 +201,9 @@ export async function buildFplFixtureGrid(
 
   return {
     startGw,
-    horizon,
+    endGw,
     gwHeaders,
+    gwBlocks: buildGwBlocks(),
     rows,
     dgwKeys,
     fplSeason,

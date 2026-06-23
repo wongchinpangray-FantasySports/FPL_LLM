@@ -11,9 +11,8 @@ type Props = { params: { locale: string } };
 export default async function FplPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "fplHub" });
-  const grid = await buildFplFixtureGrid(6);
+  const grid = await buildFplFixtureGrid();
   const seasonLabel = `${grid.fplSeason}/${String(Number(grid.fplSeason) + 1).slice(-2)}`;
-  const toGw = grid.startGw + grid.horizon - 1;
 
   return (
     <PageShell
@@ -28,13 +27,9 @@ export default async function FplPage({ params }: Props) {
         {grid.rows.length > 0 ? (
           <FplFdrGrid
             rows={grid.rows}
-            gwHeaders={grid.gwHeaders}
+            gwBlocks={grid.gwBlocks}
             dgwKeys={grid.dgwKeys}
-            title={t("fixturesTitle", {
-              season: seasonLabel,
-              fromGw: grid.startGw,
-              toGw,
-            })}
+            title={t("fixturesTitle", { season: seasonLabel })}
             summary={t("fixturesEyebrow")}
             detail={t("fixturesDetail")}
             moreLabel={t("fixturesMore")}
