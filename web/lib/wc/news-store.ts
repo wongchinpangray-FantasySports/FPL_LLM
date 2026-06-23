@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { isNextProductionBuild } from "@/lib/next-build";
 import {
   fetchWcNewsItems,
   type NewsCategory,
@@ -127,6 +128,23 @@ export async function getWcNewsForApi(opts?: {
         };
       }
     }
+  }
+
+  // Cloudflare/OpenNext build: skip live RSS (many feeds → build timeout).
+  if (isNextProductionBuild() && !opts?.refresh) {
+    const db = await loadWcNewsFromDb();
+    const items = db.items.length > 0 ? db.items : memCache?.items ?? [];
+    const fetched_at =
+      db.fetched_at ?? memCache?.fetched_at ?? new Date().toISOString();
+    if (items.length > 0) {
+      memCache = { at: now, items, fetched_at };
+    }
+    return {
+      items: filterItems(items, filterOpts),
+      cached: true,
+      fetched_at,
+      source: "database",
+    };
   }
 
   let items: WcNewsItem[] = [];

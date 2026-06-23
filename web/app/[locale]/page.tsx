@@ -2,6 +2,8 @@ import { setRequestLocale } from "next-intl/server";
 import { HomeHub } from "@/components/home/home-hub";
 import { loadHomeHubDataCached } from "@/lib/home/hub-data";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: { locale: string };
 };

@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { isNextProductionBuild } from "@/lib/next-build";
 import {
   fetchMatchEvents,
   isApiFootballConfigured,
@@ -148,6 +149,14 @@ export async function buildWcMatchesWithStats(): Promise<{
 
 /** Live FIFA schedule with Supabase fallback (retries on transient failures). */
 export async function loadWcMatchesForDisplay(): Promise<WcMatchRow[]> {
+  if (isNextProductionBuild()) {
+    try {
+      return await loadScheduleMatchesFromCache();
+    } catch {
+      return [];
+    }
+  }
+
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const { matches } = await buildWcMatchesWithStats();
@@ -158,7 +167,7 @@ export async function loadWcMatchesForDisplay(): Promise<WcMatchRow[]> {
       }
     }
   }
-  return loadScheduleMatchesFromCache();
+  return loadScheduleMatchesFromCache().catch(() => []);
 }
 
 function pickGoals(
