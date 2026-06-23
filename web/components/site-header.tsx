@@ -72,11 +72,6 @@ export function SiteHeader() {
     { href: "/chat", label: t("chat") },
   ];
 
-  const playLinks = [
-    { href: "/play/mini", label: t("miniFpl") },
-    { href: "/play/wc-mini", label: t("miniWc") },
-  ];
-
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
@@ -141,18 +136,6 @@ export function SiteHeader() {
                 {t("fplTools")}
               </p>
               {fplLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <p className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("playSection")}
-              </p>
-              {playLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
