@@ -891,6 +891,15 @@
     "players": "Players",
     "playersBody": "Search stats, form, and xP for every asset.",
     "mini": "Mini 5",
-    "miniBody": "Pick five players for the gameweek."
+    "miniBody": "Pick five players for the gameweek.",
+    "fixturesEyebrow": "Fixtures",
+    "fixturesTitle": "Faleague FDR · next {horizon} GWs",
+    "fixturesDetail": "FDR ranks attack matchups using FPL strength ratings and home/away baselines, then maps quintiles to 1–5. This is the FALEAGUE model — not official FPL fixture difficulty.",
+    "fixturesMore": "How FDR is calculated",
+    "fixturesHint": "Green = easy · red = hard. Yellow ring = DGW.",
+    "fixturesExpandHint": "Tap to see upcoming opponents and FDR.",
+    "fixturesGwLabel": "GW",
+    "fixturesDgw": "DGW",
+    "fixtureTableTeam": "Team"
   }
 }

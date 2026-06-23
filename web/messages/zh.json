@@ -890,6 +890,15 @@
     "players": "球员",
     "playersBody": "搜索每位球员的数据、状态与 xP。",
     "mini": "Mini 5",
-    "miniBody": "每轮选五名球员。"
+    "miniBody": "每轮选五名球员。",
+    "fixturesEyebrow": "赛程",
+    "fixturesTitle": "Faleague FDR · 未来 {horizon} 个 GW",
+    "fixturesDetail": "FDR 基于 FPL 攻防强度与主客场基准计算进攻对阵难度，再按五分位映射为 1–5。此为 FALEAGUE 自研模型，非 FPL 官方赛程难度。",
+    "fixturesMore": "FDR 如何计算",
+    "fixturesHint": "绿色 = 容易 · 红色 = 困难。黄圈 = 双赛周。",
+    "fixturesExpandHint": "点击球队查看对手与 FDR。",
+    "fixturesGwLabel": "GW",
+    "fixturesDgw": "双赛",
+    "fixtureTableTeam": "球队"
   }
 }
