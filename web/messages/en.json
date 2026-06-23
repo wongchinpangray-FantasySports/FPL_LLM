@@ -954,6 +954,18 @@
     "newsRegions": "News regions",
     "notSet": "Not set"
   },
+  "signupPrompt": {
+    "eyebrow": "Free account",
+    "title": "Make this hub yours",
+    "body": "Join Faleague in seconds — unlock a football experience built around the teams and players you care about.",
+    "benefit1": "Personalised World Cup & FPL news in your inbox",
+    "benefit2": "Save Mini squads and track your login streak",
+    "benefit3": "Dress the app in your club or national team colours",
+    "signup": "Create free account",
+    "signin": "I already have an account",
+    "dismiss": "Maybe later",
+    "close": "Close"
+  },
   "admin": {
     "eyebrow": "Admin",
     "title": "Users",

@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
+import { SignupPromptModal } from "@/components/auth/signup-prompt-modal";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
@@ -1278,6 +1279,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           }}
         />
       </div>
+      <SignupPromptModal />
     </div>
   );
 }

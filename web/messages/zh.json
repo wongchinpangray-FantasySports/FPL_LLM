@@ -953,6 +953,18 @@
     "newsRegions": "新闻地区",
     "notSet": "未设置"
   },
+  "signupPrompt": {
+    "eyebrow": "免费账户",
+    "title": "把足球中心变成你的专属主场",
+    "body": "几秒钟完成注册 — 解锁围绕你关心的球队与球员打造的足球体验。",
+    "benefit1": "个性化世界杯与 FPL 新闻收件箱",
+    "benefit2": "保存 Mini 阵容，记录连续登录天数",
+    "benefit3": "用你主队或国家队颜色装扮全站",
+    "signup": "免费注册",
+    "signin": "已有账户，登录",
+    "dismiss": "稍后再说",
+    "close": "关闭"
+  },
   "admin": {
     "eyebrow": "管理",
     "title": "用户",
