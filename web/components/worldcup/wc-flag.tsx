@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { wcTeamFlag, wcTeamFlagSrc } from "@/lib/wc/wc-team-flags";
+import { wcTeamFlagSrc } from "@/lib/wc/wc-team-flags";
 
 export function WcFlag({
   code,
@@ -17,16 +17,17 @@ export function WcFlag({
 }) {
   const [failed, setFailed] = useState(false);
   const src = wcTeamFlagSrc(code, Math.max(20, size * 2));
+  const label = title ?? code;
 
   if (src && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
-        alt=""
+        alt={label}
         width={size}
         height={Math.round(size * 0.75)}
-        title={title ?? code}
+        title={label}
         loading="lazy"
         decoding="async"
         onError={() => setFailed(true)}
@@ -36,8 +37,15 @@ export function WcFlag({
   }
 
   return (
-    <span className={cn("inline-flex shrink-0 items-center justify-center", className)} title={title ?? code}>
-      {wcTeamFlag(code)}
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-sm bg-muted text-[9px] font-bold uppercase text-muted-foreground",
+        className,
+      )}
+      style={{ width: size, height: Math.round(size * 0.75) }}
+      title={label}
+    >
+      {code.slice(0, 3)}
     </span>
   );
 }

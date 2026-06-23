@@ -413,7 +413,7 @@ function HomeMatchRow({
       </span>
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
         <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
-          <span className="hidden truncate md:inline">{m.home_name}</span>
+          <span className="truncate">{m.home_name}</span>
           <WcFlag code={m.home_code} size={18} title={m.home_name} />
         </span>
         <span className="shrink-0 tabular-nums font-semibold text-foreground">
@@ -421,7 +421,7 @@ function HomeMatchRow({
         </span>
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <WcFlag code={m.away_code} size={18} title={m.away_name} />
-          <span className="hidden truncate md:inline">{m.away_name}</span>
+          <span className="truncate">{m.away_name}</span>
         </span>
       </div>
     </Link>
@@ -594,11 +594,11 @@ function HomeWcMain({
 
           {wc.groupsPreview.length > 0 ? (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {wc.groupsPreview.map((g, i) => (
                   <div
                     key={g.group_letter}
-                    className={cn(i >= 4 && "hidden md:block")}
+                    className={cn(i >= 6 && "hidden md:block")}
                   >
                     <MiniGroupTable
                       group={g}
@@ -607,10 +607,10 @@ function HomeWcMain({
                   </div>
                 ))}
               </div>
-              {wc.groupsPreview.length > 4 ? (
+              {wc.groupsPreview.length > 6 ? (
                 <Link
                   href="/worldcup?tab=tables"
-                  className="block text-center text-sm font-medium text-brand-accent no-underline hover:underline md:hidden"
+                  className="block text-center text-sm font-medium text-brand-accent no-underline hover:underline"
                 >
                   {labels.allTables} →
                 </Link>
@@ -651,24 +651,24 @@ function MiniGroupTable({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card/50">
-      <div className="border-b border-border px-3 py-2 text-xs font-semibold text-foreground">
+      <div className="border-b border-border bg-card/80 px-3 py-2.5 text-xs font-semibold text-foreground sm:text-sm">
         {labels.group} {group.group_letter}
       </div>
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left text-xs sm:text-sm">
         <tbody>
           {group.rows.map((row) => (
             <tr key={row.code} className="border-t border-border/50">
-              <td className="px-3 py-1.5 tabular-nums text-muted-foreground">
+              <td className="w-8 px-3 py-2 tabular-nums text-muted-foreground">
                 {row.rank}
               </td>
-              <td className="px-2 py-1.5 font-medium text-foreground">
-                <span className="inline-flex items-center gap-2">
-                  <WcFlag code={row.code} size={18} title={row.name} />
-                  <span className="hidden truncate md:inline">{row.name}</span>
+              <td className="min-w-0 px-1 py-2 font-medium text-foreground">
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <WcFlag code={row.code} size={20} title={row.name} />
+                  <span className="truncate">{row.name}</span>
                 </span>
               </td>
-              <td className="px-3 py-1.5 text-right tabular-nums text-brand-accent">
-                {row.points} {labels.pts}
+              <td className="w-12 shrink-0 px-3 py-2 text-right tabular-nums font-medium text-brand-accent">
+                {row.points}
               </td>
             </tr>
           ))}

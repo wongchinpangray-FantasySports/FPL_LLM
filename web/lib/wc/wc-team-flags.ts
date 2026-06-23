@@ -106,11 +106,11 @@ export function wcTeamFlagIso(code: string): string | null {
   return WC_ISO2[code.toUpperCase()] ?? null;
 }
 
-/** PNG flag URL (renders on Windows desktop browsers). */
+/** PNG flag URL proxied via our API (avoids CDN blocks on desktop / corporate networks). */
 export function wcTeamFlagSrc(code: string, width = 24): string | null {
   const iso = wcTeamFlagIso(code);
   if (!iso) return null;
-  return `https://flagcdn.com/w${width}/${iso}.png`;
+  return `/api/wc/flag?code=${encodeURIComponent(code.toUpperCase())}&w=${width}`;
 }
 
 export function wcTeamFlag(code: string): string {
