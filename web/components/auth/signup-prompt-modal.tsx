@@ -1,23 +1,39 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import { useAuth } from "@/components/auth/auth-provider";
+import { Link, usePathname } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "faleague_signup_prompt_dismissed";
+const STORAGE_KEY = "faleague_signup_prompt_v2_dismissed";
 const DELAY_MS = 5000;
 
-export function SignupPromptModal() {
-  const t = useTranslations("signupPrompt");
-  const { user } = useAuth();
-  const userRef = useRef(user);
-  userRef.current = user;
+async function isGuestVisitor(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/account/me", { credentials: "include" });
+    if (!res.ok) return true;
+    const data = (await res.json()) as { user?: { id?: string } | null };
+    return !data.user?.id;
+  } catch {
+    return true;
+  }
+}
 
+/** Home-page signup CTA — mounts from locale layout, shows after 5s for guests. */
+export function HomeSignupPrompt() {
+  const pathname = usePathname() ?? "";
+  const isHome = pathname === "/";
+
+  if (!isHome) return null;
+
+  return <SignupPromptDialog />;
+}
+
+function SignupPromptDialog() {
+  const t = useTranslations("signupPrompt");
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -27,7 +43,7 @@ export function SignupPromptModal() {
 
   const dismiss = useCallback(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      sessionStorage.setItem(STORAGE_KEY, "1");
     } catch {
       /* ignore */
     }
@@ -35,26 +51,36 @@ export function SignupPromptModal() {
   }, []);
 
   useEffect(() => {
-    if (user) return;
+    let cancelled = false;
 
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "1") return;
+      if (sessionStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
       /* private browsing */
     }
 
     const id = window.setTimeout(() => {
-      if (userRef.current) return;
-      try {
-        if (localStorage.getItem(STORAGE_KEY) === "1") return;
-      } catch {
-        /* ignore */
-      }
-      setOpen(true);
+      void (async () => {
+        if (cancelled) return;
+
+        try {
+          if (sessionStorage.getItem(STORAGE_KEY) === "1") return;
+        } catch {
+          /* ignore */
+        }
+
+        const guest = await isGuestVisitor();
+        if (!cancelled && guest) {
+          setOpen(true);
+        }
+      })();
     }, DELAY_MS);
 
-    return () => window.clearTimeout(id);
-  }, [user]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;

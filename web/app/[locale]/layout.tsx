@@ -4,6 +4,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { LocaleHtmlLang } from "@/components/locale-html-lang";
+import { HomeSignupPrompt } from "@/components/auth/signup-prompt-modal";
 import { SiteHeader } from "@/components/site-header";
 
 type Props = {
@@ -37,6 +38,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleHtmlLang locale={locale} />
+      <HomeSignupPrompt />
       <SiteHeader />
       <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
         {children}
