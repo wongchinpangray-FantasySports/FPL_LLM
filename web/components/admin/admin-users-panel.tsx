@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { AdminUserRow } from "@/lib/admin/users";
+import type { AdminUserRow } from "@/lib/admin/types";
 
 function fmtWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
@@ -178,7 +178,6 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
           {t("eyebrow")}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("summary")}</p>
       </div>
 

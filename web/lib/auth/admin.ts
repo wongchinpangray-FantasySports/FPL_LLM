@@ -15,7 +15,12 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 
 export async function requireAdminUser() {
   const user = await getAuthUser();
-  if (!user?.email || !isAdminEmail(user.email)) {
+  if (!user) {
+    const err = new Error("Unauthorized");
+    (err as Error & { status?: number }).status = 401;
+    throw err;
+  }
+  if (!user.email || !isAdminEmail(user.email)) {
     const err = new Error("Forbidden");
     (err as Error & { status?: number }).status = 403;
     throw err;
