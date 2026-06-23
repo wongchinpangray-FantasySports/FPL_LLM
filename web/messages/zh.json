@@ -14,7 +14,7 @@
     "mini": "五人赛",
     "worldcup": "世界杯",
     "news": "新闻",
-    "play": "玩",
+    "play": "游戏",
     "playSection": "小游戏",
     "miniFpl": "Mini 5 · FPL",
     "miniWc": "Mini 5 · 世界杯",
@@ -54,6 +54,7 @@
     "ctaFpl": "我的 FPL",
     "ctaNews": "新闻",
     "ctaTransfers": "转会",
+    "ctaPlay": "游戏",
     "headlinesTitle": "头条",
     "sidebarNews": "新闻",
     "sidebarTransfers": "热门转会",
@@ -546,14 +547,14 @@
   },
   "miniIndex": {
     "backHome": "← 返回首页",
-    "backPlay": "← 玩",
+    "backPlay": "← 游戏",
     "eyebrow": "五人迷你范特西",
     "title": "选 5 人 · 实时积分榜",
     "description": "五人阵容，沿用 FPL 官方计分。用 Entry ID 在截止前提交，以截止前最后一次为准。队长双倍（队长零分钟则副队双倍），同一俱乐部最多 2 人。"
   },
   "playHub": {
     "backHome": "← 返回首页",
-    "eyebrow": "玩",
+    "eyebrow": "游戏",
     "title": "Mini 小游戏",
     "description": "快速五人范特西——选阵容、定队长、冲榜。",
     "miniFplTitle": "Mini 5 · FPL",
@@ -562,7 +563,7 @@
     "miniWcBody": "世界杯球员池，比赛日截止，赛事实时计分。"
   },
   "wcMiniIndex": {
-    "backPlay": "← 玩",
+    "backPlay": "← 游戏",
     "eyebrow": "世界杯 Mini",
     "title": "Pick 5 · 世界杯版",
     "description": "每比赛日选五名世界杯球员。设置唯一标签，截止前提交，追踪赛事积分。"

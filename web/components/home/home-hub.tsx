@@ -1226,13 +1226,14 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         )}
       </section>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         <HubChip href="/worldcup" variant="accent">
           {t("ctaWorldCup")}
         </HubChip>
         <HubChip href="/fpl">{t("ctaFpl")}</HubChip>
         <HubChip href="/news">{t("ctaNews")}</HubChip>
         <HubChip href="/news?category=transfer">{t("ctaTransfers")}</HubChip>
+        <HubChip href="/play">{t("ctaPlay")}</HubChip>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem]">
