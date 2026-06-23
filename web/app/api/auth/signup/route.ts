@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { confirmUserEmail } from "@/lib/auth/confirm-user";
 import { recordLoginDay } from "@/lib/auth/record-login-day";
@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 
 type Body = { email?: string; password?: string };
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
     if (!getSupabaseAuthEnv()) {
       return NextResponse.json({ error: "Auth not configured" }, { status: 503 });
     }
 
-    const body = (await req.json()) as Body;
+    const body = (await request.json()) as Body;
     const email = body.email?.trim();
     const password = body.password;
     if (!email || !password || password.length < 6) {
@@ -37,13 +37,14 @@ export async function POST(req: Request) {
       await confirmUserEmail(email);
     }
 
-    const supa = createSupabaseServerClient();
+    const { supabase: supa, jsonResponse } =
+      createSupabaseRouteHandlerClient(request);
     const { error: signInErr } = await supa.auth.signInWithPassword({
       email,
       password,
     });
     if (signInErr) {
-      return NextResponse.json({ error: signInErr.message }, { status: 400 });
+      return jsonResponse({ error: signInErr.message }, { status: 400 });
     }
 
     const { data: sessionData } = await supa.auth.getUser();
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       await recordLoginDay(sessionData.user.id);
     }
 
-    return NextResponse.json({ ok: true });
+    return jsonResponse({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Sign up failed";
     return NextResponse.json({ error: message }, { status: 500 });

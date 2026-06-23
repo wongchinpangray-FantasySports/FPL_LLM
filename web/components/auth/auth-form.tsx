@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export function AuthForm({
 }) {
   const t = useTranslations("auth");
   const router = useRouter();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -58,16 +60,18 @@ export function AuthForm({
       const result = await authRequest(mode, trimmed, password);
       if (result.error) throw new Error(result.error);
 
+      await refresh();
+
       if (mode === "signup") {
         router.push("/onboarding");
         return;
       }
 
-      await new Promise((r) => setTimeout(r, 200));
       let meRes = await fetch("/api/account/me");
       if (!meRes.ok) {
         await new Promise((r) => setTimeout(r, 300));
         meRes = await fetch("/api/account/me");
+        await refresh();
       }
       const me = (await meRes.json()) as {
         user?: { id: string } | null;

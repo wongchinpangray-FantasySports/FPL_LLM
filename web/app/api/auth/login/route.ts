@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import {
   confirmUserEmail,
@@ -12,20 +12,21 @@ export const runtime = "nodejs";
 
 type Body = { email?: string; password?: string };
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
     if (!getSupabaseAuthEnv()) {
       return NextResponse.json({ error: "Auth not configured" }, { status: 503 });
     }
 
-    const body = (await req.json()) as Body;
+    const body = (await request.json()) as Body;
     const email = body.email?.trim();
     const password = body.password;
     if (!email || !password) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
     }
 
-    const supa = createSupabaseServerClient();
+    const { supabase: supa, jsonResponse } =
+      createSupabaseRouteHandlerClient(request);
     let { error: signInErr } = await supa.auth.signInWithPassword({
       email,
       password,
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     if (signInErr) {
-      return NextResponse.json({ error: signInErr.message }, { status: 400 });
+      return jsonResponse({ error: signInErr.message }, { status: 400 });
     }
 
     const { data: sessionData } = await supa.auth.getUser();
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
       await recordLoginDay(sessionData.user.id);
     }
 
-    return NextResponse.json({ ok: true });
+    return jsonResponse({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Sign in failed";
     return NextResponse.json({ error: message }, { status: 500 });
