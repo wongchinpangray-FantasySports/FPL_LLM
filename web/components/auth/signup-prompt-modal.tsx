@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -13,8 +14,16 @@ const DELAY_MS = 5000;
 
 export function SignupPromptModal() {
   const t = useTranslations("signupPrompt");
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const dismiss = useCallback(() => {
     try {
@@ -26,16 +35,26 @@ export function SignupPromptModal() {
   }, []);
 
   useEffect(() => {
-    if (loading || user) return;
+    if (user) return;
+
     try {
       if (localStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
       /* private browsing */
     }
 
-    const id = window.setTimeout(() => setOpen(true), DELAY_MS);
+    const id = window.setTimeout(() => {
+      if (userRef.current) return;
+      try {
+        if (localStorage.getItem(STORAGE_KEY) === "1") return;
+      } catch {
+        /* ignore */
+      }
+      setOpen(true);
+    }, DELAY_MS);
+
     return () => window.clearTimeout(id);
-  }, [loading, user]);
+  }, [user]);
 
   useEffect(() => {
     if (!open) return;
@@ -46,11 +65,11 @@ export function SignupPromptModal() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, dismiss]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="signup-prompt-title"
@@ -141,6 +160,7 @@ export function SignupPromptModal() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
