@@ -4,8 +4,8 @@ import { buildH2HStore, projectH2HAttackEase, type H2HStore } from "@/lib/fpl/h2
 export function buildFplFdrLookup(
   fixtures: {
     id: number;
-    home_team_id: number;
-    away_team_id: number;
+    home: string;
+    away: string;
   }[],
   store: H2HStore,
 ): Map<string, number> {
@@ -14,22 +14,12 @@ export function buildFplFdrLookup(
 
   for (const fx of fixtures) {
     cells.push({
-      key: `${fx.home_team_id}:${fx.id}`,
-      ease: projectH2HAttackEase(
-        fx.home_team_id,
-        fx.away_team_id,
-        true,
-        store,
-      ),
+      key: `${fx.home}:${fx.id}`,
+      ease: projectH2HAttackEase(fx.home, fx.away, true, store),
     });
     cells.push({
-      key: `${fx.away_team_id}:${fx.id}`,
-      ease: projectH2HAttackEase(
-        fx.away_team_id,
-        fx.home_team_id,
-        false,
-        store,
-      ),
+      key: `${fx.away}:${fx.id}`,
+      ease: projectH2HAttackEase(fx.away, fx.home, false, store),
     });
   }
 
@@ -53,11 +43,11 @@ export function buildFplFdrLookup(
 
 export function lookupFplFdr(
   lookup: Map<string, number>,
-  teamId: number,
+  teamCode: string,
   fixtureId: number,
   fallback = 3,
 ): number {
-  return lookup.get(`${teamId}:${fixtureId}`) ?? fallback;
+  return lookup.get(`${teamCode}:${fixtureId}`) ?? fallback;
 }
 
 export function fdrClass(fdr: number | null): string {

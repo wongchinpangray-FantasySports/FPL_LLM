@@ -6,38 +6,31 @@ export type H2HBucket = {
   goalsAgainst: number;
 };
 
-export type TeamMatch = {
-  teamId: number;
-  oppId: number;
-  home: boolean;
-  goalsFor: number;
-  goalsAgainst: number;
-};
+const venueKey = (team: string, opp: string, home: boolean) =>
+  `${team}:${opp}:${home ? "H" : "A"}`;
 
-const venueKey = (teamId: number, oppId: number, home: boolean) =>
-  `${teamId}:${oppId}:${home ? "H" : "A"}`;
+const pairKey = (team: string, opp: string) => `${team}:${opp}`;
 
-const pairKey = (teamId: number, oppId: number) => `${teamId}:${oppId}`;
-
+/** H2H keyed by FPL-style club codes (ARS, COV, …). */
 export class H2HStore {
   private venue = new Map<string, H2HBucket>();
   private any = new Map<string, H2HBucket>();
-  private teamTotals = new Map<number, H2HBucket>();
+  private teamTotals = new Map<string, H2HBucket>();
   leagueAvgGpg = 1.35;
 
-  addMatch(teamId: number, oppId: number, home: boolean, gf: number, ga: number) {
-    if (teamId === oppId) return;
-    this.bump(this.venue, venueKey(teamId, oppId, home), gf, ga);
-    this.bump(this.any, pairKey(teamId, oppId), gf, ga);
-    const team = this.teamTotals.get(teamId) ?? {
+  addMatch(team: string, opp: string, home: boolean, gf: number, ga: number) {
+    if (team === opp) return;
+    this.bump(this.venue, venueKey(team, opp, home), gf, ga);
+    this.bump(this.any, pairKey(team, opp), gf, ga);
+    const cur = this.teamTotals.get(team) ?? {
       games: 0,
       goalsFor: 0,
       goalsAgainst: 0,
     };
-    team.games += 1;
-    team.goalsFor += gf;
-    team.goalsAgainst += ga;
-    this.teamTotals.set(teamId, team);
+    cur.games += 1;
+    cur.goalsFor += gf;
+    cur.goalsAgainst += ga;
+    this.teamTotals.set(team, cur);
     this.recomputeLeagueAvg();
   }
 
@@ -59,90 +52,43 @@ export class H2HStore {
     if (games > 0) this.leagueAvgGpg = gf / games;
   }
 
-  getVenue(teamId: number, oppId: number, home: boolean): H2HBucket | null {
-    return this.venue.get(venueKey(teamId, oppId, home)) ?? null;
+  getVenue(team: string, opp: string, home: boolean): H2HBucket | null {
+    return this.venue.get(venueKey(team, opp, home)) ?? null;
   }
 
-  getAny(teamId: number, oppId: number): H2HBucket | null {
-    return this.any.get(pairKey(teamId, oppId)) ?? null;
+  getAny(team: string, opp: string): H2HBucket | null {
+    return this.any.get(pairKey(team, opp)) ?? null;
   }
 
-  getTeamAttackRate(teamId: number): number {
-    const t = this.teamTotals.get(teamId);
+  getTeamAttackRate(team: string): number {
+    const t = this.teamTotals.get(team);
     if (!t || t.games === 0) return 1;
     return t.goalsFor / t.games / this.leagueAvgGpg;
   }
 
-  getTeamDefRate(teamId: number): number {
-    const t = this.teamTotals.get(teamId);
+  getTeamDefRate(team: string): number {
+    const t = this.teamTotals.get(team);
     if (!t || t.games === 0) return 1;
     return t.goalsAgainst / t.games / this.leagueAvgGpg;
   }
 }
 
-function aggregatePlayerRows(
-  rows: Array<{
-    season: string;
-    fixture_id: number | null;
-    opponent_team_id: number | null;
-    was_home: boolean | null;
-    goals_scored: number | null;
-    goals_conceded: number | null;
-    minutes: number | null;
-    player_id: number;
-  }>,
-  teamByPlayer: Map<number, number>,
-): Array<TeamMatch & { season: string; fixtureId: number }> {
-  type Acc = {
-    season: string;
-    fixtureId: number;
-    teamId: number;
-    oppId: number;
-    home: boolean;
-    goalsFor: number;
-    goalsAgainst: number;
-  };
-  const byFixture = new Map<string, Acc>();
-
-  for (const row of rows) {
-    if (!row.fixture_id || !row.opponent_team_id || (row.minutes ?? 0) <= 0) {
-      continue;
-    }
-    const teamId = teamByPlayer.get(row.player_id);
-    if (!teamId) continue;
-
-    const key = `${row.season}:${row.fixture_id}:${teamId}`;
-    let acc = byFixture.get(key);
-    if (!acc) {
-      acc = {
-        season: row.season,
-        fixtureId: row.fixture_id,
-        teamId,
-        oppId: row.opponent_team_id,
-        home: Boolean(row.was_home),
-        goalsFor: 0,
-        goalsAgainst: row.goals_conceded ?? 0,
-      };
-      byFixture.set(key, acc);
-    }
-    acc.goalsFor += row.goals_scored ?? 0;
-    acc.goalsAgainst = Math.max(acc.goalsAgainst, row.goals_conceded ?? 0);
+async function loadFplTeamCodeMap(): Promise<Map<number, string>> {
+  const supa = getServerSupabase();
+  const { data } = await supa.from("teams").select("id,short_name");
+  const out = new Map<number, string>();
+  for (const row of data ?? []) {
+    const code = String(row.short_name ?? "").trim().toUpperCase();
+    if (code) out.set(row.id as number, code);
   }
-
-  return [...byFixture.values()].map((a) => ({
-    season: a.season,
-    fixtureId: a.fixtureId,
-    teamId: a.teamId,
-    oppId: a.oppId,
-    home: a.home,
-    goalsFor: a.goalsFor,
-    goalsAgainst: a.goalsAgainst,
-  }));
+  return out;
 }
 
-async function loadTeamByPlayerMap(): Promise<Map<number, number>> {
+async function loadTeamCodeByPlayer(
+  teamCodeById: Map<number, string>,
+): Promise<Map<number, string>> {
   const supa = getServerSupabase();
-  const out = new Map<number, number>();
+  const out = new Map<number, string>();
   const PAGE = 1000;
   let from = 0;
 
@@ -154,7 +100,8 @@ async function loadTeamByPlayerMap(): Promise<Map<number, number>> {
       .range(from, from + PAGE - 1);
     if (!data?.length) break;
     for (const row of data) {
-      out.set(row.fpl_id as number, row.team_id as number);
+      const code = teamCodeById.get(row.team_id as number);
+      if (code) out.set(row.fpl_id as number, code);
     }
     from += PAGE;
     if (data.length < PAGE) break;
@@ -205,13 +152,62 @@ async function loadPlayerGwRows(): Promise<
   return rows;
 }
 
-async function loadFinishedFixturesFromDb(): Promise<
+type AggregatedMatch = {
+  season: string;
+  fixtureId: number;
+  team: string;
+  opp: string;
+  home: boolean;
+  goalsFor: number;
+  goalsAgainst: number;
+};
+
+function aggregatePlayerRows(
+  rows: Awaited<ReturnType<typeof loadPlayerGwRows>>,
+  teamCodeByPlayer: Map<number, string>,
+  teamCodeById: Map<number, string>,
+): AggregatedMatch[] {
+  type Acc = AggregatedMatch;
+  const byFixture = new Map<string, Acc>();
+
+  for (const row of rows) {
+    if (!row.fixture_id || !row.opponent_team_id || (row.minutes ?? 0) <= 0) {
+      continue;
+    }
+    const team = teamCodeByPlayer.get(row.player_id);
+    const opp = teamCodeById.get(row.opponent_team_id);
+    if (!team || !opp) continue;
+
+    const key = `${row.season}:${row.fixture_id}:${team}`;
+    let acc = byFixture.get(key);
+    if (!acc) {
+      acc = {
+        season: row.season,
+        fixtureId: row.fixture_id,
+        team,
+        opp,
+        home: Boolean(row.was_home),
+        goalsFor: 0,
+        goalsAgainst: row.goals_conceded ?? 0,
+      };
+      byFixture.set(key, acc);
+    }
+    acc.goalsFor += row.goals_scored ?? 0;
+    acc.goalsAgainst = Math.max(acc.goalsAgainst, row.goals_conceded ?? 0);
+  }
+
+  return [...byFixture.values()];
+}
+
+async function loadFinishedFixturesFromDb(
+  teamCodeById: Map<number, string>,
+): Promise<
   Array<{
     id: number;
-    home_team_id: number;
-    away_team_id: number;
-    home_team_score: number | null;
-    away_team_score: number | null;
+    home: string;
+    away: string;
+    homeScore: number;
+    awayScore: number;
   }>
 > {
   const supa = getServerSupabase();
@@ -221,70 +217,62 @@ async function loadFinishedFixturesFromDb(): Promise<
     .eq("finished", true)
     .not("home_team_score", "is", null)
     .not("away_team_score", "is", null);
-  return data ?? [];
+
+  const out: Array<{
+    id: number;
+    home: string;
+    away: string;
+    homeScore: number;
+    awayScore: number;
+  }> = [];
+
+  for (const row of data ?? []) {
+    const home = teamCodeById.get(row.home_team_id as number);
+    const away = teamCodeById.get(row.away_team_id as number);
+    if (!home || !away) continue;
+    out.push({
+      id: row.id as number,
+      home,
+      away,
+      homeScore: row.home_team_score as number,
+      awayScore: row.away_team_score as number,
+    });
+  }
+  return out;
 }
 
 function ingestMatch(
   store: H2HStore,
   seen: Set<string>,
   key: string,
-  teamId: number,
-  oppId: number,
+  team: string,
+  opp: string,
   home: boolean,
   gf: number,
   ga: number,
 ) {
   if (seen.has(key)) return;
   seen.add(key);
-  store.addMatch(teamId, oppId, home, gf, ga);
+  store.addMatch(team, opp, home, gf, ga);
 }
 
-export function addApiFinishedFixtures(
-  store: H2HStore,
-  fixtures: Array<{
-    id?: number;
-    team_h: number;
-    team_a: number;
-    team_h_score?: number | null;
-    team_a_score?: number | null;
-    finished?: boolean;
-  }>,
-  seen = new Set<string>(),
-) {
-  for (const f of fixtures) {
-    if (!f.finished) continue;
-    if (f.team_h_score == null || f.team_a_score == null) continue;
-    const fxKey = f.id != null ? String(f.id) : `${f.team_h}-${f.team_a}-${f.team_h_score}-${f.team_a_score}`;
-    ingestMatch(store, seen, `fx:${fxKey}:h`, f.team_h, f.team_a, true, f.team_h_score, f.team_a_score);
-    ingestMatch(store, seen, `fx:${fxKey}:a`, f.team_a, f.team_h, false, f.team_a_score, f.team_h_score);
-  }
-}
-
-export async function buildH2HStore(
-  apiFixtures: Array<{
-    id?: number;
-    team_h: number;
-    team_a: number;
-    team_h_score?: number | null;
-    team_a_score?: number | null;
-    finished?: boolean;
-  }> = [],
-): Promise<H2HStore> {
+export async function buildH2HStore(): Promise<H2HStore> {
   const store = new H2HStore();
   const seen = new Set<string>();
-  const [teamByPlayer, pgsRows, dbFixtures] = await Promise.all([
-    loadTeamByPlayerMap(),
+  const teamCodeById = await loadFplTeamCodeMap();
+  const [teamCodeByPlayer, pgsRows, dbFixtures] = await Promise.all([
+    loadTeamCodeByPlayer(teamCodeById),
     loadPlayerGwRows(),
-    loadFinishedFixturesFromDb(),
+    loadFinishedFixturesFromDb(teamCodeById),
   ]);
 
-  for (const m of aggregatePlayerRows(pgsRows, teamByPlayer)) {
+  for (const m of aggregatePlayerRows(pgsRows, teamCodeByPlayer, teamCodeById)) {
     ingestMatch(
       store,
       seen,
-      `pgs:${m.season}:${m.fixtureId}:${m.teamId}`,
-      m.teamId,
-      m.oppId,
+      `pgs:${m.season}:${m.fixtureId}:${m.team}`,
+      m.team,
+      m.opp,
       m.home,
       m.goalsFor,
       m.goalsAgainst,
@@ -296,44 +284,39 @@ export async function buildH2HStore(
       store,
       seen,
       `fx:${f.id}:h`,
-      f.home_team_id,
-      f.away_team_id,
+      f.home,
+      f.away,
       true,
-      f.home_team_score as number,
-      f.away_team_score as number,
+      f.homeScore,
+      f.awayScore,
     );
     ingestMatch(
       store,
       seen,
       `fx:${f.id}:a`,
-      f.away_team_id,
-      f.home_team_id,
+      f.away,
+      f.home,
       false,
-      f.away_team_score as number,
-      f.home_team_score as number,
+      f.awayScore,
+      f.homeScore,
     );
   }
 
-  addApiFinishedFixtures(store, apiFixtures, seen);
   return store;
 }
 
-/** Minimum H2H sample before trusting venue-specific data. */
 const MIN_VENUE_GAMES = 2;
 const MIN_PAIR_GAMES = 3;
 
-/**
- * Expected goals-for for an attack fixture from historical H2H.
- * Higher = easier attacking matchup.
- */
+/** Expected goals-for from historical H2H (higher = easier attack fixture). */
 export function projectH2HAttackEase(
-  teamId: number,
-  oppId: number,
+  team: string,
+  opp: string,
   home: boolean,
   store: H2HStore,
 ): number {
-  const venue = store.getVenue(teamId, oppId, home);
-  const any = store.getAny(teamId, oppId);
+  const venue = store.getVenue(team, opp, home);
+  const any = store.getAny(team, opp);
   const base = store.leagueAvgGpg;
 
   if (venue && venue.games >= MIN_VENUE_GAMES) {
@@ -348,13 +331,13 @@ export function projectH2HAttackEase(
   if (any && any.games >= 1) {
     const gpg = any.goalsFor / any.games;
     const blended = home ? gpg * 1.12 : gpg * 0.92;
-    const teamRate = store.getTeamAttackRate(teamId);
-    const oppDef = store.getTeamDefRate(oppId);
+    const teamRate = store.getTeamAttackRate(team);
+    const oppDef = store.getTeamDefRate(opp);
     return blended * 0.55 + base * teamRate * (1 / oppDef) * 0.45;
   }
 
-  const teamRate = store.getTeamAttackRate(teamId);
-  const oppDef = store.getTeamDefRate(oppId);
+  const teamRate = store.getTeamAttackRate(team);
+  const oppDef = store.getTeamDefRate(opp);
   const venueBoost = home ? 1.12 : 0.92;
   return base * teamRate * (1 / oppDef) * venueBoost;
 }

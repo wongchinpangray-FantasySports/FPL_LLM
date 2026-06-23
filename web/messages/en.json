@@ -894,7 +894,7 @@
     "miniBody": "Pick five players for the gameweek.",
     "fixturesEyebrow": "Fixtures",
     "fixturesTitle": "Faleague FDR · {season} · full season",
-    "fixturesDetail": "FDR ranks attack matchups using historical head-to-head goals (home/away split where sample size allows), blended with each club’s overall scoring and defensive record. Quintiles map to 1–5. FALEAGUE model — not official FPL fixture difficulty.",
+    "fixturesDetail": "Fixtures from the official 2026/27 Premier League release (Coventry, Ipswich, Hull promoted). FDR uses historical head-to-head goals by club code, blended with overall scoring/defence. Quintiles map to 1–5. FALEAGUE model — not official FPL fixture difficulty.",
     "fixturesMore": "How FDR is calculated",
     "fixturesHint": "Green = easy · red = hard. Yellow ring = DGW.",
     "fixturesExpandHint": "Tap to see upcoming opponents and FDR.",

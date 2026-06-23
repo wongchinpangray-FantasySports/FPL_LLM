@@ -1,0 +1,2788 @@
+{
+  "season": "2026",
+  "source": "premierleague.com 2026/27 release via fixturedownload.com",
+  "teams": [
+    {
+      "id": 1,
+      "code": "ARS",
+      "short": "ARS",
+      "name": "Arsenal"
+    },
+    {
+      "id": 2,
+      "code": "AVL",
+      "short": "AVL",
+      "name": "Aston Villa"
+    },
+    {
+      "id": 3,
+      "code": "BHA",
+      "short": "BHA",
+      "name": "Brighton"
+    },
+    {
+      "id": 4,
+      "code": "BOU",
+      "short": "BOU",
+      "name": "Bournemouth"
+    },
+    {
+      "id": 5,
+      "code": "BRE",
+      "short": "BRE",
+      "name": "Brentford"
+    },
+    {
+      "id": 6,
+      "code": "CHE",
+      "short": "CHE",
+      "name": "Chelsea"
+    },
+    {
+      "id": 7,
+      "code": "COV",
+      "short": "COV",
+      "name": "Coventry"
+    },
+    {
+      "id": 8,
+      "code": "CRY",
+      "short": "CRY",
+      "name": "Crystal Palace"
+    },
+    {
+      "id": 9,
+      "code": "EVE",
+      "short": "EVE",
+      "name": "Everton"
+    },
+    {
+      "id": 10,
+      "code": "FUL",
+      "short": "FUL",
+      "name": "Fulham"
+    },
+    {
+      "id": 11,
+      "code": "HUL",
+      "short": "HUL",
+      "name": "Hull"
+    },
+    {
+      "id": 12,
+      "code": "IPS",
+      "short": "IPS",
+      "name": "Ipswich"
+    },
+    {
+      "id": 13,
+      "code": "LEE",
+      "short": "LEE",
+      "name": "Leeds"
+    },
+    {
+      "id": 14,
+      "code": "LIV",
+      "short": "LIV",
+      "name": "Liverpool"
+    },
+    {
+      "id": 15,
+      "code": "MCI",
+      "short": "MCI",
+      "name": "Man City"
+    },
+    {
+      "id": 16,
+      "code": "MUN",
+      "short": "MUN",
+      "name": "Man Utd"
+    },
+    {
+      "id": 17,
+      "code": "NEW",
+      "short": "NEW",
+      "name": "Newcastle"
+    },
+    {
+      "id": 18,
+      "code": "NFO",
+      "short": "NFO",
+      "name": "Nott'm Forest"
+    },
+    {
+      "id": 19,
+      "code": "SUN",
+      "short": "SUN",
+      "name": "Sunderland"
+    },
+    {
+      "id": 20,
+      "code": "TOT",
+      "short": "TOT",
+      "name": "Spurs"
+    }
+  ],
+  "fixtures": [
+    {
+      "id": 1,
+      "gw": 1,
+      "home_team_id": 1,
+      "away_team_id": 7,
+      "kickoff_time": "2026-08-21T20:00:00"
+    },
+    {
+      "id": 2,
+      "gw": 1,
+      "home_team_id": 11,
+      "away_team_id": 16,
+      "kickoff_time": "2026-08-22T12:30:00"
+    },
+    {
+      "id": 3,
+      "gw": 1,
+      "home_team_id": 9,
+      "away_team_id": 8,
+      "kickoff_time": "2026-08-22T15:00:00"
+    },
+    {
+      "id": 4,
+      "gw": 1,
+      "home_team_id": 12,
+      "away_team_id": 19,
+      "kickoff_time": "2026-08-22T15:00:00"
+    },
+    {
+      "id": 5,
+      "gw": 1,
+      "home_team_id": 18,
+      "away_team_id": 13,
+      "kickoff_time": "2026-08-22T15:00:00"
+    },
+    {
+      "id": 6,
+      "gw": 1,
+      "home_team_id": 5,
+      "away_team_id": 20,
+      "kickoff_time": "2026-08-22T17:30:00"
+    },
+    {
+      "id": 7,
+      "gw": 1,
+      "home_team_id": 3,
+      "away_team_id": 2,
+      "kickoff_time": "2026-08-23T14:00:00"
+    },
+    {
+      "id": 8,
+      "gw": 1,
+      "home_team_id": 15,
+      "away_team_id": 4,
+      "kickoff_time": "2026-08-23T14:00:00"
+    },
+    {
+      "id": 9,
+      "gw": 1,
+      "home_team_id": 17,
+      "away_team_id": 14,
+      "kickoff_time": "2026-08-23T16:30:00"
+    },
+    {
+      "id": 10,
+      "gw": 1,
+      "home_team_id": 10,
+      "away_team_id": 6,
+      "kickoff_time": "2026-08-24T20:00:00"
+    },
+    {
+      "id": 11,
+      "gw": 2,
+      "home_team_id": 4,
+      "away_team_id": 9,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 12,
+      "gw": 2,
+      "home_team_id": 2,
+      "away_team_id": 1,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 13,
+      "gw": 2,
+      "home_team_id": 6,
+      "away_team_id": 3,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 14,
+      "gw": 2,
+      "home_team_id": 7,
+      "away_team_id": 11,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 15,
+      "gw": 2,
+      "home_team_id": 8,
+      "away_team_id": 15,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 16,
+      "gw": 2,
+      "home_team_id": 13,
+      "away_team_id": 5,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 17,
+      "gw": 2,
+      "home_team_id": 14,
+      "away_team_id": 18,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 18,
+      "gw": 2,
+      "home_team_id": 16,
+      "away_team_id": 12,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 19,
+      "gw": 2,
+      "home_team_id": 19,
+      "away_team_id": 10,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 20,
+      "gw": 2,
+      "home_team_id": 20,
+      "away_team_id": 17,
+      "kickoff_time": "2026-08-29T15:00:00"
+    },
+    {
+      "id": 21,
+      "gw": 3,
+      "home_team_id": 1,
+      "away_team_id": 6,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 22,
+      "gw": 3,
+      "home_team_id": 5,
+      "away_team_id": 19,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 23,
+      "gw": 3,
+      "home_team_id": 3,
+      "away_team_id": 13,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 24,
+      "gw": 3,
+      "home_team_id": 9,
+      "away_team_id": 16,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 25,
+      "gw": 3,
+      "home_team_id": 10,
+      "away_team_id": 8,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 26,
+      "gw": 3,
+      "home_team_id": 11,
+      "away_team_id": 2,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 27,
+      "gw": 3,
+      "home_team_id": 12,
+      "away_team_id": 14,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 28,
+      "gw": 3,
+      "home_team_id": 15,
+      "away_team_id": 7,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 29,
+      "gw": 3,
+      "home_team_id": 17,
+      "away_team_id": 4,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 30,
+      "gw": 3,
+      "home_team_id": 18,
+      "away_team_id": 20,
+      "kickoff_time": "2026-09-05T15:00:00"
+    },
+    {
+      "id": 31,
+      "gw": 4,
+      "home_team_id": 4,
+      "away_team_id": 5,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 32,
+      "gw": 4,
+      "home_team_id": 2,
+      "away_team_id": 18,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 33,
+      "gw": 4,
+      "home_team_id": 6,
+      "away_team_id": 11,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 34,
+      "gw": 4,
+      "home_team_id": 7,
+      "away_team_id": 3,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 35,
+      "gw": 4,
+      "home_team_id": 8,
+      "away_team_id": 12,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 36,
+      "gw": 4,
+      "home_team_id": 13,
+      "away_team_id": 17,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 37,
+      "gw": 4,
+      "home_team_id": 14,
+      "away_team_id": 10,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 38,
+      "gw": 4,
+      "home_team_id": 16,
+      "away_team_id": 15,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 39,
+      "gw": 4,
+      "home_team_id": 19,
+      "away_team_id": 1,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 40,
+      "gw": 4,
+      "home_team_id": 20,
+      "away_team_id": 9,
+      "kickoff_time": "2026-09-12T15:00:00"
+    },
+    {
+      "id": 41,
+      "gw": 5,
+      "home_team_id": 4,
+      "away_team_id": 14,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 42,
+      "gw": 5,
+      "home_team_id": 5,
+      "away_team_id": 6,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 43,
+      "gw": 5,
+      "home_team_id": 3,
+      "away_team_id": 1,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 44,
+      "gw": 5,
+      "home_team_id": 9,
+      "away_team_id": 12,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 45,
+      "gw": 5,
+      "home_team_id": 10,
+      "away_team_id": 16,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 46,
+      "gw": 5,
+      "home_team_id": 13,
+      "away_team_id": 8,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 47,
+      "gw": 5,
+      "home_team_id": 15,
+      "away_team_id": 19,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 48,
+      "gw": 5,
+      "home_team_id": 17,
+      "away_team_id": 11,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 49,
+      "gw": 5,
+      "home_team_id": 18,
+      "away_team_id": 7,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 50,
+      "gw": 5,
+      "home_team_id": 20,
+      "away_team_id": 2,
+      "kickoff_time": "2026-09-19T15:00:00"
+    },
+    {
+      "id": 51,
+      "gw": 6,
+      "home_team_id": 1,
+      "away_team_id": 13,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 52,
+      "gw": 6,
+      "home_team_id": 2,
+      "away_team_id": 5,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 53,
+      "gw": 6,
+      "home_team_id": 6,
+      "away_team_id": 4,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 54,
+      "gw": 6,
+      "home_team_id": 7,
+      "away_team_id": 17,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 55,
+      "gw": 6,
+      "home_team_id": 8,
+      "away_team_id": 18,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 56,
+      "gw": 6,
+      "home_team_id": 11,
+      "away_team_id": 9,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 57,
+      "gw": 6,
+      "home_team_id": 12,
+      "away_team_id": 10,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 58,
+      "gw": 6,
+      "home_team_id": 14,
+      "away_team_id": 15,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 59,
+      "gw": 6,
+      "home_team_id": 16,
+      "away_team_id": 20,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 60,
+      "gw": 6,
+      "home_team_id": 19,
+      "away_team_id": 3,
+      "kickoff_time": "2026-10-10T15:00:00"
+    },
+    {
+      "id": 61,
+      "gw": 7,
+      "home_team_id": 4,
+      "away_team_id": 19,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 62,
+      "gw": 7,
+      "home_team_id": 5,
+      "away_team_id": 14,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 63,
+      "gw": 7,
+      "home_team_id": 3,
+      "away_team_id": 8,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 64,
+      "gw": 7,
+      "home_team_id": 9,
+      "away_team_id": 6,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 65,
+      "gw": 7,
+      "home_team_id": 10,
+      "away_team_id": 11,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 66,
+      "gw": 7,
+      "home_team_id": 13,
+      "away_team_id": 16,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 67,
+      "gw": 7,
+      "home_team_id": 15,
+      "away_team_id": 12,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 68,
+      "gw": 7,
+      "home_team_id": 17,
+      "away_team_id": 2,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 69,
+      "gw": 7,
+      "home_team_id": 18,
+      "away_team_id": 1,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 70,
+      "gw": 7,
+      "home_team_id": 20,
+      "away_team_id": 7,
+      "kickoff_time": "2026-10-17T15:00:00"
+    },
+    {
+      "id": 71,
+      "gw": 8,
+      "home_team_id": 1,
+      "away_team_id": 9,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 72,
+      "gw": 8,
+      "home_team_id": 2,
+      "away_team_id": 15,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 73,
+      "gw": 8,
+      "home_team_id": 6,
+      "away_team_id": 20,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 74,
+      "gw": 8,
+      "home_team_id": 7,
+      "away_team_id": 10,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 75,
+      "gw": 8,
+      "home_team_id": 8,
+      "away_team_id": 17,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 76,
+      "gw": 8,
+      "home_team_id": 11,
+      "away_team_id": 5,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 77,
+      "gw": 8,
+      "home_team_id": 12,
+      "away_team_id": 18,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 78,
+      "gw": 8,
+      "home_team_id": 14,
+      "away_team_id": 3,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 79,
+      "gw": 8,
+      "home_team_id": 16,
+      "away_team_id": 4,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 80,
+      "gw": 8,
+      "home_team_id": 19,
+      "away_team_id": 13,
+      "kickoff_time": "2026-10-24T15:00:00"
+    },
+    {
+      "id": 81,
+      "gw": 9,
+      "home_team_id": 4,
+      "away_team_id": 13,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 82,
+      "gw": 9,
+      "home_team_id": 2,
+      "away_team_id": 10,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 83,
+      "gw": 9,
+      "home_team_id": 5,
+      "away_team_id": 18,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 84,
+      "gw": 9,
+      "home_team_id": 6,
+      "away_team_id": 16,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 85,
+      "gw": 9,
+      "home_team_id": 7,
+      "away_team_id": 19,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 86,
+      "gw": 9,
+      "home_team_id": 11,
+      "away_team_id": 12,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 87,
+      "gw": 9,
+      "home_team_id": 14,
+      "away_team_id": 1,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 88,
+      "gw": 9,
+      "home_team_id": 15,
+      "away_team_id": 3,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 89,
+      "gw": 9,
+      "home_team_id": 17,
+      "away_team_id": 9,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 90,
+      "gw": 9,
+      "home_team_id": 20,
+      "away_team_id": 8,
+      "kickoff_time": "2026-10-31T15:00:00"
+    },
+    {
+      "id": 91,
+      "gw": 10,
+      "home_team_id": 1,
+      "away_team_id": 11,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 92,
+      "gw": 10,
+      "home_team_id": 3,
+      "away_team_id": 5,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 93,
+      "gw": 10,
+      "home_team_id": 8,
+      "away_team_id": 14,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 94,
+      "gw": 10,
+      "home_team_id": 9,
+      "away_team_id": 7,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 95,
+      "gw": 10,
+      "home_team_id": 10,
+      "away_team_id": 17,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 96,
+      "gw": 10,
+      "home_team_id": 12,
+      "away_team_id": 4,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 97,
+      "gw": 10,
+      "home_team_id": 13,
+      "away_team_id": 20,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 98,
+      "gw": 10,
+      "home_team_id": 16,
+      "away_team_id": 2,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 99,
+      "gw": 10,
+      "home_team_id": 18,
+      "away_team_id": 15,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 100,
+      "gw": 10,
+      "home_team_id": 19,
+      "away_team_id": 6,
+      "kickoff_time": "2026-11-07T15:00:00"
+    },
+    {
+      "id": 101,
+      "gw": 11,
+      "home_team_id": 4,
+      "away_team_id": 18,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 102,
+      "gw": 11,
+      "home_team_id": 2,
+      "away_team_id": 19,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 103,
+      "gw": 11,
+      "home_team_id": 5,
+      "away_team_id": 9,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 104,
+      "gw": 11,
+      "home_team_id": 6,
+      "away_team_id": 13,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 105,
+      "gw": 11,
+      "home_team_id": 7,
+      "away_team_id": 8,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 106,
+      "gw": 11,
+      "home_team_id": 11,
+      "away_team_id": 3,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 107,
+      "gw": 11,
+      "home_team_id": 14,
+      "away_team_id": 16,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 108,
+      "gw": 11,
+      "home_team_id": 15,
+      "away_team_id": 10,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 109,
+      "gw": 11,
+      "home_team_id": 17,
+      "away_team_id": 1,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 110,
+      "gw": 11,
+      "home_team_id": 20,
+      "away_team_id": 12,
+      "kickoff_time": "2026-11-21T15:00:00"
+    },
+    {
+      "id": 111,
+      "gw": 12,
+      "home_team_id": 1,
+      "away_team_id": 15,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 112,
+      "gw": 12,
+      "home_team_id": 3,
+      "away_team_id": 17,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 113,
+      "gw": 12,
+      "home_team_id": 8,
+      "away_team_id": 11,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 114,
+      "gw": 12,
+      "home_team_id": 9,
+      "away_team_id": 14,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 115,
+      "gw": 12,
+      "home_team_id": 10,
+      "away_team_id": 4,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 116,
+      "gw": 12,
+      "home_team_id": 12,
+      "away_team_id": 2,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 117,
+      "gw": 12,
+      "home_team_id": 13,
+      "away_team_id": 7,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 118,
+      "gw": 12,
+      "home_team_id": 16,
+      "away_team_id": 5,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 119,
+      "gw": 12,
+      "home_team_id": 18,
+      "away_team_id": 6,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 120,
+      "gw": 12,
+      "home_team_id": 19,
+      "away_team_id": 20,
+      "kickoff_time": "2026-11-28T15:00:00"
+    },
+    {
+      "id": 121,
+      "gw": 13,
+      "home_team_id": 4,
+      "away_team_id": 3,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 122,
+      "gw": 13,
+      "home_team_id": 2,
+      "away_team_id": 9,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 123,
+      "gw": 13,
+      "home_team_id": 5,
+      "away_team_id": 1,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 124,
+      "gw": 13,
+      "home_team_id": 6,
+      "away_team_id": 8,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 125,
+      "gw": 13,
+      "home_team_id": 7,
+      "away_team_id": 12,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 126,
+      "gw": 13,
+      "home_team_id": 11,
+      "away_team_id": 18,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 127,
+      "gw": 13,
+      "home_team_id": 14,
+      "away_team_id": 19,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 128,
+      "gw": 13,
+      "home_team_id": 15,
+      "away_team_id": 13,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 129,
+      "gw": 13,
+      "home_team_id": 17,
+      "away_team_id": 16,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 130,
+      "gw": 13,
+      "home_team_id": 20,
+      "away_team_id": 10,
+      "kickoff_time": "2026-12-02T20:00:00"
+    },
+    {
+      "id": 131,
+      "gw": 14,
+      "home_team_id": 4,
+      "away_team_id": 11,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 132,
+      "gw": 14,
+      "home_team_id": 2,
+      "away_team_id": 8,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 133,
+      "gw": 14,
+      "home_team_id": 5,
+      "away_team_id": 15,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 134,
+      "gw": 14,
+      "home_team_id": 6,
+      "away_team_id": 14,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 135,
+      "gw": 14,
+      "home_team_id": 9,
+      "away_team_id": 10,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 136,
+      "gw": 14,
+      "home_team_id": 13,
+      "away_team_id": 12,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 137,
+      "gw": 14,
+      "home_team_id": 16,
+      "away_team_id": 7,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 138,
+      "gw": 14,
+      "home_team_id": 17,
+      "away_team_id": 19,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 139,
+      "gw": 14,
+      "home_team_id": 18,
+      "away_team_id": 3,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 140,
+      "gw": 14,
+      "home_team_id": 20,
+      "away_team_id": 1,
+      "kickoff_time": "2026-12-05T15:00:00"
+    },
+    {
+      "id": 141,
+      "gw": 15,
+      "home_team_id": 1,
+      "away_team_id": 4,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 142,
+      "gw": 15,
+      "home_team_id": 3,
+      "away_team_id": 9,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 143,
+      "gw": 15,
+      "home_team_id": 7,
+      "away_team_id": 2,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 144,
+      "gw": 15,
+      "home_team_id": 8,
+      "away_team_id": 16,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 145,
+      "gw": 15,
+      "home_team_id": 10,
+      "away_team_id": 5,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 146,
+      "gw": 15,
+      "home_team_id": 11,
+      "away_team_id": 20,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 147,
+      "gw": 15,
+      "home_team_id": 12,
+      "away_team_id": 17,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 148,
+      "gw": 15,
+      "home_team_id": 14,
+      "away_team_id": 13,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 149,
+      "gw": 15,
+      "home_team_id": 15,
+      "away_team_id": 6,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 150,
+      "gw": 15,
+      "home_team_id": 19,
+      "away_team_id": 18,
+      "kickoff_time": "2026-12-12T15:00:00"
+    },
+    {
+      "id": 151,
+      "gw": 16,
+      "home_team_id": 4,
+      "away_team_id": 7,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 152,
+      "gw": 16,
+      "home_team_id": 1,
+      "away_team_id": 16,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 153,
+      "gw": 16,
+      "home_team_id": 5,
+      "away_team_id": 17,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 154,
+      "gw": 16,
+      "home_team_id": 3,
+      "away_team_id": 12,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 155,
+      "gw": 16,
+      "home_team_id": 6,
+      "away_team_id": 2,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 156,
+      "gw": 16,
+      "home_team_id": 13,
+      "away_team_id": 10,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 157,
+      "gw": 16,
+      "home_team_id": 14,
+      "away_team_id": 20,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 158,
+      "gw": 16,
+      "home_team_id": 15,
+      "away_team_id": 11,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 159,
+      "gw": 16,
+      "home_team_id": 18,
+      "away_team_id": 9,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 160,
+      "gw": 16,
+      "home_team_id": 19,
+      "away_team_id": 8,
+      "kickoff_time": "2026-12-19T15:00:00"
+    },
+    {
+      "id": 161,
+      "gw": 17,
+      "home_team_id": 2,
+      "away_team_id": 13,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 162,
+      "gw": 17,
+      "home_team_id": 7,
+      "away_team_id": 6,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 163,
+      "gw": 17,
+      "home_team_id": 8,
+      "away_team_id": 1,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 164,
+      "gw": 17,
+      "home_team_id": 9,
+      "away_team_id": 19,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 165,
+      "gw": 17,
+      "home_team_id": 10,
+      "away_team_id": 3,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 166,
+      "gw": 17,
+      "home_team_id": 11,
+      "away_team_id": 14,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 167,
+      "gw": 17,
+      "home_team_id": 12,
+      "away_team_id": 5,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 168,
+      "gw": 17,
+      "home_team_id": 16,
+      "away_team_id": 18,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 169,
+      "gw": 17,
+      "home_team_id": 17,
+      "away_team_id": 15,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 170,
+      "gw": 17,
+      "home_team_id": 20,
+      "away_team_id": 4,
+      "kickoff_time": "2026-12-26T15:00:00"
+    },
+    {
+      "id": 171,
+      "gw": 18,
+      "home_team_id": 2,
+      "away_team_id": 14,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 172,
+      "gw": 18,
+      "home_team_id": 7,
+      "away_team_id": 5,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 173,
+      "gw": 18,
+      "home_team_id": 8,
+      "away_team_id": 4,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 174,
+      "gw": 18,
+      "home_team_id": 9,
+      "away_team_id": 15,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 175,
+      "gw": 18,
+      "home_team_id": 10,
+      "away_team_id": 1,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 176,
+      "gw": 18,
+      "home_team_id": 11,
+      "away_team_id": 13,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 177,
+      "gw": 18,
+      "home_team_id": 12,
+      "away_team_id": 6,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 178,
+      "gw": 18,
+      "home_team_id": 16,
+      "away_team_id": 19,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 179,
+      "gw": 18,
+      "home_team_id": 17,
+      "away_team_id": 18,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 180,
+      "gw": 18,
+      "home_team_id": 20,
+      "away_team_id": 3,
+      "kickoff_time": "2026-12-30T20:00:00"
+    },
+    {
+      "id": 181,
+      "gw": 19,
+      "home_team_id": 4,
+      "away_team_id": 2,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 182,
+      "gw": 19,
+      "home_team_id": 1,
+      "away_team_id": 12,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 183,
+      "gw": 19,
+      "home_team_id": 5,
+      "away_team_id": 8,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 184,
+      "gw": 19,
+      "home_team_id": 3,
+      "away_team_id": 16,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 185,
+      "gw": 19,
+      "home_team_id": 6,
+      "away_team_id": 17,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 186,
+      "gw": 19,
+      "home_team_id": 13,
+      "away_team_id": 9,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 187,
+      "gw": 19,
+      "home_team_id": 14,
+      "away_team_id": 7,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 188,
+      "gw": 19,
+      "home_team_id": 15,
+      "away_team_id": 20,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 189,
+      "gw": 19,
+      "home_team_id": 18,
+      "away_team_id": 10,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 190,
+      "gw": 19,
+      "home_team_id": 19,
+      "away_team_id": 11,
+      "kickoff_time": "2027-01-02T15:00:00"
+    },
+    {
+      "id": 191,
+      "gw": 20,
+      "home_team_id": 1,
+      "away_team_id": 5,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 192,
+      "gw": 20,
+      "home_team_id": 3,
+      "away_team_id": 4,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 193,
+      "gw": 20,
+      "home_team_id": 8,
+      "away_team_id": 6,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 194,
+      "gw": 20,
+      "home_team_id": 9,
+      "away_team_id": 2,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 195,
+      "gw": 20,
+      "home_team_id": 10,
+      "away_team_id": 20,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 196,
+      "gw": 20,
+      "home_team_id": 12,
+      "away_team_id": 7,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 197,
+      "gw": 20,
+      "home_team_id": 13,
+      "away_team_id": 15,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 198,
+      "gw": 20,
+      "home_team_id": 16,
+      "away_team_id": 17,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 199,
+      "gw": 20,
+      "home_team_id": 18,
+      "away_team_id": 11,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 200,
+      "gw": 20,
+      "home_team_id": 19,
+      "away_team_id": 14,
+      "kickoff_time": "2027-01-06T20:00:00"
+    },
+    {
+      "id": 201,
+      "gw": 21,
+      "home_team_id": 4,
+      "away_team_id": 12,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 202,
+      "gw": 21,
+      "home_team_id": 2,
+      "away_team_id": 16,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 203,
+      "gw": 21,
+      "home_team_id": 5,
+      "away_team_id": 3,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 204,
+      "gw": 21,
+      "home_team_id": 6,
+      "away_team_id": 19,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 205,
+      "gw": 21,
+      "home_team_id": 7,
+      "away_team_id": 9,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 206,
+      "gw": 21,
+      "home_team_id": 11,
+      "away_team_id": 1,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 207,
+      "gw": 21,
+      "home_team_id": 14,
+      "away_team_id": 8,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 208,
+      "gw": 21,
+      "home_team_id": 15,
+      "away_team_id": 18,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 209,
+      "gw": 21,
+      "home_team_id": 17,
+      "away_team_id": 10,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 210,
+      "gw": 21,
+      "home_team_id": 20,
+      "away_team_id": 13,
+      "kickoff_time": "2027-01-16T15:00:00"
+    },
+    {
+      "id": 211,
+      "gw": 22,
+      "home_team_id": 1,
+      "away_team_id": 17,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 212,
+      "gw": 22,
+      "home_team_id": 3,
+      "away_team_id": 15,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 213,
+      "gw": 22,
+      "home_team_id": 8,
+      "away_team_id": 20,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 214,
+      "gw": 22,
+      "home_team_id": 9,
+      "away_team_id": 5,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 215,
+      "gw": 22,
+      "home_team_id": 10,
+      "away_team_id": 2,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 216,
+      "gw": 22,
+      "home_team_id": 12,
+      "away_team_id": 11,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 217,
+      "gw": 22,
+      "home_team_id": 13,
+      "away_team_id": 6,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 218,
+      "gw": 22,
+      "home_team_id": 16,
+      "away_team_id": 14,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 219,
+      "gw": 22,
+      "home_team_id": 18,
+      "away_team_id": 4,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 220,
+      "gw": 22,
+      "home_team_id": 19,
+      "away_team_id": 7,
+      "kickoff_time": "2027-01-23T15:00:00"
+    },
+    {
+      "id": 221,
+      "gw": 23,
+      "home_team_id": 4,
+      "away_team_id": 10,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 222,
+      "gw": 23,
+      "home_team_id": 2,
+      "away_team_id": 12,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 223,
+      "gw": 23,
+      "home_team_id": 5,
+      "away_team_id": 16,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 224,
+      "gw": 23,
+      "home_team_id": 6,
+      "away_team_id": 18,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 225,
+      "gw": 23,
+      "home_team_id": 7,
+      "away_team_id": 13,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 226,
+      "gw": 23,
+      "home_team_id": 11,
+      "away_team_id": 8,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 227,
+      "gw": 23,
+      "home_team_id": 14,
+      "away_team_id": 9,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 228,
+      "gw": 23,
+      "home_team_id": 15,
+      "away_team_id": 1,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 229,
+      "gw": 23,
+      "home_team_id": 17,
+      "away_team_id": 3,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 230,
+      "gw": 23,
+      "home_team_id": 20,
+      "away_team_id": 19,
+      "kickoff_time": "2027-01-30T15:00:00"
+    },
+    {
+      "id": 231,
+      "gw": 24,
+      "home_team_id": 1,
+      "away_team_id": 14,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 232,
+      "gw": 24,
+      "home_team_id": 3,
+      "away_team_id": 11,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 233,
+      "gw": 24,
+      "home_team_id": 8,
+      "away_team_id": 7,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 234,
+      "gw": 24,
+      "home_team_id": 9,
+      "away_team_id": 17,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 235,
+      "gw": 24,
+      "home_team_id": 10,
+      "away_team_id": 15,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 236,
+      "gw": 24,
+      "home_team_id": 12,
+      "away_team_id": 20,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 237,
+      "gw": 24,
+      "home_team_id": 13,
+      "away_team_id": 4,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 238,
+      "gw": 24,
+      "home_team_id": 16,
+      "away_team_id": 6,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 239,
+      "gw": 24,
+      "home_team_id": 18,
+      "away_team_id": 5,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 240,
+      "gw": 24,
+      "home_team_id": 19,
+      "away_team_id": 2,
+      "kickoff_time": "2027-02-06T15:00:00"
+    },
+    {
+      "id": 241,
+      "gw": 25,
+      "home_team_id": 2,
+      "away_team_id": 4,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 242,
+      "gw": 25,
+      "home_team_id": 7,
+      "away_team_id": 14,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 243,
+      "gw": 25,
+      "home_team_id": 8,
+      "away_team_id": 5,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 244,
+      "gw": 25,
+      "home_team_id": 9,
+      "away_team_id": 13,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 245,
+      "gw": 25,
+      "home_team_id": 10,
+      "away_team_id": 18,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 246,
+      "gw": 25,
+      "home_team_id": 11,
+      "away_team_id": 19,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 247,
+      "gw": 25,
+      "home_team_id": 12,
+      "away_team_id": 1,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 248,
+      "gw": 25,
+      "home_team_id": 16,
+      "away_team_id": 3,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 249,
+      "gw": 25,
+      "home_team_id": 17,
+      "away_team_id": 6,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 250,
+      "gw": 25,
+      "home_team_id": 20,
+      "away_team_id": 15,
+      "kickoff_time": "2027-02-10T20:00:00"
+    },
+    {
+      "id": 251,
+      "gw": 26,
+      "home_team_id": 4,
+      "away_team_id": 8,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 252,
+      "gw": 26,
+      "home_team_id": 1,
+      "away_team_id": 10,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 253,
+      "gw": 26,
+      "home_team_id": 5,
+      "away_team_id": 7,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 254,
+      "gw": 26,
+      "home_team_id": 3,
+      "away_team_id": 20,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 255,
+      "gw": 26,
+      "home_team_id": 6,
+      "away_team_id": 12,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 256,
+      "gw": 26,
+      "home_team_id": 13,
+      "away_team_id": 2,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 257,
+      "gw": 26,
+      "home_team_id": 14,
+      "away_team_id": 11,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 258,
+      "gw": 26,
+      "home_team_id": 15,
+      "away_team_id": 17,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 259,
+      "gw": 26,
+      "home_team_id": 18,
+      "away_team_id": 16,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 260,
+      "gw": 26,
+      "home_team_id": 19,
+      "away_team_id": 9,
+      "kickoff_time": "2027-02-20T15:00:00"
+    },
+    {
+      "id": 261,
+      "gw": 27,
+      "home_team_id": 2,
+      "away_team_id": 6,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 262,
+      "gw": 27,
+      "home_team_id": 7,
+      "away_team_id": 4,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 263,
+      "gw": 27,
+      "home_team_id": 8,
+      "away_team_id": 19,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 264,
+      "gw": 27,
+      "home_team_id": 9,
+      "away_team_id": 18,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 265,
+      "gw": 27,
+      "home_team_id": 10,
+      "away_team_id": 13,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 266,
+      "gw": 27,
+      "home_team_id": 11,
+      "away_team_id": 15,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 267,
+      "gw": 27,
+      "home_team_id": 12,
+      "away_team_id": 3,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 268,
+      "gw": 27,
+      "home_team_id": 16,
+      "away_team_id": 1,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 269,
+      "gw": 27,
+      "home_team_id": 17,
+      "away_team_id": 5,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 270,
+      "gw": 27,
+      "home_team_id": 20,
+      "away_team_id": 14,
+      "kickoff_time": "2027-02-27T15:00:00"
+    },
+    {
+      "id": 271,
+      "gw": 28,
+      "home_team_id": 4,
+      "away_team_id": 20,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 272,
+      "gw": 28,
+      "home_team_id": 1,
+      "away_team_id": 8,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 273,
+      "gw": 28,
+      "home_team_id": 5,
+      "away_team_id": 12,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 274,
+      "gw": 28,
+      "home_team_id": 3,
+      "away_team_id": 10,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 275,
+      "gw": 28,
+      "home_team_id": 6,
+      "away_team_id": 7,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 276,
+      "gw": 28,
+      "home_team_id": 13,
+      "away_team_id": 11,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 277,
+      "gw": 28,
+      "home_team_id": 14,
+      "away_team_id": 2,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 278,
+      "gw": 28,
+      "home_team_id": 15,
+      "away_team_id": 9,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 279,
+      "gw": 28,
+      "home_team_id": 18,
+      "away_team_id": 17,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 280,
+      "gw": 28,
+      "home_team_id": 19,
+      "away_team_id": 16,
+      "kickoff_time": "2027-03-03T20:00:00"
+    },
+    {
+      "id": 281,
+      "gw": 29,
+      "home_team_id": 4,
+      "away_team_id": 17,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 282,
+      "gw": 29,
+      "home_team_id": 2,
+      "away_team_id": 11,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 283,
+      "gw": 29,
+      "home_team_id": 6,
+      "away_team_id": 1,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 284,
+      "gw": 29,
+      "home_team_id": 7,
+      "away_team_id": 15,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 285,
+      "gw": 29,
+      "home_team_id": 8,
+      "away_team_id": 10,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 286,
+      "gw": 29,
+      "home_team_id": 13,
+      "away_team_id": 3,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 287,
+      "gw": 29,
+      "home_team_id": 14,
+      "away_team_id": 12,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 288,
+      "gw": 29,
+      "home_team_id": 16,
+      "away_team_id": 9,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 289,
+      "gw": 29,
+      "home_team_id": 19,
+      "away_team_id": 5,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 290,
+      "gw": 29,
+      "home_team_id": 20,
+      "away_team_id": 18,
+      "kickoff_time": "2027-03-13T15:00:00"
+    },
+    {
+      "id": 291,
+      "gw": 30,
+      "home_team_id": 1,
+      "away_team_id": 19,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 292,
+      "gw": 30,
+      "home_team_id": 5,
+      "away_team_id": 4,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 293,
+      "gw": 30,
+      "home_team_id": 3,
+      "away_team_id": 7,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 294,
+      "gw": 30,
+      "home_team_id": 9,
+      "away_team_id": 20,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 295,
+      "gw": 30,
+      "home_team_id": 10,
+      "away_team_id": 14,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 296,
+      "gw": 30,
+      "home_team_id": 11,
+      "away_team_id": 6,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 297,
+      "gw": 30,
+      "home_team_id": 12,
+      "away_team_id": 8,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 298,
+      "gw": 30,
+      "home_team_id": 15,
+      "away_team_id": 16,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 299,
+      "gw": 30,
+      "home_team_id": 17,
+      "away_team_id": 13,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 300,
+      "gw": 30,
+      "home_team_id": 18,
+      "away_team_id": 2,
+      "kickoff_time": "2027-03-20T15:00:00"
+    },
+    {
+      "id": 301,
+      "gw": 31,
+      "home_team_id": 4,
+      "away_team_id": 15,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 302,
+      "gw": 31,
+      "home_team_id": 2,
+      "away_team_id": 3,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 303,
+      "gw": 31,
+      "home_team_id": 6,
+      "away_team_id": 10,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 304,
+      "gw": 31,
+      "home_team_id": 7,
+      "away_team_id": 1,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 305,
+      "gw": 31,
+      "home_team_id": 8,
+      "away_team_id": 9,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 306,
+      "gw": 31,
+      "home_team_id": 13,
+      "away_team_id": 18,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 307,
+      "gw": 31,
+      "home_team_id": 14,
+      "away_team_id": 17,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 308,
+      "gw": 31,
+      "home_team_id": 16,
+      "away_team_id": 11,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 309,
+      "gw": 31,
+      "home_team_id": 19,
+      "away_team_id": 12,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 310,
+      "gw": 31,
+      "home_team_id": 20,
+      "away_team_id": 5,
+      "kickoff_time": "2027-04-10T15:00:00"
+    },
+    {
+      "id": 311,
+      "gw": 32,
+      "home_team_id": 1,
+      "away_team_id": 2,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 312,
+      "gw": 32,
+      "home_team_id": 5,
+      "away_team_id": 13,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 313,
+      "gw": 32,
+      "home_team_id": 3,
+      "away_team_id": 6,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 314,
+      "gw": 32,
+      "home_team_id": 9,
+      "away_team_id": 4,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 315,
+      "gw": 32,
+      "home_team_id": 10,
+      "away_team_id": 19,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 316,
+      "gw": 32,
+      "home_team_id": 11,
+      "away_team_id": 7,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 317,
+      "gw": 32,
+      "home_team_id": 12,
+      "away_team_id": 16,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 318,
+      "gw": 32,
+      "home_team_id": 15,
+      "away_team_id": 8,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 319,
+      "gw": 32,
+      "home_team_id": 17,
+      "away_team_id": 20,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 320,
+      "gw": 32,
+      "home_team_id": 18,
+      "away_team_id": 14,
+      "kickoff_time": "2027-04-17T15:00:00"
+    },
+    {
+      "id": 321,
+      "gw": 33,
+      "home_team_id": 4,
+      "away_team_id": 1,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 322,
+      "gw": 33,
+      "home_team_id": 2,
+      "away_team_id": 7,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 323,
+      "gw": 33,
+      "home_team_id": 5,
+      "away_team_id": 10,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 324,
+      "gw": 33,
+      "home_team_id": 6,
+      "away_team_id": 15,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 325,
+      "gw": 33,
+      "home_team_id": 9,
+      "away_team_id": 3,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 326,
+      "gw": 33,
+      "home_team_id": 13,
+      "away_team_id": 14,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 327,
+      "gw": 33,
+      "home_team_id": 16,
+      "away_team_id": 8,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 328,
+      "gw": 33,
+      "home_team_id": 17,
+      "away_team_id": 12,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 329,
+      "gw": 33,
+      "home_team_id": 18,
+      "away_team_id": 19,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 330,
+      "gw": 33,
+      "home_team_id": 20,
+      "away_team_id": 11,
+      "kickoff_time": "2027-04-24T15:00:00"
+    },
+    {
+      "id": 331,
+      "gw": 34,
+      "home_team_id": 1,
+      "away_team_id": 20,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 332,
+      "gw": 34,
+      "home_team_id": 3,
+      "away_team_id": 18,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 333,
+      "gw": 34,
+      "home_team_id": 7,
+      "away_team_id": 16,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 334,
+      "gw": 34,
+      "home_team_id": 8,
+      "away_team_id": 2,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 335,
+      "gw": 34,
+      "home_team_id": 10,
+      "away_team_id": 9,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 336,
+      "gw": 34,
+      "home_team_id": 11,
+      "away_team_id": 4,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 337,
+      "gw": 34,
+      "home_team_id": 12,
+      "away_team_id": 13,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 338,
+      "gw": 34,
+      "home_team_id": 14,
+      "away_team_id": 6,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 339,
+      "gw": 34,
+      "home_team_id": 15,
+      "away_team_id": 5,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 340,
+      "gw": 34,
+      "home_team_id": 19,
+      "away_team_id": 17,
+      "kickoff_time": "2027-05-01T15:00:00"
+    },
+    {
+      "id": 341,
+      "gw": 35,
+      "home_team_id": 4,
+      "away_team_id": 16,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 342,
+      "gw": 35,
+      "home_team_id": 5,
+      "away_team_id": 2,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 343,
+      "gw": 35,
+      "home_team_id": 3,
+      "away_team_id": 19,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 344,
+      "gw": 35,
+      "home_team_id": 9,
+      "away_team_id": 11,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 345,
+      "gw": 35,
+      "home_team_id": 10,
+      "away_team_id": 12,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 346,
+      "gw": 35,
+      "home_team_id": 13,
+      "away_team_id": 1,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 347,
+      "gw": 35,
+      "home_team_id": 15,
+      "away_team_id": 14,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 348,
+      "gw": 35,
+      "home_team_id": 17,
+      "away_team_id": 7,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 349,
+      "gw": 35,
+      "home_team_id": 18,
+      "away_team_id": 8,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 350,
+      "gw": 35,
+      "home_team_id": 20,
+      "away_team_id": 6,
+      "kickoff_time": "2027-05-08T15:00:00"
+    },
+    {
+      "id": 351,
+      "gw": 36,
+      "home_team_id": 1,
+      "away_team_id": 18,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 352,
+      "gw": 36,
+      "home_team_id": 2,
+      "away_team_id": 17,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 353,
+      "gw": 36,
+      "home_team_id": 6,
+      "away_team_id": 9,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 354,
+      "gw": 36,
+      "home_team_id": 7,
+      "away_team_id": 20,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 355,
+      "gw": 36,
+      "home_team_id": 8,
+      "away_team_id": 3,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 356,
+      "gw": 36,
+      "home_team_id": 11,
+      "away_team_id": 10,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 357,
+      "gw": 36,
+      "home_team_id": 12,
+      "away_team_id": 15,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 358,
+      "gw": 36,
+      "home_team_id": 14,
+      "away_team_id": 5,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 359,
+      "gw": 36,
+      "home_team_id": 16,
+      "away_team_id": 13,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 360,
+      "gw": 36,
+      "home_team_id": 19,
+      "away_team_id": 4,
+      "kickoff_time": "2027-05-15T15:00:00"
+    },
+    {
+      "id": 361,
+      "gw": 37,
+      "home_team_id": 4,
+      "away_team_id": 6,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 362,
+      "gw": 37,
+      "home_team_id": 5,
+      "away_team_id": 11,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 363,
+      "gw": 37,
+      "home_team_id": 3,
+      "away_team_id": 14,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 364,
+      "gw": 37,
+      "home_team_id": 9,
+      "away_team_id": 1,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 365,
+      "gw": 37,
+      "home_team_id": 10,
+      "away_team_id": 7,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 366,
+      "gw": 37,
+      "home_team_id": 13,
+      "away_team_id": 19,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 367,
+      "gw": 37,
+      "home_team_id": 15,
+      "away_team_id": 2,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 368,
+      "gw": 37,
+      "home_team_id": 17,
+      "away_team_id": 8,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 369,
+      "gw": 37,
+      "home_team_id": 18,
+      "away_team_id": 12,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 370,
+      "gw": 37,
+      "home_team_id": 20,
+      "away_team_id": 16,
+      "kickoff_time": "2027-05-23T15:00:00"
+    },
+    {
+      "id": 371,
+      "gw": 38,
+      "home_team_id": 1,
+      "away_team_id": 3,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 372,
+      "gw": 38,
+      "home_team_id": 2,
+      "away_team_id": 20,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 373,
+      "gw": 38,
+      "home_team_id": 6,
+      "away_team_id": 5,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 374,
+      "gw": 38,
+      "home_team_id": 7,
+      "away_team_id": 18,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 375,
+      "gw": 38,
+      "home_team_id": 8,
+      "away_team_id": 13,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 376,
+      "gw": 38,
+      "home_team_id": 11,
+      "away_team_id": 17,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 377,
+      "gw": 38,
+      "home_team_id": 12,
+      "away_team_id": 9,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 378,
+      "gw": 38,
+      "home_team_id": 14,
+      "away_team_id": 4,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 379,
+      "gw": 38,
+      "home_team_id": 16,
+      "away_team_id": 10,
+      "kickoff_time": "2027-05-30T16:00:00"
+    },
+    {
+      "id": 380,
+      "gw": 38,
+      "home_team_id": 19,
+      "away_team_id": 15,
+      "kickoff_time": "2027-05-30T16:00:00"
+    }
+  ]
+}
