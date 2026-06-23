@@ -10,7 +10,7 @@ import { useEntryId } from "./entry-id-context";
 export { useEntryId } from "./entry-id-context";
 
 export function EntryIdForm({
-  redirectTo = "/chat",
+  redirectTo = "/dashboard",
 }: {
   /** After save: open this path. Use a function for e.g. `/planner/123` without a query. */
   redirectTo?: string | ((entryId: string) => string);

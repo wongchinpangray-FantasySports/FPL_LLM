@@ -11,8 +11,8 @@ const inter = Inter({
 
 /** Root metadata fallback; `[locale]/layout` overrides per language. */
 export const metadata: Metadata = {
-  title: "FALEAGUE AI",
-  description: "AI Fantasy Premier League analyst.",
+  title: "Faleague The Football Hub",
+  description: "World Cup live, FPL tools, global football news, and AI.",
 };
 
 export default function RootLayout({

@@ -6,12 +6,29 @@ export type WcNewsRegion =
   | "APAC"
   | "GLOBAL";
 
+export type NewsCategory =
+  | "trending"
+  | "transfer"
+  | "epl"
+  | "worldcup"
+  | "leagues"
+  | "events";
+
+export type NewsLeague =
+  | "epl"
+  | "laliga"
+  | "serie_a"
+  | "bundesliga"
+  | "ligue_1";
+
 export type WcNewsFeedSource = {
   id: string;
   outlet: string;
   region: WcNewsRegion;
   lang: string;
   url: string;
+  category: NewsCategory;
+  league?: NewsLeague;
   /** Keep items whose title+summary match (for broad feeds). */
   filter?: RegExp;
   editorialBias?: boolean;
@@ -28,12 +45,14 @@ export type WcNewsItem = {
   region: WcNewsRegion;
   lang: string;
   feed_id: string;
+  category: NewsCategory;
+  league?: NewsLeague;
   editorial_score: number;
   is_editorial: boolean;
 };
 
-/** Google News + major outlets — editorial / analysis bias where possible. */
-export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
+/** Google News + major outlets — World Cup focus. */
+const WC_NEWS_FEEDS_RAW: Omit<WcNewsFeedSource, "category">[] = [
   {
     id: "gn-us-editorial",
     outlet: "Google News",
@@ -201,6 +220,125 @@ export const WC_NEWS_FEEDS: WcNewsFeedSource[] = [
     url: "https://rss.nytimes.com/services/xml/rss/nyt/Soccer.xml",
     filter: /world cup|worldcup|fifa|2026/i,
   },
+];
+
+const EXTRA_NEWS_FEEDS: WcNewsFeedSource[] = [
+  {
+    id: "gn-transfer-uk",
+    outlet: "Google News",
+    region: "UK",
+    lang: "en",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=football+transfer+news+OR+transfer+rumour&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
+    id: "gn-transfer-us",
+    outlet: "Google News",
+    region: "US",
+    lang: "en",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=soccer+transfer+news&hl=en-US&gl=US&ceid=US:en",
+  },
+  {
+    id: "sky-transfers",
+    outlet: "Sky Sports",
+    region: "UK",
+    lang: "en",
+    category: "transfer",
+    url: "https://www.skysports.com/rss/12040",
+    filter: /transfer|rummour|rumor|sign|deal|agree|bid/i,
+  },
+  {
+    id: "gn-epl-uk",
+    outlet: "Google News",
+    region: "UK",
+    lang: "en",
+    category: "epl",
+    league: "epl",
+    url: "https://news.google.com/rss/search?q=Premier+League+football&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
+    id: "gn-fpl-fantasy",
+    outlet: "Google News",
+    region: "UK",
+    lang: "en",
+    category: "epl",
+    league: "epl",
+    url: "https://news.google.com/rss/search?q=Fantasy+Premier+League+FPL&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
+    id: "bbc-epl",
+    outlet: "BBC Sport",
+    region: "UK",
+    lang: "en",
+    category: "epl",
+    league: "epl",
+    url: "https://feeds.bbci.co.uk/sport/football/premier-league/rss.xml",
+  },
+  {
+    id: "guardian-football",
+    outlet: "The Guardian",
+    region: "UK",
+    lang: "en",
+    category: "epl",
+    league: "epl",
+    url: "https://www.theguardian.com/football/rss",
+    filter: /premier league|fpl|fantasy premier|arsenal|liverpool|manchester|chelsea|tottenham|newcastle|aston villa/i,
+  },
+  {
+    id: "gn-laliga",
+    outlet: "Google News",
+    region: "EU",
+    lang: "en",
+    category: "leagues",
+    league: "laliga",
+    url: "https://news.google.com/rss/search?q=La+Liga+football&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
+    id: "gn-serie-a",
+    outlet: "Google News",
+    region: "EU",
+    lang: "en",
+    category: "leagues",
+    league: "serie_a",
+    url: "https://news.google.com/rss/search?q=Serie+A+football&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
+    id: "gn-bundesliga",
+    outlet: "Google News",
+    region: "EU",
+    lang: "de",
+    category: "leagues",
+    league: "bundesliga",
+    url: "https://news.google.com/rss/search?q=Bundesliga+Fu%C3%9Fball&hl=de&gl=DE&ceid=DE:de",
+  },
+  {
+    id: "gn-ligue-1",
+    outlet: "Google News",
+    region: "EU",
+    lang: "fr",
+    category: "leagues",
+    league: "ligue_1",
+    url: "https://news.google.com/rss/search?q=Ligue+1+football&hl=fr&gl=FR&ceid=FR:fr",
+  },
+  {
+    id: "gn-football-events",
+    outlet: "Google News",
+    region: "GLOBAL",
+    lang: "en",
+    category: "events",
+    url: "https://news.google.com/rss/search?q=football+tournament+OR+Champions+League+OR+Euro+2028&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+];
+
+export const WC_NEWS_FEEDS: WcNewsFeedSource[] = WC_NEWS_FEEDS_RAW.map((f) => ({
+  ...f,
+  category: "worldcup" as const,
+}));
+
+export const NEWS_FEEDS: WcNewsFeedSource[] = [
+  ...WC_NEWS_FEEDS,
+  ...EXTRA_NEWS_FEEDS,
 ];
 
 const FETCH_HEADERS = {
@@ -423,7 +561,7 @@ export async function fetchWcNewsItems(opts?: {
   const limit = Math.min(150, Math.max(20, opts?.limit ?? 100));
   const editorialOnly = opts?.editorialOnly ?? false;
 
-  const batches = await mapWithConcurrency(WC_NEWS_FEEDS, async (feed) => {
+  const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
       if (!xml) return [] as WcNewsItem[];
 
@@ -433,7 +571,13 @@ export async function fetchWcNewsItems(opts?: {
       for (const row of parsed) {
         const text = `${row.title} ${row.summary}`;
         if (feed.filter && !feed.filter.test(text)) continue;
-        if (!feed.filter && !feed.editorialBias && !WC_RE.test(text)) continue;
+        if (
+          feed.category === "worldcup" &&
+          !feed.filter &&
+          !feed.editorialBias &&
+          !WC_RE.test(text)
+        )
+          continue;
 
         const score = editorialScore(row.title, row.summary, feed);
         if (editorialOnly && score < 2) continue;
@@ -450,6 +594,8 @@ export async function fetchWcNewsItems(opts?: {
           region: feed.region,
           lang: feed.lang,
           feed_id: feed.id,
+          category: feed.category,
+          league: feed.league,
           editorial_score: score,
           is_editorial: score >= 3,
         });

@@ -132,7 +132,7 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
   const [wcResult, newsResult, fplResult] = await Promise.allSettled([
     loadWcHub(locale),
-    getWcNewsForApi({ limit: 6, editorialOnly: false }),
+    getWcNewsForApi({ limit: 8, editorialOnly: false, category: "trending" }),
     getMiniGameweekContext(),
   ]);
 

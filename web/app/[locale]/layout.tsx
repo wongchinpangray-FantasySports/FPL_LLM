@@ -3,12 +3,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { Link } from "@/i18n/navigation";
-import { SiteNav } from "@/components/site-nav";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { LocaleHtmlLang } from "@/components/locale-html-lang";
-import { AuthNav } from "@/components/auth/auth-nav";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
 
 type Props = {
   children: React.ReactNode;
@@ -35,44 +31,18 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   setRequestLocale(locale);
-  // Explicit locale avoids falling back to defaultLocale (en) when middleware
-  // locale is missing from this RSC request (e.g. on Vercel preview).
   const messages = await getMessages({ locale });
   const t = await getTranslations({ locale, namespace: "footer" });
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleHtmlLang locale={locale} />
-      <header className="sticky top-0 z-50 border-b border-border bg-background/75 backdrop-blur-xl">
-        <div className="container flex flex-wrap items-center justify-between gap-3 py-2.5 sm:gap-4 md:py-4">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <Link
-              href="/"
-              className="group flex items-center gap-2.5 font-semibold tracking-tight text-foreground"
-            >
-              <span
-                className="h-2 w-2 shrink-0 rounded-full bg-brand-accent shadow-[0_0_14px_rgba(0,255,135,0.85)] transition-transform group-hover:scale-110"
-                aria-hidden
-              />
-              <span className="text-sm sm:text-base">
-                FALEAGUE
-                <span className="font-normal text-muted-foreground"> · Football Hub</span>
-              </span>
-            </Link>
-            <SiteNav />
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <LanguageSwitcher />
-          </div>
-          <AuthNav />
-        </div>
-      </header>
-      <main className="container flex w-full flex-1 flex-col py-8 md:py-10 lg:py-12">
+      <SiteHeader />
+      <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
         {children}
       </main>
       <footer className="border-t border-border bg-background/40">
-        <div className="container py-6 text-xs text-muted-foreground sm:py-10">
+        <div className="container py-5 text-xs text-muted-foreground md:py-8">
           <p>{t("legal")}</p>
         </div>
       </footer>

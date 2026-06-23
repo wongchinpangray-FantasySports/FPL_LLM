@@ -1,11 +1,11 @@
 {
   "meta": {
-    "title": "FALEAGUE · Football Hub",
-    "description": "世界杯、FPL 工具、足球新闻与 AI —— 你的足球中心。"
+    "title": "Faleague The Football Hub",
+    "description": "世界杯、FPL 工具、全球足球新闻与 AI —— 你的足球中心。"
   },
   "nav": {
     "home": "首页",
-    "chat": "对话",
+    "chat": "AI 对话",
     "fpl": "FPL",
     "dashboard": "仪表盘",
     "manager": "经理",
@@ -19,7 +19,11 @@
     "inbox": "收件箱",
     "account": "账户",
     "signOut": "退出",
-    "ariaMain": "主导航"
+    "ariaMain": "主导航",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "menuTitle": "菜单",
+    "fplTools": "FPL 工具"
   },
   "footer": {
     "legal": "非官方 · 与英超联赛或 FPL 无关联。"
@@ -42,7 +46,8 @@
     "ctaWorldCup": "世界杯",
     "ctaFpl": "我的 FPL",
     "ctaNews": "新闻",
-    "ctaChat": "问 AI",
+    "ctaTransfers": "转会",
+    "headlinesTitle": "头条",
     "todayTitle": "今日",
     "todayResult": "完场",
     "todayUpcoming": "即将",
@@ -847,6 +852,31 @@
   },
   "newsIndex": {
     "title": "新闻",
-    "summary": "来自全球 RSS 的世界杯与足球评论 — 可按地区与编辑质量筛选。"
+    "summary": "全球足球热点 —— 转会、英超、各大联赛、赛事与世界杯。",
+    "catTrending": "热点",
+    "catTransfer": "转会",
+    "catEpl": "英超 / FPL",
+    "catWorldCup": "世界杯",
+    "catLeagues": "联赛",
+    "catEvents": "赛事"
+  },
+  "fplHub": {
+    "title": "英超范特西 FPL",
+    "description": "绑定球队、规划转会，并向 AI 分析师提问。",
+    "backHome": "← 首页",
+    "entryTitle": "你的球队",
+    "entryHint": "Entry ID 见 fantasy.premierleague.com 积分页 URL",
+    "chatTitle": "AI 对话",
+    "chatBody": "队长、转会与阵容问题，结合实时 FPL 数据。",
+    "dashboard": "仪表盘",
+    "dashboardBody": "阵容快照、排名与本轮积分。",
+    "planner": "规划器",
+    "plannerBody": "跨轮次规划转会与芯片策略。",
+    "manager": "经理",
+    "managerBody": "球队价值、转会与赛季历史。",
+    "players": "球员",
+    "playersBody": "搜索每位球员的数据、状态与 xP。",
+    "mini": "Mini 5",
+    "miniBody": "每轮选五名球员。"
   }
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { WcNewsItem, WcNewsRegion } from "@/lib/wc/news-feeds";
+import type { NewsCategory, WcNewsItem, WcNewsRegion } from "@/lib/wc/news-feeds";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
 
@@ -36,6 +36,7 @@ function NewsCard({
     editorialBadge: string;
     readMore: string;
     regions: Record<string, string>;
+    categories?: Record<string, string>;
   };
 }) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -74,6 +75,11 @@ function NewsCard({
             {item.is_editorial ? (
               <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
                 {labels.editorialBadge}
+              </span>
+            ) : null}
+            {labels.categories?.[item.category] ? (
+              <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-300/90">
+                {labels.categories[item.category]}
               </span>
             ) : null}
             <span className="text-[10px] uppercase text-muted-foreground/80">{item.lang}</span>
@@ -118,9 +124,19 @@ function NewsCard({
 type NewsPayload = {
   items: WcNewsItem[];
   total: number;
+  category?: string;
   disclaimer: string;
   error?: string;
 };
+
+const CATEGORY_TABS: NewsCategory[] = [
+  "trending",
+  "transfer",
+  "epl",
+  "worldcup",
+  "leagues",
+  "events",
+];
 
 export function WcNewsPanel({
   locale,
@@ -129,12 +145,14 @@ export function WcNewsPanel({
   detail,
   moreLabel,
   labels,
+  defaultCategory = "trending",
 }: {
   locale: string;
   title: string;
   summary: string;
   detail?: string;
   moreLabel: string;
+  defaultCategory?: NewsCategory;
   labels: {
     filterRegion: string;
     regionAll: string;
@@ -146,8 +164,10 @@ export function WcNewsPanel({
     refresh: string;
     count: string;
     regions: Record<string, string>;
+    categories: Record<string, string>;
   };
 }) {
+  const [category, setCategory] = useState<NewsCategory>(defaultCategory);
   const [region, setRegion] = useState("ALL");
   const [editorialOnly, setEditorialOnly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -155,17 +175,23 @@ export function WcNewsPanel({
   const [data, setData] = useState<NewsPayload | null>(null);
 
   const load = useCallback(
-    async (regionFilter: string, editorial: boolean, refresh = false) => {
+    async (
+      categoryFilter: NewsCategory,
+      regionFilter: string,
+      editorial: boolean,
+      refresh = false,
+    ) => {
       setLoading(true);
       setError(null);
       try {
         const q = new URLSearchParams({
+          category: categoryFilter,
           region: regionFilter,
-          limit: "80",
+          limit: "60",
         });
         if (editorial) q.set("editorial", "1");
         if (refresh) q.set("refresh", "1");
-        const res = await fetch(`/api/worldcup/news?${q.toString()}`);
+        const res = await fetch(`/api/news?${q.toString()}`);
         const json = (await res.json()) as NewsPayload;
         if (!res.ok) throw new Error(json.error ?? "Failed to load news");
         setData(json);
@@ -179,8 +205,12 @@ export function WcNewsPanel({
   );
 
   useEffect(() => {
-    void load(region, editorialOnly);
-  }, [load, region, editorialOnly]);
+    setCategory(defaultCategory);
+  }, [defaultCategory]);
+
+  useEffect(() => {
+    void load(category, region, editorialOnly);
+  }, [load, category, region, editorialOnly]);
 
   const regionOptions = [
     { value: "ALL", label: labels.regionAll },
@@ -196,49 +226,66 @@ export function WcNewsPanel({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <WcSectionIntro
-          title={title}
-          summary={summary}
-          detail={detail}
-          moreLabel={moreLabel}
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={editorialOnly}
-              onChange={(e) => setEditorialOnly(e.target.checked)}
-              className="rounded border-border bg-popover"
-            />
-            {labels.editorialOnly}
-          </label>
-          <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-            <span>{labels.filterRegion}</span>
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="rounded-md border border-border bg-popover/80 px-2 py-1.5 text-sm text-foreground"
-            >
-              {regionOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+      <WcSectionIntro
+        title={title}
+        summary={summary}
+        detail={detail}
+        moreLabel={moreLabel}
+      />
+
+      <div className="flex gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {CATEGORY_TABS.map((tab) => (
           <button
+            key={tab}
             type="button"
-            onClick={() => void load(region, editorialOnly, true)}
-            disabled={loading}
+            onClick={() => setCategory(tab)}
             className={cn(
-              "rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground/70 transition-colors",
-              "hover:border-brand-accent/40 hover:text-foreground disabled:opacity-50",
+              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              category === tab
+                ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
+                : "border-border bg-card text-muted-foreground hover:text-foreground",
             )}
           >
-            {labels.refresh}
+            {labels.categories[tab] ?? tab}
           </button>
-        </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={editorialOnly}
+            onChange={(e) => setEditorialOnly(e.target.checked)}
+            className="rounded border-border bg-popover"
+          />
+          {labels.editorialOnly}
+        </label>
+        <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+          <span>{labels.filterRegion}</span>
+          <select
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            className="rounded-md border border-border bg-popover/80 px-2 py-1.5 text-sm text-foreground"
+          >
+            {regionOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => void load(category, region, editorialOnly, true)}
+          disabled={loading}
+          className={cn(
+            "rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground/70 transition-colors",
+            "hover:border-brand-accent/40 hover:text-foreground disabled:opacity-50",
+          )}
+        >
+          {labels.refresh}
+        </button>
       </div>
 
       {loading ? (
@@ -269,6 +316,7 @@ export function WcNewsPanel({
                   editorialBadge: labels.editorialBadge,
                   readMore: labels.readMore,
                   regions: labels.regions,
+                  categories: labels.categories,
                 }}
               />
             ))}

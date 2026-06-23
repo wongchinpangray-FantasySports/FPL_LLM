@@ -175,7 +175,7 @@ function TodayTicker({
           {labels.fplDeadline}
         </span>
         <span>
-          {labels.fplGw.replace("{gw}", String(fpl.gw))}
+          {labels.fplGw}
           {fpl.deadline ? ` · ${fmtDeadline(fpl.deadline, locale)}` : ""}
         </span>
       </Link>,
@@ -836,8 +836,6 @@ function ExploreSection({
 export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
-  const { entryId } = useEntryId();
-  const fplHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
   const [data, setData] = useState<HomeHubData | null>(initialData ?? null);
   const [hubError, setHubError] = useState<string | null>(null);
   const [hubLoading, setHubLoading] = useState(!initialData);
@@ -891,31 +889,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   };
 
   return (
-    <div className="flex flex-col gap-12 md:gap-16">
-      <section className="flex max-w-3xl flex-col items-start gap-6">
-        <span className="rounded-full border border-brand-accent/25 bg-brand-accent/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-          {t("badge")}
-        </span>
-        <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-4xl md:text-5xl md:leading-[1.05]">
-          {t("titleLead")}{" "}
-          <span className="bg-gradient-to-r from-brand-accent to-emerald-300 bg-clip-text text-transparent">
-            {t("titleAccent")}
-          </span>
-        </h1>
-        <p className="max-w-2xl text-base leading-relaxed text-foreground/70 md:text-lg">
-          {t("subtitle")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <HubChip href="/worldcup" variant="accent">
-            {t("ctaWorldCup")}
-          </HubChip>
-          <HubChip href={fplHref}>{t("ctaFpl")}</HubChip>
-          <HubChip href="/news">{t("ctaNews")}</HubChip>
-          <HubChip href="/chat">{t("ctaChat")}</HubChip>
-        </div>
-      </section>
-
-      <HubSection title={t("todayTitle")}>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 md:gap-10">
+      <section className="flex flex-col gap-4">
         {hubLoading && !data ? (
           <div className="h-12 animate-pulse rounded-xl border border-border bg-card" />
         ) : (
@@ -928,106 +903,59 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
                 result: t("todayResult"),
                 upcoming: t("todayUpcoming"),
                 fplDeadline: t("todayFpl"),
-                fplGw: t("todayFplGw"),
+                fplGw: t("todayFplGw", { gw: String(hub.today.fpl.gw ?? "—") }),
                 noItems: t("todayEmpty"),
               }}
             />
             {hubError ? (
-              <p className="mt-2 text-xs text-muted-foreground">{hubError}</p>
+              <p className="text-xs text-muted-foreground">{hubError}</p>
             ) : null}
           </>
         )}
-      </HubSection>
+      </section>
 
-      <YourFootballSection
-        labels={{
-          title: t("yourFootballTitle"),
-          guestTitle: t("yourFootballGuestTitle"),
-          guestBody: t("yourFootballGuestBody"),
-          signUp: t("yourFootballSignUp"),
-          signIn: t("yourFootballSignIn"),
-          inboxCta: t("yourFootballInbox"),
-          empty: t("yourFootballEmpty"),
-          loading: t("loading"),
-          unread: t("yourFootballUnread"),
-        }}
-      />
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <HubChip href="/worldcup" variant="accent">
+          {t("ctaWorldCup")}
+        </HubChip>
+        <HubChip href="/fpl">{t("ctaFpl")}</HubChip>
+        <HubChip href="/news">{t("ctaNews")}</HubChip>
+        <HubChip href="/news?category=transfer">{t("ctaTransfers")}</HubChip>
+      </section>
 
-      <WorldCupSection
-        wc={hub.wc}
-        locale={locale}
-        labels={{
-          eyebrow: t("wcEyebrow"),
-          title: t("wcTitle"),
-          description: t("wcDescription"),
-          allMatches: t("wcAllMatches"),
-          allTables: t("wcAllTables"),
-          scorers: t("wcScorers"),
-          assists: t("wcAssists"),
-          group: t("wcGroup"),
-          team: t("wcTeam"),
-          pts: t("wcPts"),
-          empty: t("wcEmpty"),
-        }}
-      />
-
-      <NewsSection
-        items={hub.news}
-        labels={{
-          eyebrow: t("newsEyebrow"),
-          title: t("newsTitle"),
-          description: t("newsDescription"),
-          allNews: t("newsAll"),
-          readMore: t("newsReadMore"),
-          empty: t("newsEmpty"),
-        }}
-      />
-
-      <FplSection
-        todayFpl={hub.today.fpl}
-        locale={locale}
-        labels={{
-          eyebrow: t("fplEyebrow"),
-          title: t("fplTitle"),
-          description: t("fplDescription"),
-          entryHint: t("entryHint"),
-          deadline: t("fplDeadline"),
-          gw: t("fplGw"),
-          snapshotLoading: t("fplSnapshotLoading"),
-          snapshotRank: t("fplSnapshotRank"),
-          snapshotPoints: t("fplSnapshotPoints"),
-          snapshotGw: t("fplSnapshotGw"),
-          openDashboard: t("fplOpenDashboard"),
-          openPlanner: t("fplOpenPlanner"),
-          shortcuts: t("fplShortcuts"),
-        }}
-      />
-
-      <ExploreSection
-        labels={{
-          title: t("exploreTitle"),
-          tiles: {
-            chat: { title: t("exploreChatTitle"), body: t("exploreChatBody") },
-            mini: { title: t("exploreMiniTitle"), body: t("exploreMiniBody") },
-            players: {
-              title: t("explorePlayersTitle"),
-              body: t("explorePlayersBody"),
-            },
-            scouting: {
-              title: t("exploreScoutingTitle"),
-              body: t("exploreScoutingBody"),
-            },
-            matches: {
-              title: t("exploreMatchesTitle"),
-              body: t("exploreMatchesBody"),
-            },
-            tables: {
-              title: t("exploreTablesTitle"),
-              body: t("exploreTablesBody"),
-            },
-          },
-        }}
-      />
+      {hub.news.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-foreground">{t("headlinesTitle")}</h2>
+            <Link
+              href="/news"
+              className="text-xs font-medium text-brand-accent no-underline hover:underline"
+            >
+              {t("newsAll")}
+            </Link>
+          </div>
+          <ul className="divide-y divide-border rounded-xl border border-border bg-card/40">
+            {hub.news.slice(0, 6).map((item) => (
+              <li key={item.id}>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block px-4 py-3 no-underline transition-colors hover:bg-muted/40"
+                >
+                  <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {item.outlet}
+                    {item.category ? ` · ${item.category}` : ""}
+                  </p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

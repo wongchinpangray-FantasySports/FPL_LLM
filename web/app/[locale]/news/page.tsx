@@ -1,9 +1,27 @@
 import { NewsPageContent } from "@/components/news/news-page-content";
+import type { NewsCategory } from "@/lib/wc/news-feeds";
 
-export default function NewsPage() {
+const CATEGORIES = new Set<NewsCategory>([
+  "trending",
+  "transfer",
+  "epl",
+  "worldcup",
+  "leagues",
+  "events",
+]);
+
+type Props = {
+  searchParams?: { category?: string };
+};
+
+export default function NewsPage({ searchParams }: Props) {
+  const raw = searchParams?.category?.toLowerCase();
+  const category =
+    raw && CATEGORIES.has(raw as NewsCategory) ? (raw as NewsCategory) : "trending";
+
   return (
     <div className="flex flex-col gap-4">
-      <NewsPageContent />
+      <NewsPageContent defaultCategory={category} />
     </div>
   );
 }

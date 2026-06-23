@@ -1,9 +1,10 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import type { NewsCategory } from "@/lib/wc/news-feeds";
 import { WcNewsPanel } from "@/components/worldcup/wc-news-panel";
 
-export function NewsPageContent() {
+export function NewsPageContent({ defaultCategory = "trending" }: { defaultCategory?: NewsCategory }) {
   const locale = useLocale();
   const t = useTranslations("worldcup");
   const tIndex = useTranslations("newsIndex");
@@ -15,6 +16,7 @@ export function NewsPageContent() {
       summary={tIndex("summary")}
       detail={t("newsDetail")}
       moreLabel={t("moreDetail")}
+      defaultCategory={defaultCategory}
       labels={{
         filterRegion: t("newsFilterRegion"),
         regionAll: t("newsRegionAll"),
@@ -32,6 +34,14 @@ export function NewsPageContent() {
           LATAM: t("newsRegionLatam"),
           APAC: t("newsRegionApac"),
           GLOBAL: t("newsRegionGlobal"),
+        },
+        categories: {
+          trending: tIndex("catTrending"),
+          transfer: tIndex("catTransfer"),
+          epl: tIndex("catEpl"),
+          worldcup: tIndex("catWorldCup"),
+          leagues: tIndex("catLeagues"),
+          events: tIndex("catEvents"),
         },
       }}
     />

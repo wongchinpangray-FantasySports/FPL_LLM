@@ -1,5 +1,9 @@
 import { getServerSupabase } from "@/lib/supabase";
-import { fetchWcNewsItems, type WcNewsItem } from "@/lib/wc/news-feeds";
+import {
+  fetchWcNewsItems,
+  type NewsCategory,
+  type WcNewsItem,
+} from "@/lib/wc/news-feeds";
 
 const CACHE_ID = "global";
 const CACHE_MS = 20 * 60 * 1000;
@@ -7,18 +11,36 @@ const CACHE_MS = 20 * 60 * 1000;
 let memCache: { at: number; items: WcNewsItem[]; fetched_at: string } | null =
   null;
 
-function filterItems(
-  items: WcNewsItem[],
-  editorialOnly: boolean,
-  limit: number,
-): WcNewsItem[] {
-  let out = items;
-  if (editorialOnly) out = out.filter((i) => i.editorial_score >= 2);
-  return out.slice(0, limit);
+function normalizeItem(raw: WcNewsItem): WcNewsItem {
+  return {
+    ...raw,
+    image_url: raw.image_url ?? null,
+    category: raw.category ?? "trending",
+  };
 }
 
-function normalizeItem(raw: WcNewsItem): WcNewsItem {
-  return { ...raw, image_url: raw.image_url ?? null };
+function filterItems(
+  items: WcNewsItem[],
+  opts: {
+    editorialOnly: boolean;
+    limit: number;
+    category?: NewsCategory | "ALL";
+  },
+): WcNewsItem[] {
+  let out = items.map(normalizeItem);
+  if (opts.category && opts.category !== "ALL") {
+    if (opts.category === "trending") {
+      out = [...out].sort((a, b) => {
+        const ta = a.published_at ? Date.parse(a.published_at) : 0;
+        const tb = b.published_at ? Date.parse(b.published_at) : 0;
+        return tb - ta;
+      });
+    } else {
+      out = out.filter((i) => i.category === opts.category);
+    }
+  }
+  if (opts.editorialOnly) out = out.filter((i) => i.editorial_score >= 2);
+  return out.slice(0, opts.limit);
 }
 
 export async function loadWcNewsFromDb(): Promise<{
@@ -69,6 +91,7 @@ export async function getWcNewsForApi(opts?: {
   limit?: number;
   editorialOnly?: boolean;
   refresh?: boolean;
+  category?: NewsCategory | "ALL";
 }): Promise<{
   items: WcNewsItem[];
   cached: boolean;
@@ -77,11 +100,13 @@ export async function getWcNewsForApi(opts?: {
 }> {
   const editorialOnly = opts?.editorialOnly ?? false;
   const limit = Math.min(150, Math.max(10, opts?.limit ?? 100));
+  const category = opts?.category ?? "ALL";
+  const filterOpts = { editorialOnly, limit, category };
   const now = Date.now();
 
   if (!opts?.refresh && memCache && now - memCache.at < CACHE_MS) {
     return {
-      items: filterItems(memCache.items, editorialOnly, limit),
+      items: filterItems(memCache.items, filterOpts),
       cached: true,
       fetched_at: memCache.fetched_at,
       source: "memory",
@@ -95,7 +120,7 @@ export async function getWcNewsForApi(opts?: {
       if (dbAge < CACHE_MS) {
         memCache = { at: now, items: db.items, fetched_at: db.fetched_at };
         return {
-          items: filterItems(db.items, editorialOnly, limit),
+          items: filterItems(db.items, filterOpts),
           cached: true,
           fetched_at: db.fetched_at,
           source: "database",
@@ -131,7 +156,7 @@ export async function getWcNewsForApi(opts?: {
   }
 
   return {
-    items: filterItems(items, editorialOnly, limit),
+    items: filterItems(items, filterOpts),
     cached: source !== "live",
     fetched_at,
     source,
