@@ -24,7 +24,7 @@ export function WcFlag({
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
-        alt={label}
+        alt=""
         width={size}
         height={Math.round(size * 0.75)}
         title={label}
@@ -36,16 +36,13 @@ export function WcFlag({
     );
   }
 
+  // No visible fallback badge — country name is shown beside the flag slot.
   return (
     <span
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-sm bg-muted text-[9px] font-bold uppercase text-muted-foreground",
-        className,
-      )}
+      className={cn("inline-block shrink-0", className)}
       style={{ width: size, height: Math.round(size * 0.75) }}
       title={label}
-    >
-      {code.slice(0, 3)}
-    </span>
+      aria-hidden
+    />
   );
 }
