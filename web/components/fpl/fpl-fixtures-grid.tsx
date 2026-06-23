@@ -2,22 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fdrClass } from "@/lib/fpl/fdr";
-import type { FplFdrRow, FplGwBlock } from "@/lib/fpl/fixtures-grid";
+import type { FplFixtureRow, FplGwBlock } from "@/lib/fpl/fixtures-grid";
 
 function FixtureCell({
   fs,
   isDgw,
   dgwLabel,
 }: {
-  fs: FplFdrRow["fixtures"];
+  fs: FplFixtureRow["fixtures"];
   isDgw: boolean;
   dgwLabel: string;
 }) {
   return (
     <div
       className={cn(
-        "flex min-h-[2.75rem] min-w-[4.25rem] flex-col gap-1 rounded-md border border-border px-1.5 py-1 text-center text-xs",
+        "flex min-h-[2.75rem] min-w-[4.25rem] flex-col gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-1 text-center text-xs",
         isDgw &&
           "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_rgba(250,204,21,0.35)]",
       )}
@@ -25,14 +24,13 @@ function FixtureCell({
       {fs.map((f) => (
         <div
           key={f.fixture_id}
-          className={cn("rounded-md border px-1.5 py-0.5", fdrClass(f.fdr))}
-          title={`FDR ${f.fdr} vs ${f.opp_name}${f.home ? " (H)" : " (A)"}`}
+          className="rounded-md border border-border/80 bg-card px-1.5 py-0.5"
+          title={`${f.home ? "Home" : "Away"} vs ${f.opp_name}`}
         >
           <div className="font-semibold">
             {f.opp}
             {!f.home ? " (A)" : ""}
           </div>
-          <div className="text-[10px] text-foreground/90">FDR {f.fdr}</div>
         </div>
       ))}
       {isDgw && fs.length >= 2 ? (
@@ -52,7 +50,7 @@ function TeamRow({
   onToggle,
   labels,
 }: {
-  row: FplFdrRow;
+  row: FplFixtureRow;
   gwHeaders: number[];
   dgwKeys: Set<string>;
   expanded: boolean;
@@ -107,7 +105,10 @@ function TeamRow({
                   key={gw}
                   className="flex min-w-[3rem] shrink-0 flex-col items-center justify-center rounded border border-border/60 px-2 py-1.5 text-center text-muted-foreground/80"
                 >
-                  <div className="text-[9px] uppercase">{labels.gwLabel}{gw}</div>
+                  <div className="text-[9px] uppercase">
+                    {labels.gwLabel}
+                    {gw}
+                  </div>
                   —
                 </div>
               );
@@ -119,24 +120,20 @@ function TeamRow({
   );
 }
 
-export function FplFdrGrid({
+export function FplFixturesGrid({
   rows,
   gwBlocks,
   dgwKeys,
   title,
   summary,
-  detail,
-  moreLabel,
   hint,
   labels,
 }: {
-  rows: FplFdrRow[];
+  rows: FplFixtureRow[];
   gwBlocks: FplGwBlock[];
   dgwKeys: string[];
   title: string;
   summary?: string;
-  detail?: string;
-  moreLabel?: string;
   hint?: string;
   labels: {
     team: string;
@@ -170,16 +167,6 @@ export function FplFdrGrid({
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
             {title}
           </h2>
-          {detail ? (
-            <details className="mt-2 text-sm text-muted-foreground">
-              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                <span className="underline decoration-dotted underline-offset-2">
-                  {moreLabel}
-                </span>
-              </summary>
-              <p className="mt-2 leading-relaxed">{detail}</p>
-            </details>
-          ) : null}
         </div>
         {hint ? (
           <span className="text-xs text-muted-foreground">{hint}</span>

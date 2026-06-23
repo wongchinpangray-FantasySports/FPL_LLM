@@ -1,30 +1,23 @@
 import {
-  buildFplFdrLookup,
-  buildH2HStore,
-  loadTeamStrengthByCode,
-  lookupFplFdr,
-} from "@/lib/fpl/fdr";
-import {
   getEpl2627Fixtures,
   getEpl2627Season,
   getEpl2627Teams,
 } from "@/lib/fpl/epl-2627";
 import { FPL_LAST_SEASON_GW } from "@/lib/dashboard";
 
-export type FplFdrCell = {
+export type FplFixtureCell = {
   fixture_id: number;
   gw: number;
   opp: string;
   opp_name: string;
   home: boolean;
-  fdr: number;
 };
 
-export type FplFdrRow = {
+export type FplFixtureRow = {
   team_id: number;
   short: string;
   name: string;
-  fixtures: FplFdrCell[];
+  fixtures: FplFixtureCell[];
 };
 
 export type FplGwBlock = {
@@ -38,7 +31,7 @@ export type FplFixtureGrid = {
   endGw: number;
   gwHeaders: number[];
   gwBlocks: FplGwBlock[];
-  rows: FplFdrRow[];
+  rows: FplFixtureRow[];
   dgwKeys: string[];
   fplSeason: string;
 };
@@ -81,7 +74,7 @@ function buildDoubleGameweekKeys(
   return [...counts.entries()].filter(([, n]) => n >= 2).map(([k]) => k);
 }
 
-export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
+export function buildFplFixtureGrid(): FplFixtureGrid {
   const season = getEpl2627Season();
   const teams = getEpl2627Teams();
   const fixtures = getEpl2627Fixtures();
@@ -93,30 +86,16 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
     (teams.get(a)?.short ?? "").localeCompare(teams.get(b)?.short ?? ""),
   );
 
-  const [h2hStore, strengths] = await Promise.all([
-    buildH2HStore(),
-    loadTeamStrengthByCode(),
-  ]);
-  const fdrLookup = buildFplFdrLookup(
-    fixtures.map((f) => ({
-      id: f.id,
-      home: teams.get(f.home_team_id)!.code,
-      away: teams.get(f.away_team_id)!.code,
-    })),
-    h2hStore,
-    strengths,
-  );
-
   const dgwKeys = buildDoubleGameweekKeys(fixtures, teamIds, startGw, endGw);
   const gwHeaders = Array.from(
     { length: endGw - startGw + 1 },
     (_, i) => startGw + i,
   );
 
-  const rows: FplFdrRow[] = [];
+  const rows: FplFixtureRow[] = [];
   for (const teamId of teamIds) {
     const team = teams.get(teamId);
-    const cells: FplFdrCell[] = [];
+    const cells: FplFixtureCell[] = [];
 
     for (const fx of fixtures) {
       const isHome = fx.home_team_id === teamId;
@@ -131,7 +110,6 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
         opp: opp?.short ?? String(oppId),
         opp_name: opp?.name ?? String(oppId),
         home: isHome,
-        fdr: lookupFplFdr(fdrLookup, team!.code, fx.id),
       });
     }
 
