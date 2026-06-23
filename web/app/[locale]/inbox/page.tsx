@@ -1,13 +1,13 @@
 import { getTranslations } from "next-intl/server";
+import { PageShell } from "@/components/page-shell";
 import { InboxPanel } from "@/components/inbox/inbox-panel";
 
 export default async function InboxPage() {
   const t = await getTranslations("inbox");
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+    <PageShell title={t("title")} width="4xl">
       <InboxPanel />
-    </div>
+    </PageShell>
   );
 }

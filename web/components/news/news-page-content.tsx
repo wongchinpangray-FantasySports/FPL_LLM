@@ -12,8 +12,8 @@ export function NewsPageContent({ defaultCategory = "trending" }: { defaultCateg
   return (
     <WcNewsPanel
       locale={locale}
-      title={tIndex("title")}
-      summary={tIndex("summary")}
+      title=""
+      summary=""
       detail={t("newsDetail")}
       moreLabel={t("moreDetail")}
       defaultCategory={defaultCategory}

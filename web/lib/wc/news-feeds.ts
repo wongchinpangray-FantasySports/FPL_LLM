@@ -249,6 +249,72 @@ const EXTRA_NEWS_FEEDS: WcNewsFeedSource[] = [
     filter: /transfer|rummour|rumor|sign|deal|agree|bid/i,
   },
   {
+    id: "bbc-football-transfers",
+    outlet: "BBC Sport",
+    region: "UK",
+    lang: "en",
+    category: "transfer",
+    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
+    filter: /transfer|sign|deal|loan|bid|fee|move|join/i,
+  },
+  {
+    id: "guardian-transfers",
+    outlet: "The Guardian",
+    region: "UK",
+    lang: "en",
+    category: "transfer",
+    url: "https://www.theguardian.com/football/transfers/rss",
+  },
+  {
+    id: "espn-transfer",
+    outlet: "ESPN",
+    region: "US",
+    lang: "en",
+    category: "transfer",
+    url: "https://www.espn.com/espn/rss/soccer/news",
+    filter: /transfer|sign|deal|loan|move|fee/i,
+  },
+  {
+    id: "gn-transfer-es",
+    outlet: "Google News",
+    region: "EU",
+    lang: "es",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=f%C3%BAtbol+fichajes+mercado&hl=es&gl=ES&ceid=ES:es",
+  },
+  {
+    id: "gn-transfer-it",
+    outlet: "Google News",
+    region: "EU",
+    lang: "it",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=calciomercato&hl=it&gl=IT&ceid=IT:it",
+  },
+  {
+    id: "gn-transfer-de",
+    outlet: "Google News",
+    region: "EU",
+    lang: "de",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=Fu%C3%9Fball+Transfer+Ger%C3%BCchte&hl=de&gl=DE&ceid=DE:de",
+  },
+  {
+    id: "gn-transfer-fr",
+    outlet: "Google News",
+    region: "EU",
+    lang: "fr",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=mercato+football+transfert&hl=fr&gl=FR&ceid=FR:fr",
+  },
+  {
+    id: "gn-transfer-global",
+    outlet: "Google News",
+    region: "GLOBAL",
+    lang: "en",
+    category: "transfer",
+    url: "https://news.google.com/rss/search?q=football+transfer+news+when:7d&hl=en-GB&gl=GB&ceid=GB:en",
+  },
+  {
     id: "gn-epl-uk",
     outlet: "Google News",
     region: "UK",
@@ -398,22 +464,23 @@ function extractLink(block: string): string {
 }
 
 function extractImageUrl(block: string, rawSummary: string): string | null {
-  const thumb = block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
-  if (thumb?.[1]?.startsWith("http")) return thumb[1];
+  const haystacks = [block, rawSummary];
+  const patterns = [
+    /<media:thumbnail[^>]+url=["']([^"']+)["']/gi,
+    /<media:content[^>]+url=["']([^"']+)["'][^>]*(?:medium=["']image|type=["']image)/gi,
+    /<media:content[^>]+(?:medium=["']image|type=["']image)[^>]+url=["']([^"']+)["']/gi,
+    /<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image[^"']*["']/gi,
+    /<img[^>]+src=["']([^"']+)["']/gi,
+  ];
 
-  const media = block.match(/<media:content[^>]+url=["']([^"']+)["']/i);
-  if (media?.[1]?.startsWith("http")) return media[1];
-
-  const enclosure = block.match(
-    /<enclosure[^>]+url=["']([^"']+)["'][^>]*(?:type=["']image|medium=["']image)/i,
-  );
-  if (enclosure?.[1]?.startsWith("http")) return enclosure[1];
-
-  const img =
-    rawSummary.match(/<img[^>]+src=["']([^"']+)["']/i) ??
-    block.match(/<img[^>]+src=["']([^"']+)["']/i);
-  const src = img?.[1];
-  if (src?.startsWith("http")) return src;
+  for (const hay of haystacks) {
+    for (const re of patterns) {
+      re.lastIndex = 0;
+      const m = re.exec(hay);
+      const url = m?.[1]?.trim();
+      if (url?.startsWith("http")) return url;
+    }
+  }
 
   return null;
 }

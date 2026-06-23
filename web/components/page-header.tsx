@@ -1,5 +1,5 @@
 /**
- * Consistent title block for inner pages (chat, optional sections).
+ * Compact title block — prefer PageShell for new pages.
  */
 export function PageHeader({
   eyebrow,
@@ -11,19 +11,17 @@ export function PageHeader({
   description?: string;
 }) {
   return (
-    <header className="mb-6 max-w-2xl md:mb-8">
+    <header className="mb-4 flex flex-col gap-1 md:mb-5">
       {eyebrow ? (
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
           {eyebrow}
         </p>
       ) : null}
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+      <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
         {title}
       </h1>
       {description ? (
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:mt-3 md:text-base">
-          {description}
-        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
     </header>
   );

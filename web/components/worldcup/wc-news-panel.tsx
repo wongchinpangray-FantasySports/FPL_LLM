@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { NewsCategory, WcNewsItem, WcNewsRegion } from "@/lib/wc/news-feeds";
-import { proxiedNewsImageUrl } from "@/lib/news-image";
+import { NewsThumb } from "@/components/news/news-thumb";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
 
 function fmtDate(iso: string | null, locale: string): string {
@@ -39,31 +39,27 @@ function NewsCard({
     categories?: Record<string, string>;
   };
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const imgSrc = proxiedNewsImageUrl(item.image_url);
-  const showImage = Boolean(imgSrc) && !imgFailed;
+  const hasImage = Boolean(item.image_url?.trim());
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-card/50 transition-colors hover:border-border hover:bg-card">
-      <div className={cn("flex flex-col", showImage && "sm:flex-row")}>
-        {showImage ? (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative block shrink-0 sm:w-36 md:w-44"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imgSrc!}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              onError={() => setImgFailed(true)}
-              className="h-36 w-full object-cover sm:h-full sm:min-h-[8.5rem]"
-            />
-          </a>
-        ) : null}
+      <div className={cn("flex flex-col", hasImage && "sm:flex-row")}>
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "relative block shrink-0 overflow-hidden bg-muted/30",
+            hasImage ? "sm:w-36 md:w-44" : "hidden",
+          )}
+        >
+          <NewsThumb
+            imageUrl={item.image_url}
+            outlet={item.outlet}
+            size={160}
+            className="!h-36 !w-full rounded-none sm:!min-h-[8.5rem]"
+          />
+        </a>
         <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
@@ -226,12 +222,14 @@ export function WcNewsPanel({
 
   return (
     <section className="flex flex-col gap-4">
-      <WcSectionIntro
-        title={title}
-        summary={summary}
-        detail={detail}
-        moreLabel={moreLabel}
-      />
+      {title ? (
+        <WcSectionIntro
+          title={title}
+          summary={summary}
+          detail={detail}
+          moreLabel={moreLabel}
+        />
+      ) : null}
 
       <div className="flex gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {CATEGORY_TABS.map((tab) => (

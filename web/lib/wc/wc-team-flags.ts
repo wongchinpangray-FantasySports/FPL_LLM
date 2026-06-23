@@ -1,4 +1,56 @@
-/** FIFA 3-letter codes → flag emoji (ISO 3166-1 alpha-2 where applicable). */
+/** FIFA 3-letter codes → ISO 3166-1 alpha-2 for flagcdn.com (Windows-friendly vs emoji). */
+const WC_ISO2: Record<string, string> = {
+  MEX: "mx",
+  KOR: "kr",
+  RSA: "za",
+  CZE: "cz",
+  CAN: "ca",
+  SUI: "ch",
+  QAT: "qa",
+  BIH: "ba",
+  BRA: "br",
+  MAR: "ma",
+  SCO: "gb-sct",
+  HAI: "ht",
+  USA: "us",
+  PAR: "py",
+  AUS: "au",
+  TUR: "tr",
+  GER: "de",
+  ECU: "ec",
+  CIV: "ci",
+  CUW: "cw",
+  NED: "nl",
+  JPN: "jp",
+  TUN: "tn",
+  SWE: "se",
+  BEL: "be",
+  IRN: "ir",
+  EGY: "eg",
+  NZL: "nz",
+  ESP: "es",
+  URU: "uy",
+  KSA: "sa",
+  CPV: "cv",
+  FRA: "fr",
+  SEN: "sn",
+  NOR: "no",
+  IRQ: "iq",
+  ARG: "ar",
+  AUT: "at",
+  ALG: "dz",
+  JOR: "jo",
+  POR: "pt",
+  COL: "co",
+  UZB: "uz",
+  COD: "cd",
+  ENG: "gb-eng",
+  CRO: "hr",
+  PAN: "pa",
+  GHA: "gh",
+};
+
+/** Legacy emoji flags (fallback). */
 const WC_FLAG: Record<string, string> = {
   MEX: "🇲🇽",
   KOR: "🇰🇷",
@@ -49,6 +101,17 @@ const WC_FLAG: Record<string, string> = {
   PAN: "🇵🇦",
   GHA: "🇬🇭",
 };
+
+export function wcTeamFlagIso(code: string): string | null {
+  return WC_ISO2[code.toUpperCase()] ?? null;
+}
+
+/** PNG flag URL (renders on Windows desktop browsers). */
+export function wcTeamFlagSrc(code: string, width = 24): string | null {
+  const iso = wcTeamFlagIso(code);
+  if (!iso) return null;
+  return `https://flagcdn.com/w${width}/${iso}.png`;
+}
 
 export function wcTeamFlag(code: string): string {
   return WC_FLAG[code.toUpperCase()] ?? "🏳️";

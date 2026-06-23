@@ -12,7 +12,8 @@ import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
-import { wcTeamFlag } from "@/lib/wc/wc-team-flags";
+import { WcFlag } from "@/components/worldcup/wc-flag";
+import { NewsThumb } from "@/components/news/news-thumb";
 
 function HubSection({
   eyebrow,
@@ -145,14 +146,16 @@ function TodayTicker({
         >
           {item.kind === "result" ? labels.result : labels.upcoming}
         </span>
-        <span>
-          {wcTeamFlag(m.home_code)} {m.home_name}
+        <span className="inline-flex items-center gap-1.5">
+          <WcFlag code={m.home_code} size={16} title={m.home_name} />
+          <span className="max-w-[5rem] truncate sm:max-w-none">{m.home_name}</span>
         </span>
         <span className="tabular-nums text-foreground">
           {finished ? `${m.home_score}–${m.away_score}` : "vs"}
         </span>
-        <span>
-          {m.away_name} {wcTeamFlag(m.away_code)}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="max-w-[5rem] truncate sm:max-w-none">{m.away_name}</span>
+          <WcFlag code={m.away_code} size={16} title={m.away_name} />
         </span>
         {!finished && m.kickoff ? (
           <span className="text-xs text-muted-foreground">
@@ -196,8 +199,8 @@ function TodayTicker({
     <div className="relative overflow-hidden rounded-xl border border-border bg-card/50 py-2.5">
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-background to-transparent" />
-      <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:overflow-hidden [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max gap-3 px-4 md:animate-[marquee_50s_linear_infinite] md:hover:[animation-play-state:paused] motion-reduce:md:animate-none">
+      <div className="overflow-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max gap-3 px-4 animate-[marquee_50s_linear_infinite] hover:[animation-play-state:paused] motion-reduce:animate-none">
           {loop.map((chip, i) => (
             <div key={i} className="shrink-0">
               {chip}
@@ -362,16 +365,18 @@ function WcMatchCard({
         {match.round_label} · {fmtKickoff(match.kickoff, locale)}
       </span>
       <div className="flex items-center justify-between gap-2 text-sm font-medium text-foreground">
-        <span className="truncate">
-          {wcTeamFlag(match.home_code)} {match.home_name}
+        <span className="truncate inline-flex items-center gap-1.5">
+          <WcFlag code={match.home_code} size={16} title={match.home_name} />
+          {match.home_name}
         </span>
         <span className="shrink-0 tabular-nums text-brand-accent">
           {finished
             ? `${match.home_score}–${match.away_score}`
             : "vs"}
         </span>
-        <span className="truncate text-right">
-          {match.away_name} {wcTeamFlag(match.away_code)}
+        <span className="truncate text-right inline-flex items-center justify-end gap-1.5">
+          {match.away_name}
+          <WcFlag code={match.away_code} size={16} title={match.away_name} />
         </span>
       </div>
     </Link>
@@ -407,16 +412,16 @@ function HomeMatchRow({
         {finished ? labels.result : m.kickoff ? fmtKickoff(m.kickoff, locale) : labels.upcoming}
       </span>
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-        <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5 truncate text-right text-foreground">
-          {m.home_name}
-          {wcTeamFlag(m.home_code)}
+        <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+          <span className="hidden truncate md:inline">{m.home_name}</span>
+          <WcFlag code={m.home_code} size={18} title={m.home_name} />
         </span>
         <span className="shrink-0 tabular-nums font-semibold text-foreground">
           {finished ? `${m.home_score} - ${m.away_score}` : "vs"}
         </span>
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-left text-foreground">
-          {wcTeamFlag(m.away_code)}
-          {m.away_name}
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <WcFlag code={m.away_code} size={18} title={m.away_name} />
+          <span className="hidden truncate md:inline">{m.away_name}</span>
         </span>
       </div>
     </Link>
@@ -424,10 +429,6 @@ function HomeMatchRow({
 }
 
 function HomeNewsSidebarItem({ item }: { item: WcNewsItem }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const imgSrc = proxiedNewsImageUrl(item.image_url);
-  const showImage = Boolean(imgSrc) && !imgFailed;
-
   return (
     <a
       href={item.url}
@@ -435,21 +436,7 @@ function HomeNewsSidebarItem({ item }: { item: WcNewsItem }) {
       rel="noopener noreferrer"
       className="flex gap-3 py-2.5 no-underline transition-colors hover:opacity-90"
     >
-      {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imgSrc!}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={() => setImgFailed(true)}
-          className="h-16 w-16 shrink-0 rounded-lg object-cover"
-        />
-      ) : (
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-semibold uppercase text-muted-foreground">
-          {item.outlet.slice(0, 3)}
-        </div>
-      )}
+      <NewsThumb imageUrl={item.image_url} outlet={item.outlet} size={64} />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
           {item.title}
@@ -675,7 +662,10 @@ function MiniGroupTable({
                 {row.rank}
               </td>
               <td className="px-2 py-1.5 font-medium text-foreground">
-                {wcTeamFlag(row.code)} {row.short_name}
+                <span className="inline-flex items-center gap-2">
+                  <WcFlag code={row.code} size={18} title={row.name} />
+                  <span className="hidden truncate md:inline">{row.name}</span>
+                </span>
               </td>
               <td className="px-3 py-1.5 text-right tabular-nums text-brand-accent">
                 {row.points} {labels.pts}

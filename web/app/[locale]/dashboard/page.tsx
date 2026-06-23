@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { PageShell } from "@/components/page-shell";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
-import { PageHeader } from "@/components/page-header";
 
 export default function DashboardIndexPage() {
   const t = useTranslations("dashboardIndex");
@@ -20,20 +20,22 @@ export default function DashboardIndexPage() {
 
   if (entryId) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-muted-foreground">
-        <p className="text-sm">{t("opening")}</p>
-      </div>
+      <PageShell width="2xl">
+        <div className="flex flex-col items-center py-16 text-muted-foreground">
+          <p className="text-sm">{t("opening")}</p>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col">
-      <PageHeader
-        eyebrow={t("eyebrow")}
-        title={t("title")}
-        description={t("description")}
-      />
+    <PageShell
+      eyebrow={t("eyebrow")}
+      title={t("title")}
+      description={t("description")}
+      width="2xl"
+    >
       <EntryIdForm redirectTo={(id) => `/dashboard/${id}`} />
-    </div>
+    </PageShell>
   );
 }
