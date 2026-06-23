@@ -550,12 +550,23 @@ function HomeWcMain({
     allMatches: string;
     allTables: string;
     group: string;
-    pts: string;
     scorers: string;
     assists: string;
     empty: string;
     result: string;
     upcoming: string;
+    tableCols: {
+      group: string;
+      team: string;
+      p: string;
+      w: string;
+      d: string;
+      l: string;
+      gf: string;
+      ga: string;
+      gd: string;
+      pts: string;
+    };
   };
 }) {
   const hasContent =
@@ -593,29 +604,15 @@ function HomeWcMain({
           ) : null}
 
           {wc.groupsPreview.length > 0 ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {wc.groupsPreview.map((g, i) => (
-                  <div
-                    key={g.group_letter}
-                    className={cn(i >= 6 && "hidden md:block")}
-                  >
-                    <MiniGroupTable
-                      group={g}
-                      labels={{ group: labels.group, team: "", pts: labels.pts }}
-                    />
-                  </div>
-                ))}
-              </div>
-              {wc.groupsPreview.length > 6 ? (
-                <Link
-                  href="/worldcup?tab=tables"
-                  className="block text-center text-sm font-medium text-brand-accent no-underline hover:underline"
-                >
-                  {labels.allTables} →
-                </Link>
-              ) : null}
-            </>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {wc.groupsPreview.map((g) => (
+                <MiniGroupTable
+                  key={g.group_letter}
+                  group={g}
+                  labels={labels.tableCols}
+                />
+              ))}
+            </div>
           ) : null}
 
           {wc.topScorers.length > 0 || wc.topAssists.length > 0 ? (
@@ -647,33 +644,73 @@ function MiniGroupTable({
   labels,
 }: {
   group: GroupTable;
-  labels: { group: string; team: string; pts: string };
+  labels: {
+    group: string;
+    team: string;
+    p: string;
+    w: string;
+    d: string;
+    l: string;
+    gf: string;
+    ga: string;
+    gd: string;
+    pts: string;
+  };
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card/50">
       <div className="border-b border-border bg-card/80 px-3 py-2.5 text-xs font-semibold text-foreground sm:text-sm">
         {labels.group} {group.group_letter}
       </div>
-      <table className="w-full text-left text-xs sm:text-sm">
-        <tbody>
-          {group.rows.map((row) => (
-            <tr key={row.code} className="border-t border-border/50">
-              <td className="w-8 px-3 py-2 tabular-nums text-muted-foreground">
-                {row.rank}
-              </td>
-              <td className="min-w-0 px-1 py-2 font-medium text-foreground">
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <WcFlag code={row.code} size={20} title={row.name} />
-                  <span className="truncate">{row.name}</span>
-                </span>
-              </td>
-              <td className="w-12 shrink-0 px-3 py-2 text-right tabular-nums font-medium text-brand-accent">
-                {row.points}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[17rem] text-left text-[11px] sm:text-xs">
+          <thead>
+            <tr className="text-muted-foreground">
+              <th className="px-2 py-1.5 font-medium">#</th>
+              <th className="px-2 py-1.5 font-medium">{labels.team}</th>
+              <th className="px-1 py-1.5 text-center font-medium">{labels.p}</th>
+              <th className="px-1 py-1.5 text-center font-medium">{labels.w}</th>
+              <th className="px-1 py-1.5 text-center font-medium">{labels.d}</th>
+              <th className="px-1 py-1.5 text-center font-medium">{labels.l}</th>
+              <th className="hidden px-1 py-1.5 text-center font-medium sm:table-cell">
+                {labels.gf}
+              </th>
+              <th className="hidden px-1 py-1.5 text-center font-medium sm:table-cell">
+                {labels.ga}
+              </th>
+              <th className="px-1 py-1.5 text-center font-medium">{labels.gd}</th>
+              <th className="px-2 py-1.5 text-center font-medium">{labels.pts}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {group.rows.map((row) => (
+              <tr key={row.code} className="border-t border-border/50">
+                <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{row.rank}</td>
+                <td className="max-w-[6rem] px-1 py-1.5 font-medium text-foreground sm:max-w-none">
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <WcFlag code={row.code} size={18} title={row.name} />
+                    <span className="truncate">{row.name}</span>
+                  </span>
+                </td>
+                <td className="px-1 py-1.5 text-center tabular-nums">{row.played}</td>
+                <td className="px-1 py-1.5 text-center tabular-nums">{row.won}</td>
+                <td className="px-1 py-1.5 text-center tabular-nums">{row.drawn}</td>
+                <td className="px-1 py-1.5 text-center tabular-nums">{row.lost}</td>
+                <td className="hidden px-1 py-1.5 text-center tabular-nums sm:table-cell">
+                  {row.gf}
+                </td>
+                <td className="hidden px-1 py-1.5 text-center tabular-nums sm:table-cell">
+                  {row.ga}
+                </td>
+                <td className="px-1 py-1.5 text-center tabular-nums">{row.gd}</td>
+                <td className="px-2 py-1.5 text-center font-semibold tabular-nums text-brand-accent">
+                  {row.points}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -736,6 +773,13 @@ function WorldCupSection({
                     labels={{
                       group: labels.group,
                       team: labels.team,
+                      p: "P",
+                      w: "W",
+                      d: "D",
+                      l: "L",
+                      gf: "GF",
+                      ga: "GA",
+                      gd: "GD",
                       pts: labels.pts,
                     }}
                   />
@@ -1201,12 +1245,23 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
             allMatches: t("wcAllMatches"),
             allTables: t("wcAllTables"),
             group: t("wcGroup"),
-            pts: t("wcPts"),
             scorers: t("wcScorers"),
             assists: t("wcAssists"),
             empty: t("wcEmpty"),
             result: t("todayResult"),
             upcoming: t("todayUpcoming"),
+            tableCols: {
+              group: t("wcGroup"),
+              team: t("wcTeam"),
+              p: t("wcColP"),
+              w: t("wcColW"),
+              d: t("wcColD"),
+              l: t("wcColL"),
+              gf: t("wcColGf"),
+              ga: t("wcColGa"),
+              gd: t("wcColGd"),
+              pts: t("wcColPts"),
+            },
           }}
         />
 
