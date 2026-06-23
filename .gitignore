@@ -34,3 +34,6 @@ Thumbs.db
 
 # Generated Supabase seeds (see web/scripts/seed-wc-news-sql.ts)
 supabase/seed_wc_news_cache.sql
+
+# Local FIFA API research (not part of the app)
+/scripts/
