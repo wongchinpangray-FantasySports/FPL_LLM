@@ -378,6 +378,283 @@ function WcMatchCard({
   );
 }
 
+function HomeMatchRow({
+  item,
+  locale,
+  labels,
+}: {
+  item: TodayTickerItem;
+  locale: string;
+  labels: { result: string; upcoming: string };
+}) {
+  const m = item.match;
+  const finished =
+    item.kind === "result" &&
+    m.home_score != null &&
+    m.away_score != null;
+
+  return (
+    <Link
+      href="/worldcup?tab=matches"
+      className="flex items-center gap-3 border-b border-border/60 px-3 py-2.5 text-sm no-underline transition-colors last:border-b-0 hover:bg-muted/40"
+    >
+      <span
+        className={cn(
+          "w-10 shrink-0 text-center text-[10px] font-semibold uppercase tracking-wide",
+          item.kind === "result" ? "text-muted-foreground" : "text-sky-400",
+        )}
+      >
+        {finished ? labels.result : m.kickoff ? fmtKickoff(m.kickoff, locale) : labels.upcoming}
+      </span>
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+        <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5 truncate text-right text-foreground">
+          {m.home_name}
+          {wcTeamFlag(m.home_code)}
+        </span>
+        <span className="shrink-0 tabular-nums font-semibold text-foreground">
+          {finished ? `${m.home_score} - ${m.away_score}` : "vs"}
+        </span>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-left text-foreground">
+          {wcTeamFlag(m.away_code)}
+          {m.away_name}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function HomeNewsSidebarItem({ item }: { item: WcNewsItem }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const imgSrc = proxiedNewsImageUrl(item.image_url);
+  const showImage = Boolean(imgSrc) && !imgFailed;
+
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex gap-3 py-2.5 no-underline transition-colors hover:opacity-90"
+    >
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imgSrc!}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setImgFailed(true)}
+          className="h-16 w-16 shrink-0 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-semibold uppercase text-muted-foreground">
+          {item.outlet.slice(0, 3)}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {item.title}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{item.outlet}</p>
+      </div>
+    </a>
+  );
+}
+
+function HomeNewsSidebar({
+  news,
+  transfers,
+  labels,
+}: {
+  news: WcNewsItem[];
+  transfers: WcNewsItem[];
+  labels: {
+    newsTitle: string;
+    transfersTitle: string;
+    seeAll: string;
+    seeTransfers: string;
+    empty: string;
+  };
+}) {
+  return (
+    <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
+      <section className="rounded-xl border border-border bg-card/50">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-foreground">{labels.newsTitle}</h2>
+          <Link
+            href="/news"
+            className="text-xs font-medium text-brand-accent no-underline hover:underline"
+          >
+            {labels.seeAll}
+          </Link>
+        </div>
+        <div className="divide-y divide-border px-4">
+          {news.length > 0 ? (
+            news.map((item) => <HomeNewsSidebarItem key={item.id} item={item} />)
+          ) : (
+            <p className="py-4 text-sm text-muted-foreground">{labels.empty}</p>
+          )}
+        </div>
+      </section>
+
+      {transfers.length > 0 ? (
+        <section className="rounded-xl border border-border bg-card/50">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="text-sm font-semibold text-foreground">{labels.transfersTitle}</h2>
+            <Link
+              href="/news?category=transfer"
+              className="text-xs font-medium text-brand-accent no-underline hover:underline"
+            >
+              {labels.seeTransfers}
+            </Link>
+          </div>
+          <div className="divide-y divide-border px-4">
+            {transfers.map((item) => (
+              <HomeNewsSidebarItem key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </aside>
+  );
+}
+
+function HomeLeaderboardMini({
+  title,
+  rows,
+  stat,
+}: {
+  title: string;
+  rows: LeaderboardRow[];
+  stat: "goals" | "assists";
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card/50 p-3">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <ol className="space-y-1.5 text-sm">
+        {rows.slice(0, 5).map((s, i) => (
+          <li key={s.player_id} className="flex justify-between gap-2 text-foreground/80">
+            <span className="min-w-0 truncate">
+              <span className="mr-2 tabular-nums text-muted-foreground">{i + 1}</span>
+              {s.name}
+            </span>
+            <span className="shrink-0 tabular-nums font-medium text-foreground">
+              {stat === "goals" ? s.goals : s.assists}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function HomeWcMain({
+  wc,
+  ticker,
+  locale,
+  labels,
+}: {
+  wc: HomeHubData["wc"];
+  ticker: TodayTickerItem[];
+  locale: string;
+  labels: {
+    title: string;
+    allMatches: string;
+    allTables: string;
+    group: string;
+    pts: string;
+    scorers: string;
+    assists: string;
+    empty: string;
+    result: string;
+    upcoming: string;
+  };
+}) {
+  const hasContent =
+    ticker.length > 0 ||
+    wc.groupsPreview.length > 0 ||
+    wc.nextMatches.length > 0 ||
+    wc.topScorers.length > 0 ||
+    wc.topAssists.length > 0;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-card/40">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-gradient-to-r from-sky-950/40 to-transparent px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
+        <div className="flex gap-2">
+          <HubChip href="/worldcup?tab=matches">{labels.allMatches}</HubChip>
+          <HubChip href="/worldcup?tab=tables">{labels.allTables}</HubChip>
+        </div>
+      </div>
+
+      {!hasContent ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">{labels.empty}</p>
+      ) : (
+        <div className="flex flex-col gap-4 p-4">
+          {ticker.length > 0 ? (
+            <div className="overflow-hidden rounded-lg border border-border bg-background/40">
+              {ticker.slice(0, 10).map((item) => (
+                <HomeMatchRow
+                  key={`${item.kind}-${item.match.id}`}
+                  item={item}
+                  locale={locale}
+                  labels={{ result: labels.result, upcoming: labels.upcoming }}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {wc.groupsPreview.length > 0 ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {wc.groupsPreview.map((g, i) => (
+                  <div
+                    key={g.group_letter}
+                    className={cn(i >= 4 && "hidden md:block")}
+                  >
+                    <MiniGroupTable
+                      group={g}
+                      labels={{ group: labels.group, team: "", pts: labels.pts }}
+                    />
+                  </div>
+                ))}
+              </div>
+              {wc.groupsPreview.length > 4 ? (
+                <Link
+                  href="/worldcup?tab=tables"
+                  className="block text-center text-sm font-medium text-brand-accent no-underline hover:underline md:hidden"
+                >
+                  {labels.allTables} →
+                </Link>
+              ) : null}
+            </>
+          ) : null}
+
+          {wc.topScorers.length > 0 || wc.topAssists.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {wc.topScorers.length > 0 ? (
+                <HomeLeaderboardMini
+                  title={labels.scorers}
+                  rows={wc.topScorers}
+                  stat="goals"
+                />
+              ) : null}
+              {wc.topAssists.length > 0 ? (
+                <HomeLeaderboardMini
+                  title={labels.assists}
+                  rows={wc.topAssists}
+                  stat="assists"
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function MiniGroupTable({
   group,
   labels,
@@ -398,7 +675,7 @@ function MiniGroupTable({
                 {row.rank}
               </td>
               <td className="px-2 py-1.5 font-medium text-foreground">
-                {row.short_name}
+                {wcTeamFlag(row.code)} {row.short_name}
               </td>
               <td className="px-3 py-1.5 text-right tabular-nums text-brand-accent">
                 {row.points} {labels.pts}
@@ -886,10 +1163,11 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
       topAssists: [],
     },
     news: [],
+    transferNews: [],
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 md:gap-10">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6">
       <section className="flex flex-col gap-4">
         {hubLoading && !data ? (
           <div className="h-12 animate-pulse rounded-xl border border-border bg-card" />
@@ -923,39 +1201,37 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         <HubChip href="/news?category=transfer">{t("ctaTransfers")}</HubChip>
       </section>
 
-      {hub.news.length > 0 ? (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">{t("headlinesTitle")}</h2>
-            <Link
-              href="/news"
-              className="text-xs font-medium text-brand-accent no-underline hover:underline"
-            >
-              {t("newsAll")}
-            </Link>
-          </div>
-          <ul className="divide-y divide-border rounded-xl border border-border bg-card/40">
-            {hub.news.slice(0, 6).map((item) => (
-              <li key={item.id}>
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block px-4 py-3 no-underline transition-colors hover:bg-muted/40"
-                >
-                  <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {item.outlet}
-                    {item.category ? ` · ${item.category}` : ""}
-                  </p>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem]">
+        <HomeWcMain
+          wc={hub.wc}
+          ticker={hub.today.ticker}
+          locale={locale}
+          labels={{
+            title: t("wcPanelTitle"),
+            allMatches: t("wcAllMatches"),
+            allTables: t("wcAllTables"),
+            group: t("wcGroup"),
+            pts: t("wcPts"),
+            scorers: t("wcScorers"),
+            assists: t("wcAssists"),
+            empty: t("wcEmpty"),
+            result: t("todayResult"),
+            upcoming: t("todayUpcoming"),
+          }}
+        />
+
+        <HomeNewsSidebar
+          news={hub.news}
+          transfers={hub.transferNews}
+          labels={{
+            newsTitle: t("sidebarNews"),
+            transfersTitle: t("sidebarTransfers"),
+            seeAll: t("newsAll"),
+            seeTransfers: t("ctaTransfers"),
+            empty: t("newsEmpty"),
+          }}
+        />
+      </div>
     </div>
   );
 }

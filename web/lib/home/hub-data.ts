@@ -49,6 +49,7 @@ export type HomeHubData = {
     topAssists: LeaderboardRow[];
   };
   news: WcNewsItem[];
+  transferNews: WcNewsItem[];
 };
 
 function toSnippet(m: WcMatchRow): HomeMatchSnippet {
@@ -123,16 +124,17 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
   return {
     ticker: buildTodayTicker(matches),
     nextMatches: upcoming.slice(0, 3).map(toSnippet),
-    groupsPreview: groups.slice(0, 3),
+    groupsPreview: groups,
     topScorers,
     topAssists,
   };
 }
 
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
-  const [wcResult, newsResult, fplResult] = await Promise.allSettled([
+  const [wcResult, newsResult, transferResult, fplResult] = await Promise.allSettled([
     loadWcHub(locale),
-    getWcNewsForApi({ limit: 8, editorialOnly: false, category: "trending" }),
+    getWcNewsForApi({ limit: 10, editorialOnly: false, category: "trending" }),
+    getWcNewsForApi({ limit: 6, editorialOnly: false, category: "transfer" }),
     getMiniGameweekContext(),
   ]);
 
@@ -148,7 +150,12 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
         };
 
   const newsItems =
-    newsResult.status === "fulfilled" ? newsResult.value.items.slice(0, 6) : [];
+    newsResult.status === "fulfilled" ? newsResult.value.items.slice(0, 8) : [];
+
+  const transferItems =
+    transferResult.status === "fulfilled"
+      ? transferResult.value.items.slice(0, 5)
+      : [];
 
   const fplCtx =
     fplResult.status === "fulfilled"
@@ -175,6 +182,7 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
       topAssists: wcBundle.topAssists,
     },
     news: newsItems,
+    transferNews: transferItems,
   };
 }
 
