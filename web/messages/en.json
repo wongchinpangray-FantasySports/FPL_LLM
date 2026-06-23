@@ -23,7 +23,9 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "menuTitle": "Menu",
-    "fplTools": "FPL tools"
+    "fplTools": "FPL tools",
+    "affiliateTitle": "Also visit",
+    "faleagueCn": "Play Faleague"
   },
   "footer": {
     "legal": "Unofficial · not affiliated with the Premier League or FPL."

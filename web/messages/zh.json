@@ -23,7 +23,9 @@
     "openMenu": "打开菜单",
     "closeMenu": "关闭菜单",
     "menuTitle": "菜单",
-    "fplTools": "FPL 工具"
+    "fplTools": "FPL 工具",
+    "affiliateTitle": "更多",
+    "faleagueCn": "玩 Faleague"
   },
   "footer": {
     "legal": "非官方 · 与英超联赛或 FPL 无关联。"
