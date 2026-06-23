@@ -9,6 +9,10 @@ import {
 const CACHE_ID = "global";
 const CACHE_MS = 20 * 60 * 1000;
 
+function cacheHasPlNews(items: WcNewsItem[]): boolean {
+  return items.some((i) => i.feed_id === "pl-official");
+}
+
 let memCache: { at: number; items: WcNewsItem[]; fetched_at: string } | null =
   null;
 
@@ -106,19 +110,21 @@ export async function getWcNewsForApi(opts?: {
   const now = Date.now();
 
   if (!opts?.refresh && memCache && now - memCache.at < CACHE_MS) {
-    return {
-      items: filterItems(memCache.items, filterOpts),
-      cached: true,
-      fetched_at: memCache.fetched_at,
-      source: "memory",
-    };
+    if (cacheHasPlNews(memCache.items)) {
+      return {
+        items: filterItems(memCache.items, filterOpts),
+        cached: true,
+        fetched_at: memCache.fetched_at,
+        source: "memory",
+      };
+    }
   }
 
   if (!opts?.refresh) {
     const db = await loadWcNewsFromDb();
     if (db.items.length > 0 && db.fetched_at) {
       const dbAge = now - Date.parse(db.fetched_at);
-      if (dbAge < CACHE_MS) {
+      if (dbAge < CACHE_MS && cacheHasPlNews(db.items)) {
         memCache = { at: now, items: db.items, fetched_at: db.fetched_at };
         return {
           items: filterItems(db.items, filterOpts),

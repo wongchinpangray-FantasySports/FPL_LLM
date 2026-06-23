@@ -44,13 +44,29 @@ type PlMultiResponse = {
 const TRANSFER_RE =
   /transfer|sign(?:ing|ed|s)?|deal|loan|bid|fee|move|join|rummour|rumor|mercato|fichaje/i;
 const WC_RE =
-  /world cup|worldcup|fifa|wm 2026|mundial|coupe du monde|mondiale|copa do mundo|2026/i;
+  /world cup|worldcup|fifa world cup|wm 2026|mundial 2026|coupe du monde 2026|mondiale 2026|copa do mundo 2026|\bworld cup 2026\b/i;
+const SEASON_RE = /20\d{2}\/\d{2}/;
+const BRIEFING_DESC_RE =
+  /^our round-up of news stories and transfer reports across the premier league\.?$/i;
 
 function categorizePlArticle(article: PlArticle): NewsCategory {
-  const text = `${article.title} ${article.description ?? ""} ${article.summary ?? ""}`;
+  const title = article.title ?? "";
+  const rawSummary = (article.description ?? article.summary ?? "").trim();
+  const summary =
+    rawSummary && !BRIEFING_DESC_RE.test(rawSummary) ? rawSummary : "";
+  const text = `${title} ${summary}`.trim();
   const tagText = (article.tags ?? []).map((t) => t.label).join(" ");
-  if (TRANSFER_RE.test(text) || TRANSFER_RE.test(tagText)) return "transfer";
-  if (WC_RE.test(text)) return "worldcup";
+
+  if (TRANSFER_RE.test(title) || TRANSFER_RE.test(`${title} ${summary}`)) {
+    return "transfer";
+  }
+  if (
+    !SEASON_RE.test(title) &&
+    !SEASON_RE.test(summary) &&
+    (WC_RE.test(text) || WC_RE.test(tagText))
+  ) {
+    return "worldcup";
+  }
   return "epl";
 }
 

@@ -632,6 +632,8 @@ export async function fetchWcNewsItems(opts?: {
   const plItems = await fetchPremierLeagueNewsItems({ limit: 35 }).catch(
     () => [] as WcNewsItem[],
   );
+  const plBudget = Math.min(plItems.length, 35);
+  const rssLimit = Math.max(20, limit - plBudget);
 
   const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
@@ -676,15 +678,36 @@ export async function fetchWcNewsItems(opts?: {
   });
 
   const seen = new Set<string>();
-  const merged: WcNewsItem[] = [];
-  for (const item of [...plItems, ...batches.flat()]) {
+  const rssMerged: WcNewsItem[] = [];
+  for (const item of batches.flat()) {
     const key = dedupeKey(item.title, item.url);
     if (seen.has(key)) continue;
     seen.add(key);
+    rssMerged.push(item);
+  }
+
+  rssMerged.sort((a, b) => {
+    if (b.editorial_score !== a.editorial_score) {
+      return b.editorial_score - a.editorial_score;
+    }
+    const ta = a.published_at ? Date.parse(a.published_at) : 0;
+    const tb = b.published_at ? Date.parse(b.published_at) : 0;
+    return tb - ta;
+  });
+
+  const merged: WcNewsItem[] = [];
+  const seenFinal = new Set<string>();
+  for (const item of [...plItems, ...rssMerged.slice(0, rssLimit)]) {
+    const key = dedupeKey(item.title, item.url);
+    if (seenFinal.has(key)) continue;
+    seenFinal.add(key);
     merged.push(item);
   }
 
   merged.sort((a, b) => {
+    const aPl = a.feed_id === "pl-official" ? 1 : 0;
+    const bPl = b.feed_id === "pl-official" ? 1 : 0;
+    if (bPl !== aPl) return bPl - aPl;
     if (b.editorial_score !== a.editorial_score) {
       return b.editorial_score - a.editorial_score;
     }
