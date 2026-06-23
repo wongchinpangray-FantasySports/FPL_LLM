@@ -28,10 +28,24 @@ export async function getWcMiniMatchdayContext(): Promise<WcMiniMatchdayContext>
   let submissionOpen = false;
   let deadlineTime: string | null = null;
 
-  if (nextMd?.id != null && nextMd.deadline_time) {
+  if (nextMd?.id != null) {
     submissionMatchday = nextMd.id as number;
-    deadlineTime = String(nextMd.deadline_time);
-    submissionOpen = now < new Date(deadlineTime).getTime();
+    if (nextMd.deadline_time) {
+      deadlineTime = String(nextMd.deadline_time);
+      submissionOpen = now < new Date(deadlineTime).getTime();
+    } else {
+      // No deadline stored — treat next matchday as open for squad building
+      submissionOpen = true;
+    }
+  } else if (currentMd?.id != null) {
+    submissionMatchday = currentMd.id as number;
+    if (currentMd.deadline_time) {
+      deadlineTime = String(currentMd.deadline_time);
+      submissionOpen = now < new Date(deadlineTime).getTime();
+    }
+  } else if (mds.length > 0) {
+    submissionMatchday = mds[0]!.id as number;
+    submissionOpen = true;
   }
 
   const scoringMatchday =
@@ -58,7 +72,7 @@ export async function getWcMiniMatchdayContext(): Promise<WcMiniMatchdayContext>
 
 export async function resolveWcSubmissionMatchday(
   requestedMd?: number,
-): Promise<{ matchday: number; season: string; deadline_time: string }> {
+): Promise<{ matchday: number; season: string; deadline_time: string | null }> {
   const ctx = await getWcMiniMatchdayContext();
   const matchday = requestedMd ?? ctx.submission_matchday;
 
@@ -70,7 +84,7 @@ export async function resolveWcSubmissionMatchday(
       `Submissions are only open for MD${ctx.submission_matchday ?? "?"}, not MD${requestedMd}.`,
     );
   }
-  if (!ctx.submission_open || !ctx.deadline_time) {
+  if (!ctx.submission_open) {
     throw new Error(
       `Submissions for MD${matchday} are closed (deadline has passed).`,
     );

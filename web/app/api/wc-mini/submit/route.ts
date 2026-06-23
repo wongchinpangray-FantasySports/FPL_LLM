@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid player IDs in picks" }, { status: 400 });
   }
 
-  let mdMeta: { matchday: number; season: string; deadline_time: string };
+  let mdMeta: { matchday: number; season: string; deadline_time: string | null };
   try {
     mdMeta = await resolveWcSubmissionMatchday(
       body.matchday != null ? Number(body.matchday) : undefined,

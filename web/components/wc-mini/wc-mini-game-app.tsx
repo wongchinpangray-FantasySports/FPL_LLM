@@ -283,10 +283,6 @@ export function WcMiniGameApp({ locale }: { locale: string }) {
   }
 
   function onSlotClick(slotIndex: number) {
-    if (!submissionOpen) {
-      showNotice(t("submissionsClosed"));
-      return;
-    }
     setPickerSlot(slotIndex);
   }
 
@@ -422,7 +418,6 @@ export function WcMiniGameApp({ locale }: { locale: string }) {
               captainId={captainId}
               viceId={viceId}
               activeSlot={pickerSlot}
-              disabled={!submissionOpen}
               slotGkLabel={t("slotGk")}
               slotOutLabel={t("slotOut")}
               captainLabel={t("captain")}
@@ -430,12 +425,10 @@ export function WcMiniGameApp({ locale }: { locale: string }) {
               emptyLabel={t("tapToPick")}
               onSlotClick={onSlotClick}
               onSetCaptain={(id) => {
-                if (!submissionOpen) return;
                 setCaptainId(id);
                 if (viceId === id) setViceId(null);
               }}
               onSetVice={(id) => {
-                if (!submissionOpen) return;
                 setViceId(id);
                 if (captainId === id) setCaptainId(null);
               }}
