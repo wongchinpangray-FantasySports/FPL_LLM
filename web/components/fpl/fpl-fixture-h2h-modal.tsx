@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { getFplTeamTheme } from "@/lib/team-themes";
+import { getFplTeamBadgeStyle, getFplTeamTheme } from "@/lib/team-themes";
 import {
   formatPlSeason,
   getH2HHistory,
@@ -36,13 +36,14 @@ function ResultBadge({ result }: { result: "W" | "D" | "L" }) {
 }
 
 function TeamChip({ code, name }: { code: string; name?: string }) {
-  const theme = getFplTeamTheme(code);
+  const badge = getFplTeamBadgeStyle(code);
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-0.5 text-xs font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-bold shadow-sm"
       style={{
-        background: `linear-gradient(135deg, ${theme.primary}33, ${theme.secondary}55)`,
-        color: theme.accent,
+        background: badge.chipBg,
+        color: badge.color,
+        borderColor: badge.chipBorder,
       }}
       title={name ?? code}
     >
@@ -62,8 +63,10 @@ export function FplFixtureH2hModal({
   selection: FixtureSelection | null;
   h2hHistory: Record<string, H2HMatch[]>;
   labels: {
-    h2hTitle: string;
-    h2hEmpty: string;
+    h2hTitleHome: string;
+    h2hTitleAway: string;
+    h2hEmptyHome: string;
+    h2hEmptyAway: string;
     home: string;
     away: string;
     close: string;
@@ -81,9 +84,18 @@ export function FplFixtureH2hModal({
 
   if (!open || !selection) return null;
 
-  const matches = getH2HHistory(h2hHistory, selection.team, selection.opp);
+  const matches = getH2HHistory(
+    h2hHistory,
+    selection.team,
+    selection.opp,
+    selection.home,
+  );
+  const teamBadge = getFplTeamBadgeStyle(selection.team);
+  const oppBadge = getFplTeamBadgeStyle(selection.opp);
   const teamTheme = getFplTeamTheme(selection.team);
   const oppTheme = getFplTeamTheme(selection.opp);
+  const h2hTitle = selection.home ? labels.h2hTitleHome : labels.h2hTitleAway;
+  const h2hEmpty = selection.home ? labels.h2hEmptyHome : labels.h2hEmptyAway;
 
   return (
     <div
@@ -107,11 +119,11 @@ export function FplFixtureH2hModal({
         <div
           className="shrink-0 rounded-t-2xl px-5 pb-4 pt-5 sm:rounded-t-2xl"
           style={{
-            background: `linear-gradient(135deg, ${teamTheme.primary}22 0%, ${oppTheme.secondary}33 100%)`,
+            background: `linear-gradient(135deg, ${teamTheme.primary}28 0%, ${oppTheme.primary}22 55%, transparent 100%)`,
           }}
         >
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            GW{selection.gw} · {labels.h2hTitle}
+            GW{selection.gw} · {h2hTitle}
           </p>
           <h2
             id="fpl-h2h-title"
@@ -121,16 +133,26 @@ export function FplFixtureH2hModal({
             <span className="text-muted-foreground">vs</span>
             <TeamChip code={selection.opp} name={selection.oppName} />
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             {selection.teamName}{" "}
-            {selection.home ? labels.home : labels.away}
+            <span
+              className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+              style={{
+                backgroundColor: selection.home
+                  ? `${teamBadge.bg}33`
+                  : `${oppBadge.bg}33`,
+                color: selection.home ? teamBadge.color : oppBadge.color,
+              }}
+            >
+              {selection.home ? labels.home : labels.away}
+            </span>
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
           {matches.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {labels.h2hEmpty}
+              {h2hEmpty}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -143,6 +165,8 @@ export function FplFixtureH2hModal({
                       year: "numeric",
                     })
                   : null;
+                const homeBadge = getFplTeamBadgeStyle(m.home);
+                const awayBadge = getFplTeamBadgeStyle(m.away);
                 return (
                   <li
                     key={`${m.season}:${m.home}:${m.away}:${i}`}
@@ -151,13 +175,37 @@ export function FplFixtureH2hModal({
                     <ResultBadge result={result} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 text-sm font-semibold tabular-nums">
-                        <span className={m.home === selection.team ? "text-foreground" : "text-muted-foreground"}>
+                        <span
+                          className="rounded px-1.5 py-0.5 text-xs"
+                          style={{
+                            background:
+                              m.home === selection.team
+                                ? homeBadge.chipBg
+                                : `${homeBadge.bg}22`,
+                            color:
+                              m.home === selection.team
+                                ? homeBadge.color
+                                : "inherit",
+                          }}
+                        >
                           {m.home}
                         </span>
                         <span className="text-foreground">
                           {m.homeScore}–{m.awayScore}
                         </span>
-                        <span className={m.away === selection.team ? "text-foreground" : "text-muted-foreground"}>
+                        <span
+                          className="rounded px-1.5 py-0.5 text-xs"
+                          style={{
+                            background:
+                              m.away === selection.team
+                                ? awayBadge.chipBg
+                                : `${awayBadge.bg}22`,
+                            color:
+                              m.away === selection.team
+                                ? awayBadge.color
+                                : "inherit",
+                          }}
+                        >
                           {m.away}
                         </span>
                       </div>
@@ -174,7 +222,12 @@ export function FplFixtureH2hModal({
         </div>
 
         <div className="shrink-0 border-t border-border px-5 py-4">
-          <Button type="button" variant="secondary" className="w-full" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={onClose}
+          >
             {labels.close}
           </Button>
         </div>

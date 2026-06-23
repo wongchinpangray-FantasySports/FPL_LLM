@@ -905,8 +905,10 @@
     "fixturesDgw": "DGW",
     "fixturesHome": "Home",
     "fixturesAway": "Away",
-    "fixturesH2hTitle": "Last 5 meetings",
-    "fixturesH2hEmpty": "No recent Premier League meetings on record.",
+    "fixturesH2hTitleHome": "Last 5 home meetings",
+    "fixturesH2hTitleAway": "Last 5 away meetings",
+    "fixturesH2hEmptyHome": "No recent home meetings on record.",
+    "fixturesH2hEmptyAway": "No recent away meetings on record.",
     "fixturesH2hTapHint": "View H2H",
     "fixturesH2hClose": "Close",
     "fixtureTableTeam": "Team"

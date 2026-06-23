@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { getFplTeamTheme } from "@/lib/team-themes";
+import { getFplTeamBadgeStyle } from "@/lib/team-themes";
 import type { H2HMatch } from "@/lib/fpl/h2h-history";
 import type { FplFixtureRow, FplGwBlock } from "@/lib/fpl/fixtures-grid";
 import {
@@ -19,7 +19,8 @@ function FixtureChip({
   onSelect: () => void;
   labels: { home: string; away: string; h2hTapHint: string };
 }) {
-  const oppTheme = getFplTeamTheme(fixture.opp);
+  const oppBadge = getFplTeamBadgeStyle(fixture.opp);
+  const teamSide = fixture.home ? labels.home : labels.away;
 
   return (
     <button
@@ -30,33 +31,39 @@ function FixtureChip({
       }}
       className={cn(
         "group relative w-full overflow-hidden rounded-lg border text-left transition-all",
-        "border-border/70 bg-card/90 hover:border-brand-accent/40 hover:shadow-md hover:shadow-brand-accent/5",
+        "border-border/60 bg-card hover:-translate-y-0.5 hover:border-brand-accent/35 hover:shadow-lg",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/50",
       )}
       title={labels.h2hTapHint}
     >
       <span
-        className="absolute inset-y-0 left-0 w-1"
-        style={{ backgroundColor: oppTheme.primary }}
+        className="absolute inset-y-0 left-0 w-1.5"
+        style={{ background: oppBadge.chipBg }}
         aria-hidden
       />
-      <span className="flex flex-col gap-1 px-2.5 py-2 pl-3.5">
-        <span className="flex items-center justify-between gap-1">
-          <span className="text-[13px] font-bold tracking-tight text-foreground">
+      <span className="flex flex-col gap-1.5 px-2.5 py-2 pl-3.5">
+        <span className="flex items-center justify-between gap-1.5">
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[12px] font-bold tracking-tight"
+            style={{
+              background: oppBadge.chipBg,
+              color: oppBadge.color,
+            }}
+          >
             {fixture.opp}
           </span>
           <span
             className={cn(
               "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
               fixture.home
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "bg-sky-500/20 text-sky-300",
+                ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30"
+                : "bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/30",
             )}
           >
-            {fixture.home ? labels.home : labels.away}
+            {teamSide}
           </span>
         </span>
-        <span className="text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="text-[10px] text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100">
           {labels.h2hTapHint}
         </span>
       </span>
@@ -133,7 +140,7 @@ function TeamRow({
     h2hTapHint: string;
   };
 }) {
-  const theme = getFplTeamTheme(row.short);
+  const badge = getFplTeamBadgeStyle(row.short);
 
   return (
     <article
@@ -156,15 +163,15 @@ function TeamRow({
       <div
         className="flex items-center gap-3 px-3 py-3"
         style={{
-          background: `linear-gradient(90deg, ${theme.primary}18, transparent)`,
+          background: `linear-gradient(90deg, ${badge.rowTint}, transparent)`,
         }}
       >
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold shadow-sm"
           style={{
-            backgroundColor: theme.secondary,
-            color: theme.accent,
-            borderLeft: `3px solid ${theme.primary}`,
+            background: badge.chipBg,
+            color: badge.color,
+            boxShadow: `inset 0 0 0 1px ${badge.chipBorder}`,
           }}
         >
           {row.short}
@@ -244,8 +251,10 @@ export function FplFixturesGrid({
     dgw: string;
     home: string;
     away: string;
-    h2hTitle: string;
-    h2hEmpty: string;
+    h2hTitleHome: string;
+    h2hTitleAway: string;
+    h2hEmptyHome: string;
+    h2hEmptyAway: string;
     h2hTapHint: string;
     close: string;
   };
@@ -348,7 +357,7 @@ export function FplFixturesGrid({
             </thead>
             <tbody>
               {rows.map((t) => {
-                const theme = getFplTeamTheme(t.short);
+                const badge = getFplTeamBadgeStyle(t.short);
                 return (
                   <tr
                     key={t.team_id}
@@ -357,11 +366,11 @@ export function FplFixturesGrid({
                     <td className="sticky left-0 z-10 bg-card px-3 py-2">
                       <div className="flex items-center gap-2">
                         <span
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10px] font-bold shadow-sm"
                           style={{
-                            backgroundColor: theme.secondary,
-                            color: theme.accent,
-                            boxShadow: `inset 3px 0 0 ${theme.primary}`,
+                            background: badge.chipBg,
+                            color: badge.color,
+                            boxShadow: `inset 0 0 0 1px ${badge.chipBorder}`,
                           }}
                         >
                           {t.short}

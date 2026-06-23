@@ -11,8 +11,18 @@ export type H2HMatch = {
   kickoff: string | null;
 };
 
+/** Sorted pair key — any venue (legacy). */
 export function h2hPairKey(a: string, b: string): string {
   return [a, b].sort().join(":");
+}
+
+/** Team perspective + venue: ARS:CHE:H = Arsenal home vs Chelsea. */
+export function h2hVenueKey(
+  team: string,
+  opp: string,
+  teamWasHome: boolean,
+): string {
+  return `${team}:${opp}:${teamWasHome ? "H" : "A"}`;
 }
 
 export function formatPlSeason(season: string): string {
@@ -87,23 +97,20 @@ async function loadFinishedDbMatches(
   return out;
 }
 
-async function loadPgsHomeMatches(
-  teamCodeById: Map<number, string>,
-  teamCodeByPlayer: Map<number, string>,
-): Promise<H2HMatch[]> {
-  const supa = getServerSupabase();
-  type Row = {
-    season: string;
-    fixture_id: number;
-    opponent_team_id: number;
-    was_home: boolean;
-    goals_scored: number | null;
-    goals_conceded: number | null;
-    minutes: number | null;
-    player_id: number;
-  };
+type PgsRow = {
+  season: string;
+  fixture_id: number;
+  opponent_team_id: number;
+  was_home: boolean;
+  goals_scored: number | null;
+  goals_conceded: number | null;
+  minutes: number | null;
+  player_id: number;
+};
 
-  const rows: Row[] = [];
+async function loadPgsRows(): Promise<PgsRow[]> {
+  const supa = getServerSupabase();
+  const rows: PgsRow[] = [];
   const PAGE = 5000;
   let from = 0;
 
@@ -117,14 +124,21 @@ async function loadPgsHomeMatches(
       .gt("minutes", 0)
       .range(from, from + PAGE - 1);
     if (!data?.length) break;
-    rows.push(...(data as Row[]));
+    rows.push(...(data as PgsRow[]));
     from += PAGE;
     if (data.length < PAGE) break;
   }
+  return rows;
+}
 
+function aggregatePgsMatches(
+  rows: PgsRow[],
+  teamCodeById: Map<number, string>,
+  teamCodeByPlayer: Map<number, string>,
+  homeOnly: boolean,
+): H2HMatch[] {
   type Acc = {
     season: string;
-    fixtureId: number;
     home: string;
     away: string;
     homeScore: number;
@@ -134,26 +148,36 @@ async function loadPgsHomeMatches(
   const byFixture = new Map<string, Acc>();
 
   for (const row of rows) {
-    if (!row.fixture_id || !row.was_home || (row.minutes ?? 0) <= 0) continue;
-    const home = teamCodeByPlayer.get(row.player_id);
-    const away = teamCodeById.get(row.opponent_team_id);
-    if (!home || !away || home === away) continue;
+    if (!row.fixture_id || Boolean(row.was_home) !== homeOnly) continue;
+    if ((row.minutes ?? 0) <= 0) continue;
 
+    const team = teamCodeByPlayer.get(row.player_id);
+    const opp = teamCodeById.get(row.opponent_team_id);
+    if (!team || !opp || team === opp) continue;
+
+    const home = homeOnly ? team : opp;
+    const away = homeOnly ? opp : team;
     const key = `${row.season}:${row.fixture_id}`;
+
     let acc = byFixture.get(key);
     if (!acc) {
       acc = {
         season: row.season,
-        fixtureId: row.fixture_id,
         home,
         away,
         homeScore: 0,
-        awayScore: row.goals_conceded ?? 0,
+        awayScore: homeOnly ? (row.goals_conceded ?? 0) : 0,
       };
       byFixture.set(key, acc);
     }
-    acc.homeScore += row.goals_scored ?? 0;
-    acc.awayScore = Math.max(acc.awayScore, row.goals_conceded ?? 0);
+
+    if (homeOnly) {
+      acc.homeScore += row.goals_scored ?? 0;
+      acc.awayScore = Math.max(acc.awayScore, row.goals_conceded ?? 0);
+    } else {
+      acc.awayScore += row.goals_scored ?? 0;
+      acc.homeScore = Math.max(acc.homeScore, row.goals_conceded ?? 0);
+    }
   }
 
   return [...byFixture.values()].map((m) => ({
@@ -176,21 +200,45 @@ function matchSortKey(m: H2HMatch): number {
   return season * 1e12 + kickoff;
 }
 
-/** Last {H2H_HISTORY_LIMIT} PL meetings per pair, keyed by sorted codes (e.g. ARS:CHE). */
+function pushVenueMatch(
+  grouped: Map<string, H2HMatch[]>,
+  team: string,
+  opp: string,
+  teamWasHome: boolean,
+  match: H2HMatch,
+) {
+  const key = h2hVenueKey(team, opp, teamWasHome);
+  const list = grouped.get(key) ?? [];
+  if (list.some((m) => matchDedupeKey(m) === matchDedupeKey(match))) return;
+  list.push(match);
+  list.sort((a, b) => matchSortKey(b) - matchSortKey(a));
+  grouped.set(key, list.slice(0, H2H_HISTORY_LIMIT));
+}
+
+/**
+ * Last {H2H_HISTORY_LIMIT} PL meetings per team+opponent+venue.
+ * Key: `{team}:{opp}:H` or `{team}:{opp}:A` (from the selected team's perspective).
+ */
 export async function buildH2HHistoryLookup(): Promise<
   Record<string, H2HMatch[]>
 > {
   const teamCodeById = await loadTeamCodeMap();
   const teamCodeByPlayer = await loadTeamCodeByPlayer(teamCodeById);
-  const [dbMatches, pgsMatches] = await Promise.all([
+  const pgsRows = await loadPgsRows();
+  const [dbMatches, pgsHome, pgsAway] = await Promise.all([
     loadFinishedDbMatches(teamCodeById),
-    loadPgsHomeMatches(teamCodeById, teamCodeByPlayer),
+    Promise.resolve(
+      aggregatePgsMatches(pgsRows, teamCodeById, teamCodeByPlayer, true),
+    ),
+    Promise.resolve(
+      aggregatePgsMatches(pgsRows, teamCodeById, teamCodeByPlayer, false),
+    ),
   ]);
 
   const seen = new Set<string>();
   const all: H2HMatch[] = [];
 
-  for (const m of [...dbMatches, ...pgsMatches]) {
+  for (const m of [...dbMatches, ...pgsHome, ...pgsAway]) {
     const key = matchDedupeKey(m);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -201,11 +249,8 @@ export async function buildH2HHistoryLookup(): Promise<
 
   const grouped = new Map<string, H2HMatch[]>();
   for (const m of all) {
-    const pair = h2hPairKey(m.home, m.away);
-    const list = grouped.get(pair) ?? [];
-    if (list.length >= H2H_HISTORY_LIMIT) continue;
-    list.push(m);
-    grouped.set(pair, list);
+    pushVenueMatch(grouped, m.home, m.away, true, m);
+    pushVenueMatch(grouped, m.away, m.home, false, m);
   }
 
   return Object.fromEntries(grouped);
@@ -213,10 +258,11 @@ export async function buildH2HHistoryLookup(): Promise<
 
 export function getH2HHistory(
   lookup: Record<string, H2HMatch[]>,
-  teamA: string,
-  teamB: string,
+  team: string,
+  opp: string,
+  teamWasHome: boolean,
 ): H2HMatch[] {
-  return lookup[h2hPairKey(teamA, teamB)] ?? [];
+  return lookup[h2hVenueKey(team, opp, teamWasHome)] ?? [];
 }
 
 export type H2HResultForTeam = "W" | "D" | "L";

@@ -41,8 +41,10 @@ export default async function FplFixturesPage({ params }: Props) {
             dgw: t("fixturesDgw"),
             home: t("fixturesHome"),
             away: t("fixturesAway"),
-            h2hTitle: t("fixturesH2hTitle"),
-            h2hEmpty: t("fixturesH2hEmpty"),
+            h2hTitleHome: t("fixturesH2hTitleHome"),
+            h2hTitleAway: t("fixturesH2hTitleAway"),
+            h2hEmptyHome: t("fixturesH2hEmptyHome"),
+            h2hEmptyAway: t("fixturesH2hEmptyAway"),
             h2hTapHint: t("fixturesH2hTapHint"),
             close: t("fixturesH2hClose"),
           }}

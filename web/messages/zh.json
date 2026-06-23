@@ -904,8 +904,10 @@
     "fixturesDgw": "双赛",
     "fixturesHome": "主场",
     "fixturesAway": "客场",
-    "fixturesH2hTitle": "最近 5 次交锋",
-    "fixturesH2hEmpty": "暂无英超历史交锋记录。",
+    "fixturesH2hTitleHome": "最近 5 次主场交锋",
+    "fixturesH2hTitleAway": "最近 5 次客场交锋",
+    "fixturesH2hEmptyHome": "暂无主场交锋记录。",
+    "fixturesH2hEmptyAway": "暂无客场交锋记录。",
     "fixturesH2hTapHint": "查看交锋",
     "fixturesH2hClose": "关闭",
     "fixtureTableTeam": "球队"
