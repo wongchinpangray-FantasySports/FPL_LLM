@@ -746,6 +746,8 @@
     "newsEmpty": "No articles for this filter. Try another region or turn off “Editorials only”.",
     "newsRefresh": "Refresh",
     "newsCount": "Showing {n} articles",
+    "newsSavedOnDevice": "Saved on this device",
+    "newsUpdating": "Updating headlines…",
     "scoutSeasonClub": "Season club",
     "scoutSeasonLeague": "League",
     "scoutFplName": "FPL name",

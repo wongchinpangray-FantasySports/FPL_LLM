@@ -628,6 +628,11 @@ export async function fetchWcNewsItems(opts?: {
   const limit = Math.min(150, Math.max(20, opts?.limit ?? 100));
   const editorialOnly = opts?.editorialOnly ?? false;
 
+  const { fetchPremierLeagueNewsItems } = await import("@/lib/wc/premierleague-news");
+  const plItems = await fetchPremierLeagueNewsItems({ limit: 35 }).catch(
+    () => [] as WcNewsItem[],
+  );
+
   const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
       if (!xml) return [] as WcNewsItem[];
@@ -672,7 +677,7 @@ export async function fetchWcNewsItems(opts?: {
 
   const seen = new Set<string>();
   const merged: WcNewsItem[] = [];
-  for (const item of batches.flat()) {
+  for (const item of [...plItems, ...batches.flat()]) {
     const key = dedupeKey(item.title, item.url);
     if (seen.has(key)) continue;
     seen.add(key);

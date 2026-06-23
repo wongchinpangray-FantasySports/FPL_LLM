@@ -60,7 +60,7 @@ export async function GET(req: Request) {
         fetched_at,
         source,
         disclaimer:
-          "Headlines from third-party RSS feeds. Open links to read full articles on publisher sites.",
+          "Headlines from premierleague.com and third-party RSS feeds. Open links to read full articles on publisher sites.",
       },
       {
         headers: {

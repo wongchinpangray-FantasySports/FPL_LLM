@@ -27,6 +27,8 @@ export function NewsPageContent({ defaultCategory = "trending" }: { defaultCateg
         empty: t("newsEmpty"),
         refresh: t("newsRefresh"),
         count: t("newsCount"),
+        savedOnDevice: t("newsSavedOnDevice"),
+        updating: t("newsUpdating"),
         regions: {
           US: t("newsRegionUs"),
           UK: t("newsRegionUk"),

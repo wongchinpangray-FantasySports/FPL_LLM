@@ -745,6 +745,8 @@
     "newsEmpty": "该筛选条件下暂无文章，请换地区或取消「仅评论/专栏」。",
     "newsRefresh": "刷新",
     "newsCount": "共 {n} 篇",
+    "newsSavedOnDevice": "已保存在本设备",
+    "newsUpdating": "正在更新…",
     "scoutSeasonClub": "赛季俱乐部",
     "scoutSeasonLeague": "联赛",
     "scoutFplName": "FPL 显示名",

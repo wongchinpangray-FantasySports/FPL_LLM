@@ -1,8 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { NewsCategory, WcNewsItem, WcNewsRegion } from "@/lib/wc/news-feeds";
+import {
+  newsPageCacheKey,
+  readNewsPageCache,
+  writeNewsPageCache,
+} from "@/lib/news/page-cache";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { WcSectionIntro } from "@/components/worldcup/wc-shared";
 
@@ -122,6 +127,7 @@ type NewsPayload = {
   total: number;
   category?: string;
   disclaimer: string;
+  fetched_at?: string;
   error?: string;
 };
 
@@ -159,6 +165,8 @@ export function WcNewsPanel({
     empty: string;
     refresh: string;
     count: string;
+    savedOnDevice?: string;
+    updating?: string;
     regions: Record<string, string>;
     categories: Record<string, string>;
   };
@@ -167,8 +175,14 @@ export function WcNewsPanel({
   const [region, setRegion] = useState("ALL");
   const [editorialOnly, setEditorialOnly] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<NewsPayload | null>(null);
+
+  const cacheKey = useMemo(
+    () => newsPageCacheKey(category, region, editorialOnly),
+    [category, region, editorialOnly],
+  );
 
   const load = useCallback(
     async (
@@ -176,8 +190,14 @@ export function WcNewsPanel({
       regionFilter: string,
       editorial: boolean,
       refresh = false,
+      opts?: { keepVisible?: boolean },
     ) => {
-      setLoading(true);
+      const keepVisible = opts?.keepVisible ?? false;
+      if (refresh || keepVisible) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       try {
         const q = new URLSearchParams({
@@ -191,10 +211,21 @@ export function WcNewsPanel({
         const json = (await res.json()) as NewsPayload;
         if (!res.ok) throw new Error(json.error ?? "Failed to load news");
         setData(json);
+        writeNewsPageCache(
+          newsPageCacheKey(categoryFilter, regionFilter, editorial),
+          {
+            items: json.items,
+            total: json.total,
+            category: json.category,
+            disclaimer: json.disclaimer,
+            fetched_at: json.fetched_at,
+          },
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load news");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     },
     [],
@@ -205,8 +236,22 @@ export function WcNewsPanel({
   }, [defaultCategory]);
 
   useEffect(() => {
+    const cached = readNewsPageCache(cacheKey);
+    if (cached) {
+      setData({
+        items: cached.items,
+        total: cached.total,
+        category: cached.category,
+        disclaimer: cached.disclaimer,
+        fetched_at: cached.fetched_at,
+      });
+      setLoading(false);
+      void load(category, region, editorialOnly, false, { keepVisible: true });
+      return;
+    }
+    setData(null);
     void load(category, region, editorialOnly);
-  }, [load, category, region, editorialOnly]);
+  }, [load, category, region, editorialOnly, cacheKey]);
 
   const regionOptions = [
     { value: "ALL", label: labels.regionAll },
@@ -275,8 +320,8 @@ export function WcNewsPanel({
         </label>
         <button
           type="button"
-          onClick={() => void load(category, region, editorialOnly, true)}
-          disabled={loading}
+          onClick={() => void load(category, region, editorialOnly, true, { keepVisible: true })}
+          disabled={loading || refreshing}
           className={cn(
             "rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground/70 transition-colors",
             "hover:border-brand-accent/40 hover:text-foreground disabled:opacity-50",
@@ -286,8 +331,11 @@ export function WcNewsPanel({
         </button>
       </div>
 
-      {loading ? (
+      {loading && !data ? (
         <p className="text-sm text-muted-foreground">{labels.loading}</p>
+      ) : null}
+      {refreshing && data ? (
+        <p className="text-xs text-muted-foreground">{labels.updating ?? labels.loading}</p>
       ) : null}
       {error ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
@@ -299,10 +347,13 @@ export function WcNewsPanel({
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : null}
 
-      {!loading && !error && items.length > 0 ? (
+      {!error && items.length > 0 ? (
         <>
           <p className="text-xs text-muted-foreground">
             {labels.count.replace("{n}", String(items.length))}
+            {labels.savedOnDevice ? (
+              <span className="text-muted-foreground/70"> · {labels.savedOnDevice}</span>
+            ) : null}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {items.map((item) => (
