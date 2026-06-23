@@ -19,22 +19,31 @@ FPL_BASE = "https://fantasy.premierleague.com/api"
 
 
 def fpl_season_start_year_from_bootstrap(data: dict) -> str:
-    """Calendar year when the FPL season kicks off (e.g. 2025 for 2025/26).
+    """Calendar year when the FPL season kicks off (e.g. 2026 for 2026/27).
 
-    Prefer ``FPL_CURRENT_SEASON`` env when set. Otherwise derive from the
-    earliest event's ``deadline_time`` (GW1) in ``bootstrap-static`` JSON.
+    Prefer ``FPL_CURRENT_SEASON`` env when set. Otherwise derive from
+    ``bootstrap-static`` events. When every GW is finished (off-season), use the
+    calendar year of the **last** gameweek deadline — that is the start year of
+    the next campaign once FPL rolls fixtures forward (e.g. GW38 in May 2026 →
+    ``2026`` for 2026/27).
     """
     env = os.environ.get("FPL_CURRENT_SEASON", "").strip()
     if env:
         return env
     events = data.get("events") or []
     if not events:
-        return "2025"
+        return "2026"
+    all_finished = all(bool(e.get("finished")) for e in events)
+    if all_finished:
+        last = max(events, key=lambda e: int(e.get("id", 0)))
+        dt = last.get("deadline_time")
+        if isinstance(dt, str) and len(dt) >= 4 and dt[:4].isdigit():
+            return dt[:4]
     first = min(events, key=lambda e: int(e.get("id", 999)))
     dt = first.get("deadline_time")
     if isinstance(dt, str) and len(dt) >= 4 and dt[:4].isdigit():
         return dt[:4]
-    return "2025"
+    return "2026"
 
 _DEFAULT_HEADERS = {
     "User-Agent": (

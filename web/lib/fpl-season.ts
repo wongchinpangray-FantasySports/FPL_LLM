@@ -42,9 +42,27 @@ export async function getCurrentFplSeason(): Promise<string> {
     .limit(1)
     .maybeSingle();
 
+  const { data: gwRows } = await supa
+    .from("gameweeks")
+    .select("id,finished,deadline_time")
+    .order("id", { ascending: true });
+
+  const gws = gwRows ?? [];
+  if (
+    gws.length > 0 &&
+    gws.every((g) => g.finished) &&
+    gws[gws.length - 1]?.deadline_time
+  ) {
+    const offSeasonYear = String(gws[gws.length - 1].deadline_time).slice(0, 4);
+    if (isFplSeasonKey(offSeasonYear)) {
+      cache = { value: offSeasonYear, at: now };
+      return offSeasonYear;
+    }
+  }
+
   const fromFx =
     fxRow?.season != null ? String(fxRow.season).trim() : "";
-  const resolved = fromFx || "2024";
+  const resolved = fromFx || "2026";
   cache = { value: resolved, at: now };
   return resolved;
 }
