@@ -1,6 +1,21 @@
-import { buildH2HStore, projectH2HAttackEase, type H2HStore } from "@/lib/fpl/h2h";
+import {
+  buildH2HStore,
+  projectH2HAttackEase,
+  type H2HStore,
+} from "@/lib/fpl/h2h";
 
-/** Map H2H attack-ease scores to FDR 1–5 using quintiles (1 = easiest). */
+/**
+ * Map expected goals-for to FDR 1–5 using fixed PL-calibrated bands.
+ * 1 = easiest attack fixture, 5 = hardest (not season quintiles).
+ */
+export function easeToFdr(ease: number): number {
+  if (ease >= 1.72) return 1;
+  if (ease >= 1.48) return 2;
+  if (ease >= 1.28) return 3;
+  if (ease >= 1.06) return 4;
+  return 5;
+}
+
 export function buildFplFdrLookup(
   fixtures: {
     id: number;
@@ -9,34 +24,14 @@ export function buildFplFdrLookup(
   }[],
   store: H2HStore,
 ): Map<string, number> {
-  type Cell = { key: string; ease: number };
-  const cells: Cell[] = [];
-
-  for (const fx of fixtures) {
-    cells.push({
-      key: `${fx.home}:${fx.id}`,
-      ease: projectH2HAttackEase(fx.home, fx.away, true, store),
-    });
-    cells.push({
-      key: `${fx.away}:${fx.id}`,
-      ease: projectH2HAttackEase(fx.away, fx.home, false, store),
-    });
-  }
-
-  const sorted = [...cells].sort((a, b) => b.ease - a.ease);
-  const n = sorted.length;
   const out = new Map<string, number>();
 
-  sorted.forEach((cell, idx) => {
-    const pct = n <= 1 ? 0 : idx / (n - 1);
-    let fdr: number;
-    if (pct <= 0.2) fdr = 1;
-    else if (pct <= 0.4) fdr = 2;
-    else if (pct <= 0.6) fdr = 3;
-    else if (pct <= 0.8) fdr = 4;
-    else fdr = 5;
-    out.set(cell.key, fdr);
-  });
+  for (const fx of fixtures) {
+    const homeEase = projectH2HAttackEase(fx.home, fx.away, true, store);
+    const awayEase = projectH2HAttackEase(fx.away, fx.home, false, store);
+    out.set(`${fx.home}:${fx.id}`, easeToFdr(homeEase));
+    out.set(`${fx.away}:${fx.id}`, easeToFdr(awayEase));
+  }
 
   return out;
 }

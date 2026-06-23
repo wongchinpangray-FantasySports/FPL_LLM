@@ -11,27 +11,56 @@ const venueKey = (team: string, opp: string, home: boolean) =>
 
 const pairKey = (team: string, opp: string) => `${team}:${opp}`;
 
-/** H2H keyed by FPL-style club codes (ARS, COV, …). */
+const HOME_BASE = 1.45;
+const AWAY_BASE = 1.15;
+
+/** Cap opponent defensive weakness — elite sides cannot look artificially easy. */
+const ELITE_DEF_WEAKNESS_CAP: Record<string, number> = {
+  MCI: 0.65,
+  LIV: 0.7,
+  CHE: 0.72,
+  ARS: 0.75,
+  MUN: 0.8,
+  NEW: 0.85,
+  TOT: 0.88,
+};
+
+/** H2H + venue strength keyed by FPL-style club codes (ARS, COV, …). */
 export class H2HStore {
   private venue = new Map<string, H2HBucket>();
   private any = new Map<string, H2HBucket>();
-  private teamTotals = new Map<string, H2HBucket>();
-  leagueAvgGpg = 1.35;
+  private homeProfile = new Map<string, H2HBucket>();
+  private awayProfile = new Map<string, H2HBucket>();
+
+  leagueHomeGpg = HOME_BASE;
+  leagueAwayGpg = AWAY_BASE;
+  leagueHomeGpgConceded = HOME_BASE;
+  leagueAwayGpgConceded = AWAY_BASE;
 
   addMatch(team: string, opp: string, home: boolean, gf: number, ga: number) {
     if (team === opp) return;
     this.bump(this.venue, venueKey(team, opp, home), gf, ga);
     this.bump(this.any, pairKey(team, opp), gf, ga);
-    const cur = this.teamTotals.get(team) ?? {
-      games: 0,
-      goalsFor: 0,
-      goalsAgainst: 0,
-    };
+
+    const profile = home ? this.homeProfile : this.awayProfile;
+    const oppProfile = home ? this.awayProfile : this.homeProfile;
+    this.bumpTeam(profile, team, gf, ga);
+    this.bumpTeam(oppProfile, opp, ga, gf);
+
+    this.recomputeLeagueAvgs();
+  }
+
+  private bumpTeam(
+    map: Map<string, H2HBucket>,
+    team: string,
+    gf: number,
+    ga: number,
+  ) {
+    const cur = map.get(team) ?? { games: 0, goalsFor: 0, goalsAgainst: 0 };
     cur.games += 1;
     cur.goalsFor += gf;
     cur.goalsAgainst += ga;
-    this.teamTotals.set(team, cur);
-    this.recomputeLeagueAvg();
+    map.set(team, cur);
   }
 
   private bump(map: Map<string, H2HBucket>, key: string, gf: number, ga: number) {
@@ -42,14 +71,25 @@ export class H2HStore {
     map.set(key, cur);
   }
 
-  private recomputeLeagueAvg() {
-    let gf = 0;
+  private avgGpg(map: Map<string, H2HBucket>, field: "goalsFor" | "goalsAgainst") {
+    let total = 0;
     let games = 0;
-    for (const b of this.teamTotals.values()) {
-      gf += b.goalsFor;
+    for (const b of map.values()) {
+      total += b[field];
       games += b.games;
     }
-    if (games > 0) this.leagueAvgGpg = gf / games;
+    return games > 0 ? total / games : null;
+  }
+
+  private recomputeLeagueAvgs() {
+    const homeGf = this.avgGpg(this.homeProfile, "goalsFor");
+    const awayGf = this.avgGpg(this.awayProfile, "goalsFor");
+    const homeGa = this.avgGpg(this.homeProfile, "goalsAgainst");
+    const awayGa = this.avgGpg(this.awayProfile, "goalsAgainst");
+    if (homeGf != null) this.leagueHomeGpg = homeGf;
+    if (awayGf != null) this.leagueAwayGpg = awayGf;
+    if (homeGa != null) this.leagueHomeGpgConceded = homeGa;
+    if (awayGa != null) this.leagueAwayGpgConceded = awayGa;
   }
 
   getVenue(team: string, opp: string, home: boolean): H2HBucket | null {
@@ -60,17 +100,39 @@ export class H2HStore {
     return this.any.get(pairKey(team, opp)) ?? null;
   }
 
-  getTeamAttackRate(team: string): number {
-    const t = this.teamTotals.get(team);
-    if (!t || t.games === 0) return 1;
-    return t.goalsFor / t.games / this.leagueAvgGpg;
+  private rate(
+    map: Map<string, H2HBucket>,
+    team: string,
+    field: "goalsFor" | "goalsAgainst",
+    baseline: number,
+  ): number {
+    const t = map.get(team);
+    if (!t || t.games < 4) return 1;
+    return t[field] / t.games / baseline;
   }
 
-  getTeamDefRate(team: string): number {
-    const t = this.teamTotals.get(team);
-    if (!t || t.games === 0) return 1;
-    /** Goals conceded per game vs league average (higher = leakier defence). */
-    return t.goalsAgainst / t.games / this.leagueAvgGpg;
+  getHomeAttackRate(team: string): number {
+    return this.rate(this.homeProfile, team, "goalsFor", this.leagueHomeGpg);
+  }
+
+  getAwayAttackRate(team: string): number {
+    return this.rate(this.awayProfile, team, "goalsFor", this.leagueAwayGpg);
+  }
+
+  /** Opponent goals conceded at the relevant venue (higher = leakier). */
+  getHomeDefWeakness(team: string): number {
+    return this.rate(this.homeProfile, team, "goalsAgainst", this.leagueHomeGpgConceded);
+  }
+
+  getAwayDefWeakness(team: string): number {
+    return this.rate(this.awayProfile, team, "goalsAgainst", this.leagueAwayGpgConceded);
+  }
+
+  opponentDefWeakness(opp: string, home: boolean): number {
+    let w = home ? this.getAwayDefWeakness(opp) : this.getHomeDefWeakness(opp);
+    const cap = ELITE_DEF_WEAKNESS_CAP[opp];
+    if (cap != null) w = Math.min(w, cap);
+    return w;
   }
 }
 
@@ -168,8 +230,7 @@ function aggregatePlayerRows(
   teamCodeByPlayer: Map<number, string>,
   teamCodeById: Map<number, string>,
 ): AggregatedMatch[] {
-  type Acc = AggregatedMatch;
-  const byFixture = new Map<string, Acc>();
+  const byFixture = new Map<string, AggregatedMatch>();
 
   for (const row of rows) {
     if (!row.fixture_id || !row.opponent_team_id || (row.minutes ?? 0) <= 0) {
@@ -313,23 +374,21 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
 }
 
-/** Baseline expected goals-for from team attack × opponent defensive weakness. */
+/** Baseline expected goals-for from venue attack × opponent venue defence. */
 export function modelAttackEase(
   team: string,
   opp: string,
   home: boolean,
   store: H2HStore,
 ): number {
-  const base = store.leagueAvgGpg;
-  const teamRate = store.getTeamAttackRate(team);
-  /** Higher = concedes more relative to league avg → easier to score against. */
-  const oppDefWeakness = store.getTeamDefRate(opp);
-  const venueBoost = home ? 1.12 : 0.88;
-  return base * teamRate * oppDefWeakness * venueBoost;
+  const oppDef = store.opponentDefWeakness(opp, home);
+  if (home) {
+    return HOME_BASE * store.getHomeAttackRate(team) * oppDef;
+  }
+  return AWAY_BASE * store.getAwayAttackRate(team) * oppDef;
 }
 
-/** H2H adjustment vs model (capped so one outlier derby cannot flip elite oppositions). */
-function h2hMultiplier(
+function h2hGoalDelta(
   team: string,
   opp: string,
   home: boolean,
@@ -340,27 +399,27 @@ function h2hMultiplier(
   const any = store.getAny(team, opp);
 
   let h2hGpg: number | null = null;
+  let games = 0;
   if (venue && venue.games >= MIN_VENUE_GAMES) {
     h2hGpg = venue.goalsFor / venue.games;
+    games = venue.games;
   } else if (any && any.games >= MIN_PAIR_GAMES) {
     const gpg = any.goalsFor / any.games;
-    h2hGpg = home ? gpg * 1.1 : gpg * 0.9;
+    h2hGpg = home ? gpg * 1.08 : gpg * 0.92;
+    games = any.games;
   } else if (any && any.games >= 1) {
     const gpg = any.goalsFor / any.games;
-    h2hGpg = home ? gpg * 1.08 : gpg * 0.92;
+    h2hGpg = home ? gpg * 1.05 : gpg * 0.95;
+    games = any.games;
   }
 
-  if (h2hGpg == null) return 1;
+  if (h2hGpg == null) return 0;
 
-  const safeModel = Math.max(0.45, model);
-  const ratio = h2hGpg / safeModel;
-  const games = venue?.games ?? any?.games ?? 0;
-  const weight = clamp(games / 8, 0.25, 0.65);
-  const adjusted = 1 + (ratio - 1) * weight;
-  return clamp(adjusted, 0.78, 1.22);
+  const weight = clamp(games / 10, 0.15, 0.4);
+  return clamp((h2hGpg - model) * weight, -0.22, 0.22);
 }
 
-/** Expected goals-for for an attack fixture (higher = easier). Used for FDR quintiles. */
+/** Expected goals-for for an attack fixture (higher = easier). */
 export function projectH2HAttackEase(
   team: string,
   opp: string,
@@ -368,5 +427,6 @@ export function projectH2HAttackEase(
   store: H2HStore,
 ): number {
   const model = modelAttackEase(team, opp, home, store);
-  return model * h2hMultiplier(team, opp, home, store, model);
+  const delta = h2hGoalDelta(team, opp, home, store, model);
+  return clamp(model + delta, 0.35, 2.6);
 }
