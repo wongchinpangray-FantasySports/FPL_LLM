@@ -12,12 +12,19 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { UserProfile } from "@/lib/auth/session";
 import { useEntryId } from "@/components/entry-id-context";
+import type { TeamTheme } from "@/lib/team-themes";
+import {
+  applyTeamThemeToDocument,
+  clearTeamThemeOnDocument,
+} from "@/lib/team-theme-css";
 
 type AuthContextValue = {
   user: User | null;
   profile: UserProfile | null;
   unreadCount: number;
   isAdmin: boolean;
+  theme: TeamTheme | null;
+  themeTeamType: "club" | "national" | null;
   loading: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -31,6 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [theme, setTheme] = useState<TeamTheme | null>(null);
+  const [themeTeamType, setThemeTeamType] = useState<"club" | "national" | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -41,6 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setUnreadCount(0);
         setIsAdmin(false);
+        setTheme(null);
+        setThemeTeamType(null);
+        clearTeamThemeOnDocument();
         return;
       }
       const data = (await res.json()) as {
@@ -48,11 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile: UserProfile | null;
         unread_count: number;
         is_admin?: boolean;
+        theme?: TeamTheme | null;
+        theme_team_type?: "club" | "national" | null;
       };
       setUser(data.user);
       setProfile(data.profile);
       setUnreadCount(data.unread_count ?? 0);
       setIsAdmin(Boolean(data.is_admin));
+      if (data.user && data.theme) {
+        setTheme(data.theme);
+        setThemeTeamType(data.theme_team_type ?? null);
+        applyTeamThemeToDocument(data.theme);
+      } else {
+        setTheme(null);
+        setThemeTeamType(null);
+        clearTeamThemeOnDocument();
+      }
       if (data.profile?.fpl_entry_id != null) {
         setEntryId(String(data.profile.fpl_entry_id));
       }
@@ -61,6 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       setUnreadCount(0);
       setIsAdmin(false);
+      setTheme(null);
+      setThemeTeamType(null);
+      clearTeamThemeOnDocument();
     }
   }, [setEntryId]);
 
@@ -99,11 +127,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     setUnreadCount(0);
     setIsAdmin(false);
+    setTheme(null);
+    setThemeTeamType(null);
+    clearTeamThemeOnDocument();
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, unreadCount, isAdmin, loading, refresh, signOut }),
-    [user, profile, unreadCount, isAdmin, loading, refresh, signOut],
+    () => ({
+      user,
+      profile,
+      unreadCount,
+      isAdmin,
+      theme,
+      themeTeamType,
+      loading,
+      refresh,
+      signOut,
+    }),
+    [
+      user,
+      profile,
+      unreadCount,
+      isAdmin,
+      theme,
+      themeTeamType,
+      loading,
+      refresh,
+      signOut,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

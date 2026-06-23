@@ -62,7 +62,6 @@ export function FplHub() {
         <HubTile href={plannerHref} title={t("planner")} description={t("plannerBody")} />
         <HubTile href={managerHref} title={t("manager")} description={t("managerBody")} />
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
-        <HubTile href="/mini" title={t("mini")} description={t("miniBody")} />
         <HubTile
           href="/fpl/fixtures"
           title={t("fixturesLinkTitle")}

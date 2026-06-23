@@ -14,6 +14,7 @@ export function MiniPlayerPicker({
   searchingLabel,
   noResultsLabel,
   clearSlotLabel,
+  playersApi = "/api/planner/players",
   onClose,
   onSelect,
   onClearSlot,
@@ -26,6 +27,7 @@ export function MiniPlayerPicker({
   searchingLabel: string;
   noResultsLabel: string;
   clearSlotLabel: string;
+  playersApi?: string;
   onClose: () => void;
   onSelect: (player: PlayerHit) => void;
   onClearSlot?: () => void;
@@ -52,7 +54,7 @@ export function MiniPlayerPicker({
         try {
           const params = new URLSearchParams({ q: trimmed });
           if (positionFilter) params.set("position", positionFilter);
-          const res = await fetch(`/api/planner/players?${params}`);
+          const res = await fetch(`${playersApi}?${params}`);
           const data = (await res.json()) as { players?: PlayerHit[] };
           setHits(data.players ?? []);
         } catch {
@@ -63,7 +65,7 @@ export function MiniPlayerPicker({
       })();
     }, 220);
     return () => window.clearTimeout(id);
-  }, [q, open, positionFilter]);
+  }, [q, open, positionFilter, playersApi]);
 
   return (
     <MiniModal

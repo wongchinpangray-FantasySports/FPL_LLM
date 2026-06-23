@@ -36,7 +36,7 @@ function leagueLabel(id: string, t: (k: string) => string): string {
 
 export function AccountPanel() {
   const t = useTranslations("account");
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refresh } = useAuth();
   const [details, setDetails] = useState<AccountDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +87,7 @@ export function AccountPanel() {
             }
           : prev,
       );
+      void refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("themeError"));
     } finally {

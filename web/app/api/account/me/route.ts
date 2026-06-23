@@ -4,6 +4,7 @@ import { getServerSupabase } from "@/lib/supabase";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { isAdminEmail } from "@/lib/auth/admin";
 import { recordLoginDay } from "@/lib/auth/record-login-day";
+import { resolveUserTheme } from "@/lib/auth/resolve-user-theme";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ export async function GET() {
       await admin.from("profiles").upsert({ id: userId });
     }
 
+    const themePayload = await resolveUserTheme(userId);
+
     return NextResponse.json({
       user: {
         id: authData.user.id,
@@ -59,6 +62,8 @@ export async function GET() {
       profile: profile ?? { id: userId, onboarding_completed_at: null },
       unread_count: unread ?? 0,
       is_admin: isAdminEmail(authData.user.email),
+      theme: themePayload.theme,
+      theme_team_type: themePayload.theme_team_type,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load account";

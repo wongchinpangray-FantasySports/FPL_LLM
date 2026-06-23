@@ -1,28 +1,7 @@
-import { setRequestLocale, getTranslations } from "next-intl/server";
-import { PageShell } from "@/components/page-shell";
-import { MiniGameApp } from "@/components/mini/mini-game-app";
+import { redirect } from "@/i18n/navigation";
 
-export const dynamic = "force-dynamic";
+type Props = { params: { locale: string } };
 
-export default async function MiniFantasyPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
-  const { locale } = params;
-  setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "miniIndex" });
-
-  return (
-    <PageShell
-      backHref="/"
-      backLabel={t("backHome")}
-      eyebrow={t("eyebrow")}
-      title={t("title")}
-      description={t("description")}
-      width="4xl"
-    >
-      <MiniGameApp locale={locale} />
-    </PageShell>
-  );
+export default function LegacyMiniRedirect({ params }: Props) {
+  redirect({ href: "/play/mini", locale: params.locale });
 }
