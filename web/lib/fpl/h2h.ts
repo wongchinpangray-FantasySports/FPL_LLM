@@ -69,6 +69,7 @@ export class H2HStore {
   getTeamDefRate(team: string): number {
     const t = this.teamTotals.get(team);
     if (!t || t.games === 0) return 1;
+    /** Goals conceded per game vs league average (higher = leakier defence). */
     return t.goalsAgainst / t.games / this.leagueAvgGpg;
   }
 }
@@ -308,36 +309,64 @@ export async function buildH2HStore(): Promise<H2HStore> {
 const MIN_VENUE_GAMES = 2;
 const MIN_PAIR_GAMES = 3;
 
-/** Expected goals-for from historical H2H (higher = easier attack fixture). */
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, n));
+}
+
+/** Baseline expected goals-for from team attack × opponent defensive weakness. */
+export function modelAttackEase(
+  team: string,
+  opp: string,
+  home: boolean,
+  store: H2HStore,
+): number {
+  const base = store.leagueAvgGpg;
+  const teamRate = store.getTeamAttackRate(team);
+  /** Higher = concedes more relative to league avg → easier to score against. */
+  const oppDefWeakness = store.getTeamDefRate(opp);
+  const venueBoost = home ? 1.12 : 0.88;
+  return base * teamRate * oppDefWeakness * venueBoost;
+}
+
+/** H2H adjustment vs model (capped so one outlier derby cannot flip elite oppositions). */
+function h2hMultiplier(
+  team: string,
+  opp: string,
+  home: boolean,
+  store: H2HStore,
+  model: number,
+): number {
+  const venue = store.getVenue(team, opp, home);
+  const any = store.getAny(team, opp);
+
+  let h2hGpg: number | null = null;
+  if (venue && venue.games >= MIN_VENUE_GAMES) {
+    h2hGpg = venue.goalsFor / venue.games;
+  } else if (any && any.games >= MIN_PAIR_GAMES) {
+    const gpg = any.goalsFor / any.games;
+    h2hGpg = home ? gpg * 1.1 : gpg * 0.9;
+  } else if (any && any.games >= 1) {
+    const gpg = any.goalsFor / any.games;
+    h2hGpg = home ? gpg * 1.08 : gpg * 0.92;
+  }
+
+  if (h2hGpg == null) return 1;
+
+  const safeModel = Math.max(0.45, model);
+  const ratio = h2hGpg / safeModel;
+  const games = venue?.games ?? any?.games ?? 0;
+  const weight = clamp(games / 8, 0.25, 0.65);
+  const adjusted = 1 + (ratio - 1) * weight;
+  return clamp(adjusted, 0.78, 1.22);
+}
+
+/** Expected goals-for for an attack fixture (higher = easier). Used for FDR quintiles. */
 export function projectH2HAttackEase(
   team: string,
   opp: string,
   home: boolean,
   store: H2HStore,
 ): number {
-  const venue = store.getVenue(team, opp, home);
-  const any = store.getAny(team, opp);
-  const base = store.leagueAvgGpg;
-
-  if (venue && venue.games >= MIN_VENUE_GAMES) {
-    return venue.goalsFor / venue.games;
-  }
-
-  if (any && any.games >= MIN_PAIR_GAMES) {
-    const gpg = any.goalsFor / any.games;
-    return home ? gpg * 1.15 : gpg * 0.9;
-  }
-
-  if (any && any.games >= 1) {
-    const gpg = any.goalsFor / any.games;
-    const blended = home ? gpg * 1.12 : gpg * 0.92;
-    const teamRate = store.getTeamAttackRate(team);
-    const oppDef = store.getTeamDefRate(opp);
-    return blended * 0.55 + base * teamRate * (1 / oppDef) * 0.45;
-  }
-
-  const teamRate = store.getTeamAttackRate(team);
-  const oppDef = store.getTeamDefRate(opp);
-  const venueBoost = home ? 1.12 : 0.92;
-  return base * teamRate * (1 / oppDef) * venueBoost;
+  const model = modelAttackEase(team, opp, home, store);
+  return model * h2hMultiplier(team, opp, home, store, model);
 }
