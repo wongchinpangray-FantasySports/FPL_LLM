@@ -17,6 +17,7 @@ type AuthContextValue = {
   user: User | null;
   profile: UserProfile | null;
   unreadCount: number;
+  isAdmin: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -38,16 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setProfile(null);
         setUnreadCount(0);
+        setIsAdmin(false);
         return;
       }
       const data = (await res.json()) as {
         user: User | null;
         profile: UserProfile | null;
         unread_count: number;
+        is_admin?: boolean;
       };
       setUser(data.user);
       setProfile(data.profile);
       setUnreadCount(data.unread_count ?? 0);
+      setIsAdmin(Boolean(data.is_admin));
       if (data.profile?.fpl_entry_id != null) {
         setEntryId(String(data.profile.fpl_entry_id));
       }
@@ -55,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       setUnreadCount(0);
+      setIsAdmin(false);
     }
   }, [setEntryId]);
 
@@ -92,11 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProfile(null);
     setUnreadCount(0);
+    setIsAdmin(false);
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, unreadCount, loading, refresh, signOut }),
-    [user, profile, unreadCount, loading, refresh, signOut],
+    () => ({ user, profile, unreadCount, isAdmin, loading, refresh, signOut }),
+    [user, profile, unreadCount, isAdmin, loading, refresh, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

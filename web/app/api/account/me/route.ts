@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
+import { isAdminEmail } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export async function GET() {
       },
       profile: profile ?? { id: userId, onboarding_completed_at: null },
       unread_count: unread ?? 0,
+      is_admin: isAdminEmail(authData.user.email),
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load account";

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export function AuthNav() {
   const t = useTranslations("nav");
   const router = useRouter();
-  const { user, unreadCount, loading, signOut } = useAuth();
+  const { user, unreadCount, isAdmin, loading, signOut } = useAuth();
 
   if (loading) return null;
 
@@ -35,6 +35,14 @@ export function AuthNav() {
 
   return (
     <div className="flex items-center gap-1 sm:gap-2">
+      {isAdmin ? (
+        <Link
+          href="/admin"
+          className="rounded-md px-2 py-1 text-xs text-amber-200/90 hover:text-amber-100 sm:text-sm"
+        >
+          {t("admin")}
+        </Link>
+      ) : null}
       <Link
         href="/inbox"
         className="relative rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground sm:text-sm"

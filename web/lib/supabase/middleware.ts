@@ -1,7 +1,12 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/onboarding", "/inbox", "/account"];
+const PROTECTED_PREFIXES = ["/onboarding", "/inbox", "/account", "/admin"];
+
+export function isAdminPath(pathname: string): boolean {
+  const path = pathname.replace(/^\/(en|zh)(?=\/|$)/, "") || pathname;
+  return path === "/admin" || path.startsWith("/admin/");
+}
 
 export function isProtectedPath(pathname: string): boolean {
   const path = pathname.replace(/^\/(en|zh)(?=\/|$)/, "") || pathname;
