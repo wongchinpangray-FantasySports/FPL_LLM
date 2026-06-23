@@ -7,8 +7,10 @@ import {
   listWcPlayers,
 } from "@/lib/wc/data";
 import {
-  localizeNamedRows,
+  localizeFdrGrid,
+  localizePlayerListItems,
   localizeScoutingReport,
+  localizeXpRows,
   readLocaleFromRequest,
 } from "@/lib/wc/localize-players";
 
@@ -55,8 +57,8 @@ export async function GET(req: Request) {
       getWcPoolStatus(),
     ]);
 
-    const localizedXpRows = await localizeNamedRows(xp.rows, locale);
-    const localizedPlayers = await localizeNamedRows(players, locale);
+    const localizedXpRows = await localizeXpRows(xp.rows, locale);
+    const localizedPlayers = await localizePlayerListItems(players, locale);
 
     const poolNote =
       pool.source === "fifa"
@@ -66,7 +68,7 @@ export async function GET(req: Request) {
           : "Set FIFA_FANTASY_BOOTSTRAP_PATH on Cloudflare for the official FIFA player list.";
 
     return NextResponse.json({
-      fdrGrid,
+      fdrGrid: localizeFdrGrid(fdrGrid, locale),
       xp: { matchdays: xp.matchdays, rows: localizedXpRows },
       projection: xp.projection,
       projection_note: projectionNote(xp.projection),

@@ -6,7 +6,11 @@ import {
   buildTeamResultsFromFifa,
   loadTeamsByCode,
 } from "@/lib/wc/fifa-standings";
-import { localizeLeaderboardRows } from "@/lib/wc/localize-players";
+import {
+  localizeGroupTables,
+  localizeLeaderboardRows,
+  localizeTeamsDetail,
+} from "@/lib/wc/localize-players";
 import type { WcFixtureRow } from "@/lib/wc/projection-context";
 import type { WcTeam } from "@/lib/wc/types";
 import { unstable_cache } from "next/cache";
@@ -243,7 +247,10 @@ export async function loadWcTablesData(locale = "en"): Promise<{
     loadTeamsByCode(),
   ]);
 
-  const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
+  const groups = localizeGroupTables(
+    buildGroupTablesFromFifaMatches(teamsByCode, matches),
+    locale,
+  );
   const { scorers, assists } = buildLeaderboardsFromFifaMatches(
     teamsByCode,
     matches,
@@ -280,7 +287,7 @@ export async function loadWcTablesData(locale = "en"): Promise<{
     groups,
     scorers: localizedScorers,
     assists: localizedAssists,
-    teams: teamsDetail,
+    teams: localizeTeamsDetail(teamsDetail, locale),
   };
 }
 

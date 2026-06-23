@@ -12,7 +12,11 @@ import {
   buildLeaderboardsFromFifaMatches,
   loadTeamsByCode,
 } from "@/lib/wc/fifa-standings";
-import { localizeLeaderboardRows } from "@/lib/wc/localize-players";
+import {
+  localizeGroupTables,
+  localizeHomeMatchSnippets,
+  localizeLeaderboardRows,
+} from "@/lib/wc/localize-players";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
 
 export type HomeMatchSnippet = {
@@ -108,7 +112,10 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
     loadTeamsByCode(),
   ]);
 
-  const groups = buildGroupTablesFromFifaMatches(teamsByCode, matches);
+  const groups = localizeGroupTables(
+    buildGroupTablesFromFifaMatches(teamsByCode, matches),
+    locale,
+  );
   const { scorers, assists } = buildLeaderboardsFromFifaMatches(
     teamsByCode,
     matches,
@@ -122,8 +129,14 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
   ]);
 
   return {
-    ticker: buildTodayTicker(matches),
-    nextMatches: upcoming.slice(0, 3).map(toSnippet),
+    ticker: buildTodayTicker(matches).map((item) => ({
+      ...item,
+      match: localizeHomeMatchSnippets([item.match], locale)[0]!,
+    })),
+    nextMatches: localizeHomeMatchSnippets(
+      upcoming.slice(0, 3).map(toSnippet),
+      locale,
+    ),
     groupsPreview: groups,
     topScorers,
     topAssists,
