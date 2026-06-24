@@ -1031,7 +1031,7 @@
     "fixturesPageDescription": "Official Premier League schedule. Tap any fixture for the last five meetings.",
     "fixturesEyebrow": "Fixtures",
     "fixturesTitle": "{season} · GW1–38",
-    "fixturesHint": "Tap a fixture for H2H · yellow ring = DGW.",
+    "fixturesHint": "FDR from H2H history · tap fixture for last 5 meetings · yellow ring = DGW.",
     "fixturesExpandHint": "Tap team row to expand fixtures.",
     "fixturesGwLabel": "GW",
     "fixturesDgw": "DGW",

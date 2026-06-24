@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { fdrClass } from "@/lib/fpl/fdr";
 import { getFplTeamBadgeStyle } from "@/lib/team-themes";
 import type { H2HMatch } from "@/lib/fpl/h2h-history";
 import type { FplFixtureRow, FplGwBlock } from "@/lib/fpl/fixtures-grid";
@@ -31,10 +32,11 @@ function FixtureChip({
       }}
       className={cn(
         "group relative w-full overflow-hidden rounded-lg border text-left transition-all",
-        "border-border/60 bg-card hover:-translate-y-0.5 hover:border-brand-accent/35 hover:shadow-lg",
+        "hover:-translate-y-0.5 hover:border-brand-accent/35 hover:shadow-lg",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/50",
+        fdrClass(fixture.fdr),
       )}
-      title={labels.h2hTapHint}
+      title={`FDR ${fixture.fdr} · ${labels.h2hTapHint}`}
     >
       <span
         className="absolute inset-y-0 left-0 w-1.5"
@@ -52,6 +54,11 @@ function FixtureChip({
           >
             {fixture.opp}
           </span>
+          <span className="text-[10px] font-semibold tabular-nums text-foreground/90">
+            FDR {fixture.fdr}
+          </span>
+        </span>
+        <span className="flex items-center justify-between gap-1.5">
           <span
             className={cn(
               "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",

@@ -12,7 +12,7 @@ export default async function FplFixturesPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "fplHub" });
   const [grid, h2hHistory] = await Promise.all([
-    Promise.resolve(buildFplFixtureGrid()),
+    buildFplFixtureGrid(),
     buildH2HHistoryLookup(),
   ]);
   const seasonLabel = `${grid.fplSeason}/${String(Number(grid.fplSeason) + 1).slice(-2)}`;

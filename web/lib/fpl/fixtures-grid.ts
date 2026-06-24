@@ -3,6 +3,12 @@ import {
   getEpl2627Season,
   getEpl2627Teams,
 } from "@/lib/fpl/epl-2627";
+import {
+  buildFplFdrLookup,
+  buildH2HStore,
+  loadTeamStrengthByCode,
+  lookupFplFdr,
+} from "@/lib/fpl/fdr";
 import { FPL_LAST_SEASON_GW } from "@/lib/dashboard";
 
 export type FplFixtureCell = {
@@ -11,6 +17,7 @@ export type FplFixtureCell = {
   opp: string;
   opp_name: string;
   home: boolean;
+  fdr: number;
 };
 
 export type FplFixtureRow = {
@@ -74,13 +81,28 @@ function buildDoubleGameweekKeys(
   return [...counts.entries()].filter(([, n]) => n >= 2).map(([k]) => k);
 }
 
-export function buildFplFixtureGrid(): FplFixtureGrid {
+export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
   const season = getEpl2627Season();
   const teams = getEpl2627Teams();
   const fixtures = getEpl2627Fixtures();
   const startGw = 1;
   const endGw = FPL_LAST_SEASON_GW;
   const fplSeason = season.season;
+
+  const [h2hStore, strengths] = await Promise.all([
+    buildH2HStore(),
+    loadTeamStrengthByCode(),
+  ]);
+
+  const fdrLookup = buildFplFdrLookup(
+    fixtures.map((fx) => ({
+      id: fx.id,
+      home: teams.get(fx.home_team_id)?.short ?? "",
+      away: teams.get(fx.away_team_id)?.short ?? "",
+    })),
+    h2hStore,
+    strengths,
+  );
 
   const teamIds = [...teams.keys()].sort((a, b) =>
     (teams.get(a)?.short ?? "").localeCompare(teams.get(b)?.short ?? ""),
@@ -110,6 +132,7 @@ export function buildFplFixtureGrid(): FplFixtureGrid {
         opp: opp?.short ?? String(oppId),
         opp_name: opp?.name ?? String(oppId),
         home: isHome,
+        fdr: lookupFplFdr(fdrLookup, team?.short ?? "", fx.id),
       });
     }
 
