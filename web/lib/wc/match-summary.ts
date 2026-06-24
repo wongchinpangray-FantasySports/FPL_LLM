@@ -66,7 +66,7 @@ function formatGoalLine(
   return `${min}${g.scorer_display}`;
 }
 
-function buildFactsBlock(
+export function buildFactsBlock(
   match: WcMatchRow,
   enrichment: MatchEnrichment,
   locale: SummaryLocale,

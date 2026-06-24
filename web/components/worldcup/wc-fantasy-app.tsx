@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { WcFdrRow, WcPlayerListItem, WcXpRow } from "@/lib/wc/data";
 import type { WcScoutingReport } from "@/lib/wc/scouting";
@@ -168,6 +169,14 @@ export function WcFantasyApp() {
 
   return (
     <div className="flex flex-col gap-5">
+      <Link
+        href="/worldcup/articles"
+        className="flex flex-col gap-1 rounded-xl border border-brand-accent/25 bg-brand-accent/5 p-4 no-underline transition-colors hover:bg-brand-accent/10"
+      >
+        <span className="font-semibold text-foreground">{t("articlesLink")}</span>
+        <span className="text-sm text-muted-foreground">{t("articlesLinkHint")}</span>
+      </Link>
+
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
         {tabs.map((item) => (
           <button
