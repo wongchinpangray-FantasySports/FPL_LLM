@@ -2,6 +2,8 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
 import { canWriteMatchArticle, articleKindForMatch } from "@/lib/wc/match-article";
+import { roundLabelForLocale } from "@/lib/wc/match-enrichment";
+import { displayTeamName } from "@/lib/wc/team-names-zh";
 import { WcArticlesList } from "@/components/worldcup/wc-articles-list";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +19,8 @@ export default async function WcArticlesPage({ params }: Props) {
     .filter(canWriteMatchArticle)
     .map((m) => ({
       id: m.id,
-      home: m.home_name,
-      away: m.away_name,
+      home: displayTeamName(m.home_code, m.home_name, params.locale),
+      away: displayTeamName(m.away_code, m.away_name, params.locale),
       home_code: m.home_code,
       away_code: m.away_code,
       score:
@@ -26,7 +28,7 @@ export default async function WcArticlesPage({ params }: Props) {
           ? `${m.home_score}-${m.away_score}`
           : null,
       kickoff: m.kickoff,
-      round_label: m.round_label,
+      round_label: roundLabelForLocale(m, params.locale.startsWith("zh") ? "zh" : "en"),
       kind: articleKindForMatch(m),
       featured:
         (m.home_code === "ENG" && m.away_code === "GHA") ||

@@ -4,6 +4,7 @@ import {
   canWriteMatchArticle,
   getOrCreateMatchArticle,
 } from "@/lib/wc/match-article";
+import { displayTeamName } from "@/lib/wc/team-names-zh";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,8 @@ export async function GET(req: Request) {
     const article = await getOrCreateMatchArticle(match, locale, matches);
     return NextResponse.json({
       match_id: matchId,
-      home: match.home_name,
-      away: match.away_name,
+      home: displayTeamName(match.home_code, match.home_name, locale),
+      away: displayTeamName(match.away_code, match.away_name, locale),
       home_code: match.home_code,
       away_code: match.away_code,
       score:

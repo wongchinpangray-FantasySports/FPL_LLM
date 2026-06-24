@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { wcTeamFlag } from "@/lib/wc/wc-team-flags";
+import { WcFlag } from "@/components/worldcup/wc-flag";
 import { cn } from "@/lib/utils";
 
 type ArticleListItem = {
@@ -54,10 +54,12 @@ export function WcArticlesList({
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-semibold text-foreground">
-                {wcTeamFlag(m.home_code)} {m.home}{" "}
-                <span className="text-muted-foreground">vs</span>{" "}
-                {wcTeamFlag(m.away_code)} {m.away}
+              <p className="flex flex-wrap items-center gap-1.5 font-semibold text-foreground">
+                <WcFlag code={m.home_code} size={18} title={m.home} />
+                <span>{m.home}</span>
+                <span className="text-muted-foreground">vs</span>
+                <WcFlag code={m.away_code} size={18} title={m.away} />
+                <span>{m.away}</span>
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.round_label}

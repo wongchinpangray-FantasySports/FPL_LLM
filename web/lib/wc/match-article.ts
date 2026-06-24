@@ -1,10 +1,18 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { DEFAULT_MODEL, getGenAI } from "@/lib/llm";
-import { buildMatchEnrichment, type SummaryLocale } from "@/lib/wc/match-enrichment";
+import {
+  buildMatchEnrichment,
+  formatEnrichmentFacts,
+  formatMatchTimeline,
+  roundLabelForLocale,
+  type MatchEnrichment,
+  type SummaryLocale,
+} from "@/lib/wc/match-enrichment";
 import {
   buildFactsBlock,
   matchSummaryFingerprint,
 } from "@/lib/wc/match-summary";
+import { displayTeamName } from "@/lib/wc/team-names-zh";
 import {
   buildWcMatchSchedule,
   isWcMatchFinished,
@@ -22,8 +30,32 @@ export type MatchArticleResult = MatchArticle & {
   fingerprint: string;
 };
 
+const MIN_ARTICLE_BODY_CHARS = 280;
+
 function normalizeLocale(locale: string): SummaryLocale {
   return locale.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+function teamNames(
+  match: WcMatchRow,
+  locale: SummaryLocale,
+): { home: string; away: string } {
+  return {
+    home: displayTeamName(match.home_code, match.home_name, locale),
+    away: displayTeamName(match.away_code, match.away_name, locale),
+  };
+}
+
+function localizeFactsBlock(
+  facts: string,
+  match: WcMatchRow,
+  locale: SummaryLocale,
+): string {
+  if (locale !== "zh") return facts;
+  const { home, away } = teamNames(match, locale);
+  return facts
+    .replaceAll(match.home_name, home)
+    .replaceAll(match.away_name, away);
 }
 
 function appendTeamStatsBlock(
@@ -35,29 +67,30 @@ function appendTeamStatsBlock(
   const as = match.away_stats;
   if (!match.stats_available || (!hs && !as)) return facts;
 
+  const { home, away } = teamNames(match, locale);
   const lines: string[] = [facts, ""];
   if (locale === "zh") {
     lines.push("比赛统计（若可用）：");
     if (hs) {
       lines.push(
-        `${match.home_name}：xG ${hs.xg ?? "—"}，射门 ${hs.shots ?? "—"}，射正 ${hs.shots_on_target ?? "—"}，控球 ${hs.possession != null ? `${hs.possession}%` : "—"}`,
+        `${home}：xG ${hs.xg ?? "—"}，射门 ${hs.shots ?? "—"}，射正 ${hs.shots_on_target ?? "—"}，控球 ${hs.possession != null ? `${hs.possession}%` : "—"}`,
       );
     }
     if (as) {
       lines.push(
-        `${match.away_name}：xG ${as.xg ?? "—"}，射门 ${as.shots ?? "—"}，射正 ${as.shots_on_target ?? "—"}，控球 ${as.possession != null ? `${as.possession}%` : "—"}`,
+        `${away}：xG ${as.xg ?? "—"}，射门 ${as.shots ?? "—"}，射正 ${as.shots_on_target ?? "—"}，控球 ${as.possession != null ? `${as.possession}%` : "—"}`,
       );
     }
   } else {
     lines.push("Match statistics (when available):");
     if (hs) {
       lines.push(
-        `${match.home_name}: xG ${hs.xg ?? "—"}, shots ${hs.shots ?? "—"}, on target ${hs.shots_on_target ?? "—"}, possession ${hs.possession != null ? `${hs.possession}%` : "—"}`,
+        `${home}: xG ${hs.xg ?? "—"}, shots ${hs.shots ?? "—"}, on target ${hs.shots_on_target ?? "—"}, possession ${hs.possession != null ? `${hs.possession}%` : "—"}`,
       );
     }
     if (as) {
       lines.push(
-        `${match.away_name}: xG ${as.xg ?? "—"}, shots ${as.shots ?? "—"}, on target ${as.shots_on_target ?? "—"}, possession ${as.possession != null ? `${as.possession}%` : "—"}`,
+        `${away}: xG ${as.xg ?? "—"}, shots ${as.shots ?? "—"}, on target ${as.shots_on_target ?? "—"}, possession ${as.possession != null ? `${as.possession}%` : "—"}`,
       );
     }
   }
@@ -66,59 +99,161 @@ function appendTeamStatsBlock(
 
 function articleFingerprint(
   match: WcMatchRow,
-  enrichment: Awaited<ReturnType<typeof buildMatchEnrichment>>,
+  enrichment: MatchEnrichment,
 ): string {
-  return `article_v1:${matchSummaryFingerprint(match, enrichment)}`;
+  return `article_v2:${matchSummaryFingerprint(match, enrichment)}`;
 }
 
-function templateArticle(
+function scoreResultLine(
   match: WcMatchRow,
+  locale: SummaryLocale,
+): string {
+  const { home, away } = teamNames(match, locale);
+  const hs = match.home_score ?? 0;
+  const as = match.away_score ?? 0;
+
+  if (locale === "zh") {
+    if (hs > as) return `${home} 以 ${hs}-${as} 战胜 ${away}`;
+    if (as > hs) return `${away} 以 ${as}-${hs} 战胜 ${home}`;
+    return `${home} 与 ${away} ${hs}-${as} 战平`;
+  }
+  if (hs > as) return `${home} beat ${away} ${hs}-${as}`;
+  if (as > hs) return `${away} beat ${home} ${as}-${hs}`;
+  return `${home} and ${away} drew ${hs}-${as}`;
+}
+
+function richTemplateArticle(
+  match: WcMatchRow,
+  enrichment: MatchEnrichment,
   locale: SummaryLocale,
   kind: "report" | "preview",
 ): MatchArticle {
-  const home = match.home_name;
-  const away = match.away_name;
+  const { home, away } = teamNames(match, locale);
+  const round = roundLabelForLocale(match, locale);
+  const venue = match.venue ?? (locale === "zh" ? "待定球场" : "TBC");
+  const timeline = formatMatchTimeline(match, locale);
+  const context = formatEnrichmentFacts(match, enrichment, locale);
 
   if (kind === "preview") {
+    const headline =
+      locale === "zh"
+        ? `${home} 对阵 ${away}：世界杯前瞻`
+        : `${home} vs ${away}: World Cup preview`;
+
+    const sections: string[] = [];
     if (locale === "zh") {
-      return {
-        headline: `${home} 对阵 ${away}：世界杯前瞻`,
-        body: `${match.round_label} 即将上演 ${home} 与 ${away} 的对决${match.venue ? `，场地为 ${match.venue}` : ""}。两队都将为小组出线形势全力以赴。请关注赛前阵容与关键球员状态。`,
-        kind,
-      };
+      sections.push(
+        `## 比赛背景\n\n${round}，${home} 将在 ${venue} 迎战 ${away}。${enrichment.matchDetail}`,
+        `## 两队走势\n\n${home} 赛前：${enrichment.homeForm}。${away} 赛前：${enrichment.awayForm}。`,
+      );
+      if (enrichment.groupTable) {
+        sections.push(`## 小组形势\n\n${enrichment.groupTable}`);
+      } else if (enrichment.homeStandingLine || enrichment.awayStandingLine) {
+        const lines = [enrichment.homeStandingLine, enrichment.awayStandingLine]
+          .filter(Boolean)
+          .join("\n");
+        sections.push(`## 小组形势\n\n${lines}`);
+      }
+      sections.push(
+        `## 观赛提示\n\n两队都将为出线形势全力以赴。请关注赛前阵容、伤病与关键球员状态，开球时间 ${match.kickoff?.slice(0, 16).replace("T", " ") ?? "待定"}。`,
+      );
+    } else {
+      sections.push(
+        `## Match context\n\n${home} host ${away} in ${round} at ${venue}. ${enrichment.matchDetail}`,
+        `## Form check\n\n${home} before kickoff: ${enrichment.homeForm}. ${away}: ${enrichment.awayForm}.`,
+      );
+      if (enrichment.groupTable) {
+        sections.push(`## Group stakes\n\n${enrichment.groupTable}`);
+      } else if (enrichment.homeStandingLine || enrichment.awayStandingLine) {
+        const lines = [enrichment.homeStandingLine, enrichment.awayStandingLine]
+          .filter(Boolean)
+          .join("\n");
+        sections.push(`## Group stakes\n\n${lines}`);
+      }
+      sections.push(
+        `## What to watch\n\nBoth sides need points with qualification on the line. Track team news and key players ahead of kickoff${match.kickoff ? ` on ${match.kickoff.slice(0, 16).replace("T", " ")}` : ""}.`,
+      );
     }
-    return {
-      headline: `${home} vs ${away}: World Cup preview`,
-      body: `${home} meet ${away} in ${match.round_label}${match.venue ? ` at ${match.venue}` : ""}. Both sides will chase group-stage points with knockout qualification on the line. Watch team news and form before kickoff.`,
-      kind,
-    };
+
+    return { headline, body: sections.join("\n\n"), kind };
   }
 
-  const hs = match.home_score ?? 0;
-  const as = match.away_score ?? 0;
+  const result = scoreResultLine(match, locale);
+  const headline =
+    locale === "zh" ? `${result}：${round} 战报` : `${result} — ${round} report`;
+
+  const sections: string[] = [];
   if (locale === "zh") {
-    let result: string;
-    if (hs > as) result = `${home} ${hs}-${as} 战胜 ${away}`;
-    else if (as > hs) result = `${away} ${as}-${hs} 战胜 ${home}`;
-    else result = `${home} 与 ${away} ${hs}-${as} 战平`;
-
-    return {
-      headline: `${result}：${match.round_label} 战报`,
-      body: `${match.round_label}，${result}${match.venue ? `（${match.venue}）` : ""}。比赛已结束，更多细节请查看比分与时间线。`,
-      kind,
-    };
+    sections.push(
+      `## 比赛概览\n\n${round}，${result}，比赛在 ${venue} 结束。${enrichment.matchDetail}`,
+    );
+    if (timeline) {
+      sections.push(`## 关键瞬间\n\n${timeline.replace(/\n/g, "；")}`);
+    } else {
+      const hs = match.home_score ?? 0;
+      const as = match.away_score ?? 0;
+      sections.push(
+        `## 关键瞬间\n\n${hs === 0 && as === 0 ? `双方均未能破门，${home} 与 ${away} 互交白卷。` : `请结合比分与时间线回顾比赛进程。`}`,
+      );
+    }
+    if (match.stats_available && (match.home_stats || match.away_stats)) {
+      const statLines: string[] = [];
+      const hst = match.home_stats;
+      const ast = match.away_stats;
+      if (hst) {
+        statLines.push(
+          `${home}：xG ${hst.xg ?? "—"}，射门 ${hst.shots ?? "—"}，射正 ${hst.shots_on_target ?? "—"}${hst.possession != null ? `，控球 ${hst.possession}%` : ""}`,
+        );
+      }
+      if (ast) {
+        statLines.push(
+          `${away}：xG ${ast.xg ?? "—"}，射门 ${ast.shots ?? "—"}，射正 ${ast.shots_on_target ?? "—"}${ast.possession != null ? `，控球 ${ast.possession}%` : ""}`,
+        );
+      }
+      sections.push(`## 数据与表现\n\n${statLines.join("。")}。`);
+    }
+    if (enrichment.groupTable) {
+      sections.push(`## 小组影响\n\n${enrichment.groupTable}`);
+    }
+    sections.push(
+      `## 后续展望\n\n${home} 与 ${away} 的出线形势将随同组赛果继续变化。${context.split("\n").slice(0, 2).join(" ")}`,
+    );
+  } else {
+    sections.push(
+      `## The story\n\n${result} in ${round} at ${venue}. ${enrichment.matchDetail}`,
+    );
+    if (timeline) {
+      sections.push(`## Key moments\n\n${timeline.replace(/\n/g, "; ")}`);
+    } else {
+      sections.push(
+        `## Key moments\n\nThe scoreline tells the story — see how each side created chances across 90 minutes.`,
+      );
+    }
+    if (match.stats_available && (match.home_stats || match.away_stats)) {
+      const statLines: string[] = [];
+      const hst = match.home_stats;
+      const ast = match.away_stats;
+      if (hst) {
+        statLines.push(
+          `${home}: xG ${hst.xg ?? "—"}, shots ${hst.shots ?? "—"}, on target ${hst.shots_on_target ?? "—"}${hst.possession != null ? `, possession ${hst.possession}%` : ""}`,
+        );
+      }
+      if (ast) {
+        statLines.push(
+          `${away}: xG ${ast.xg ?? "—"}, shots ${ast.shots ?? "—"}, on target ${ast.shots_on_target ?? "—"}${ast.possession != null ? `, possession ${ast.possession}%` : ""}`,
+        );
+      }
+      sections.push(`## By the numbers\n\n${statLines.join(". ")}.`);
+    }
+    if (enrichment.groupTable) {
+      sections.push(`## Group impact\n\n${enrichment.groupTable}`);
+    }
+    sections.push(
+      `## What's next\n\nQualification paths for ${home} and ${away} will shift with every result in the group.`,
+    );
   }
 
-  let result: string;
-  if (hs > as) result = `${home} beat ${away} ${hs}-${as}`;
-  else if (as > hs) result = `${away} beat ${home} ${as}-${hs}`;
-  else result = `${home} and ${away} drew ${hs}-${as}`;
-
-  return {
-    headline: `${result} — ${match.round_label} report`,
-    body: `In ${match.round_label}, ${result}${match.venue ? ` at ${match.venue}` : ""}. Full-time at the whistle — see the timeline for goals and cards.`,
-    kind,
-  };
+  return { headline, body: sections.join("\n\n"), kind };
 }
 
 async function loadCachedArticle(
@@ -138,6 +273,7 @@ async function loadCachedArticle(
     const json = data.article_json as Record<string, MatchArticle> | null;
     const hit = json?.[locale];
     if (!hit?.headline?.trim() || !hit?.body?.trim()) return null;
+    if (hit.body.trim().length < MIN_ARTICLE_BODY_CHARS) return null;
     return hit;
   } catch {
     return null;
@@ -150,6 +286,8 @@ async function saveCachedArticle(
   article: MatchArticle,
   fingerprint: string,
 ): Promise<void> {
+  if (article.body.trim().length < MIN_ARTICLE_BODY_CHARS) return;
+
   try {
     const supa = getServerSupabase();
     const { data: existing } = await supa
@@ -187,83 +325,99 @@ async function saveCachedArticle(
   }
 }
 
+function parseGeminiArticle(
+  text: string,
+  kind: "report" | "preview",
+  fallbackHeadline: string,
+): MatchArticle | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const jsonBlock = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? trimmed;
+  try {
+    const parsed = JSON.parse(jsonBlock) as { headline?: string; body?: string };
+    const headline = parsed.headline?.trim();
+    const body = parsed.body?.trim();
+    if (headline && body && body.length >= MIN_ARTICLE_BODY_CHARS) {
+      return { headline, body, kind };
+    }
+  } catch {
+    /* not JSON */
+  }
+
+  const headlineMatch = trimmed.match(/^HEADLINE:\s*(.+?)(?:\n|$)/im);
+  if (headlineMatch) {
+    const body = trimmed.replace(/^HEADLINE:\s*.+?\n+/im, "").trim();
+    if (body.length >= MIN_ARTICLE_BODY_CHARS) {
+      return { headline: headlineMatch[1].trim(), body, kind };
+    }
+  }
+
+  const mdMatch = trimmed.match(/^#\s+(.+?)\n+([\s\S]+)$/);
+  if (mdMatch && mdMatch[2].trim().length >= MIN_ARTICLE_BODY_CHARS) {
+    return { headline: mdMatch[1].trim(), body: mdMatch[2].trim(), kind };
+  }
+
+  if (trimmed.includes("##") && trimmed.length >= MIN_ARTICLE_BODY_CHARS) {
+    return { headline: fallbackHeadline, body: trimmed, kind };
+  }
+
+  return null;
+}
+
 async function generateWithGemini(
   match: WcMatchRow,
   facts: string,
   locale: SummaryLocale,
   kind: "report" | "preview",
+  fallbackHeadline: string,
 ): Promise<MatchArticle | null> {
   try {
     const ai = await getGenAI();
+    const { home, away } = teamNames(match, locale);
 
     const prompt =
       locale === "zh"
         ? kind === "preview"
           ? `你是一名世界杯专栏作者。根据以下素材撰写赛前分析文章。
 仅使用所给事实，不得编造球员、比分或事件。
+正文必须使用简体中文；球队名请使用：${home}、${away}。
 
 ${facts}
 
-输出格式（严格遵守）：
-第一行：HEADLINE: （一行标题，不超过 28 字）
-空一行
-正文 4–5 段 Markdown，总字数 380–520 字，包含：
-## 比赛背景
-## 两队近况与关键球员
-## 战术看点
-## 小组形势
-## 观赛提示
+输出格式：只输出一段 JSON，不要 markdown 代码块或其它说明文字：
+{"headline":"一行标题（不超过28字）","body":"Markdown 正文"}
 
-要求：简体中文；专业、有观点但不编造；不要用项目符号列表，每节 1–2 段 prose。`
+正文要求 4–5 个 ## 小节，总字数 280–380 字，包含：比赛背景、两队近况与关键球员、战术看点、小组形势、观赛提示。每节 1–2 段 prose，不要用项目符号。`
           : `你是一名世界杯专栏作者。根据以下素材撰写赛后深度分析。
 仅使用所给事实，不得编造球员、比分、时间或事件。
+正文必须使用简体中文；球队名请使用：${home}、${away}。
 
 ${facts}
 
-输出格式（严格遵守）：
-第一行：HEADLINE: （一行标题，不超过 28 字）
-空一行
-正文 4–6 段 Markdown，总字数 420–580 字，包含：
-## 比赛概览
-## 关键瞬间
-## 战术解读
-## 数据与表现
-## 小组影响
-## 后续展望
+输出格式：只输出一段 JSON，不要 markdown 代码块或其它说明文字：
+{"headline":"一行标题（不超过28字）","body":"Markdown 正文"}
 
-要求：简体中文；专业赛后分析语气；不要用项目符号列表，每节 1–2 段 prose。`
+正文要求 4–6 个 ## 小节，总字数 300–420 字，包含：比赛概览、关键瞬间、战术解读、数据与表现、小组影响、后续展望。每节 1–2 段 prose，不要用项目符号。`
         : kind === "preview"
           ? `You are a World Cup feature writer. Write a pre-match preview from these facts only — do not invent players, scores, or events.
+Use team names: ${home}, ${away}.
 
 ${facts}
 
-Format (strict):
-Line 1: HEADLINE: (one headline, max 12 words)
-Blank line
-Body in Markdown, 4–5 sections, 380–520 words total:
-## Match context
-## Form & players to watch
-## Tactical angles
-## Group stakes
-## What to expect
+Output ONLY one JSON object (no markdown fences or extra text):
+{"headline":"One headline, max 12 words","body":"Markdown body"}
 
-English only. Confident editorial tone. No bullet lists — prose paragraphs under each heading.`
+Body: 4–5 ## sections, 250–350 words total — match context, form & players, tactical angles, group stakes, what to expect. Prose paragraphs only, no bullet lists.`
           : `You are a World Cup feature writer. Write a post-match analysis from these facts only — do not invent players, scores, minutes, or events.
+Use team names: ${home}, ${away}.
 
 ${facts}
 
-Format (strict):
-Line 1: HEADLINE: (one headline, max 12 words)
-Blank line
-Body in Markdown, 4–6 sections, 420–580 words total:
-## The story
-## Key moments
-## Tactical read
-## By the numbers
-## Group impact
-## What's next
+Output ONLY one JSON object (no markdown fences or extra text):
+{"headline":"One headline, max 12 words","body":"Markdown body"}
 
-English only. Engaging long-form tone. No bullet lists — prose paragraphs under each heading.`;
+Body: 4–6 ## sections, 280–380 words total — the story, key moments, tactical read, by the numbers, group impact, what's next. Prose paragraphs only, no bullet lists.`;
 
     const resp = await ai.models.generateContent({
       model: DEFAULT_MODEL,
@@ -275,14 +429,8 @@ English only. Engaging long-form tone. No bullet lists — prose paragraphs unde
       .map((p) => ("text" in p ? p.text : ""))
       .join("")
       .trim();
-    if (!text) return null;
 
-    const headlineMatch = text.match(/^HEADLINE:\s*(.+?)(?:\n|$)/i);
-    const headline = headlineMatch?.[1]?.trim() ?? "";
-    const body = text.replace(/^HEADLINE:\s*.+?\n+/i, "").trim();
-    if (!headline || !body) return null;
-
-    return { headline, body, kind };
+    return parseGeminiArticle(text, kind, fallbackHeadline);
   } catch {
     return null;
   }
@@ -318,18 +466,29 @@ export async function getOrCreateMatchArticle(
     return { ...cached, source: "cache", fingerprint };
   }
 
-  let facts = buildFactsBlock(match, enrichment, locale);
+  let facts = localizeFactsBlock(
+    buildFactsBlock(match, enrichment, locale),
+    match,
+    locale,
+  );
   if (kind === "report") {
     facts = appendTeamStatsBlock(facts, match, locale);
   }
 
-  const gemini = await generateWithGemini(match, facts, locale, kind);
+  const fallback = richTemplateArticle(match, enrichment, locale, kind);
+
+  let gemini = await generateWithGemini(match, facts, locale, kind, fallback.headline);
+  if (!gemini) {
+    gemini = await generateWithGemini(match, facts, locale, kind, fallback.headline);
+  }
+
   if (gemini) {
     await saveCachedArticle(match, locale, gemini, fingerprint);
     return { ...gemini, source: "gemini", fingerprint };
   }
 
-  const template = templateArticle(match, locale, kind);
-  await saveCachedArticle(match, locale, template, fingerprint);
-  return { ...template, source: "template", fingerprint };
+  if (fallback.body.trim().length >= MIN_ARTICLE_BODY_CHARS) {
+    await saveCachedArticle(match, locale, fallback, fingerprint);
+  }
+  return { ...fallback, source: "template", fingerprint };
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Link } from "@/i18n/navigation";
-import { wcTeamFlag } from "@/lib/wc/wc-team-flags";
+import { WcFlag } from "@/components/worldcup/wc-flag";
 import { cn } from "@/lib/utils";
 
 type ArticlePayload = {
@@ -85,9 +85,6 @@ export function WcArticleReader({
     );
   }
 
-  const homeFlag = article.home_code ? wcTeamFlag(article.home_code) : "🏳️";
-  const awayFlag = article.away_code ? wcTeamFlag(article.away_code) : "🏳️";
-
   return (
     <article className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -114,10 +111,14 @@ export function WcArticleReader({
 
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2 text-lg font-semibold text-foreground">
-          <span>{homeFlag}</span>
+          {article.home_code ? (
+            <WcFlag code={article.home_code} size={22} title={article.home} />
+          ) : null}
           <span>{article.home}</span>
           <span className="text-muted-foreground">vs</span>
-          <span>{awayFlag}</span>
+          {article.away_code ? (
+            <WcFlag code={article.away_code} size={22} title={article.away} />
+          ) : null}
           <span>{article.away}</span>
         </div>
         <h1 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
