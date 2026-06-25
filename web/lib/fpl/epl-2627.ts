@@ -1,4 +1,9 @@
 import fixturesData from "@/data/epl-2627-fixtures.json";
+export {
+  EPL_2627_PROMOTED,
+  EPL_2627_RELEGATED,
+  fplApiHasStale2627Teams,
+} from "@/lib/fpl/epl-2627-clubs";
 
 export type Epl2627Team = {
   id: number;
@@ -35,14 +40,4 @@ export function getEpl2627Teams(): Map<number, Epl2627Team> {
 
 export function getEpl2627Fixtures(): Epl2627Fixture[] {
   return data.fixtures;
-}
-
-/** True when FPL bootstrap still lists relegated clubs for the upcoming campaign. */
-export function fplApiHasStale2627Teams(apiShortNames: string[]): boolean {
-  const stale = new Set(["BUR", "WHU", "WOL"]);
-  const promoted = new Set(["COV", "HUL", "IPS"]);
-  const api = new Set(apiShortNames);
-  const hasStale = [...stale].some((c) => api.has(c));
-  const missingPromoted = [...promoted].some((c) => !api.has(c));
-  return hasStale || missingPromoted;
 }

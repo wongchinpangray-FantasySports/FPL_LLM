@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  buildEpl2627ClubOptions,
+  ensureEpl2627PromotedTeams,
+} from "@/lib/fpl/epl-2627-clubs";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +17,8 @@ export async function GET() {
     }
 
     const admin = getServerSupabase();
+    await ensureEpl2627PromotedTeams(admin);
+
     const [{ data: fplTeams }, { data: wcTeams }] = await Promise.all([
       admin.from("teams").select("id,name,short_name").order("name"),
       admin
@@ -22,7 +28,7 @@ export async function GET() {
     ]);
 
     return NextResponse.json({
-      fpl_teams: fplTeams ?? [],
+      fpl_teams: buildEpl2627ClubOptions(fplTeams ?? []),
       wc_teams: wcTeams ?? [],
       leagues: [
         { id: "epl", label: "Premier League" },
