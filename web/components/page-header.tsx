@@ -13,7 +13,7 @@ export function PageHeader({
   return (
     <header className="mb-4 flex flex-col gap-1 md:mb-5">
       {eyebrow ? (
-        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
+        <p className="page-eyebrow text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
           {eyebrow}
         </p>
       ) : null}

@@ -14,7 +14,22 @@
   --ring: 152 100% 50%;
   --brand-accent: #00ff87;
   --brand-accent-rgb: 0, 255, 135;
+  --brand-accent-fg: #0b0a0f;
+  --team-primary: #00ff87;
+  --team-primary-rgb: 0, 255, 135;
+  --team-secondary: #37003c;
+  --team-secondary-rgb: 55, 0, 60;
+  --team-accent: #ffffff;
   color-scheme: light;
+}
+
+html.team-themed {
+  --team-stripe: linear-gradient(
+    90deg,
+    var(--team-secondary) 0%,
+    var(--team-primary) 42%,
+    var(--team-secondary) 100%
+  );
 }
 
 .dark {
@@ -51,6 +66,63 @@ body {
     radial-gradient(ellipse 80% 50% at 15% -20%, rgba(var(--brand-accent-rgb), 0.14), transparent 50%),
     radial-gradient(ellipse 60% 40% at 100% 0%, rgba(55, 0, 60, 0.5), transparent 55%),
     radial-gradient(circle at 50% 100%, rgba(15, 12, 22, 1), rgba(11, 10, 15, 1));
+}
+
+html.team-themed body {
+  background-image:
+    radial-gradient(ellipse 90% 60% at 8% -18%, rgba(var(--brand-accent-rgb), 0.24), transparent 52%),
+    radial-gradient(ellipse 75% 50% at 98% 0%, rgba(var(--team-secondary-rgb), 0.2), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 50% 100%, rgba(var(--team-primary-rgb), 0.08), transparent 55%),
+    radial-gradient(circle at 50% 100%, rgba(240, 238, 248, 1), rgba(252, 251, 254, 1));
+}
+
+html.team-themed.dark body {
+  background-image:
+    radial-gradient(ellipse 90% 60% at 8% -18%, rgba(var(--brand-accent-rgb), 0.28), transparent 52%),
+    radial-gradient(ellipse 75% 50% at 98% 0%, rgba(var(--team-secondary-rgb), 0.26), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 50% 100%, rgba(var(--team-primary-rgb), 0.12), transparent 55%),
+    radial-gradient(circle at 50% 100%, rgba(15, 12, 22, 1), rgba(11, 10, 15, 1));
+}
+
+html.team-themed .site-header {
+  position: relative;
+  border-bottom-color: color-mix(in srgb, var(--team-primary) 38%, hsl(var(--border)));
+  box-shadow:
+    0 1px 0 rgba(var(--brand-accent-rgb), 0.14),
+    0 8px 28px rgba(var(--team-secondary-rgb), 0.12);
+}
+
+html.team-themed .site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 3px;
+  background: var(--team-stripe);
+}
+
+html.team-themed .site-footer {
+  border-top-color: color-mix(in srgb, var(--team-primary) 32%, hsl(var(--border)));
+  background-image: linear-gradient(
+    180deg,
+    rgba(var(--team-secondary-rgb), 0.06) 0%,
+    transparent 100%
+  );
+}
+
+html.team-themed .page-eyebrow {
+  display: inline-block;
+  border-left: 3px solid var(--team-primary);
+  padding-left: 0.625rem;
+}
+
+html.team-themed .nav-link-active {
+  border: 1px solid color-mix(in srgb, var(--team-primary) 35%, transparent);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--brand-accent-rgb), 0.16) 0%,
+    rgba(var(--team-secondary-rgb), 0.1) 100%
+  );
 }
 
 ::selection {

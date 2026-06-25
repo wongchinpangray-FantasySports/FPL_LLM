@@ -51,7 +51,7 @@ export function PageShell({
       {title ? (
         <header className="flex flex-col gap-1">
           {eyebrow ? (
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
+            <p className="page-eyebrow text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
               {eyebrow}
             </p>
           ) : null}

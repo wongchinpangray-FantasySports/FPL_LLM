@@ -43,7 +43,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
         {children}
       </main>
-      <footer className="border-t border-border bg-background/40">
+      <footer className="site-footer border-t border-border bg-background/40">
         <div className="container py-5 text-xs text-muted-foreground md:py-8">
           <p>{t("legal")}</p>
         </div>

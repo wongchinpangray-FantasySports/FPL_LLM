@@ -23,6 +23,7 @@ const config: Config = {
         brand: {
           DEFAULT: "#37003c",
           accent: "var(--brand-accent, #00ff87)",
+          "accent-fg": "var(--brand-accent-fg, #0b0a0f)",
           ink: "#0b0a0f",
         },
         background: "hsl(var(--background) / <alpha-value>)",

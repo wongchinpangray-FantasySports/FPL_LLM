@@ -8,6 +8,7 @@ import { useEntryId } from "@/components/entry-id-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthNav } from "@/components/auth/auth-nav";
+import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
 
 function isFplPath(pathname: string): boolean {
@@ -37,6 +38,7 @@ export function SiteHeader() {
   const t = useTranslations("nav");
   const pathname = usePathname() ?? "";
   const { entryId } = useEntryId();
+  const { theme } = useAuth();
   const [open, setOpen] = useState(false);
 
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
@@ -74,7 +76,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+      <header className="site-header sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
         <div className="container flex items-center justify-between gap-3 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -85,9 +87,23 @@ export function SiteHeader() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <Link href="/" className="min-w-0 truncate font-semibold tracking-tight text-foreground">
+            <Link href="/" className="flex min-w-0 items-center gap-2 truncate font-semibold tracking-tight text-foreground">
               <span className="text-brand-accent">Faleague</span>
-              <span className="font-normal text-muted-foreground"> The Football Hub</span>
+              <span className="hidden font-normal text-muted-foreground sm:inline">
+                The Football Hub
+              </span>
+              {theme && theme.label !== "FALEAGUE AI" ? (
+                <span
+                  className="hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide sm:inline"
+                  style={{
+                    background: `linear-gradient(135deg, var(--team-secondary), var(--team-primary))`,
+                    color: "var(--team-accent)",
+                    border: "1px solid color-mix(in srgb, var(--team-primary) 45%, transparent)",
+                  }}
+                >
+                  {theme.label}
+                </span>
+              ) : null}
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -125,7 +141,7 @@ export function SiteHeader() {
                   className={cn(
                     "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     link.active
-                      ? "bg-brand-accent/10 text-brand-accent"
+                      ? "nav-link-active bg-brand-accent/10 text-brand-accent"
                       : "text-foreground hover:bg-muted",
                   )}
                 >
