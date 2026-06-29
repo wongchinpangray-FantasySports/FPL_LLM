@@ -31,6 +31,46 @@ export type KnockoutBracket = {
   highlightStage: string;
 };
 
+export type BracketSideTree = {
+  r32: BracketMatch[];
+  r16: BracketMatch[];
+  qf: BracketMatch[];
+  sf: BracketMatch | null;
+};
+
+export type SplitKnockoutBracket = {
+  left: BracketSideTree;
+  right: BracketSideTree;
+  final: BracketMatch | null;
+};
+
+export function splitKnockoutBracket(
+  bracket: KnockoutBracket,
+): SplitKnockoutBracket {
+  const byRound = new Map(bracket.rounds.map((r) => [r.roundId, r.matches]));
+  const r32 = byRound.get(4) ?? [];
+  const r16 = byRound.get(5) ?? [];
+  const qf = byRound.get(6) ?? [];
+  const sf = byRound.get(7) ?? [];
+  const final = byRound.get(8)?.[0] ?? null;
+
+  return {
+    left: {
+      r32: r32.slice(0, 8),
+      r16: r16.slice(0, 4),
+      qf: qf.slice(0, 2),
+      sf: sf[0] ?? null,
+    },
+    right: {
+      r32: r32.slice(8, 16),
+      r16: r16.slice(4, 8),
+      qf: qf.slice(2, 4),
+      sf: sf[1] ?? null,
+    },
+    final,
+  };
+}
+
 const KNOCKOUT_ROUND_IDS = [4, 5, 6, 7, 8] as const;
 
 const ROUND_LABELS: Record<

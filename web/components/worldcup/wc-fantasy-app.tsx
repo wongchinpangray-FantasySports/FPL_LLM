@@ -206,6 +206,13 @@ export function WcFantasyApp() {
             tbd: t("bracketTbd"),
             live: t("bracketLive"),
             ft: t("bracketFt"),
+            match: t("bracketMatch"),
+            r32: t("bracketR32"),
+            r16: t("bracketR16"),
+            qf: t("bracketQf"),
+            sf: t("bracketSf"),
+            final: t("bracketFinal"),
+            fifaLink: t("bracketFifaLink"),
           }}
         />
       ) : null}
