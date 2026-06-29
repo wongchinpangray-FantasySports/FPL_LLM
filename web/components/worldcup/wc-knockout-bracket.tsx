@@ -11,9 +11,11 @@ import {
   type KnockoutBracket,
 } from "@/lib/wc/knockout-bracket";
 
-/** Height of one two-team match card (px). */
-const MATCH_H = 58;
-const SLOT_GAP = 10;
+const ROW_H = 22;
+const MATCH_H = ROW_H * 2;
+const PAIR_INNER_GAP = 4;
+const PAIR_SLOT_H = MATCH_H * 2 + PAIR_INNER_GAP;
+const BLOCK_GAP = 14;
 
 type Labels = {
   tbd: string;
@@ -27,6 +29,10 @@ type Labels = {
   final: string;
   fifaLink: string;
 };
+
+function slotHeight(span: number): number {
+  return span * PAIR_SLOT_H + (span - 1) * BLOCK_GAP;
+}
 
 function isLive(status: string): boolean {
   const s = status.toLowerCase();
@@ -45,6 +51,7 @@ function TeamRow({
   tbd,
   winner,
   penalties,
+  tree,
 }: {
   side: BracketTeam | null;
   score: number | null;
@@ -52,12 +59,21 @@ function TeamRow({
   tbd: string;
   winner: BracketTeam | null;
   penalties: boolean;
+  tree?: boolean;
 }) {
+  const rowH = tree ? ROW_H : 28;
+
   if (!side) {
     return (
-      <div className="flex h-[29px] items-center justify-between gap-2 border-b border-border/50 bg-muted/20 px-2.5 last:border-b-0">
-        <span className="truncate text-[11px] italic text-muted-foreground">{tbd}</span>
-        <span className="text-[11px] tabular-nums text-muted-foreground">—</span>
+      <div
+        className={cn(
+          "flex items-center justify-between gap-1.5 border-b border-border/40 bg-muted/15 px-2 last:border-b-0",
+          tree ? "px-1.5" : "px-2.5",
+        )}
+        style={{ height: rowH }}
+      >
+        <span className="truncate text-[10px] italic text-muted-foreground">{tbd}</span>
+        <span className="text-[10px] tabular-nums text-muted-foreground">—</span>
       </div>
     );
   }
@@ -68,24 +84,35 @@ function TeamRow({
   return (
     <div
       className={cn(
-        "flex h-[29px] items-center justify-between gap-2 border-b border-border/50 px-2.5 last:border-b-0",
+        "flex items-center justify-between gap-1.5 border-b border-border/40 last:border-b-0",
         won
-          ? "border-l-[3px] border-l-emerald-500 bg-emerald-500/10"
-          : "border-l-[3px] border-l-transparent bg-card",
+          ? "border-l-2 border-l-emerald-500 bg-emerald-500/10"
+          : "border-l-2 border-l-transparent bg-card/90",
+        tree ? "px-1.5" : "px-2.5",
       )}
+      style={{ height: rowH }}
+      title={name}
     >
-      <span className="flex min-w-0 items-center gap-1.5">
-        <WcFlag code={side.code} size={16} title={name} />
-        <span className="shrink-0 text-[11px] font-bold tracking-wide text-foreground">
+      <span className="flex min-w-0 flex-1 items-center gap-1">
+        <WcFlag code={side.code} size={tree ? 13 : 16} title={name} />
+        <span
+          className={cn(
+            "shrink-0 font-bold tracking-wide text-foreground",
+            tree ? "text-[10px]" : "text-xs",
+          )}
+        >
           {side.code}
         </span>
-        <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
-          {name}
-        </span>
+        {!tree ? (
+          <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
+            {name}
+          </span>
+        ) : null}
       </span>
       <span
         className={cn(
-          "shrink-0 text-xs font-semibold tabular-nums",
+          "shrink-0 font-semibold tabular-nums",
+          tree ? "w-3.5 text-right text-[10px]" : "text-xs",
           won ? "text-emerald-400" : "text-foreground",
         )}
       >
@@ -99,12 +126,12 @@ function MatchCard({
   match,
   locale,
   labels,
-  compact,
+  tree,
 }: {
   match: BracketMatch;
   locale: string;
   labels: Labels;
-  compact?: boolean;
+  tree?: boolean;
 }) {
   const live = isLive(match.status);
   const finished = isFinished(match.status, match.homeScore);
@@ -116,28 +143,28 @@ function MatchCard({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-md border shadow-sm",
+        "overflow-hidden rounded border bg-card/95",
         live
-          ? "border-brand-accent/50 ring-1 ring-brand-accent/30"
-          : "border-border/80",
-        compact ? "max-w-[9.5rem]" : "max-w-[11rem]",
+          ? "border-brand-accent/50 ring-1 ring-brand-accent/25"
+          : "border-border/70",
+        tree ? "w-[5.75rem] shrink-0" : "w-full max-w-[14rem]",
       )}
     >
-      {!compact && match.id ? (
-        <div className="absolute -top-2 left-2 z-10 rounded bg-muted px-1.5 py-px text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-          {labels.match.replace("{n}", String(match.id))}
-        </div>
-      ) : null}
-      {live || finished ? (
-        <div
-          className={cn(
-            "absolute right-1.5 top-1 z-10 rounded px-1 py-px text-[9px] font-semibold uppercase",
-            live
-              ? "bg-brand-accent/20 text-brand-accent"
-              : "bg-muted text-muted-foreground",
-          )}
-        >
-          {live ? labels.live : labels.ft}
+      {!tree && match.id ? (
+        <div className="flex items-center justify-between border-b border-border/40 bg-muted/25 px-2 py-0.5">
+          <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+            {labels.match.replace("{n}", String(match.id))}
+          </span>
+          {live || finished ? (
+            <span
+              className={cn(
+                "text-[9px] font-semibold uppercase",
+                live ? "text-brand-accent" : "text-muted-foreground",
+              )}
+            >
+              {live ? labels.live : labels.ft}
+            </span>
+          ) : null}
         </div>
       ) : null}
       <TeamRow
@@ -147,6 +174,7 @@ function MatchCard({
         tbd={labels.tbd}
         winner={match.winner}
         penalties={pens}
+        tree={tree}
       />
       <TeamRow
         side={match.away}
@@ -155,10 +183,11 @@ function MatchCard({
         tbd={labels.tbd}
         winner={match.winner}
         penalties={pens}
+        tree={tree}
       />
       {pens && finished ? (
-        <p className="border-t border-border/40 bg-muted/30 px-2 py-0.5 text-center text-[9px] tabular-nums text-muted-foreground">
-          {match.homePenalty}-{match.awayPenalty} pens
+        <p className="border-t border-border/40 bg-muted/25 px-1.5 py-px text-center text-[8px] tabular-nums text-muted-foreground">
+          {match.homePenalty}-{match.awayPenalty}p
         </p>
       ) : null}
     </div>
@@ -167,13 +196,12 @@ function MatchCard({
 
 function RoundHeader({ label }: { label: string }) {
   return (
-    <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <p className="mb-2.5 text-center text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
       {label}
     </p>
   );
 }
 
-/** One knockout column with vertical spacing so slots align across rounds. */
 function AlignedRound({
   matches,
   span,
@@ -181,6 +209,7 @@ function AlignedRound({
   locale,
   labels,
   align,
+  pairMatches,
 }: {
   matches: BracketMatch[];
   span: number;
@@ -188,16 +217,49 @@ function AlignedRound({
   locale: string;
   labels: Labels;
   align: "left" | "right";
+  pairMatches?: boolean;
 }) {
-  const slotH = span * MATCH_H + (span - 1) * SLOT_GAP;
+  const slotH = slotHeight(span);
+
+  if (pairMatches) {
+    const pairs: BracketMatch[][] = [];
+    for (let i = 0; i < matches.length; i += 2) {
+      pairs.push(matches.slice(i, i + 2));
+    }
+
+    return (
+      <div className="flex shrink-0 flex-col">
+        <RoundHeader label={roundLabel} />
+        <div className="flex flex-col" style={{ gap: BLOCK_GAP }}>
+          {pairs.map((pair, idx) => (
+            <div
+              key={`${roundLabel}-pair-${idx}`}
+              className={cn(
+                "relative flex flex-col",
+                align === "left" ? "items-end" : "items-start",
+              )}
+              style={{ minHeight: PAIR_SLOT_H, gap: PAIR_INNER_GAP }}
+            >
+              {pair.map((match, j) => (
+                <MatchCard
+                  key={`${match.id ?? j}-${roundLabel}`}
+                  match={match}
+                  locale={locale}
+                  labels={labels}
+                  tree
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex shrink-0 flex-col">
       <RoundHeader label={roundLabel} />
-      <div
-        className="relative flex flex-col"
-        style={{ gap: slotH - MATCH_H }}
-      >
+      <div className="relative flex flex-col" style={{ gap: BLOCK_GAP }}>
         {matches.map((match, idx) => (
           <div
             key={`${match.id ?? idx}-${roundLabel}`}
@@ -210,8 +272,8 @@ function AlignedRound({
             {span > 1 && idx % 2 === 0 ? (
               <div
                 className={cn(
-                  "pointer-events-none absolute top-1/2 z-0 h-px w-3 bg-border",
-                  align === "left" ? "-right-3" : "-left-3",
+                  "pointer-events-none absolute top-1/2 z-0 h-px w-2.5 bg-border/80",
+                  align === "left" ? "-right-2.5" : "-left-2.5",
                 )}
                 aria-hidden
               />
@@ -219,17 +281,14 @@ function AlignedRound({
             {span > 1 && idx % 2 === 0 ? (
               <div
                 className={cn(
-                  "pointer-events-none absolute z-0 w-px bg-border",
-                  align === "left" ? "-right-3" : "-left-3",
+                  "pointer-events-none absolute z-0 w-px bg-border/80",
+                  align === "left" ? "-right-2.5" : "-left-2.5",
                 )}
-                style={{
-                  top: "50%",
-                  height: slotH,
-                }}
+                style={{ top: "50%", height: slotH }}
                 aria-hidden
               />
             ) : null}
-            <MatchCard match={match} locale={locale} labels={labels} />
+            <MatchCard match={match} locale={locale} labels={labels} tree />
           </div>
         ))}
       </div>
@@ -248,30 +307,32 @@ function SideTree({
   labels: Labels;
   align: "left" | "right";
 }) {
+  const treeHeight = slotHeight(4);
+
   const cols =
     align === "left"
       ? [
-          { matches: tree.r32, span: 1, label: labels.r32 },
-          { matches: tree.r16, span: 2, label: labels.r16 },
-          { matches: tree.qf, span: 4, label: labels.qf },
+          { matches: tree.r32, span: 1, label: labels.r32, pair: true },
+          { matches: tree.r16, span: 1, label: labels.r16, pair: false },
+          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
         ]
       : [
-          { matches: tree.qf, span: 4, label: labels.qf },
-          { matches: tree.r16, span: 2, label: labels.r16 },
-          { matches: tree.r32, span: 1, label: labels.r32 },
+          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
+          { matches: tree.r16, span: 1, label: labels.r16, pair: false },
+          { matches: tree.r32, span: 1, label: labels.r32, pair: true },
         ];
 
   const sfCol = (
     <div className="flex shrink-0 flex-col">
       <RoundHeader label={labels.sf} />
-      <div
-        className="flex items-center"
-        style={{ minHeight: 8 * MATCH_H + 7 * SLOT_GAP }}
-      >
+      <div className="flex items-center" style={{ minHeight: treeHeight }}>
         {tree.sf ? (
-          <MatchCard match={tree.sf} locale={locale} labels={labels} />
+          <MatchCard match={tree.sf} locale={locale} labels={labels} tree />
         ) : (
-          <div className="w-[11rem] rounded-md border border-dashed border-border/60 bg-muted/10 px-3 py-6 text-center text-[11px] text-muted-foreground">
+          <div
+            className="flex w-[5.75rem] items-center justify-center rounded border border-dashed border-border/50 bg-muted/10 text-[10px] text-muted-foreground"
+            style={{ height: PAIR_SLOT_H }}
+          >
             {labels.tbd}
           </div>
         )}
@@ -280,12 +341,7 @@ function SideTree({
   );
 
   return (
-    <div
-      className={cn(
-        "flex items-start gap-2 md:gap-3",
-        align === "left" ? "flex-row" : "flex-row",
-      )}
-    >
+    <div className="flex items-start gap-3">
       {align === "left" ? (
         <>
           {cols.map((c) => (
@@ -297,6 +353,7 @@ function SideTree({
               locale={locale}
               labels={labels}
               align={align}
+              pairMatches={c.pair}
             />
           ))}
           {sfCol}
@@ -313,6 +370,7 @@ function SideTree({
               locale={locale}
               labels={labels}
               align={align}
+              pairMatches={c.pair}
             />
           ))}
         </>
@@ -330,20 +388,25 @@ function FinalColumn({
   locale: string;
   labels: Labels;
 }) {
+  const treeHeight = slotHeight(4);
+
   return (
-    <div className="flex shrink-0 flex-col items-center px-2 md:px-4">
+    <div className="flex shrink-0 flex-col items-center px-3">
       <RoundHeader label={labels.final} />
       <div
         className="flex flex-col items-center justify-center gap-2"
-        style={{ minHeight: 8 * MATCH_H + 7 * SLOT_GAP }}
+        style={{ minHeight: treeHeight }}
       >
-        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-200/90">
+        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-amber-200/90">
           🏆
         </div>
         {match ? (
-          <MatchCard match={match} locale={locale} labels={labels} compact />
+          <MatchCard match={match} locale={locale} labels={labels} tree />
         ) : (
-          <div className="w-[9.5rem] rounded-md border border-dashed border-border/60 bg-muted/10 px-3 py-8 text-center text-[11px] text-muted-foreground">
+          <div
+            className="flex w-[5.75rem] items-center justify-center rounded border border-dashed border-border/50 bg-muted/10 text-[10px] text-muted-foreground"
+            style={{ height: MATCH_H }}
+          >
             {labels.tbd}
           </div>
         )}
@@ -368,7 +431,7 @@ function MobileRoundList({
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand-accent">
             {round.label}
           </h3>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {round.matches.map((match, idx) => (
               <MatchCard
                 key={`${round.roundId}-${match.id ?? idx}`}
@@ -414,7 +477,7 @@ export function WcKnockoutBracket({
       </header>
 
       <div className="hidden overflow-x-auto p-4 md:p-6 lg:block">
-        <div className="mx-auto flex min-w-[960px] max-w-[1200px] items-start justify-center gap-0">
+        <div className="mx-auto flex w-max items-start justify-center">
           <SideTree tree={split.left} locale={locale} labels={labels} align="left" />
           <FinalColumn match={split.final} locale={locale} labels={labels} />
           <SideTree tree={split.right} locale={locale} labels={labels} align="right" />
