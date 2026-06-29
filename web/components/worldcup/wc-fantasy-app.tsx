@@ -15,6 +15,8 @@ import { WcScoutingPanel } from "@/components/worldcup/wc-scouting-panel";
 
 import { WcMatchesPanel } from "@/components/worldcup/wc-matches-panel";
 import { WcTablesPanel } from "@/components/worldcup/wc-tables-panel";
+import { WcKnockoutBracket } from "@/components/worldcup/wc-knockout-bracket";
+import type { KnockoutBracket } from "@/lib/wc/knockout-bracket";
 
 type Tab = "fdr" | "xp" | "scouting" | "matches" | "tables";
 
@@ -66,6 +68,8 @@ export function WcFantasyApp() {
   const [scouting, setScouting] = useState<ScoutingPayload | null>(null);
   const [scoutingLoading, setScoutingLoading] = useState(false);
   const [scoutingError, setScoutingError] = useState<string | null>(null);
+  const [bracket, setBracket] = useState<KnockoutBracket | null>(null);
+  const [bracketLoading, setBracketLoading] = useState(true);
 
   useEffect(() => {
     const next = tabFromParam(searchParams.get("tab"));
@@ -92,6 +96,27 @@ export function WcFantasyApp() {
   useEffect(() => {
     void loadContext(position);
   }, [loadContext, position]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setBracketLoading(true);
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/worldcup/bracket?locale=${encodeURIComponent(locale)}`,
+        );
+        const data = (await readApiJson<{ bracket: KnockoutBracket | null }>(res));
+        if (!cancelled) setBracket(data.bracket);
+      } catch {
+        if (!cancelled) setBracket(null);
+      } finally {
+        if (!cancelled) setBracketLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
   useEffect(() => {
     if (tab !== "scouting" || scouting != null) return;
@@ -169,6 +194,22 @@ export function WcFantasyApp() {
 
   return (
     <div className="flex flex-col gap-5">
+      {bracketLoading && !bracket ? (
+        <p className="text-sm text-muted-foreground">{t("bracketLoading")}</p>
+      ) : null}
+      {bracket ? (
+        <WcKnockoutBracket
+          bracket={bracket}
+          title={t("bracketTitle")}
+          summary={t("bracketSummary")}
+          labels={{
+            tbd: t("bracketTbd"),
+            live: t("bracketLive"),
+            ft: t("bracketFt"),
+          }}
+        />
+      ) : null}
+
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-card p-1">
         {tabs.map((item) => (
           <button
