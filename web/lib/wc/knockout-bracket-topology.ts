@@ -52,12 +52,12 @@ export const WC2026_ROUND_ORDER: Record<number, readonly number[]> = {
  * for Mexico/England, so M92 = [82, 83] → MEX vs ENG, not M93 = ENG vs BEL).
  */
 export const WC2026_FEEDERS: Record<number, readonly [number, number]> = {
-  89: [78, 79], // PAR vs FRA
-  90: [73, 75], // CAN vs MAR
-  91: [74, 77], // BRA vs NOR
+  89: [73, 75], // CAN vs MAR
+  90: [74, 77], // BRA vs NOR
+  91: [78, 79], // PAR vs FRA
   92: [82, 83], // MEX vs ENG
-  93: [85, 87], // POR/CRO vs ESP/AUT
-  94: [76, 84], // USA vs BEL
+  93: [76, 84], // USA vs BEL
+  94: [85, 87], // POR/CRO vs ESP/AUT
   95: [80, 81], // ARG/CPV vs AUS/EGY
   96: [86, 88], // COL/GHA vs SUI/ALG
   97: [89, 90],

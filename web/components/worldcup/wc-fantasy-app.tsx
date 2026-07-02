@@ -224,7 +224,6 @@ export function WcFantasyApp({
             tabSchedule: t("bracketTabSchedule"),
             swipeHint: t("bracketSwipeHint"),
             fifaLink: t("bracketFifaLink"),
-            xhsLink: t("bracketXhsLink"),
           }}
         />
       ) : null}

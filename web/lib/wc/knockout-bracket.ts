@@ -305,6 +305,13 @@ function resolveSlotMatch(
 
   const feeders = WC2026_FEEDERS[slotId];
 
+  // Use FIFA-published fixture when teams are already assigned (before R32 completes).
+  const directPublished =
+    resolved.get(slotId) ?? pool.find((m) => m.id === slotId && m.roundId === roundId);
+  if (directPublished?.home && directPublished?.away) {
+    return { ...directPublished, id: slotId };
+  }
+
   // Round of 32 — fixed fixtures from FIFA.
   if (!feeders) {
     const direct = resolved.get(slotId) ?? pool.find((m) => m.id === slotId);
