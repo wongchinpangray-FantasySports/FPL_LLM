@@ -1,6 +1,19 @@
 import type { FifaRoundRow, FifaTournamentRow, WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
+import {
+  WC2026_FINAL,
+  WC2026_LEFT_QF,
+  WC2026_LEFT_R16,
+  WC2026_LEFT_R32_PAIRS,
+  WC2026_LEFT_SF,
+  WC2026_RIGHT_QF,
+  WC2026_RIGHT_R16,
+  WC2026_RIGHT_R32_PAIRS,
+  WC2026_RIGHT_SF,
+  WC2026_FEEDERS,
+  WC2026_ROUND_ORDER,
+} from "@/lib/wc/knockout-bracket-topology";
 
 export type BracketTeam = { code: string; name: string };
 
@@ -47,27 +60,30 @@ export type SplitKnockoutBracket = {
 export function splitKnockoutBracket(
   bracket: KnockoutBracket,
 ): SplitKnockoutBracket {
-  const byRound = new Map(bracket.rounds.map((r) => [r.roundId, r.matches]));
-  const r32 = byRound.get(4) ?? [];
-  const r16 = byRound.get(5) ?? [];
-  const qf = byRound.get(6) ?? [];
-  const sf = byRound.get(7) ?? [];
-  const final = byRound.get(8)?.[0] ?? null;
+  const byId = new Map<number, BracketMatch>();
+  for (const round of bracket.rounds) {
+    for (const match of round.matches) {
+      if (match.id != null) byId.set(match.id, match);
+    }
+  }
+
+  const pick = (id: number): BracketMatch =>
+    byId.get(id) ?? placeholderMatch(id, roundIdForMatch(id));
 
   return {
     left: {
-      r32: r32.slice(0, 8),
-      r16: r16.slice(0, 4),
-      qf: qf.slice(0, 2),
-      sf: sf[0] ?? null,
+      r32: WC2026_LEFT_R32_PAIRS.flat().map((id) => pick(id)),
+      r16: WC2026_LEFT_R16.map((id) => pick(id)),
+      qf: WC2026_LEFT_QF.map((id) => pick(id)),
+      sf: pick(WC2026_LEFT_SF),
     },
     right: {
-      r32: r32.slice(8, 16),
-      r16: r16.slice(4, 8),
-      qf: qf.slice(2, 4),
-      sf: sf[1] ?? null,
+      r32: WC2026_RIGHT_R32_PAIRS.flat().map((id) => pick(id)),
+      r16: WC2026_RIGHT_R16.map((id) => pick(id)),
+      qf: WC2026_RIGHT_QF.map((id) => pick(id)),
+      sf: pick(WC2026_RIGHT_SF),
     },
-    final,
+    final: pick(WC2026_FINAL),
   };
 }
 
@@ -83,6 +99,14 @@ const ROUND_LABELS: Record<
   7: { stage: "SF", en: "Semi-finals", zh: "半决赛", slots: 2 },
   8: { stage: "F", en: "Final", zh: "决赛", slots: 1 },
 };
+
+function roundIdForMatch(matchId: number): number {
+  if (matchId >= 104) return 8;
+  if (matchId >= 101) return 7;
+  if (matchId >= 97) return 6;
+  if (matchId >= 89) return 5;
+  return 4;
+}
 
 function squadAbbrToCodeLocal(abbr: string, name: string): string {
   const fromAbbr = fifaTeamToWcCode({ short_name: abbr, name: abbr });
@@ -196,14 +220,13 @@ function mergeBracketMatch(
   return fromWcMatchRow(enriched);
 }
 
-function advancePair(a: BracketMatch, b: BracketMatch, roundId: number): BracketMatch {
-  const meta = ROUND_LABELS[roundId];
+function placeholderMatch(id: number, roundId: number): BracketMatch {
   return {
-    id: null,
+    id,
     roundId,
-    stage: meta?.stage ?? "",
-    home: a.winner ?? a.home,
-    away: b.winner ?? b.away,
+    stage: ROUND_LABELS[roundId]?.stage ?? "",
+    home: null,
+    away: null,
     homeScore: null,
     awayScore: null,
     homePenalty: null,
@@ -212,6 +235,99 @@ function advancePair(a: BracketMatch, b: BracketMatch, roundId: number): Bracket
     kickoff: null,
     winner: null,
   };
+}
+
+function teamsMatch(
+  m: BracketMatch,
+  home: BracketTeam,
+  away: BracketTeam,
+): boolean {
+  if (!m.home || !m.away) return false;
+  return (
+    (m.home.code === home.code && m.away.code === away.code) ||
+    (m.home.code === away.code && m.away.code === home.code)
+  );
+}
+
+function resolveSlotMatch(
+  slotId: number,
+  roundId: number,
+  resolved: Map<number, BracketMatch>,
+  pool: BracketMatch[],
+): BracketMatch {
+  const feeders = WC2026_FEEDERS[slotId];
+  if (feeders) {
+    const [feedA, feedB] = feeders;
+    const a = resolved.get(feedA);
+    const b = resolved.get(feedB);
+    const home = a?.winner ?? a?.home;
+    const away = b?.winner ?? b?.home;
+
+    if (home && away) {
+      const fromPool = pool.find(
+        (m) => m.roundId === roundId && teamsMatch(m, home, away),
+      );
+      if (fromPool) {
+        return { ...fromPool, id: slotId };
+      }
+
+      return {
+        id: slotId,
+        roundId,
+        stage: ROUND_LABELS[roundId]?.stage ?? "",
+        home,
+        away,
+        homeScore: null,
+        awayScore: null,
+        homePenalty: null,
+        awayPenalty: null,
+        status: "scheduled",
+        kickoff: null,
+        winner: null,
+      };
+    }
+  }
+
+  const direct = resolved.get(slotId) ?? pool.find((m) => m.id === slotId);
+  if (direct) return { ...direct, id: slotId };
+
+  return placeholderMatch(slotId, roundId);
+}
+
+function ingestFifaKnockoutMatches(
+  fifaRounds: FifaRoundRow[],
+  matchesById: Map<number, WcMatchRow>,
+): { resolved: Map<number, BracketMatch>; pool: BracketMatch[] } {
+  const resolved = new Map<number, BracketMatch>();
+  const pool: BracketMatch[] = [];
+
+  for (const round of fifaRounds) {
+    if (!KNOCKOUT_ROUND_IDS.includes(round.id as (typeof KNOCKOUT_ROUND_IDS)[number])) {
+      continue;
+    }
+    for (const t of round.tournaments ?? []) {
+      const roundId = round.id;
+      const match = mergeBracketMatch(
+        fromFifaTournament(t, roundId),
+        matchesById.get(t.id),
+      );
+      pool.push(match);
+      resolved.set(t.id, match);
+    }
+  }
+
+  for (const m of matchesById.values()) {
+    if (
+      KNOCKOUT_ROUND_IDS.includes(m.round_id as (typeof KNOCKOUT_ROUND_IDS)[number]) &&
+      !resolved.has(m.id)
+    ) {
+      const match = fromWcMatchRow(m);
+      pool.push(match);
+      resolved.set(m.id, match);
+    }
+  }
+
+  return { resolved, pool };
 }
 
 export function buildKnockoutBracket(
@@ -223,29 +339,19 @@ export function buildKnockoutBracket(
   if (!r32?.tournaments?.length) return null;
 
   const isZh = locale.toLowerCase().startsWith("zh");
+  const { resolved, pool } = ingestFifaKnockoutMatches(fifaRounds, matchesById);
   const built: BracketRound[] = [];
-  let prevMatches: BracketMatch[] = [];
 
   for (const roundId of KNOCKOUT_ROUND_IDS) {
     const meta = ROUND_LABELS[roundId];
-    const fifaRound = fifaRounds.find((r) => r.id === roundId);
-    let matches: BracketMatch[];
+    const order = WC2026_ROUND_ORDER[roundId];
+    if (!order?.length) continue;
 
-    if (fifaRound?.tournaments?.length) {
-      matches = fifaRound.tournaments.map((t) =>
-        mergeBracketMatch(
-          fromFifaTournament(t, roundId),
-          matchesById.get(t.id),
-        ),
-      );
-    } else if (prevMatches.length >= 2) {
-      matches = [];
-      for (let i = 0; i + 1 < prevMatches.length; i += 2) {
-        matches.push(advancePair(prevMatches[i]!, prevMatches[i + 1]!, roundId));
-      }
-    } else {
-      break;
-    }
+    const matches = order.map((slotId) => {
+      const match = resolveSlotMatch(slotId, roundId, resolved, pool);
+      resolved.set(slotId, match);
+      return match;
+    });
 
     built.push({
       roundId,
@@ -253,7 +359,6 @@ export function buildKnockoutBracket(
       label: isZh ? meta.zh : meta.en,
       matches,
     });
-    prevMatches = matches;
   }
 
   if (built.length === 0) return null;
