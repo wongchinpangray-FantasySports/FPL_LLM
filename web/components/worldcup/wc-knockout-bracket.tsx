@@ -5,17 +5,22 @@ import { cn } from "@/lib/utils";
 import { WcFlag } from "@/components/worldcup/wc-flag";
 import { displayTeamName } from "@/lib/wc/team-names-zh";
 import {
+  formatBracketKickoff,
+  formatPenaltyLine,
+  hasPenaltyShootout,
+} from "@/lib/wc/bracket-format";
+import {
   splitKnockoutBracket,
   type BracketMatch,
   type BracketTeam,
   type KnockoutBracket,
 } from "@/lib/wc/knockout-bracket";
 
-const ROW_H = 22;
+const ROW_H = 24;
 const MATCH_H = ROW_H * 2;
 const PAIR_INNER_GAP = 4;
 const PAIR_SLOT_H = MATCH_H * 2 + PAIR_INNER_GAP;
-const BLOCK_GAP = 14;
+const BLOCK_GAP = 12;
 
 type Labels = {
   tbd: string;
@@ -28,18 +33,11 @@ type Labels = {
   sf: string;
   final: string;
   fifaLink: string;
+  xhsLink?: string;
 };
 
 function slotHeight(span: number): number {
   return span * PAIR_SLOT_H + (span - 1) * BLOCK_GAP;
-}
-
-function roundHasTeams(matches: BracketMatch[]): boolean {
-  return matches.some((m) => m.home && m.away);
-}
-
-function matchHasTeams(match: BracketMatch | null): boolean {
-  return Boolean(match?.home && match?.away);
 }
 
 function isLive(status: string): boolean {
@@ -52,35 +50,47 @@ function isFinished(status: string, homeScore: number | null): boolean {
   return s === "complete" || s === "finished" || homeScore != null;
 }
 
+function useChineseLayout(locale: string): boolean {
+  return locale.toLowerCase().startsWith("zh");
+}
+
 function TeamRow({
   side,
   score,
   locale,
   tbd,
   winner,
-  penalties,
   tree,
+  compact,
 }: {
   side: BracketTeam | null;
   score: number | null;
   locale: string;
   tbd: string;
   winner: BracketTeam | null;
-  penalties: boolean;
   tree?: boolean;
+  compact?: boolean;
 }) {
-  const rowH = tree ? ROW_H : 28;
+  const zh = useChineseLayout(locale);
+  const rowH = tree ? (zh ? ROW_H + 2 : ROW_H) : 28;
 
   if (!side) {
     return (
       <div
         className={cn(
-          "flex items-center justify-between gap-1.5 border-b border-border/40 bg-muted/15 px-2 last:border-b-0",
+          "flex items-center justify-between gap-1 border-b border-border/40 bg-muted/15 last:border-b-0",
           tree ? "px-1.5" : "px-2.5",
         )}
         style={{ height: rowH }}
       >
-        <span className="truncate text-[10px] italic text-muted-foreground">{tbd}</span>
+        <span
+          className={cn(
+            "truncate italic text-muted-foreground",
+            tree ? "text-[10px]" : "text-xs",
+          )}
+        >
+          {tbd}
+        </span>
         <span className="text-[10px] tabular-nums text-muted-foreground">—</span>
       </div>
     );
@@ -88,11 +98,12 @@ function TeamRow({
 
   const name = displayTeamName(side.code, side.name, locale);
   const won = winner?.code === side.code;
+  const showName = zh || !tree;
 
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-1.5 border-b border-border/40 last:border-b-0",
+        "flex items-center justify-between gap-1 border-b border-border/40 last:border-b-0",
         won
           ? "border-l-2 border-l-emerald-500 bg-emerald-500/10"
           : "border-l-2 border-l-transparent bg-card/90",
@@ -102,30 +113,39 @@ function TeamRow({
       title={name}
     >
       <span className="flex min-w-0 flex-1 items-center gap-1">
-        <WcFlag code={side.code} size={tree ? 13 : 16} title={name} />
-        <span
-          className={cn(
-            "shrink-0 font-bold tracking-wide text-foreground",
-            tree ? "text-[10px]" : "text-xs",
-          )}
-        >
-          {side.code}
-        </span>
-        {!tree ? (
+        <WcFlag code={side.code} size={tree ? (zh ? 14 : 13) : 16} title={name} />
+        {showName ? (
+          <span
+            className={cn(
+              "truncate font-medium text-foreground",
+              tree ? (zh ? "text-[10px]" : "text-[10px] font-bold tracking-wide") : "text-xs",
+              !tree && zh ? "sm:text-sm" : "",
+            )}
+          >
+            {zh ? name : side.code}
+          </span>
+        ) : (
+          <span className="shrink-0 text-[10px] font-bold tracking-wide text-foreground">
+            {side.code}
+          </span>
+        )}
+        {!tree && !zh ? (
           <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
             {name}
           </span>
         ) : null}
       </span>
-      <span
-        className={cn(
-          "shrink-0 font-semibold tabular-nums",
-          tree ? "w-3.5 text-right text-[10px]" : "text-xs",
-          won ? "text-emerald-400" : "text-foreground",
-        )}
-      >
-        {score != null ? score : penalties ? "" : "—"}
-      </span>
+      {!compact ? (
+        <span
+          className={cn(
+            "shrink-0 font-semibold tabular-nums",
+            tree ? "w-4 text-right text-[10px]" : "text-xs",
+            won ? "text-emerald-400" : "text-foreground",
+          )}
+        >
+          {score != null ? score : "—"}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -141,26 +161,47 @@ function MatchCard({
   labels: Labels;
   tree?: boolean;
 }) {
+  const zh = useChineseLayout(locale);
   const live = isLive(match.status);
   const finished = isFinished(match.status, match.homeScore);
-  const pens =
-    match.homePenalty != null &&
-    match.awayPenalty != null &&
-    match.homePenalty !== match.awayPenalty;
+  const pens = hasPenaltyShootout(match);
+  const penaltyLine = formatPenaltyLine(match);
+  const kickoff = formatBracketKickoff(match.kickoff, locale);
+  const hasTeams = Boolean(match.home && match.away);
 
   return (
     <div
       className={cn(
-        "overflow-hidden rounded border bg-card/95",
+        "overflow-hidden rounded-md border bg-card/95 shadow-sm",
         live
           ? "border-brand-accent/50 ring-1 ring-brand-accent/25"
           : "border-border/70",
-        tree ? "w-[5.75rem] shrink-0" : "w-full max-w-[14rem]",
+        tree
+          ? zh
+            ? "w-[8.25rem] shrink-0 sm:w-[8.75rem]"
+            : "w-[6.25rem] shrink-0 sm:w-[6.75rem]"
+          : "w-full max-w-[16rem]",
       )}
     >
       {tree && match.id ? (
-        <div className="border-b border-border/40 bg-muted/20 px-1 py-px text-center text-[7px] font-medium tabular-nums text-muted-foreground">
-          {labels.match.replace("{n}", String(match.id))}
+        <div className="space-y-px border-b border-border/40 bg-muted/20 px-1 py-0.5 text-center">
+          <p className="text-[7px] font-medium tabular-nums text-muted-foreground">
+            {labels.match.replace("{n}", String(match.id))}
+          </p>
+          {kickoff && hasTeams ? (
+            <p className="text-[7px] leading-tight text-muted-foreground/90">
+              {zh ? (
+                <>
+                  <span>{kickoff.date}</span>{" "}
+                  <span className="font-medium text-foreground/80">{kickoff.time}</span>
+                </>
+              ) : (
+                <>
+                  {kickoff.date} {kickoff.time}
+                </>
+              )}
+            </p>
+          ) : null}
         </div>
       ) : null}
       {!tree && match.id ? (
@@ -168,6 +209,11 @@ function MatchCard({
           <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
             {labels.match.replace("{n}", String(match.id))}
           </span>
+          {kickoff && hasTeams ? (
+            <span className="text-[9px] tabular-nums text-muted-foreground">
+              {kickoff.date} {kickoff.time}
+            </span>
+          ) : null}
           {live || finished ? (
             <span
               className={cn(
@@ -186,8 +232,8 @@ function MatchCard({
         locale={locale}
         tbd={labels.tbd}
         winner={match.winner}
-        penalties={pens}
         tree={tree}
+        compact={Boolean(pens && finished && penaltyLine)}
       />
       <TeamRow
         side={match.away}
@@ -195,12 +241,17 @@ function MatchCard({
         locale={locale}
         tbd={labels.tbd}
         winner={match.winner}
-        penalties={pens}
         tree={tree}
+        compact={Boolean(pens && finished && penaltyLine)}
       />
-      {pens && finished ? (
-        <p className="border-t border-border/40 bg-muted/25 px-1.5 py-px text-center text-[8px] tabular-nums text-muted-foreground">
-          {match.homePenalty}-{match.awayPenalty}p
+      {pens && finished && penaltyLine ? (
+        <p className="border-t border-border/40 bg-muted/25 px-1 py-0.5 text-center text-[8px] font-medium tabular-nums text-muted-foreground">
+          {penaltyLine}
+        </p>
+      ) : null}
+      {!tree && live ? (
+        <p className="border-t border-border/40 bg-brand-accent/10 px-2 py-0.5 text-center text-[9px] font-semibold text-brand-accent">
+          {labels.live}
         </p>
       ) : null}
     </div>
@@ -209,9 +260,23 @@ function MatchCard({
 
 function RoundHeader({ label }: { label: string }) {
   return (
-    <p className="mb-2.5 text-center text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+    <p className="mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground sm:text-[10px]">
       {label}
     </p>
+  );
+}
+
+function TbdCard({ label, tree, zh }: { label: string; tree?: boolean; zh?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/10 text-muted-foreground",
+        tree ? (zh ? "w-[8.25rem] sm:w-[8.75rem]" : "w-[6.25rem] sm:w-[6.75rem]") : "w-full",
+      )}
+      style={{ height: tree ? PAIR_SLOT_H / 2 : MATCH_H }}
+    >
+      <span className="text-[10px]">{label}</span>
+    </div>
   );
 }
 
@@ -232,6 +297,7 @@ function AlignedRound({
   align: "left" | "right";
   pairMatches?: boolean;
 }) {
+  const zh = useChineseLayout(locale);
   const slotH = slotHeight(span);
 
   if (pairMatches) {
@@ -301,7 +367,11 @@ function AlignedRound({
                 aria-hidden
               />
             ) : null}
-            <MatchCard match={match} locale={locale} labels={labels} tree />
+            {match.home || match.away ? (
+              <MatchCard match={match} locale={locale} labels={labels} tree />
+            ) : (
+              <TbdCard label={labels.tbd} tree zh={zh} />
+            )}
           </div>
         ))}
       </div>
@@ -320,48 +390,37 @@ function SideTree({
   labels: Labels;
   align: "left" | "right";
 }) {
+  const zh = useChineseLayout(locale);
   const treeHeight = slotHeight(4);
-
-  const showQf = roundHasTeams(tree.qf);
-  const showSf = matchHasTeams(tree.sf);
 
   const cols =
     align === "left"
       ? [
           { matches: tree.r32, span: 1, label: labels.r32, pair: true },
           { matches: tree.r16, span: 1, label: labels.r16, pair: false },
-          ...(showQf
-            ? [{ matches: tree.qf, span: 2, label: labels.qf, pair: false }]
-            : []),
+          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
         ]
       : [
-          ...(showQf
-            ? [{ matches: tree.qf, span: 2, label: labels.qf, pair: false }]
-            : []),
+          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
           { matches: tree.r16, span: 1, label: labels.r16, pair: false },
           { matches: tree.r32, span: 1, label: labels.r32, pair: true },
         ];
 
-  const sfCol = showSf ? (
+  const sfCol = (
     <div className="flex shrink-0 flex-col">
       <RoundHeader label={labels.sf} />
       <div className="flex items-center" style={{ minHeight: treeHeight }}>
-        {tree.sf ? (
+        {tree.sf?.home && tree.sf?.away ? (
           <MatchCard match={tree.sf} locale={locale} labels={labels} tree />
         ) : (
-          <div
-            className="flex w-[5.75rem] items-center justify-center rounded border border-dashed border-border/50 bg-muted/10 text-[10px] text-muted-foreground"
-            style={{ height: PAIR_SLOT_H }}
-          >
-            {labels.tbd}
-          </div>
+          <TbdCard label={labels.tbd} tree zh={zh} />
         )}
       </div>
     </div>
-  ) : null;
+  );
 
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-2 sm:gap-3">
       {align === "left" ? (
         <>
           {cols.map((c) => (
@@ -408,63 +467,25 @@ function FinalColumn({
   locale: string;
   labels: Labels;
 }) {
-  if (!matchHasTeams(match)) return null;
-
+  const zh = useChineseLayout(locale);
   const treeHeight = slotHeight(4);
 
   return (
-    <div className="flex shrink-0 flex-col items-center px-3">
+    <div className="flex shrink-0 flex-col items-center px-2 sm:px-3">
       <RoundHeader label={labels.final} />
       <div
         className="flex flex-col items-center justify-center gap-2"
         style={{ minHeight: treeHeight }}
       >
-        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-amber-200/90">
+        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
           🏆
         </div>
-        {match ? (
+        {match?.home && match?.away ? (
           <MatchCard match={match} locale={locale} labels={labels} tree />
         ) : (
-          <div
-            className="flex w-[5.75rem] items-center justify-center rounded border border-dashed border-border/50 bg-muted/10 text-[10px] text-muted-foreground"
-            style={{ height: MATCH_H }}
-          >
-            {labels.tbd}
-          </div>
+          <TbdCard label={labels.tbd} tree zh={zh} />
         )}
       </div>
-    </div>
-  );
-}
-
-function MobileRoundList({
-  bracket,
-  locale,
-  labels,
-}: {
-  bracket: KnockoutBracket;
-  locale: string;
-  labels: Labels;
-}) {
-  return (
-    <div className="flex flex-col gap-6 lg:hidden">
-      {bracket.rounds.map((round) => (
-        <div key={round.roundId}>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand-accent">
-            {round.label}
-          </h3>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {round.matches.map((match, idx) => (
-              <MatchCard
-                key={`${round.roundId}-${match.id ?? idx}`}
-                match={match}
-                locale={locale}
-                labels={labels}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -482,32 +503,44 @@ export function WcKnockoutBracket({
 }) {
   const locale = useLocale();
   const split = splitKnockoutBracket(bracket);
+  const zh = useChineseLayout(locale);
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/80 to-card/40 shadow-sm">
       <header className="border-b border-border/60 bg-muted/20 px-4 py-4 md:px-6">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{summary}</p>
-        <a
-          href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/standings"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-block text-xs text-brand-accent hover:underline"
-        >
-          {labels.fifaLink}
-        </a>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <a
+            href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/standings"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-brand-accent hover:underline"
+          >
+            {labels.fifaLink}
+          </a>
+          {labels.xhsLink ? (
+            <a
+              href="https://www.xiaohongshu.com/worldcup26/fixtures"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-brand-accent hover:underline"
+            >
+              {labels.xhsLink}
+            </a>
+          ) : null}
+        </div>
       </header>
 
-      <div className="hidden overflow-x-auto p-4 md:p-6 lg:block">
-        <div className="mx-auto flex w-max items-start justify-center">
+      <div className="overflow-x-auto p-3 sm:p-4 md:p-6">
+        <p className="mb-3 text-center text-[10px] text-muted-foreground sm:hidden">
+          {zh ? "左右滑动查看完整晋级图" : "Swipe horizontally for the full bracket"}
+        </p>
+        <div className="mx-auto flex w-max items-start justify-center pb-1">
           <SideTree tree={split.left} locale={locale} labels={labels} align="left" />
           <FinalColumn match={split.final} locale={locale} labels={labels} />
           <SideTree tree={split.right} locale={locale} labels={labels} align="right" />
         </div>
-      </div>
-
-      <div className="p-4 md:p-6 lg:hidden">
-        <MobileRoundList bracket={bracket} locale={locale} labels={labels} />
       </div>
     </section>
   );

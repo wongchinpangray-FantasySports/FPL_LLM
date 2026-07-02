@@ -220,6 +220,7 @@ export function WcFantasyApp({
             sf: t("bracketSf"),
             final: t("bracketFinal"),
             fifaLink: t("bracketFifaLink"),
+            xhsLink: t("bracketXhsLink"),
           }}
         />
       ) : null}
