@@ -209,6 +209,38 @@ export function isWcMatchFinished(m: Pick<WcMatchRow, "status" | "home_score">):
   return s === "finished" || s === "complete" || m.home_score != null;
 }
 
+export function isWcMatchLive(
+  m: Pick<WcMatchRow, "status" | "minutes">,
+): boolean {
+  const s = m.status.toLowerCase();
+  if (s === "finished" || s === "complete" || s === "scheduled") return false;
+  if (m.minutes > 0) return true;
+  return !["postponed", "cancelled", "abandoned"].includes(s);
+}
+
+/** Match data page: finished (latest first) → live → upcoming. */
+export function sortWcMatchesForDisplay(matches: WcMatchRow[]): WcMatchRow[] {
+  const kickoffMs = (m: WcMatchRow) => (m.kickoff ? Date.parse(m.kickoff) : 0);
+
+  function bucket(m: WcMatchRow): number {
+    if (isWcMatchFinished(m)) return 0;
+    if (isWcMatchLive(m)) return 1;
+    return 2;
+  }
+
+  return [...matches].sort((a, b) => {
+    const ba = bucket(a);
+    const bb = bucket(b);
+    if (ba !== bb) return ba - bb;
+
+    const ta = kickoffMs(a);
+    const tb = kickoffMs(b);
+
+    if (ba === 0) return tb - ta || b.id - a.id;
+    return ta - tb || a.id - b.id;
+  });
+}
+
 export async function loadFifaPlayerNames(): Promise<Map<number, string>> {
   if (playerNameCache && Date.now() - playerNameCacheAt < PLAYER_CACHE_MS) {
     return playerNameCache;

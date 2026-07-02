@@ -4,6 +4,7 @@ import {
   localizeWcMatches,
   readLocaleFromRequest,
 } from "@/lib/wc/localize-players";
+import { sortWcMatchesForDisplay } from "@/lib/wc/fifa-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       rounds,
-      matches: localized,
+      matches: sortWcMatchesForDisplay(localized),
       disclaimer:
         "Schedule and scores from FIFA. Goal/card minutes from API-Football when configured.",
     });
