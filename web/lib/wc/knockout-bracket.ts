@@ -218,7 +218,43 @@ function mergeBracketMatch(
   enriched: WcMatchRow | undefined,
 ): BracketMatch {
   if (!enriched) return fifa;
-  return fromWcMatchRow(enriched);
+
+  const cache = fromWcMatchRow(enriched);
+  const fifaFinished = isKnockoutComplete(fifa.status);
+  const cacheFinished = isKnockoutComplete(cache.status);
+
+  // Prefer live FIFA scores/penalties/winner for knockout results.
+  if (fifaFinished && fifa.homeScore != null && fifa.awayScore != null) {
+    return {
+      ...cache,
+      home: fifa.home,
+      away: fifa.away,
+      homeScore: fifa.homeScore,
+      awayScore: fifa.awayScore,
+      homePenalty: fifa.homePenalty ?? cache.homePenalty,
+      awayPenalty: fifa.awayPenalty ?? cache.awayPenalty,
+      status: fifa.status,
+      winner: fifa.winner ?? cache.winner,
+      kickoff: cache.kickoff ?? fifa.kickoff,
+    };
+  }
+
+  if (
+    cacheFinished &&
+    cache.homeScore != null &&
+    cache.awayScore != null &&
+    cache.homePenalty == null &&
+    fifa.homePenalty != null
+  ) {
+    return {
+      ...cache,
+      homePenalty: fifa.homePenalty,
+      awayPenalty: fifa.awayPenalty,
+      winner: fifa.winner ?? cache.winner,
+    };
+  }
+
+  return cache;
 }
 
 function placeholderMatch(id: number, roundId: number): BracketMatch {
@@ -266,12 +302,28 @@ function resolveSlotMatch(
   }
 
   const [feedA, feedB] = feeders;
-  const w1 = resolved.get(feedA)?.winner ?? null;
-  const w2 = resolved.get(feedB)?.winner ?? null;
+  const feedMatchA = resolved.get(feedA);
+  const feedMatchB = resolved.get(feedB);
 
-  // Only fill later rounds once both feeder matches have a confirmed winner.
+  // Only fill later rounds once both feeder matches are finished with a winner.
+  if (
+    !feedMatchA ||
+    !feedMatchB ||
+    !isKnockoutComplete(feedMatchA.status) ||
+    !isKnockoutComplete(feedMatchB.status)
+  ) {
+    return placeholderMatch(slotId, roundId);
+  }
+
+  const w1 = feedMatchA.winner;
+  const w2 = feedMatchB.winner;
   if (!w1 || !w2) {
     return placeholderMatch(slotId, roundId);
+  }
+
+  const direct = pool.find((m) => m.id === slotId && m.roundId === roundId);
+  if (direct?.home && direct.away && teamsMatch(direct, w1, w2)) {
+    return { ...direct, id: slotId };
   }
 
   const fromPool = pool.find(
@@ -280,6 +332,8 @@ function resolveSlotMatch(
   if (fromPool) {
     return { ...fromPool, id: slotId };
   }
+
+  const slotMeta = pool.find((m) => m.id === slotId);
 
   return {
     id: slotId,
@@ -292,7 +346,7 @@ function resolveSlotMatch(
     homePenalty: null,
     awayPenalty: null,
     status: "scheduled",
-    kickoff: null,
+    kickoff: slotMeta?.kickoff ?? null,
     winner: null,
   };
 }

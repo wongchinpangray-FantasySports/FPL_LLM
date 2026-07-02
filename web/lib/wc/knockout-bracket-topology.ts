@@ -42,16 +42,23 @@ export const WC2026_ROUND_ORDER: Record<number, readonly number[]> = {
   8: [WC2026_FINAL],
 };
 
-/** Winner of each feeder match advances into this knockout match. */
+/**
+ * Winner of each feeder match advances into this knockout match.
+ *
+ * Values are play.fifa.com fantasy tournament IDs (rounds.json), NOT the
+ * bracket-slot numbers printed on FIFA.com graphics — those labels diverge
+ * once the fixed template is populated (e.g. bracket M79/M80 = fantasy M82/M83
+ * for Mexico/England, so M92 = [82, 83] → MEX vs ENG, not M93 = ENG vs BEL).
+ */
 export const WC2026_FEEDERS: Record<number, readonly [number, number]> = {
-  89: [74, 77],
-  90: [73, 75],
-  91: [76, 78],
-  92: [79, 80],
-  93: [83, 84],
-  94: [81, 82],
-  95: [86, 88],
-  96: [85, 87],
+  89: [78, 79], // PAR vs FRA
+  90: [73, 75], // CAN vs MAR
+  91: [74, 77], // BRA vs NOR
+  92: [82, 83], // MEX vs ENG
+  93: [85, 87], // POR/CRO vs ESP/AUT
+  94: [76, 84], // USA vs BEL
+  95: [80, 81], // ARG/CPV vs AUS/EGY
+  96: [86, 88], // COL/GHA vs SUI/ALG
   97: [89, 90],
   98: [93, 94],
   99: [91, 92],

@@ -34,6 +34,14 @@ function slotHeight(span: number): number {
   return span * PAIR_SLOT_H + (span - 1) * BLOCK_GAP;
 }
 
+function roundHasTeams(matches: BracketMatch[]): boolean {
+  return matches.some((m) => m.home && m.away);
+}
+
+function matchHasTeams(match: BracketMatch | null): boolean {
+  return Boolean(match?.home && match?.away);
+}
+
 function isLive(status: string): boolean {
   const s = status.toLowerCase();
   return s !== "scheduled" && s !== "complete" && s !== "finished";
@@ -150,6 +158,11 @@ function MatchCard({
         tree ? "w-[5.75rem] shrink-0" : "w-full max-w-[14rem]",
       )}
     >
+      {tree && match.id ? (
+        <div className="border-b border-border/40 bg-muted/20 px-1 py-px text-center text-[7px] font-medium tabular-nums text-muted-foreground">
+          {labels.match.replace("{n}", String(match.id))}
+        </div>
+      ) : null}
       {!tree && match.id ? (
         <div className="flex items-center justify-between border-b border-border/40 bg-muted/25 px-2 py-0.5">
           <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -309,20 +322,27 @@ function SideTree({
 }) {
   const treeHeight = slotHeight(4);
 
+  const showQf = roundHasTeams(tree.qf);
+  const showSf = matchHasTeams(tree.sf);
+
   const cols =
     align === "left"
       ? [
           { matches: tree.r32, span: 1, label: labels.r32, pair: true },
           { matches: tree.r16, span: 1, label: labels.r16, pair: false },
-          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
+          ...(showQf
+            ? [{ matches: tree.qf, span: 2, label: labels.qf, pair: false }]
+            : []),
         ]
       : [
-          { matches: tree.qf, span: 2, label: labels.qf, pair: false },
+          ...(showQf
+            ? [{ matches: tree.qf, span: 2, label: labels.qf, pair: false }]
+            : []),
           { matches: tree.r16, span: 1, label: labels.r16, pair: false },
           { matches: tree.r32, span: 1, label: labels.r32, pair: true },
         ];
 
-  const sfCol = (
+  const sfCol = showSf ? (
     <div className="flex shrink-0 flex-col">
       <RoundHeader label={labels.sf} />
       <div className="flex items-center" style={{ minHeight: treeHeight }}>
@@ -338,7 +358,7 @@ function SideTree({
         )}
       </div>
     </div>
-  );
+  ) : null;
 
   return (
     <div className="flex items-start gap-3">
@@ -388,6 +408,8 @@ function FinalColumn({
   locale: string;
   labels: Labels;
 }) {
+  if (!matchHasTeams(match)) return null;
+
   const treeHeight = slotHeight(4);
 
   return (

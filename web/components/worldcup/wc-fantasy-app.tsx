@@ -109,6 +109,7 @@ export function WcFantasyApp({
       try {
         const res = await fetch(
           `/api/worldcup/bracket?locale=${encodeURIComponent(locale)}`,
+          { cache: "no-store" },
         );
         const data = await readApiJson<{ bracket: KnockoutBracket | null }>(res);
         if (!cancelled) setBracket(data.bracket);
