@@ -1,5 +1,4 @@
 import type { FifaRoundRow, FifaTournamentRow, WcMatchRow } from "@/lib/wc/fifa-rounds";
-import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
 import {
   WC2026_FINAL,
@@ -135,12 +134,17 @@ function winnerFromScores(
   return null;
 }
 
+function isKnockoutComplete(status: string): boolean {
+  const s = status.toLowerCase();
+  return s === "complete" || s === "finished";
+}
+
 function fromWcMatchRow(m: WcMatchRow): BracketMatch {
   const home = team(m.home_code, m.home_name);
   const away = team(m.away_code, m.away_name);
   const hs = m.home_score;
   const as = m.away_score;
-  const finished = isWcMatchFinished(m);
+  const finished = isKnockoutComplete(m.status);
   const winner =
     finished && hs != null && as != null
       ? winnerFromScores(
@@ -180,10 +184,7 @@ function fromFifaTournament(t: FifaTournamentRow, roundId: number): BracketMatch
   );
   const hs = t.homeScore;
   const as = t.awayScore;
-  const finished =
-    t.status.toLowerCase() === "complete" ||
-    t.status.toLowerCase() === "finished" ||
-    hs != null;
+  const finished = isKnockoutComplete(t.status);
   const winner =
     finished && hs != null && as != null
       ? winnerFromScores(
@@ -256,42 +257,44 @@ function resolveSlotMatch(
   pool: BracketMatch[],
 ): BracketMatch {
   const feeders = WC2026_FEEDERS[slotId];
-  if (feeders) {
-    const [feedA, feedB] = feeders;
-    const a = resolved.get(feedA);
-    const b = resolved.get(feedB);
-    const home = a?.winner ?? a?.home;
-    const away = b?.winner ?? b?.home;
 
-    if (home && away) {
-      const fromPool = pool.find(
-        (m) => m.roundId === roundId && teamsMatch(m, home, away),
-      );
-      if (fromPool) {
-        return { ...fromPool, id: slotId };
-      }
-
-      return {
-        id: slotId,
-        roundId,
-        stage: ROUND_LABELS[roundId]?.stage ?? "",
-        home,
-        away,
-        homeScore: null,
-        awayScore: null,
-        homePenalty: null,
-        awayPenalty: null,
-        status: "scheduled",
-        kickoff: null,
-        winner: null,
-      };
-    }
+  // Round of 32 — fixed fixtures from FIFA.
+  if (!feeders) {
+    const direct = resolved.get(slotId) ?? pool.find((m) => m.id === slotId);
+    if (direct) return { ...direct, id: slotId };
+    return placeholderMatch(slotId, roundId);
   }
 
-  const direct = resolved.get(slotId) ?? pool.find((m) => m.id === slotId);
-  if (direct) return { ...direct, id: slotId };
+  const [feedA, feedB] = feeders;
+  const w1 = resolved.get(feedA)?.winner ?? null;
+  const w2 = resolved.get(feedB)?.winner ?? null;
 
-  return placeholderMatch(slotId, roundId);
+  // Only fill later rounds once both feeder matches have a confirmed winner.
+  if (!w1 || !w2) {
+    return placeholderMatch(slotId, roundId);
+  }
+
+  const fromPool = pool.find(
+    (m) => m.roundId === roundId && teamsMatch(m, w1, w2),
+  );
+  if (fromPool) {
+    return { ...fromPool, id: slotId };
+  }
+
+  return {
+    id: slotId,
+    roundId,
+    stage: ROUND_LABELS[roundId]?.stage ?? "",
+    home: w1,
+    away: w2,
+    homeScore: null,
+    awayScore: null,
+    homePenalty: null,
+    awayPenalty: null,
+    status: "scheduled",
+    kickoff: null,
+    winner: null,
+  };
 }
 
 function ingestFifaKnockoutMatches(
