@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
-import { fetchFifaRounds } from "@/lib/wc/fifa-rounds";
-import { buildKnockoutBracket } from "@/lib/wc/knockout-bracket";
+import { loadKnockoutBracket } from "@/lib/wc/load-knockout-bracket";
 import { readLocaleFromRequest } from "@/lib/wc/localize-players";
 
 export const dynamic = "force-dynamic";
@@ -9,13 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const locale = readLocaleFromRequest(req);
-    const [{ matches }, fifaRounds] = await Promise.all([
-      buildWcMatchesWithStats(),
-      fetchFifaRounds(),
-    ]);
-
-    const byId = new Map(matches.map((m) => [m.id, m]));
-    const bracket = buildKnockoutBracket(fifaRounds, byId, locale);
+    const bracket = await loadKnockoutBracket(locale);
 
     return NextResponse.json({
       bracket,

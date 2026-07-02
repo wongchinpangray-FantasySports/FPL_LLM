@@ -55,7 +55,11 @@ async function readApiJson<T>(res: Response): Promise<T> {
   }
 }
 
-export function WcFantasyApp() {
+export function WcFantasyApp({
+  initialBracket = null,
+}: {
+  initialBracket?: KnockoutBracket | null;
+}) {
   const t = useTranslations("worldcup");
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -68,8 +72,8 @@ export function WcFantasyApp() {
   const [scouting, setScouting] = useState<ScoutingPayload | null>(null);
   const [scoutingLoading, setScoutingLoading] = useState(false);
   const [scoutingError, setScoutingError] = useState<string | null>(null);
-  const [bracket, setBracket] = useState<KnockoutBracket | null>(null);
-  const [bracketLoading, setBracketLoading] = useState(true);
+  const [bracket, setBracket] = useState<KnockoutBracket | null>(initialBracket);
+  const [bracketLoading, setBracketLoading] = useState(initialBracket == null);
 
   useEffect(() => {
     const next = tabFromParam(searchParams.get("tab"));
@@ -99,16 +103,17 @@ export function WcFantasyApp() {
 
   useEffect(() => {
     let cancelled = false;
-    setBracketLoading(true);
+    const hadBracket = bracket != null;
+    if (!hadBracket) setBracketLoading(true);
     void (async () => {
       try {
         const res = await fetch(
           `/api/worldcup/bracket?locale=${encodeURIComponent(locale)}`,
         );
-        const data = (await readApiJson<{ bracket: KnockoutBracket | null }>(res));
+        const data = await readApiJson<{ bracket: KnockoutBracket | null }>(res);
         if (!cancelled) setBracket(data.bracket);
       } catch {
-        if (!cancelled) setBracket(null);
+        if (!cancelled && !hadBracket) setBracket(null);
       } finally {
         if (!cancelled) setBracketLoading(false);
       }
@@ -116,6 +121,7 @@ export function WcFantasyApp() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh on locale only
   }, [locale]);
 
   useEffect(() => {
