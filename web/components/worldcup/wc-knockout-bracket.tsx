@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { WcFlag } from "@/components/worldcup/wc-flag";
 import { displayTeamName } from "@/lib/wc/team-names-zh";
 import {
   formatBracketKickoff,
-  formatPenaltyLine,
+  formatXhsScoreCenter,
   hasPenaltyShootout,
 } from "@/lib/wc/bracket-format";
 import {
@@ -16,11 +17,12 @@ import {
   type KnockoutBracket,
 } from "@/lib/wc/knockout-bracket";
 
-const ROW_H = 24;
-const MATCH_H = ROW_H * 2;
-const PAIR_INNER_GAP = 4;
-const PAIR_SLOT_H = MATCH_H * 2 + PAIR_INNER_GAP;
-const BLOCK_GAP = 12;
+const SLOT_UNIT = 52;
+const PAIR_GAP = 6;
+const COL_GAP = 10;
+const BLOCK_GAP = 14;
+
+type ViewMode = "tree" | "schedule";
 
 type Labels = {
   tbd: string;
@@ -32,12 +34,16 @@ type Labels = {
   qf: string;
   sf: string;
   final: string;
+  bronze: string;
+  tabTree: string;
+  tabSchedule: string;
+  swipeHint: string;
   fifaLink: string;
   xhsLink?: string;
 };
 
-function slotHeight(span: number): number {
-  return span * PAIR_SLOT_H + (span - 1) * BLOCK_GAP;
+function isZh(locale: string): boolean {
+  return locale.toLowerCase().startsWith("zh");
 }
 
 function isLive(status: string): boolean {
@@ -50,233 +56,195 @@ function isFinished(status: string, homeScore: number | null): boolean {
   return s === "complete" || s === "finished" || homeScore != null;
 }
 
-function useChineseLayout(locale: string): boolean {
-  return locale.toLowerCase().startsWith("zh");
-}
-
-function TeamRow({
-  side,
-  score,
-  locale,
-  tbd,
-  winner,
-  tree,
-  compact,
-}: {
-  side: BracketTeam | null;
-  score: number | null;
-  locale: string;
-  tbd: string;
-  winner: BracketTeam | null;
-  tree?: boolean;
-  compact?: boolean;
-}) {
-  const zh = useChineseLayout(locale);
-  const rowH = tree ? (zh ? ROW_H + 2 : ROW_H) : 28;
-
-  if (!side) {
-    return (
-      <div
-        className={cn(
-          "flex items-center justify-between gap-1 border-b border-border/40 bg-muted/15 last:border-b-0",
-          tree ? "px-1.5" : "px-2.5",
-        )}
-        style={{ height: rowH }}
-      >
-        <span
-          className={cn(
-            "truncate italic text-muted-foreground",
-            tree ? "text-[10px]" : "text-xs",
-          )}
-        >
-          {tbd}
-        </span>
-        <span className="text-[10px] tabular-nums text-muted-foreground">—</span>
-      </div>
-    );
+function roundLabelForStage(stage: string, labels: Labels): string {
+  switch (stage) {
+    case "R32":
+      return labels.r32;
+    case "R16":
+      return labels.r16;
+    case "QF":
+      return labels.qf;
+    case "SF":
+      return labels.sf;
+    case "F":
+      return labels.final;
+    default:
+      return stage;
   }
-
-  const name = displayTeamName(side.code, side.name, locale);
-  const won = winner?.code === side.code;
-  const showName = zh || !tree;
-
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-1 border-b border-border/40 last:border-b-0",
-        won
-          ? "border-l-2 border-l-emerald-500 bg-emerald-500/10"
-          : "border-l-2 border-l-transparent bg-card/90",
-        tree ? "px-1.5" : "px-2.5",
-      )}
-      style={{ height: rowH }}
-      title={name}
-    >
-      <span className="flex min-w-0 flex-1 items-center gap-1">
-        <WcFlag code={side.code} size={tree ? (zh ? 14 : 13) : 16} title={name} />
-        {showName ? (
-          <span
-            className={cn(
-              "truncate font-medium text-foreground",
-              tree ? (zh ? "text-[10px]" : "text-[10px] font-bold tracking-wide") : "text-xs",
-              !tree && zh ? "sm:text-sm" : "",
-            )}
-          >
-            {zh ? name : side.code}
-          </span>
-        ) : (
-          <span className="shrink-0 text-[10px] font-bold tracking-wide text-foreground">
-            {side.code}
-          </span>
-        )}
-        {!tree && !zh ? (
-          <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
-            {name}
-          </span>
-        ) : null}
-      </span>
-      {!compact ? (
-        <span
-          className={cn(
-            "shrink-0 font-semibold tabular-nums",
-            tree ? "w-4 text-right text-[10px]" : "text-xs",
-            won ? "text-emerald-400" : "text-foreground",
-          )}
-        >
-          {score != null ? score : "—"}
-        </span>
-      ) : null}
-    </div>
-  );
 }
 
-function MatchCard({
+function slotHeight(span: number): number {
+  return span * SLOT_UNIT * 2 + (span - 1) * BLOCK_GAP;
+}
+
+function teamLabel(
+  side: BracketTeam | null,
+  locale: string,
+  tbd: string,
+): string {
+  if (!side) return tbd;
+  return displayTeamName(side.code, side.name, locale);
+}
+
+function XhsMatchCard({
   match,
   locale,
   labels,
+  roundLabel,
+  compact,
   tree,
 }: {
   match: BracketMatch;
   locale: string;
   labels: Labels;
+  roundLabel?: string;
+  compact?: boolean;
   tree?: boolean;
 }) {
-  const zh = useChineseLayout(locale);
+  const zh = isZh(locale);
   const live = isLive(match.status);
   const finished = isFinished(match.status, match.homeScore);
-  const pens = hasPenaltyShootout(match);
-  const penaltyLine = formatPenaltyLine(match);
   const kickoff = formatBracketKickoff(match.kickoff, locale);
+  const scoreCenter = formatXhsScoreCenter(match);
   const hasTeams = Boolean(match.home && match.away);
+  const pens = hasPenaltyShootout(match);
+
+  const homeName = teamLabel(match.home, locale, labels.tbd);
+  const awayName = teamLabel(match.away, locale, labels.tbd);
+  const homeWon = match.winner?.code === match.home?.code;
+  const awayWon = match.winner?.code === match.away?.code;
 
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-md border bg-card/95 shadow-sm",
+        "overflow-hidden rounded-lg border shadow-sm transition-colors",
         live
-          ? "border-brand-accent/50 ring-1 ring-brand-accent/25"
-          : "border-border/70",
+          ? "border-[#ff2442]/40 bg-white ring-1 ring-[#ff2442]/20"
+          : "border-black/[0.06] bg-white",
         tree
-          ? zh
-            ? "w-[8.25rem] shrink-0 sm:w-[8.75rem]"
-            : "w-[6.25rem] shrink-0 sm:w-[6.75rem]"
-          : "w-full max-w-[16rem]",
+          ? cn("w-[9.5rem] shrink-0", !zh && "w-[7.75rem]")
+          : "w-full",
+        compact && tree && (zh ? "w-[9.5rem]" : "w-[7.75rem]"),
       )}
     >
-      {tree && match.id ? (
-        <div className="space-y-px border-b border-border/40 bg-muted/20 px-1 py-0.5 text-center">
-          <p className="text-[7px] font-medium tabular-nums text-muted-foreground">
-            {labels.match.replace("{n}", String(match.id))}
-          </p>
-          {kickoff && hasTeams ? (
-            <p className="text-[7px] leading-tight text-muted-foreground/90">
-              {zh ? (
-                <>
-                  <span>{kickoff.date}</span>{" "}
-                  <span className="font-medium text-foreground/80">{kickoff.time}</span>
-                </>
-              ) : (
-                <>
-                  {kickoff.date} {kickoff.time}
-                </>
-              )}
-            </p>
-          ) : null}
+      <div className="flex items-center justify-between gap-1 border-b border-black/[0.05] px-2 py-1">
+        <span className="text-[10px] font-medium tabular-nums text-zinc-500">
+          {kickoff?.time ?? (hasTeams ? "—" : "")}
+        </span>
+        <span className="rounded px-1.5 py-px text-[9px] font-medium text-[#ff2442]">
+          {roundLabel ?? roundLabelForStage(match.stage, labels)}
+        </span>
+        {live ? (
+          <span className="text-[9px] font-semibold text-[#ff2442]">{labels.live}</span>
+        ) : finished ? (
+          <span className="text-[9px] text-zinc-400">{labels.ft}</span>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-2 py-2">
+        <div
+          className={cn(
+            "flex min-w-0 items-center justify-end gap-1",
+            homeWon && "font-semibold text-emerald-700",
+            !match.home && "text-zinc-400 italic",
+          )}
+        >
+          {match.home ? (
+            <>
+              <span className="truncate text-[11px] leading-tight">{homeName}</span>
+              <WcFlag code={match.home.code} size={14} title={homeName} />
+            </>
+          ) : (
+            <span className="text-[11px]">{labels.tbd}</span>
+          )}
         </div>
-      ) : null}
-      {!tree && match.id ? (
-        <div className="flex items-center justify-between border-b border-border/40 bg-muted/25 px-2 py-0.5">
-          <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.match.replace("{n}", String(match.id))}
-          </span>
-          {kickoff && hasTeams ? (
-            <span className="text-[9px] tabular-nums text-muted-foreground">
-              {kickoff.date} {kickoff.time}
-            </span>
-          ) : null}
-          {live || finished ? (
-            <span
-              className={cn(
-                "text-[9px] font-semibold uppercase",
-                live ? "text-brand-accent" : "text-muted-foreground",
-              )}
-            >
-              {live ? labels.live : labels.ft}
-            </span>
-          ) : null}
+
+        <span
+          className={cn(
+            "px-1 text-center text-[11px] font-bold tabular-nums tracking-tight",
+            pens && finished ? "text-[10px]" : "",
+            scoreCenter === "---" ? "text-zinc-300" : "text-zinc-800",
+          )}
+        >
+          {scoreCenter}
+        </span>
+
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-1",
+            awayWon && "font-semibold text-emerald-700",
+            !match.away && "text-zinc-400 italic",
+          )}
+        >
+          {match.away ? (
+            <>
+              <WcFlag code={match.away.code} size={14} title={awayName} />
+              <span className="truncate text-[11px] leading-tight">{awayName}</span>
+            </>
+          ) : (
+            <span className="text-[11px]">{labels.tbd}</span>
+          )}
         </div>
-      ) : null}
-      <TeamRow
-        side={match.home}
-        score={match.homeScore}
-        locale={locale}
-        tbd={labels.tbd}
-        winner={match.winner}
-        tree={tree}
-        compact={Boolean(pens && finished && penaltyLine)}
-      />
-      <TeamRow
-        side={match.away}
-        score={match.awayScore}
-        locale={locale}
-        tbd={labels.tbd}
-        winner={match.winner}
-        tree={tree}
-        compact={Boolean(pens && finished && penaltyLine)}
-      />
-      {pens && finished && penaltyLine ? (
-        <p className="border-t border-border/40 bg-muted/25 px-1 py-0.5 text-center text-[8px] font-medium tabular-nums text-muted-foreground">
-          {penaltyLine}
-        </p>
-      ) : null}
-      {!tree && live ? (
-        <p className="border-t border-border/40 bg-brand-accent/10 px-2 py-0.5 text-center text-[9px] font-semibold text-brand-accent">
-          {labels.live}
+      </div>
+
+      {!tree && kickoff?.date ? (
+        <p className="border-t border-black/[0.05] px-2 py-1 text-[10px] text-zinc-400">
+          {kickoff.date}
         </p>
       ) : null}
     </div>
   );
 }
 
-function RoundHeader({ label }: { label: string }) {
-  return (
-    <p className="mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground sm:text-[10px]">
-      {label}
-    </p>
-  );
-}
-
-function TbdCard({ label, tree, zh }: { label: string; tree?: boolean; zh?: boolean }) {
+function TbdTreeCard({ label, locale }: { label: string; locale: string }) {
+  const zh = isZh(locale);
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/10 text-muted-foreground",
-        tree ? (zh ? "w-[8.25rem] sm:w-[8.75rem]" : "w-[6.25rem] sm:w-[6.75rem]") : "w-full",
+        "flex h-[3.25rem] items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-[11px] text-zinc-400",
+        zh ? "w-[9.5rem]" : "w-[7.75rem]",
       )}
-      style={{ height: tree ? PAIR_SLOT_H / 2 : MATCH_H }}
     >
-      <span className="text-[10px]">{label}</span>
+      {label}
     </div>
+  );
+}
+
+function RoundTitle({ label }: { label: string }) {
+  return (
+    <p className="mb-2 text-center text-[10px] font-semibold text-zinc-500">{label}</p>
+  );
+}
+
+function Connector({
+  align,
+  span,
+}: {
+  align: "left" | "right";
+  span: number;
+}) {
+  const h = slotHeight(span);
+  return (
+    <svg
+      className={cn(
+        "pointer-events-none absolute top-1/2 z-0 text-zinc-300",
+        align === "left" ? "-right-3" : "-left-3",
+      )}
+      width={12}
+      height={h}
+      aria-hidden
+    >
+      <path
+        d={
+          align === "left"
+            ? `M0 ${h / 2} H8 V0 H12 M8 ${h / 2} V${h}`
+            : `M12 ${h / 2} H4 V0 H0 M4 ${h / 2} V${h}`
+        }
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1}
+      />
+    </svg>
   );
 }
 
@@ -297,7 +265,6 @@ function AlignedRound({
   align: "left" | "right";
   pairMatches?: boolean;
 }) {
-  const zh = useChineseLayout(locale);
   const slotH = slotHeight(span);
 
   if (pairMatches) {
@@ -308,23 +275,24 @@ function AlignedRound({
 
     return (
       <div className="flex shrink-0 flex-col">
-        <RoundHeader label={roundLabel} />
+        <RoundTitle label={roundLabel} />
         <div className="flex flex-col" style={{ gap: BLOCK_GAP }}>
           {pairs.map((pair, idx) => (
             <div
               key={`${roundLabel}-pair-${idx}`}
               className={cn(
-                "relative flex flex-col",
+                "flex flex-col",
                 align === "left" ? "items-end" : "items-start",
               )}
-              style={{ minHeight: PAIR_SLOT_H, gap: PAIR_INNER_GAP }}
+              style={{ minHeight: SLOT_UNIT * 2 * 2 + PAIR_GAP, gap: PAIR_GAP }}
             >
               {pair.map((match, j) => (
-                <MatchCard
+                <XhsMatchCard
                   key={`${match.id ?? j}-${roundLabel}`}
                   match={match}
                   locale={locale}
                   labels={labels}
+                  roundLabel={roundLabel}
                   tree
                 />
               ))}
@@ -337,7 +305,7 @@ function AlignedRound({
 
   return (
     <div className="flex shrink-0 flex-col">
-      <RoundHeader label={roundLabel} />
+      <RoundTitle label={roundLabel} />
       <div className="relative flex flex-col" style={{ gap: BLOCK_GAP }}>
         {matches.map((match, idx) => (
           <div
@@ -349,28 +317,18 @@ function AlignedRound({
             style={{ minHeight: slotH }}
           >
             {span > 1 && idx % 2 === 0 ? (
-              <div
-                className={cn(
-                  "pointer-events-none absolute top-1/2 z-0 h-px w-2.5 bg-border/80",
-                  align === "left" ? "-right-2.5" : "-left-2.5",
-                )}
-                aria-hidden
-              />
-            ) : null}
-            {span > 1 && idx % 2 === 0 ? (
-              <div
-                className={cn(
-                  "pointer-events-none absolute z-0 w-px bg-border/80",
-                  align === "left" ? "-right-2.5" : "-left-2.5",
-                )}
-                style={{ top: "50%", height: slotH }}
-                aria-hidden
-              />
+              <Connector align={align} span={span} />
             ) : null}
             {match.home || match.away ? (
-              <MatchCard match={match} locale={locale} labels={labels} tree />
+              <XhsMatchCard
+                match={match}
+                locale={locale}
+                labels={labels}
+                roundLabel={roundLabel}
+                tree
+              />
             ) : (
-              <TbdCard label={labels.tbd} tree zh={zh} />
+              <TbdTreeCard label={labels.tbd} locale={locale} />
             )}
           </div>
         ))}
@@ -390,7 +348,6 @@ function SideTree({
   labels: Labels;
   align: "left" | "right";
 }) {
-  const zh = useChineseLayout(locale);
   const treeHeight = slotHeight(4);
 
   const cols =
@@ -408,19 +365,25 @@ function SideTree({
 
   const sfCol = (
     <div className="flex shrink-0 flex-col">
-      <RoundHeader label={labels.sf} />
+      <RoundTitle label={labels.sf} />
       <div className="flex items-center" style={{ minHeight: treeHeight }}>
-        {tree.sf?.home && tree.sf?.away ? (
-          <MatchCard match={tree.sf} locale={locale} labels={labels} tree />
+        {tree.sf?.home || tree.sf?.away ? (
+          <XhsMatchCard
+            match={tree.sf}
+            locale={locale}
+            labels={labels}
+            roundLabel={labels.sf}
+            tree
+          />
         ) : (
-          <TbdCard label={labels.tbd} tree zh={zh} />
+          <TbdTreeCard label={labels.tbd} locale={locale} />
         )}
       </div>
     </div>
   );
 
   return (
-    <div className="flex items-start gap-2 sm:gap-3">
+    <div className="flex items-start" style={{ gap: COL_GAP }}>
       {align === "left" ? (
         <>
           {cols.map((c) => (
@@ -458,34 +421,125 @@ function SideTree({
   );
 }
 
-function FinalColumn({
-  match,
+function CenterColumn({
+  final,
+  bronze,
   locale,
   labels,
 }: {
-  match: BracketMatch | null;
+  final: BracketMatch | null;
+  bronze: BracketMatch | null;
   locale: string;
   labels: Labels;
 }) {
-  const zh = useChineseLayout(locale);
   const treeHeight = slotHeight(4);
 
   return (
-    <div className="flex shrink-0 flex-col items-center px-2 sm:px-3">
-      <RoundHeader label={labels.final} />
-      <div
-        className="flex flex-col items-center justify-center gap-2"
-        style={{ minHeight: treeHeight }}
-      >
-        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+    <div
+      className="flex shrink-0 flex-col items-center px-2"
+      style={{ gap: COL_GAP }}
+    >
+      <div className="flex flex-col items-center" style={{ minHeight: treeHeight }}>
+        <RoundTitle label={labels.final} />
+        <div className="mb-2 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700">
           🏆
         </div>
-        {match?.home && match?.away ? (
-          <MatchCard match={match} locale={locale} labels={labels} tree />
+        {final?.home || final?.away ? (
+          <XhsMatchCard
+            match={final}
+            locale={locale}
+            labels={labels}
+            roundLabel={labels.final}
+            tree
+          />
         ) : (
-          <TbdCard label={labels.tbd} tree zh={zh} />
+          <TbdTreeCard label={labels.tbd} locale={locale} />
         )}
       </div>
+
+      <div className="flex flex-col items-center">
+        <RoundTitle label={labels.bronze} />
+        {bronze?.home || bronze?.away ? (
+          <XhsMatchCard
+            match={bronze}
+            locale={locale}
+            labels={labels}
+            roundLabel={labels.bronze}
+            tree
+          />
+        ) : (
+          <TbdTreeCard label={labels.tbd} locale={locale} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScheduleList({
+  bracket,
+  locale,
+  labels,
+}: {
+  bracket: KnockoutBracket;
+  locale: string;
+  labels: Labels;
+}) {
+  return (
+    <div className="mx-auto flex max-w-lg flex-col gap-5">
+      {bracket.rounds.map((round) => (
+        <div key={round.roundId}>
+          <h3 className="mb-2.5 text-sm font-semibold text-zinc-800">{round.label}</h3>
+          <div className="flex flex-col gap-2">
+            {round.matches.map((match, idx) => (
+              <XhsMatchCard
+                key={`${round.roundId}-${match.id ?? idx}`}
+                match={match}
+                locale={locale}
+                labels={labels}
+                roundLabel={
+                  match.id === 103 ? labels.bronze : round.label
+                }
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ViewTabs({
+  mode,
+  onChange,
+  labels,
+}: {
+  mode: ViewMode;
+  onChange: (mode: ViewMode) => void;
+  labels: Labels;
+}) {
+  const tabs: { id: ViewMode; label: string }[] = [
+    { id: "tree", label: labels.tabTree },
+    { id: "schedule", label: labels.tabSchedule },
+  ];
+
+  return (
+    <div className="flex justify-center border-b border-black/[0.06] bg-white px-4">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={cn(
+            "relative px-5 py-2.5 text-sm font-medium transition-colors",
+            mode === tab.id ? "text-[#ff2442]" : "text-zinc-500 hover:text-zinc-700",
+          )}
+        >
+          {tab.label}
+          {mode === tab.id ? (
+            <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[#ff2442]" />
+          ) : null}
+        </button>
+      ))}
     </div>
   );
 }
@@ -503,11 +557,11 @@ export function WcKnockoutBracket({
 }) {
   const locale = useLocale();
   const split = splitKnockoutBracket(bracket);
-  const zh = useChineseLayout(locale);
+  const [mode, setMode] = useState<ViewMode>("tree");
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/80 to-card/40 shadow-sm">
-      <header className="border-b border-border/60 bg-muted/20 px-4 py-4 md:px-6">
+    <section className="overflow-hidden rounded-xl border border-border shadow-sm">
+      <header className="border-b border-border/60 bg-card/80 px-4 py-4 md:px-6">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{summary}</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
@@ -532,15 +586,30 @@ export function WcKnockoutBracket({
         </div>
       </header>
 
-      <div className="overflow-x-auto p-3 sm:p-4 md:p-6">
-        <p className="mb-3 text-center text-[10px] text-muted-foreground sm:hidden">
-          {zh ? "左右滑动查看完整晋级图" : "Swipe horizontally for the full bracket"}
-        </p>
-        <div className="mx-auto flex w-max items-start justify-center pb-1">
-          <SideTree tree={split.left} locale={locale} labels={labels} align="left" />
-          <FinalColumn match={split.final} locale={locale} labels={labels} />
-          <SideTree tree={split.right} locale={locale} labels={labels} align="right" />
-        </div>
+      <div className="bg-[#f7f7f7] text-zinc-900">
+        <ViewTabs mode={mode} onChange={setMode} labels={labels} />
+
+        {mode === "tree" ? (
+          <div className="overflow-x-auto p-3 sm:p-4 md:p-5">
+            <p className="mb-3 text-center text-[11px] text-zinc-500 sm:hidden">
+              {labels.swipeHint}
+            </p>
+            <div className="mx-auto flex w-max items-start justify-center pb-2">
+              <SideTree tree={split.left} locale={locale} labels={labels} align="left" />
+              <CenterColumn
+                final={split.final}
+                bronze={split.bronze}
+                locale={locale}
+                labels={labels}
+              />
+              <SideTree tree={split.right} locale={locale} labels={labels} align="right" />
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 sm:p-4 md:p-5">
+            <ScheduleList bracket={bracket} locale={locale} labels={labels} />
+          </div>
+        )}
       </div>
     </section>
   );

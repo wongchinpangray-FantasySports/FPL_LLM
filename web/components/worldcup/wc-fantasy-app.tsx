@@ -219,6 +219,10 @@ export function WcFantasyApp({
             qf: t("bracketQf"),
             sf: t("bracketSf"),
             final: t("bracketFinal"),
+            bronze: t("bracketBronze"),
+            tabTree: t("bracketTabTree"),
+            tabSchedule: t("bracketTabSchedule"),
+            swipeHint: t("bracketSwipeHint"),
             fifaLink: t("bracketFifaLink"),
             xhsLink: t("bracketXhsLink"),
           }}

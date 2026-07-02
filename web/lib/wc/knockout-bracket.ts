@@ -1,6 +1,7 @@
 import type { FifaRoundRow, FifaTournamentRow, WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { fifaTeamToWcCode } from "@/lib/wc/fifa-teams";
 import {
+  WC2026_BRONZE,
   WC2026_FINAL,
   WC2026_LEFT_QF,
   WC2026_LEFT_R16,
@@ -53,6 +54,7 @@ export type BracketSideTree = {
 export type SplitKnockoutBracket = {
   left: BracketSideTree;
   right: BracketSideTree;
+  bronze: BracketMatch | null;
   final: BracketMatch | null;
 };
 
@@ -83,6 +85,7 @@ export function splitKnockoutBracket(
       sf: pick(WC2026_RIGHT_SF),
     },
     final: pick(WC2026_FINAL),
+    bronze: pick(WC2026_BRONZE),
   };
 }
 
@@ -92,15 +95,16 @@ const ROUND_LABELS: Record<
   number,
   { stage: string; en: string; zh: string; slots: number }
 > = {
-  4: { stage: "R32", en: "Round of 32", zh: "32强", slots: 16 },
-  5: { stage: "R16", en: "Round of 16", zh: "16强", slots: 8 },
-  6: { stage: "QF", en: "Quarter-finals", zh: "四分之一决赛", slots: 4 },
+  4: { stage: "R32", en: "Round of 32", zh: "1/16决赛", slots: 16 },
+  5: { stage: "R16", en: "Round of 16", zh: "1/8决赛", slots: 8 },
+  6: { stage: "QF", en: "Quarter-finals", zh: "1/4决赛", slots: 4 },
   7: { stage: "SF", en: "Semi-finals", zh: "半决赛", slots: 2 },
   8: { stage: "F", en: "Final", zh: "决赛", slots: 1 },
 };
 
 function roundIdForMatch(matchId: number): number {
   if (matchId >= 104) return 8;
+  if (matchId === 103) return 8;
   if (matchId >= 101) return 7;
   if (matchId >= 97) return 6;
   if (matchId >= 89) return 5;
@@ -292,6 +296,13 @@ function resolveSlotMatch(
   resolved: Map<number, BracketMatch>,
   pool: BracketMatch[],
 ): BracketMatch {
+  // Third-place play-off — use FIFA fixture when published (not winner feeders).
+  if (slotId === WC2026_BRONZE) {
+    const direct = pool.find((m) => m.id === slotId);
+    if (direct?.home && direct?.away) return { ...direct, id: slotId };
+    return placeholderMatch(slotId, roundId);
+  }
+
   const feeders = WC2026_FEEDERS[slotId];
 
   // Round of 32 — fixed fixtures from FIFA.

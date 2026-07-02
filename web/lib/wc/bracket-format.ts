@@ -46,3 +46,21 @@ export function formatPenaltyLine(match: BracketMatch): string | null {
   if (match.homeScore == null || match.awayScore == null) return null;
   return `${match.homeScore}(${match.homePenalty})-(${match.awayPenalty})${match.awayScore}`;
 }
+
+/** Center score token: 2-0, 1(3)-(4)1, or --- */
+export function formatXhsScoreCenter(match: BracketMatch): string {
+  const pens = formatPenaltyLine(match);
+  if (pens) return pens;
+  if (match.homeScore != null && match.awayScore != null) {
+    return `${match.homeScore}-${match.awayScore}`;
+  }
+  return "---";
+}
+
+export function formatXhsInlineTeams(
+  homeName: string,
+  awayName: string,
+  score: string,
+): string {
+  return `${homeName}${score}${awayName}`;
+}

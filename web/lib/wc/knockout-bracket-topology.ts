@@ -28,6 +28,7 @@ export const WC2026_RIGHT_QF = [98, 100] as const;
 
 export const WC2026_LEFT_SF = 101;
 export const WC2026_RIGHT_SF = 102;
+export const WC2026_BRONZE = 103;
 export const WC2026_FINAL = 104;
 
 /** Display order per round: left half then right half, aligned for the bracket UI. */
@@ -39,7 +40,7 @@ export const WC2026_ROUND_ORDER: Record<number, readonly number[]> = {
   5: [...WC2026_LEFT_R16, ...WC2026_RIGHT_R16],
   6: [...WC2026_LEFT_QF, ...WC2026_RIGHT_QF],
   7: [WC2026_LEFT_SF, WC2026_RIGHT_SF],
-  8: [WC2026_FINAL],
+  8: [WC2026_BRONZE, WC2026_FINAL],
 };
 
 /**
