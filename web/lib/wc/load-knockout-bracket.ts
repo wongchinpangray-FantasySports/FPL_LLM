@@ -8,10 +8,14 @@ import {
 export async function loadKnockoutBracket(
   locale: string,
 ): Promise<KnockoutBracket | null> {
-  const [{ matches }, fifaRounds] = await Promise.all([
-    buildWcMatchesWithStats(),
-    fetchFifaRounds(),
-  ]);
-  const byId = new Map(matches.map((m) => [m.id, m]));
-  return buildKnockoutBracket(fifaRounds, byId, locale);
+  try {
+    const [{ matches }, fifaRounds] = await Promise.all([
+      buildWcMatchesWithStats(),
+      fetchFifaRounds(),
+    ]);
+    const byId = new Map(matches.map((m) => [m.id, m]));
+    return buildKnockoutBracket(fifaRounds, byId, locale);
+  } catch {
+    return null;
+  }
 }

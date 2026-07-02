@@ -202,8 +202,8 @@ function advancePair(a: BracketMatch, b: BracketMatch, roundId: number): Bracket
     id: null,
     roundId,
     stage: meta?.stage ?? "",
-    home: a.winner,
-    away: b.winner,
+    home: a.winner ?? a.home,
+    away: b.winner ?? b.away,
     homeScore: null,
     awayScore: null,
     homePenalty: null,
@@ -240,7 +240,7 @@ export function buildKnockoutBracket(
       );
     } else if (prevMatches.length >= 2) {
       matches = [];
-      for (let i = 0; i < prevMatches.length; i += 2) {
+      for (let i = 0; i + 1 < prevMatches.length; i += 2) {
         matches.push(advancePair(prevMatches[i]!, prevMatches[i + 1]!, roundId));
       }
     } else {
