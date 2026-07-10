@@ -67,6 +67,11 @@ export function FplHub() {
           title={t("fixturesLinkTitle")}
           description={t("fixturesLinkBody")}
         />
+        <HubTile
+          href="/fpl/historical"
+          title={t("historicalTitle")}
+          description={t("historicalBody")}
+        />
       </div>
     </div>
   );
