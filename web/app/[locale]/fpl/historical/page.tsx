@@ -10,20 +10,15 @@ type Props = { params: { locale: string } };
 export default async function FplHistoricalPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "fplHistorical" });
-  const meta = await loadHistoricalMeta();
 
-  return (
-    <PageShell
-      backHref="/fpl"
-      backLabel={t("backFpl")}
-      eyebrow={t("eyebrow")}
-      title={t("title")}
-      description={t("description")}
-      width="6xl"
-    >
-      <FplHistoricalData
-        meta={meta}
-        labels={{
+  let meta;
+  try {
+    meta = await loadHistoricalMeta();
+  } catch {
+    meta = null;
+  }
+
+  const labels = {
           season: t("season"),
           gwFrom: t("gwFrom"),
           gwTo: t("gwTo"),
@@ -76,8 +71,18 @@ export default async function FplHistoricalPage({ params }: Props) {
           sortDefcon: t("sortDefcon"),
           sortPts90: t("sortPts90"),
           sortApps: t("sortApps"),
-        }}
-      />
+  };
+
+  return (
+    <PageShell
+      backHref="/fpl"
+      backLabel={t("backFpl")}
+      eyebrow={t("eyebrow")}
+      title={t("title")}
+      description={t("description")}
+      width="6xl"
+    >
+      <FplHistoricalData meta={meta} labels={labels} />
     </PageShell>
   );
 }

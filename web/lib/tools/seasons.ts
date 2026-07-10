@@ -1,5 +1,5 @@
-import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { listAvailableFplSeasons } from "@/lib/fpl/historical-data";
 import type { ToolHandler } from "./types";
 
 const listFplSeasons: ToolHandler = {
@@ -11,16 +11,7 @@ const listFplSeasons: ToolHandler = {
     properties: {},
   },
   async run() {
-    const supa = getServerSupabase();
-    const { data, error } = await supa.from("fpl_seasons_list").select("season");
-    if (error) throw new Error(error.message);
-    const seasons = [
-      ...new Set(
-        (data ?? [])
-          .map((r) => (r.season != null ? String(r.season).trim() : ""))
-          .filter(Boolean),
-      ),
-    ].sort((a, b) => Number(b) - Number(a));
+    const seasons = await listAvailableFplSeasons();
     const active_season = await getCurrentFplSeason();
     return {
       seasons,

@@ -194,18 +194,64 @@ export function parseHistoricalQueryParams(
   };
 }
 
-export async function listAvailableFplSeasons(): Promise<string[]> {
-  const supa = getServerSupabase();
-  const { data, error } = await supa.from("fpl_seasons_list").select("season");
-  if (error) throw new Error(error.message);
-  const seasons = [
+function dedupeSeasons(rows: { season?: unknown }[]): string[] {
+  return [
     ...new Set(
-      (data ?? [])
+      rows
         .map((r) => (r.season != null ? String(r.season).trim() : ""))
         .filter(Boolean),
     ),
   ].sort((a, b) => Number(b) - Number(a));
-  return seasons.length ? seasons : [await getCurrentFplSeason()];
+}
+
+async function fetchSeasonsFromFixtures(): Promise<string[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa.from("fixtures").select("season");
+  if (error || !data?.length) return [];
+  return dedupeSeasons(data);
+}
+
+export async function listAvailableFplSeasons(): Promise<string[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa.from("fpl_seasons_list").select("season");
+  if (!error && data?.length) {
+    const seasons = dedupeSeasons(data);
+    if (seasons.length) return seasons;
+  }
+
+  const fromFixtures = await fetchSeasonsFromFixtures();
+  if (fromFixtures.length) return fromFixtures;
+
+  return [await getCurrentFplSeason()];
+}
+
+async function loadGwBounds(
+  seasons: string[],
+): Promise<Record<string, { min: number; max: number }>> {
+  const supa = getServerSupabase();
+  const bounds: Record<string, { min: number; max: number }> = {};
+
+  const { data, error } = await supa.from("fixtures").select("season,gw");
+  if (!error && data?.length) {
+    for (const row of data) {
+      const season = String(row.season ?? "").trim();
+      const gw = Math.floor(num(row.gw));
+      if (!season || gw <= 0) continue;
+      const cur = bounds[season];
+      if (!cur) {
+        bounds[season] = { min: gw, max: gw };
+      } else {
+        cur.min = Math.min(cur.min, gw);
+        cur.max = Math.max(cur.max, gw);
+      }
+    }
+  }
+
+  for (const season of seasons) {
+    if (!bounds[season]) bounds[season] = { min: 1, max: 38 };
+  }
+
+  return bounds;
 }
 
 export async function loadHistoricalMeta(): Promise<HistoricalMeta> {
@@ -216,33 +262,7 @@ export async function loadHistoricalMeta(): Promise<HistoricalMeta> {
     supa.from("teams").select("id,name,short_name").order("name"),
   ]);
 
-  const gwBounds: Record<string, { min: number; max: number }> = {};
-  await Promise.all(
-    seasons.map(async (season) => {
-      const [minRes, maxRes] = await Promise.all([
-        supa
-          .from("player_gw_stats")
-          .select("gw")
-          .eq("season", season)
-          .order("gw", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-        supa
-          .from("player_gw_stats")
-          .select("gw")
-          .eq("season", season)
-          .order("gw", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-      const minGw = Math.floor(num(minRes.data?.gw));
-      const maxGw = Math.floor(num(maxRes.data?.gw));
-      gwBounds[season] =
-        minGw > 0 && maxGw > 0
-          ? { min: minGw, max: maxGw }
-          : { min: 1, max: 38 };
-    }),
-  );
+  const gwBounds = await loadGwBounds(seasons);
 
   return {
     seasons,
@@ -470,8 +490,9 @@ export async function queryHistoricalStats(
     throw new Error("Invalid season");
   }
 
-  const meta = await loadHistoricalMeta();
-  const bounds = meta.gwBounds[season] ?? { min: 1, max: 38 };
+  const activeSeason = await getCurrentFplSeason();
+  const gwBounds = await loadGwBounds([season, activeSeason]);
+  const bounds = gwBounds[season] ?? { min: 1, max: 38 };
   const gwFrom = Math.max(
     bounds.min,
     params.gwFrom != null && params.gwFrom > 0 ? params.gwFrom : bounds.min,

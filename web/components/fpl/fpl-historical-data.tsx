@@ -189,19 +189,69 @@ function FilterField({
 const inputClass =
   "rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
 
+function emptyMeta(): HistoricalMeta {
+  return {
+    seasons: ["2025"],
+    activeSeason: "2025",
+    teams: [],
+    gwBounds: { "2025": { min: 1, max: 38 } },
+  };
+}
+
 export function FplHistoricalData({
-  meta,
+  meta: initialMeta,
   labels,
 }: {
-  meta: HistoricalMeta;
+  meta: HistoricalMeta | null;
   labels: Labels;
 }) {
-  const [filters, setFilters] = useState<Filters>(() => defaultFilters(meta));
-  const [applied, setApplied] = useState<Filters>(() => defaultFilters(meta));
+  const [meta, setMeta] = useState<HistoricalMeta>(initialMeta ?? emptyMeta());
+  const [metaReady, setMetaReady] = useState(Boolean(initialMeta));
+  const [filters, setFilters] = useState<Filters>(() =>
+    defaultFilters(initialMeta ?? emptyMeta()),
+  );
+  const [applied, setApplied] = useState<Filters>(() =>
+    defaultFilters(initialMeta ?? emptyMeta()),
+  );
   const [result, setResult] = useState<HistoricalQueryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
   const limit = 50;
+
+  useEffect(() => {
+    if (initialMeta) {
+      setMeta(initialMeta);
+      setMetaReady(true);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/fpl/historical?meta=1");
+        const data = (await res.json()) as HistoricalMeta & { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Failed to load meta");
+        if (!cancelled) {
+          setMeta(data);
+          const nextFilters = defaultFilters(data);
+          setFilters(nextFilters);
+          setApplied(nextFilters);
+        }
+      } catch {
+        if (!cancelled) {
+          const fallback = emptyMeta();
+          setMeta(fallback);
+          const nextFilters = defaultFilters(fallback);
+          setFilters(nextFilters);
+          setApplied(nextFilters);
+        }
+      } finally {
+        if (!cancelled) setMetaReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialMeta]);
 
   const gwBounds = meta.gwBounds[filters.season] ?? { min: 1, max: 38 };
 
@@ -226,8 +276,15 @@ export function FplHistoricalData({
   );
 
   useEffect(() => {
+    if (!metaReady) return;
     void fetchData(applied, offset);
-  }, [applied, offset, fetchData]);
+  }, [applied, offset, fetchData, metaReady]);
+
+  if (!metaReady) {
+    return (
+      <p className="text-sm text-muted-foreground">{labels.loading}</p>
+    );
+  }
 
   function onSeasonChange(season: string) {
     const bounds = meta.gwBounds[season] ?? { min: 1, max: 38 };
