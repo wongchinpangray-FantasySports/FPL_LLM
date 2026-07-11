@@ -1,0 +1,47 @@
+name: FPL historical backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_existing:
+        description: "Skip seasons already present in player_gw_stats"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+concurrency:
+  group: fpl-historical-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Apply player_season_profiles migration (SQL)
+        run: |
+          echo "Ensure migration 0022_player_season_profiles.sql is applied in Supabase before this job."
+
+      - name: Backfill vaastav seasons
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.skip_existing }}" = "true" ]; then
+            FLAGS="--skip-existing"
+          fi
+          python -m data_sync.backfill_vaastav_seasons $FLAGS

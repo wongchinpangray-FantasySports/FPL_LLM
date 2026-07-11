@@ -211,6 +211,37 @@ async function fetchSeasonsFromFixtures(): Promise<string[]> {
   return dedupeSeasons(data);
 }
 
+async function fetchSeasonsFromProfiles(): Promise<string[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("player_season_profiles")
+    .select("season");
+  if (error || !data?.length) return [];
+  return dedupeSeasons(data);
+}
+
+async function fetchSeasonsFromGwStats(): Promise<string[]> {
+  const supa = getServerSupabase();
+  const seasons = new Set<string>();
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supa
+      .from("player_gw_stats")
+      .select("season")
+      .range(from, from + pageSize - 1);
+    if (error || !data?.length) break;
+    for (const row of data) {
+      const s = row.season != null ? String(row.season).trim() : "";
+      if (s) seasons.add(s);
+    }
+    if (data.length < pageSize) break;
+    from += pageSize;
+    if (from > 20000) break;
+  }
+  return [...seasons].sort((a, b) => Number(b) - Number(a));
+}
+
 export async function listAvailableFplSeasons(): Promise<string[]> {
   const supa = getServerSupabase();
   const { data, error } = await supa.from("fpl_seasons_list").select("season");
@@ -219,8 +250,14 @@ export async function listAvailableFplSeasons(): Promise<string[]> {
     if (seasons.length) return seasons;
   }
 
-  const fromFixtures = await fetchSeasonsFromFixtures();
-  if (fromFixtures.length) return fromFixtures;
+  const merged = new Set<string>([
+    ...(await fetchSeasonsFromFixtures()),
+    ...(await fetchSeasonsFromProfiles()),
+    ...(await fetchSeasonsFromGwStats()),
+  ]);
+  if (merged.size) {
+    return [...merged].sort((a, b) => Number(b) - Number(a));
+  }
 
   return [await getCurrentFplSeason()];
 }
@@ -301,10 +338,58 @@ type GwStatRow = {
   defensive_contribution: number;
 };
 
+type TeamRow = { id: number; name: string; short_name: string };
+
+async function seasonUsesProfiles(season: string): Promise<boolean> {
+  const supa = getServerSupabase();
+  const { count, error } = await supa
+    .from("player_season_profiles")
+    .select("player_id", { count: "exact", head: true })
+    .eq("season", season);
+  if (error) return false;
+  return (count ?? 0) > 0;
+}
+
 async function loadPlayerCandidates(
   params: HistoricalQueryParams,
+  season: string,
+  teams: TeamRow[],
 ): Promise<PlayerStatic[]> {
   const supa = getServerSupabase();
+  const useProfiles = await seasonUsesProfiles(season);
+
+  if (useProfiles) {
+    let query = supa
+      .from("player_season_profiles")
+      .select("player_id,web_name,name,team,position")
+      .eq("season", season);
+
+    if (params.position) query = query.eq("position", params.position);
+    if (params.teamId != null && params.teamId > 0) {
+      const team = teams.find((t) => t.id === params.teamId);
+      if (team) {
+        query = query.or(
+          `team.ilike.%${team.name}%,team.ilike.%${team.short_name}%`,
+        );
+      }
+    }
+    const name = params.name?.trim();
+    if (name && name.length >= 2) {
+      query = query.or(`web_name.ilike.%${name}%,name.ilike.%${name}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => ({
+      fpl_id: Math.floor(num(r.player_id)),
+      name: String(r.name ?? ""),
+      web_name: String(r.web_name ?? r.name ?? ""),
+      team: String(r.team ?? ""),
+      team_id: null,
+      position: String(r.position ?? ""),
+    }));
+  }
+
   let query = supa.from("players_static").select(PLAYER_COLS);
 
   if (params.position) query = query.eq("position", params.position);
@@ -399,7 +484,6 @@ function aggregateRows(
   >();
 
   for (const row of gwRows) {
-    if (!byPlayer.has(row.player_id)) continue;
     let bucket = acc.get(row.player_id);
     if (!bucket) {
       bucket = {
@@ -434,8 +518,14 @@ function aggregateRows(
 
   const out: HistoricalPlayerRow[] = [];
   for (const [playerId, stats] of acc) {
-    const meta = byPlayer.get(playerId);
-    if (!meta) continue;
+    const meta = byPlayer.get(playerId) ?? {
+      fpl_id: playerId,
+      name: `#${playerId}`,
+      web_name: `#${playerId}`,
+      team: "",
+      team_id: null,
+      position: "",
+    };
     const xgi = stats.expected_goals + stats.expected_assists;
     out.push({
       fpl_id: playerId,
@@ -502,7 +592,15 @@ export async function queryHistoricalStats(
     params.gwTo != null && params.gwTo > 0 ? params.gwTo : bounds.max,
   );
 
-  const players = await loadPlayerCandidates(params);
+  const supa = getServerSupabase();
+  const teamsRes = await supa.from("teams").select("id,name,short_name");
+  const teams: TeamRow[] = (teamsRes.data ?? []).map((t) => ({
+    id: Math.floor(num(t.id)),
+    name: String(t.name ?? ""),
+    short_name: String(t.short_name ?? ""),
+  }));
+
+  const players = await loadPlayerCandidates(params, season, teams);
   const playerIds = players.map((p) => p.fpl_id);
   const gwRows = await loadGwStatsForPlayers(
     playerIds,

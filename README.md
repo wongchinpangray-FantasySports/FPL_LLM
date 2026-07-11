@@ -92,6 +92,17 @@ python -m data_sync.sync_understat --season 2025
 override with env **`FPL_CURRENT_SEASON`**). Fixture and GW-stat rows carry the
 same `season` so the app never mixes last year’s GW numbers with this season.
 
+**Historical GW data (2016/17–2024/25):** the live FPL API only returns per-GW
+`history` for the active season. Apply `supabase/migrations/0022_player_season_profiles.sql`,
+then backfill archived seasons from vaastav:
+
+```bash
+python -m data_sync.backfill_vaastav_seasons --skip-existing
+```
+
+Or use **GitHub Actions → FPL historical backfill** (after the migration is applied).
+Source: [vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League).
+
 Optional env (Python + Next.js): **`FPL_CURRENT_SEASON=2025`** when you need to
 pin the campaign before meta is synced or for local testing.
 
