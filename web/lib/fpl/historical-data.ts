@@ -1,5 +1,12 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
+  formatOpponents,
+  loadPlayerTeamIdForSeason,
+  loadSeasonTeamIdMap,
+  loadTeamFixturesByGw,
+  opponentLabel,
+} from "@/lib/fpl/historical-vaastav";
+import {
   getCurrentFplSeason,
   isFplSeasonKey,
   resolveFplSeasonForTool,
@@ -337,6 +344,74 @@ type GwStatRow = {
   ict_index: number;
   defensive_contribution: number;
 };
+
+type GwStatDetailRow = GwStatRow & {
+  opponent_team_id: number | null;
+  was_home: boolean | null;
+};
+
+async function loadPlayerGwStatsDetail(
+  fplId: number,
+  season: string,
+  gwFrom: number,
+  gwTo: number,
+): Promise<GwStatDetailRow[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("player_gw_stats")
+    .select(`${GW_COLS},opponent_team_id,was_home`)
+    .eq("season", season)
+    .eq("player_id", fplId)
+    .gte("gw", gwFrom)
+    .lte("gw", gwTo)
+    .order("gw", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((raw) => {
+    const r = raw as unknown as Record<string, unknown>;
+    return {
+      player_id: Math.floor(num(r.player_id)),
+      gw: Math.floor(num(r.gw)),
+      minutes: num(r.minutes),
+      goals_scored: num(r.goals_scored),
+      assists: num(r.assists),
+      clean_sheets: num(r.clean_sheets),
+      bonus: num(r.bonus),
+      bps: num(r.bps),
+      expected_goals: num(r.expected_goals),
+      expected_assists: num(r.expected_assists),
+      total_points: num(r.total_points),
+      ict_index: num(r.ict_index),
+      defensive_contribution: num(r.defensive_contribution),
+      opponent_team_id:
+        r.opponent_team_id != null ? Math.floor(num(r.opponent_team_id)) : null,
+      was_home:
+        typeof r.was_home === "boolean"
+          ? r.was_home
+          : r.was_home === "true"
+            ? true
+            : r.was_home === "false"
+              ? false
+              : null,
+    };
+  });
+}
+
+function emptyGameweekStats() {
+  return {
+    minutes: 0,
+    total_points: 0,
+    goals_scored: 0,
+    assists: 0,
+    clean_sheets: 0,
+    bonus: 0,
+    bps: 0,
+    expected_goals: 0,
+    expected_assists: 0,
+    ict_index: 0,
+    defensive_contribution: 0,
+  };
+}
 
 type TeamRow = { id: number; name: string; short_name: string };
 
@@ -687,6 +762,9 @@ export async function queryHistoricalStats(
 
 export type HistoricalGameweekRow = {
   gw: number;
+  kind: "played" | "bgw";
+  isDgw: boolean;
+  opponent: string;
   minutes: number;
   total_points: number;
   goals_scored: number;
@@ -737,7 +815,7 @@ export async function loadHistoricalPlayerDetail(
 
   const supa = getServerSupabase();
   let player = await loadPlayerStaticForSeason(fplId, season);
-  const gwRows = await loadGwStatsForPlayers([fplId], season, lo, hi);
+  const gwRows = await loadPlayerGwStatsDetail(fplId, season, lo, hi);
   if (!player && gwRows.length) {
     player = {
       fpl_id: fplId,
@@ -754,23 +832,60 @@ export async function loadHistoricalPlayerDetail(
   const summary = aggregated[0];
   if (!summary) return null;
 
-  const gameweeks: HistoricalGameweekRow[] = gwRows
-    .filter((r) => r.player_id === fplId)
-    .sort((a, b) => a.gw - b.gw)
-    .map((r) => ({
-      gw: r.gw,
-      minutes: r.minutes,
-      total_points: r.total_points,
-      goals_scored: r.goals_scored,
-      assists: r.assists,
-      clean_sheets: r.clean_sheets,
-      bonus: r.bonus,
-      bps: r.bps,
-      expected_goals: Math.round(r.expected_goals * 100) / 100,
-      expected_assists: Math.round(r.expected_assists * 100) / 100,
-      ict_index: Math.round(r.ict_index * 10) / 10,
-      defensive_contribution: r.defensive_contribution,
-    }));
+  const [teamMap, playerTeamId] = await Promise.all([
+    loadSeasonTeamIdMap(season),
+    loadPlayerTeamIdForSeason(season, fplId),
+  ]);
+  const teamFixtures =
+    playerTeamId != null
+      ? await loadTeamFixturesByGw(season, playerTeamId)
+      : new Map();
+  const hasFixtureCalendar = teamFixtures.size > 0;
+
+  const gwByNumber = new Map<number, GwStatDetailRow>();
+  for (const row of gwRows) gwByNumber.set(row.gw, row);
+
+  const gameweeks: HistoricalGameweekRow[] = [];
+  for (let gw = lo; gw <= hi; gw++) {
+    const fixtures = teamFixtures.get(gw) ?? [];
+    const isDgw = fixtures.length >= 2;
+    const isBgw = hasFixtureCalendar && fixtures.length === 0;
+    const played = gwByNumber.get(gw);
+
+    if (played) {
+      const opponent = fixtures.length
+        ? formatOpponents(teamMap, fixtures)
+        : opponentLabel(teamMap, played.opponent_team_id, played.was_home);
+      gameweeks.push({
+        gw,
+        kind: "played",
+        isDgw,
+        opponent,
+        minutes: played.minutes,
+        total_points: played.total_points,
+        goals_scored: played.goals_scored,
+        assists: played.assists,
+        clean_sheets: played.clean_sheets,
+        bonus: played.bonus,
+        bps: played.bps,
+        expected_goals: Math.round(played.expected_goals * 100) / 100,
+        expected_assists: Math.round(played.expected_assists * 100) / 100,
+        ict_index: Math.round(played.ict_index * 10) / 10,
+        defensive_contribution: played.defensive_contribution,
+      });
+      continue;
+    }
+
+    if (isBgw) {
+      gameweeks.push({
+        gw,
+        kind: "bgw",
+        isDgw: false,
+        opponent: "—",
+        ...emptyGameweekStats(),
+      });
+    }
+  }
 
   const { count } = await supa
     .from("players_static")

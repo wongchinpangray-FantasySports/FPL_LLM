@@ -1132,6 +1132,9 @@
     "detailViewCurrentProfile": "View current player profile →",
     "detailColGw": "GW",
     "detailColBps": "BPS",
-    "detailColDefcon": "Def. contr."
+    "detailColDefcon": "Def. contr.",
+    "detailColOpponent": "Opponent",
+    "detailDgw": "DGW",
+    "detailBgw": "BGW"
   }
 }

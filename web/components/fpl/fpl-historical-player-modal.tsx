@@ -29,11 +29,39 @@ type ModalLabels = {
   colBps: string;
   colDefcon: string;
   colPts90: string;
+  colOpponent: string;
+  dgw: string;
+  bgw: string;
 };
 
 function fmtNum(v: number | null | undefined, digits = 1): string {
   if (v == null || Number.isNaN(v)) return "—";
   return v.toFixed(digits);
+}
+
+function GwBadge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "dgw" | "bgw";
+}) {
+  return (
+    <span
+      className={cn(
+        "rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+        tone === "dgw" && "bg-amber-500/20 text-amber-300",
+        tone === "bgw" && "bg-muted text-muted-foreground",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function statCell(v: number | string, kind: "played" | "bgw") {
+  if (kind === "bgw") return "—";
+  return v;
 }
 
 function StatCell({
@@ -112,7 +140,7 @@ export function FplHistoricalPlayerModal({
       <div
         className={cn(
           "relative z-[101] flex max-h-[min(90vh,720px)] w-full flex-col",
-          "rounded-t-2xl border border-border bg-background shadow-2xl sm:max-w-2xl sm:rounded-2xl",
+          "rounded-t-2xl border border-border bg-background shadow-2xl sm:max-w-3xl sm:rounded-2xl",
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -191,10 +219,11 @@ export function FplHistoricalPlayerModal({
                 </h3>
                 {detail.gameweeks.length ? (
                   <div className="overflow-x-auto rounded-xl border border-border">
-                    <table className="w-full min-w-[640px] text-left text-xs">
+                    <table className="w-full min-w-[760px] text-left text-xs">
                       <thead>
                         <tr className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
                           <th className="px-2.5 py-2 font-medium">{labels.colGw}</th>
+                          <th className="px-2.5 py-2 font-medium">{labels.colOpponent}</th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colMins}</th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colPts}</th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colGoals}</th>
@@ -209,30 +238,58 @@ export function FplHistoricalPlayerModal({
                       <tbody>
                         {detail.gameweeks.map((gw) => (
                           <tr
-                            key={gw.gw}
-                            className="border-b border-border/60 last:border-0"
+                            key={`${gw.gw}-${gw.kind}`}
+                            className={cn(
+                              "border-b border-border/60 last:border-0",
+                              gw.kind === "bgw" && "bg-muted/15 text-muted-foreground",
+                            )}
                           >
                             <td className="px-2.5 py-2 font-medium tabular-nums">
-                              {gw.gw}
+                              <div className="flex items-center gap-1.5">
+                                <span>{gw.gw}</span>
+                                {gw.kind === "bgw" ? (
+                                  <GwBadge label={labels.bgw} tone="bgw" />
+                                ) : null}
+                                {gw.isDgw ? (
+                                  <GwBadge label={labels.dgw} tone="dgw" />
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="px-2.5 py-2 text-foreground/90">
+                              {gw.opponent}
                             </td>
                             <td className="px-2.5 py-2 tabular-nums text-muted-foreground">
-                              {gw.minutes}
+                              {statCell(gw.minutes, gw.kind)}
                             </td>
                             <td className="px-2.5 py-2 tabular-nums font-semibold text-foreground">
-                              {gw.total_points}
-                            </td>
-                            <td className="px-2.5 py-2 tabular-nums">{gw.goals_scored}</td>
-                            <td className="px-2.5 py-2 tabular-nums">{gw.assists}</td>
-                            <td className="px-2.5 py-2 tabular-nums">{gw.clean_sheets}</td>
-                            <td className="px-2.5 py-2 tabular-nums">{gw.bonus}</td>
-                            <td className="px-2.5 py-2 tabular-nums">
-                              {fmtNum(gw.expected_goals, 2)}
+                              {statCell(gw.total_points, gw.kind)}
                             </td>
                             <td className="px-2.5 py-2 tabular-nums">
-                              {fmtNum(gw.expected_assists, 2)}
+                              {statCell(gw.goals_scored, gw.kind)}
                             </td>
                             <td className="px-2.5 py-2 tabular-nums">
-                              {fmtNum(gw.ict_index, 1)}
+                              {statCell(gw.assists, gw.kind)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {statCell(gw.clean_sheets, gw.kind)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {statCell(gw.bonus, gw.kind)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {gw.kind === "bgw"
+                                ? "—"
+                                : fmtNum(gw.expected_goals, 2)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {gw.kind === "bgw"
+                                ? "—"
+                                : fmtNum(gw.expected_assists, 2)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {gw.kind === "bgw"
+                                ? "—"
+                                : fmtNum(gw.ict_index, 1)}
                             </td>
                           </tr>
                         ))}

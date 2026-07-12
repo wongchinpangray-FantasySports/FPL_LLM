@@ -1131,6 +1131,9 @@
     "detailViewCurrentProfile": "查看当前球员页 →",
     "detailColGw": "轮次",
     "detailColBps": "BPS",
-    "detailColDefcon": "防守贡献"
+    "detailColDefcon": "防守贡献",
+    "detailColOpponent": "对手",
+    "detailDgw": "双赛",
+    "detailBgw": "空轮"
   }
 }

@@ -76,6 +76,9 @@ type Labels = {
   detailColGw: string;
   detailColBps: string;
   detailColDefcon: string;
+  detailColOpponent: string;
+  detailDgw: string;
+  detailBgw: string;
 };
 
 const POSITIONS: (HistoricalPosition | "ALL")[] = [
@@ -394,6 +397,9 @@ export function FplHistoricalData({
       colBps: labels.detailColBps,
       colDefcon: labels.detailColDefcon,
       colPts90: labels.colPts90,
+      colOpponent: labels.detailColOpponent,
+      dgw: labels.detailDgw,
+      bgw: labels.detailBgw,
     }),
     [labels],
   );

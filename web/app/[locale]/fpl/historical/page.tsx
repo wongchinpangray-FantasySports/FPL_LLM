@@ -82,6 +82,9 @@ export default async function FplHistoricalPage({ params }: Props) {
           detailColGw: t("detailColGw"),
           detailColBps: t("detailColBps"),
           detailColDefcon: t("detailColDefcon"),
+          detailColOpponent: t("detailColOpponent"),
+          detailDgw: t("detailDgw"),
+          detailBgw: t("detailBgw"),
   };
 
   return (
