@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { FplHistoricalPlayerModal } from "@/components/fpl/fpl-historical-player-modal";
 import type {
   HistoricalMeta,
+  HistoricalPlayerDetail,
   HistoricalPlayerRow,
   HistoricalPosition,
   HistoricalQueryResult,
@@ -64,6 +65,17 @@ type Labels = {
   sortDefcon: string;
   sortPts90: string;
   sortApps: string;
+  detailClose: string;
+  detailLoading: string;
+  detailError: string;
+  detailSeasonRange: string;
+  detailSummaryTitle: string;
+  detailGwBreakdownTitle: string;
+  detailNoGameweeks: string;
+  detailViewCurrentProfile: string;
+  detailColGw: string;
+  detailColBps: string;
+  detailColDefcon: string;
 };
 
 const POSITIONS: (HistoricalPosition | "ALL")[] = [
@@ -216,6 +228,10 @@ export function FplHistoricalData({
   const [result, setResult] = useState<HistoricalQueryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<HistoricalPlayerDetail | null>(null);
   const limit = 50;
 
   useEffect(() => {
@@ -319,6 +335,68 @@ export function FplHistoricalData({
       .replace("{to}", String(result.gwTo))
       .replace("{count}", String(result.total));
   }, [result, labels.results]);
+
+  const openPlayerDetail = useCallback(
+    async (row: HistoricalPlayerRow) => {
+      setDetailOpen(true);
+      setDetailLoading(true);
+      setDetailError(null);
+      setDetail(null);
+      try {
+        const p = new URLSearchParams({
+          playerId: String(row.fpl_id),
+          season: applied.season,
+          gwFrom: String(applied.gwFrom),
+          gwTo: String(applied.gwTo),
+        });
+        const res = await fetch(`/api/fpl/historical/player?${p.toString()}`);
+        const data = (await res.json()) as HistoricalPlayerDetail & {
+          error?: string;
+        };
+        if (!res.ok) throw new Error(data.error ?? labels.detailError);
+        setDetail(data);
+      } catch (e) {
+        setDetailError(e instanceof Error ? e.message : labels.detailError);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [applied, labels.detailError],
+  );
+
+  const closePlayerDetail = useCallback(() => {
+    setDetailOpen(false);
+    setDetail(null);
+    setDetailError(null);
+  }, []);
+
+  const modalLabels = useMemo(
+    () => ({
+      close: labels.detailClose,
+      loading: labels.detailLoading,
+      error: labels.detailError,
+      seasonRange: labels.detailSeasonRange,
+      summaryTitle: labels.detailSummaryTitle,
+      gwBreakdownTitle: labels.detailGwBreakdownTitle,
+      noGameweeks: labels.detailNoGameweeks,
+      viewCurrentProfile: labels.detailViewCurrentProfile,
+      colGw: labels.detailColGw,
+      colMins: labels.colMins,
+      colPts: labels.colPts,
+      colGoals: labels.colGoals,
+      colAssists: labels.colAssists,
+      colCs: labels.colCs,
+      colBonus: labels.sortBonus,
+      colXg: labels.colXg,
+      colXa: labels.colXa,
+      colIct: labels.colIct,
+      colApps: labels.colApps,
+      colBps: labels.detailColBps,
+      colDefcon: labels.detailColDefcon,
+      colPts90: labels.colPts90,
+    }),
+    [labels],
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -562,7 +640,12 @@ export function FplHistoricalData({
               </tr>
             ) : (
               result.rows.map((row) => (
-                <HistoricalRow key={row.fpl_id} row={row} labels={labels} />
+                <HistoricalRow
+                  key={row.fpl_id}
+                  row={row}
+                  labels={labels}
+                  onOpenDetail={() => void openPlayerDetail(row)}
+                />
               ))
             )}
           </tbody>
@@ -602,6 +685,15 @@ export function FplHistoricalData({
           </button>
         </div>
       ) : null}
+
+      <FplHistoricalPlayerModal
+        open={detailOpen}
+        loading={detailLoading}
+        error={detailError}
+        detail={detail}
+        labels={modalLabels}
+        onClose={closePlayerDetail}
+      />
     </div>
   );
 }
@@ -609,9 +701,11 @@ export function FplHistoricalData({
 function HistoricalRow({
   row,
   labels,
+  onOpenDetail,
 }: {
   row: HistoricalPlayerRow;
   labels: Labels;
+  onOpenDetail: () => void;
 }) {
   return (
     <tr className="border-b border-border/60 transition-colors hover:bg-muted/30">
@@ -634,12 +728,13 @@ function HistoricalRow({
       <td className="px-3 py-2.5 tabular-nums">{fmtNum(row.points_per90, 2)}</td>
       <td className="px-3 py-2.5 tabular-nums">{fmtNum(row.xgi_per90, 2)}</td>
       <td className="px-3 py-2.5">
-        <Link
-          href={`/player/${row.fpl_id}`}
+        <button
+          type="button"
+          onClick={onOpenDetail}
           className="text-xs text-brand-accent hover:underline"
         >
           {labels.openProfile}
-        </Link>
+        </button>
       </td>
     </tr>
   );

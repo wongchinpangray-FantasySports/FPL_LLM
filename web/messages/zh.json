@@ -1120,6 +1120,17 @@
     "sortBps": "BPS",
     "sortDefcon": "防守贡献",
     "sortPts90": "每 90 分钟积分",
-    "sortApps": "出场次数"
+    "sortApps": "出场次数",
+    "detailClose": "关闭",
+    "detailLoading": "加载球员数据…",
+    "detailError": "无法加载球员详情。",
+    "detailSeasonRange": "{season} · GW{from}–{to}",
+    "detailSummaryTitle": "区间合计",
+    "detailGwBreakdownTitle": "逐轮明细",
+    "detailNoGameweeks": "该区间内没有逐轮数据。",
+    "detailViewCurrentProfile": "查看当前球员页 →",
+    "detailColGw": "轮次",
+    "detailColBps": "BPS",
+    "detailColDefcon": "防守贡献"
   }
 }

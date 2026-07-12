@@ -1094,7 +1094,7 @@
     "showing": "Showing {from}–{to} of {total}",
     "prev": "Previous",
     "next": "Next",
-    "openProfile": "Profile",
+    "openProfile": "Details",
     "colPlayer": "Player",
     "colTeam": "Team",
     "colPos": "Pos",
@@ -1121,6 +1121,17 @@
     "sortBps": "BPS",
     "sortDefcon": "Defensive contribution",
     "sortPts90": "Points per 90",
-    "sortApps": "Appearances"
+    "sortApps": "Appearances",
+    "detailClose": "Close",
+    "detailLoading": "Loading player…",
+    "detailError": "Could not load player details.",
+    "detailSeasonRange": "{season} · GW{from}–{to}",
+    "detailSummaryTitle": "Range totals",
+    "detailGwBreakdownTitle": "Gameweek breakdown",
+    "detailNoGameweeks": "No gameweek rows in this range.",
+    "detailViewCurrentProfile": "View current player profile →",
+    "detailColGw": "GW",
+    "detailColBps": "BPS",
+    "detailColDefcon": "Def. contr."
   }
 }

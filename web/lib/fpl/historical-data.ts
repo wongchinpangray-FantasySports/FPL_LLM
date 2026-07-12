@@ -350,6 +350,54 @@ async function seasonUsesProfiles(season: string): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
+async function loadPlayerStaticForSeason(
+  fplId: number,
+  season: string,
+): Promise<PlayerStatic | null> {
+  const supa = getServerSupabase();
+  const useProfiles = await seasonUsesProfiles(season);
+
+  if (useProfiles) {
+    const { data, error } = await supa
+      .from("player_season_profiles")
+      .select("player_id,web_name,name,team,position")
+      .eq("season", season)
+      .eq("player_id", fplId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) {
+      return {
+        fpl_id: Math.floor(num(data.player_id)),
+        name: String(data.name ?? ""),
+        web_name: String(data.web_name ?? data.name ?? ""),
+        team: String(data.team ?? ""),
+        team_id: null,
+        position: String(data.position ?? ""),
+      };
+    }
+  }
+
+  const { data: staticRow, error: staticErr } = await supa
+    .from("players_static")
+    .select(PLAYER_COLS)
+    .eq("fpl_id", fplId)
+    .maybeSingle();
+  if (staticErr) throw new Error(staticErr.message);
+  if (staticRow) {
+    return {
+      fpl_id: Math.floor(num(staticRow.fpl_id)),
+      name: String(staticRow.name ?? ""),
+      web_name: String(staticRow.web_name ?? staticRow.name ?? ""),
+      team: String(staticRow.team ?? ""),
+      team_id:
+        staticRow.team_id != null ? Math.floor(num(staticRow.team_id)) : null,
+      position: String(staticRow.position ?? ""),
+    };
+  }
+
+  return null;
+}
+
 async function loadPlayerCandidates(
   params: HistoricalQueryParams,
   season: string,
@@ -634,5 +682,108 @@ export async function queryHistoricalStats(
     gwTo: Math.max(gwFrom, gwTo),
     total,
     rows: page,
+  };
+}
+
+export type HistoricalGameweekRow = {
+  gw: number;
+  minutes: number;
+  total_points: number;
+  goals_scored: number;
+  assists: number;
+  clean_sheets: number;
+  bonus: number;
+  bps: number;
+  expected_goals: number;
+  expected_assists: number;
+  ict_index: number;
+  defensive_contribution: number;
+};
+
+export type HistoricalPlayerDetail = {
+  season: string;
+  seasonLabel: string;
+  gwFrom: number;
+  gwTo: number;
+  summary: HistoricalPlayerRow;
+  gameweeks: HistoricalGameweekRow[];
+  hasCurrentProfile: boolean;
+};
+
+export async function loadHistoricalPlayerDetail(
+  fplId: number,
+  seasonInput: string | undefined,
+  gwFromInput: number | undefined,
+  gwToInput: number | undefined,
+): Promise<HistoricalPlayerDetail | null> {
+  if (!Number.isFinite(fplId) || fplId <= 0) return null;
+
+  const season = await resolveFplSeasonForTool(seasonInput);
+  if (!isFplSeasonKey(season)) return null;
+
+  const activeSeason = await getCurrentFplSeason();
+  const gwBounds = await loadGwBounds([season, activeSeason]);
+  const bounds = gwBounds[season] ?? { min: 1, max: 38 };
+  const gwFrom = Math.max(
+    bounds.min,
+    gwFromInput != null && gwFromInput > 0 ? gwFromInput : bounds.min,
+  );
+  const gwTo = Math.min(
+    bounds.max,
+    gwToInput != null && gwToInput > 0 ? gwToInput : bounds.max,
+  );
+  const lo = Math.min(gwFrom, gwTo);
+  const hi = Math.max(gwFrom, gwTo);
+
+  const supa = getServerSupabase();
+  let player = await loadPlayerStaticForSeason(fplId, season);
+  const gwRows = await loadGwStatsForPlayers([fplId], season, lo, hi);
+  if (!player && gwRows.length) {
+    player = {
+      fpl_id: fplId,
+      name: `#${fplId}`,
+      web_name: `#${fplId}`,
+      team: "",
+      team_id: null,
+      position: "",
+    };
+  }
+  if (!player) return null;
+
+  const aggregated = aggregateRows([player], gwRows);
+  const summary = aggregated[0];
+  if (!summary) return null;
+
+  const gameweeks: HistoricalGameweekRow[] = gwRows
+    .filter((r) => r.player_id === fplId)
+    .sort((a, b) => a.gw - b.gw)
+    .map((r) => ({
+      gw: r.gw,
+      minutes: r.minutes,
+      total_points: r.total_points,
+      goals_scored: r.goals_scored,
+      assists: r.assists,
+      clean_sheets: r.clean_sheets,
+      bonus: r.bonus,
+      bps: r.bps,
+      expected_goals: Math.round(r.expected_goals * 100) / 100,
+      expected_assists: Math.round(r.expected_assists * 100) / 100,
+      ict_index: Math.round(r.ict_index * 10) / 10,
+      defensive_contribution: r.defensive_contribution,
+    }));
+
+  const { count } = await supa
+    .from("players_static")
+    .select("fpl_id", { count: "exact", head: true })
+    .eq("fpl_id", fplId);
+
+  return {
+    season,
+    seasonLabel: seasonLabel(season),
+    gwFrom: lo,
+    gwTo: hi,
+    summary,
+    gameweeks,
+    hasCurrentProfile: (count ?? 0) > 0,
   };
 }

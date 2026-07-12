@@ -16,6 +16,7 @@ import argparse
 import csv
 import io
 import sys
+from collections import Counter
 from typing import Any, Dict, Iterable, List, Tuple
 
 import requests
@@ -45,10 +46,12 @@ ELEMENT_TYPE_TO_POSITION = {"1": "GKP", "2": "DEF", "3": "MID", "4": "FWD"}
 # Past/relegated clubs missing from recent bootstrap / vaastav teams.csv exports.
 HISTORICAL_TEAM_CODE_NAMES: Dict[str, str] = {
     "25": "Middlesbrough",
+    "38": "Huddersfield",
     "45": "Norwich",
     "56": "Sunderland",
     "80": "Swansea",
     "88": "Hull",
+    "97": "Cardiff",
     "110": "Stoke",
 }
 
@@ -197,6 +200,26 @@ def _resolve_team_name(
     if tid is not None and tid in team_by_id:
         return team_by_id[tid]
     return ""
+
+
+def _enrich_team_from_gw_modal(
+    profiles: Dict[int, Dict[str, str]],
+    csv_rows: Iterable[Dict[str, str]],
+) -> None:
+    """Use the most common per-GW team label when vaastav provides it (2020/21+)."""
+    team_counts: Dict[int, Counter[str]] = {}
+    for row in csv_rows:
+        player_id = _int(row.get("element"))
+        team = (row.get("team") or "").strip()
+        if player_id is None or not team:
+            continue
+        team_counts.setdefault(player_id, Counter())[team] += 1
+
+    for player_id, counts in team_counts.items():
+        profile = profiles.get(player_id)
+        if profile is None:
+            continue
+        profile["team"] = counts.most_common(1)[0][0]
 
 
 def _enrich_profiles_from_players_raw(
@@ -409,6 +432,8 @@ def backfill_season(
         )
         for profile in profiles.values():
             profile["season"] = season
+
+    _enrich_team_from_gw_modal(profiles, csv_rows)
 
     profile_rows = [
         {

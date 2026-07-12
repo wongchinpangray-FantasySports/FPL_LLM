@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import { loadHistoricalPlayerDetail } from "@/lib/fpl/historical-data";
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const playerId = Number(searchParams.get("playerId"));
+  const season = searchParams.get("season") ?? undefined;
+  const gwFrom = searchParams.get("gwFrom");
+  const gwTo = searchParams.get("gwTo");
+
+  if (!Number.isFinite(playerId) || playerId <= 0) {
+    return NextResponse.json({ error: "Invalid playerId" }, { status: 400 });
+  }
+
+  try {
+    const detail = await loadHistoricalPlayerDetail(
+      Math.floor(playerId),
+      season,
+      gwFrom != null ? Number(gwFrom) : undefined,
+      gwTo != null ? Number(gwTo) : undefined,
+    );
+    if (!detail) {
+      return NextResponse.json({ error: "Player not found" }, { status: 404 });
+    }
+    return NextResponse.json(detail);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to load player";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

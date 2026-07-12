@@ -71,6 +71,17 @@ export default async function FplHistoricalPage({ params }: Props) {
           sortDefcon: t("sortDefcon"),
           sortPts90: t("sortPts90"),
           sortApps: t("sortApps"),
+          detailClose: t("detailClose"),
+          detailLoading: t("detailLoading"),
+          detailError: t("detailError"),
+          detailSeasonRange: t("detailSeasonRange"),
+          detailSummaryTitle: t("detailSummaryTitle"),
+          detailGwBreakdownTitle: t("detailGwBreakdownTitle"),
+          detailNoGameweeks: t("detailNoGameweeks"),
+          detailViewCurrentProfile: t("detailViewCurrentProfile"),
+          detailColGw: t("detailColGw"),
+          detailColBps: t("detailColBps"),
+          detailColDefcon: t("detailColDefcon"),
   };
 
   return (
