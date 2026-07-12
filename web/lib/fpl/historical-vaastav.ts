@@ -1,31 +1,19 @@
+import { fplTeamShortByCode, fplTeamShortLabel } from "./fpl-team-codes";
+
 const VAASTAV_BASE =
   "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data";
 
-const TEAM_CODE_NAMES: Record<string, string> = {
-  "1": "MUN",
-  "3": "ARS",
-  "6": "TOT",
-  "8": "CHE",
-  "11": "EVE",
-  "13": "LEI",
-  "14": "LIV",
-  "20": "SOU",
-  "21": "WHU",
-  "25": "MID",
-  "31": "CRY",
-  "35": "WBA",
-  "38": "HUD",
-  "39": "WOL",
-  "43": "MCI",
-  "45": "NOR",
-  "56": "SUN",
-  "80": "SWA",
-  "88": "HUL",
-  "90": "BUR",
-  "91": "BOU",
-  "97": "CAR",
-  "110": "STK",
-};
+const VAASTAV_SEASON_FOLDERS = [
+  "2016-17",
+  "2017-18",
+  "2018-19",
+  "2019-20",
+  "2020-21",
+  "2021-22",
+  "2022-23",
+  "2023-24",
+  "2024-25",
+] as const;
 
 type FixtureSide = { opponentId: number; wasHome: boolean };
 
@@ -108,6 +96,42 @@ function shortCode(raw: string): string {
     .toUpperCase();
 }
 
+let fplTeamCodeMapPromise: Promise<Map<string, string>> | null = null;
+
+async function loadFplTeamCodeMap(): Promise<Map<string, string>> {
+  if (!fplTeamCodeMapPromise) {
+    fplTeamCodeMapPromise = (async () => {
+      const out = new Map<string, string>();
+      for (const [code, label] of Object.entries(fplTeamShortByCode())) {
+        out.set(code, label);
+      }
+      for (const folder of VAASTAV_SEASON_FOLDERS) {
+        const teamRows = await loadCsv(`${folder}/teams.csv`);
+        for (const row of teamRows) {
+          const code = (row.code || "").trim();
+          const label = (row.short_name || row.name || "").trim();
+          if (code && label) out.set(code, shortCode(label));
+        }
+      }
+      const bootstrap = await loadBootstrapTeamCodeMap();
+      for (const [code, label] of bootstrap) {
+        if (!out.has(code)) out.set(code, label);
+      }
+      return out;
+    })();
+  }
+  return fplTeamCodeMapPromise;
+}
+
+function codeToLabel(
+  codeMap: Map<string, string>,
+  code: string,
+): string | undefined {
+  const c = code.trim();
+  if (!c) return undefined;
+  return codeMap.get(c) ?? fplTeamShortLabel(c);
+}
+
 export async function loadSeasonTeamIdMap(
   season: string,
 ): Promise<Map<number, string>> {
@@ -116,6 +140,7 @@ export async function loadSeasonTeamIdMap(
 
   const folder = seasonToVaastavFolder(season);
   const map = new Map<number, string>();
+  const codeMap = await loadFplTeamCodeMap();
 
   const teamRows = await loadCsv(`${folder}/teams.csv`);
   for (const row of teamRows) {
@@ -125,18 +150,19 @@ export async function loadSeasonTeamIdMap(
   }
 
   const playerRows = await loadCsv(`${folder}/players_raw.csv`);
+  const teamIdToCode = new Map<number, string>();
   for (const row of playerRows) {
     const teamId = Number(row.team);
     const code = (row.team_code || "").trim();
-    if (teamId <= 0 || map.has(teamId)) continue;
-    const fromCode = TEAM_CODE_NAMES[code];
-    if (fromCode) {
-      map.set(teamId, fromCode);
-      continue;
+    if (teamId > 0 && code && !teamIdToCode.has(teamId)) {
+      teamIdToCode.set(teamId, code);
     }
-    const bootstrap = await loadBootstrapTeamCodeMap();
-    const bootstrapName = bootstrap.get(code);
-    if (bootstrapName) map.set(teamId, bootstrapName);
+  }
+
+  for (const [teamId, code] of teamIdToCode) {
+    if (map.has(teamId)) continue;
+    const label = codeToLabel(codeMap, code);
+    if (label) map.set(teamId, label);
   }
 
   teamMapCache.set(season, map);

@@ -15,8 +15,10 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import json
 import sys
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
 
 import requests
@@ -43,17 +45,16 @@ DEFAULT_SEASON_FOLDERS: Tuple[str, ...] = (
 POSITIONS = {"GKP", "DEF", "MID", "FWD"}
 ELEMENT_TYPE_TO_POSITION = {"1": "GKP", "2": "DEF", "3": "MID", "4": "FWD"}
 
-# Past/relegated clubs missing from recent bootstrap / vaastav teams.csv exports.
-HISTORICAL_TEAM_CODE_NAMES: Dict[str, str] = {
-    "25": "Middlesbrough",
-    "38": "Huddersfield",
-    "45": "Norwich",
-    "56": "Sunderland",
-    "80": "Swansea",
-    "88": "Hull",
-    "97": "Cardiff",
-    "110": "Stoke",
-}
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FPL_TEAM_CODES_PATH = REPO_ROOT / "web" / "data" / "fpl-team-codes.json"
+
+
+def _load_canonical_team_code_names() -> Dict[str, str]:
+    data = json.loads(FPL_TEAM_CODES_PATH.read_text(encoding="utf-8"))
+    return {str(row["code"]): str(row["name"]) for row in data["teams"]}
+
+
+CANONICAL_TEAM_CODE_NAMES = _load_canonical_team_code_names()
 
 
 def _num(val: Any) -> float | None:
@@ -128,7 +129,7 @@ def _load_bootstrap_team_code_names() -> Dict[str, str]:
 
 def _load_team_name_maps(folder: str) -> Tuple[Dict[int, str], Dict[str, str]]:
     by_id: Dict[int, str] = {}
-    by_code: Dict[str, str] = dict(HISTORICAL_TEAM_CODE_NAMES)
+    by_code: Dict[str, str] = dict(CANONICAL_TEAM_CODE_NAMES)
     by_code.update(_load_bootstrap_team_code_names())
 
     for season_folder in DEFAULT_SEASON_FOLDERS:
