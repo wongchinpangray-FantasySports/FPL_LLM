@@ -1,10 +1,13 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
   formatOpponents,
+  loadPlayerFixturesByGw,
   loadPlayerTeamIdForSeason,
   loadSeasonTeamIdMap,
   loadTeamFixturesByGw,
+  mergeFixtureMaps,
   opponentLabel,
+  type FixtureSide,
 } from "@/lib/fpl/historical-vaastav";
 import {
   getCurrentFplSeason,
@@ -411,6 +414,55 @@ function emptyGameweekStats() {
     ict_index: 0,
     defensive_contribution: 0,
   };
+}
+
+async function loadTeamFixturesFromDb(
+  season: string,
+  teamId: number,
+): Promise<Map<number, FixtureSide[]>> {
+  const supa = getServerSupabase();
+  const { data } = await supa
+    .from("fixtures")
+    .select("gw,home_team_id,away_team_id")
+    .eq("season", season);
+
+  const map = new Map<number, FixtureSide[]>();
+  for (const raw of data ?? []) {
+    const row = raw as Record<string, unknown>;
+    const gw = Math.floor(num(row.gw));
+    const home = Math.floor(num(row.home_team_id));
+    const away = Math.floor(num(row.away_team_id));
+    if (!gw || !home || !away) continue;
+
+    if (home === teamId) {
+      const list = map.get(gw) ?? [];
+      list.push({ opponentId: away, wasHome: true });
+      map.set(gw, list);
+    } else if (away === teamId) {
+      const list = map.get(gw) ?? [];
+      list.push({ opponentId: home, wasHome: false });
+      map.set(gw, list);
+    }
+  }
+  return map;
+}
+
+function resolveGameweekFixtures(
+  gw: number,
+  teamFixtures: Map<number, FixtureSide[]>,
+  playerFixtures: Map<number, FixtureSide[]>,
+): FixtureSide[] {
+  const player = playerFixtures.get(gw) ?? [];
+  if (player.length) return player;
+  return teamFixtures.get(gw) ?? [];
+}
+
+function isDoubleGameweek(
+  fixtures: FixtureSide[],
+  minutes: number | undefined,
+): boolean {
+  if (fixtures.length >= 2) return true;
+  return (minutes ?? 0) > 90;
 }
 
 type TeamRow = { id: number; name: string; short_name: string };
@@ -832,14 +884,19 @@ export async function loadHistoricalPlayerDetail(
   const summary = aggregated[0];
   if (!summary) return null;
 
-  const [teamMap, playerTeamId] = await Promise.all([
+  const [teamMap, playerTeamId, playerFixturesByGw] = await Promise.all([
     loadSeasonTeamIdMap(season),
     loadPlayerTeamIdForSeason(season, fplId),
+    loadPlayerFixturesByGw(season, fplId),
   ]);
-  const teamFixtures =
+  let teamFixtures =
     playerTeamId != null
       ? await loadTeamFixturesByGw(season, playerTeamId)
-      : new Map();
+      : new Map<number, FixtureSide[]>();
+  if (playerTeamId != null) {
+    const dbFixtures = await loadTeamFixturesFromDb(season, playerTeamId);
+    teamFixtures = mergeFixtureMaps(teamFixtures, dbFixtures);
+  }
   const hasFixtureCalendar = teamFixtures.size > 0;
 
   const gwByNumber = new Map<number, GwStatDetailRow>();
@@ -847,8 +904,11 @@ export async function loadHistoricalPlayerDetail(
 
   const gameweeks: HistoricalGameweekRow[] = [];
   for (let gw = lo; gw <= hi; gw++) {
-    const fixtures = teamFixtures.get(gw) ?? [];
-    const isDgw = fixtures.length >= 2;
+    const fixtures = resolveGameweekFixtures(
+      gw,
+      teamFixtures,
+      playerFixturesByGw,
+    );
     const isBgw = hasFixtureCalendar && fixtures.length === 0;
     const played = gwByNumber.get(gw);
 
@@ -859,7 +919,7 @@ export async function loadHistoricalPlayerDetail(
       gameweeks.push({
         gw,
         kind: "played",
-        isDgw,
+        isDgw: isDoubleGameweek(fixtures, played.minutes),
         opponent,
         minutes: played.minutes,
         total_points: played.total_points,

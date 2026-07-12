@@ -17,8 +17,11 @@ const VAASTAV_SEASON_FOLDERS = [
 
 type FixtureSide = { opponentId: number; wasHome: boolean };
 
+export type { FixtureSide };
+
 const csvCache = new Map<string, Record<string, string>[]>();
 const teamMapCache = new Map<string, Map<number, string>>();
+const playerTeamIdCache = new Map<string, Map<number, number>>();
 
 export function seasonToVaastavFolder(season: string): string {
   const y = Number(season);
@@ -202,18 +205,71 @@ export async function loadPlayerTeamIdForSeason(
   season: string,
   fplId: number,
 ): Promise<number | null> {
-  const folder = seasonToVaastavFolder(season);
-  const rows = await loadCsv(`${folder}/players_raw.csv`);
-  for (const row of rows) {
-    if (Number(row.id) === fplId) {
-      const teamId = Number(row.team);
-      return teamId > 0 ? teamId : null;
-    }
-  }
-  return null;
+  const map = await loadPlayerTeamIdMapForSeason(season);
+  return map.get(fplId) ?? null;
 }
 
-export async function loadTeamFixturesByGw(
+async function loadPlayerTeamIdMapForSeason(
+  season: string,
+): Promise<Map<number, number>> {
+  const cached = playerTeamIdCache.get(season);
+  if (cached) return cached;
+
+  const folder = seasonToVaastavFolder(season);
+  const map = new Map<number, number>();
+  const rows = await loadCsv(`${folder}/players_raw.csv`);
+  for (const row of rows) {
+    const id = Number(row.id);
+    const teamId = Number(row.team);
+    if (id > 0 && teamId > 0) map.set(id, teamId);
+  }
+  playerTeamIdCache.set(season, map);
+  return map;
+}
+
+function parseGwNumber(row: Record<string, string>): number {
+  return Number(row.GW || row.round || row.event || 0);
+}
+
+function parseWasHome(row: Record<string, string>): boolean {
+  return String(row.was_home ?? "").toLowerCase() === "true";
+}
+
+function fixtureSideKey(side: FixtureSide): string {
+  return `${side.opponentId}:${side.wasHome}`;
+}
+
+function mergeFixtureSideLists(
+  ...lists: FixtureSide[][]
+): FixtureSide[] {
+  const out: FixtureSide[] = [];
+  const seen = new Set<string>();
+  for (const list of lists) {
+    for (const side of list) {
+      if (side.opponentId <= 0) continue;
+      const key = fixtureSideKey(side);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(side);
+    }
+  }
+  return out;
+}
+
+export function mergeFixtureMaps(
+  ...maps: Map<number, FixtureSide[]>[]
+): Map<number, FixtureSide[]> {
+  const out = new Map<number, FixtureSide[]>();
+  for (const map of maps) {
+    for (const [gw, sides] of map) {
+      if (!gw) continue;
+      out.set(gw, mergeFixtureSideLists(out.get(gw) ?? [], sides));
+    }
+  }
+  return out;
+}
+
+async function loadTeamFixturesFromFixturesCsv(
   season: string,
   teamId: number,
 ): Promise<Map<number, FixtureSide[]>> {
@@ -239,6 +295,95 @@ export async function loadTeamFixturesByGw(
     }
   }
   return map;
+}
+
+async function loadTeamFixturesFromMergedGw(
+  season: string,
+  teamId: number,
+): Promise<Map<number, FixtureSide[]>> {
+  const folder = seasonToVaastavFolder(season);
+  const [merged, playerTeams] = await Promise.all([
+    loadCsv(`${folder}/gws/merged_gw.csv`),
+    loadPlayerTeamIdMapForSeason(season),
+  ]);
+  const map = new Map<number, FixtureSide[]>();
+  if (!merged.length) return map;
+
+  const seenByGw = new Map<number, Set<string>>();
+  for (const row of merged) {
+    const playerId = Number(row.element);
+    const gw = parseGwNumber(row);
+    const opponentId = Number(row.opponent_team);
+    if (!playerId || !gw || !opponentId) continue;
+
+    const rowTeamId = Number(row.team);
+    const playerTeamId = playerTeams.get(playerId);
+    const effectiveTeamId =
+      rowTeamId > 0 ? rowTeamId : (playerTeamId ?? 0);
+    if (effectiveTeamId !== teamId) continue;
+
+    const side: FixtureSide = {
+      opponentId,
+      wasHome: parseWasHome(row),
+    };
+    const fixtureKey =
+      (row.fixture || "").trim() || fixtureSideKey(side);
+    const gwSeen = seenByGw.get(gw) ?? new Set<string>();
+    if (gwSeen.has(fixtureKey)) continue;
+    gwSeen.add(fixtureKey);
+    seenByGw.set(gw, gwSeen);
+
+    const list = map.get(gw) ?? [];
+    list.push(side);
+    map.set(gw, list);
+  }
+  return map;
+}
+
+/** Per-player opponents from vaastav merged_gw (captures DGW fixture pairs). */
+export async function loadPlayerFixturesByGw(
+  season: string,
+  fplId: number,
+): Promise<Map<number, FixtureSide[]>> {
+  const folder = seasonToVaastavFolder(season);
+  const merged = await loadCsv(`${folder}/gws/merged_gw.csv`);
+  const map = new Map<number, FixtureSide[]>();
+  if (!merged.length) return map;
+
+  const seenByGw = new Map<number, Set<string>>();
+  for (const row of merged) {
+    if (Number(row.element) !== fplId) continue;
+    const gw = parseGwNumber(row);
+    const opponentId = Number(row.opponent_team);
+    if (!gw || !opponentId) continue;
+
+    const side: FixtureSide = {
+      opponentId,
+      wasHome: parseWasHome(row),
+    };
+    const fixtureKey =
+      (row.fixture || "").trim() || fixtureSideKey(side);
+    const gwSeen = seenByGw.get(gw) ?? new Set<string>();
+    if (gwSeen.has(fixtureKey)) continue;
+    gwSeen.add(fixtureKey);
+    seenByGw.set(gw, gwSeen);
+
+    const list = map.get(gw) ?? [];
+    list.push(side);
+    map.set(gw, list);
+  }
+  return map;
+}
+
+export async function loadTeamFixturesByGw(
+  season: string,
+  teamId: number,
+): Promise<Map<number, FixtureSide[]>> {
+  const [fromCsv, fromMerged] = await Promise.all([
+    loadTeamFixturesFromFixturesCsv(season, teamId),
+    loadTeamFixturesFromMergedGw(season, teamId),
+  ]);
+  return mergeFixtureMaps(fromCsv, fromMerged);
 }
 
 export function opponentLabel(
