@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FplHistoricalPlayerModal } from "@/components/fpl/fpl-historical-player-modal";
-import type {
-  HistoricalMeta,
-  HistoricalPlayerDetail,
-  HistoricalPlayerRow,
-  HistoricalPosition,
-  HistoricalQueryResult,
-  HistoricalSortField,
+import {
+  HISTORICAL_SEASON_ALL,
+  type HistoricalMeta,
+  type HistoricalPlayerDetail,
+  type HistoricalPlayerRow,
+  type HistoricalPosition,
+  type HistoricalQueryResult,
+  type HistoricalSortField,
 } from "@/lib/fpl/historical-data";
 
 type Labels = {
   season: string;
+  seasonAll: string;
   gwFrom: string;
   gwTo: string;
   position: string;
@@ -142,7 +144,32 @@ function fmtNum(v: number | null | undefined, digits = 1): string {
   return v.toFixed(digits);
 }
 
+function gwBoundsForSeason(
+  season: string,
+  meta: HistoricalMeta,
+): { min: number; max: number } {
+  if (season === HISTORICAL_SEASON_ALL) {
+    const bounds = Object.values(meta.gwBounds);
+    if (!bounds.length) return { min: 1, max: 38 };
+    return bounds.reduce(
+      (acc, b) => ({
+        min: Math.min(acc.min, b.min),
+        max: Math.max(acc.max, b.max),
+      }),
+      { min: bounds[0]!.min, max: bounds[0]!.max },
+    );
+  }
+  return meta.gwBounds[season] ?? { min: 1, max: 38 };
+}
+
 function seasonDisplay(season: string): string {
+  const y = Number(season);
+  if (!Number.isFinite(y)) return season;
+  return `${season}/${String(y + 1).slice(-2)}`;
+}
+
+function seasonSummaryLabel(season: string, labels: Labels): string {
+  if (season === HISTORICAL_SEASON_ALL) return labels.seasonAll;
   const y = Number(season);
   if (!Number.isFinite(y)) return season;
   return `${season}/${String(y + 1).slice(-2)}`;
@@ -272,7 +299,7 @@ export function FplHistoricalData({
     };
   }, [initialMeta]);
 
-  const gwBounds = meta.gwBounds[filters.season] ?? { min: 1, max: 38 };
+  const gwBounds = gwBoundsForSeason(filters.season, meta);
 
   const fetchData = useCallback(
     async (active: Filters, pageOffset: number) => {
@@ -306,7 +333,7 @@ export function FplHistoricalData({
   }
 
   function onSeasonChange(season: string) {
-    const bounds = meta.gwBounds[season] ?? { min: 1, max: 38 };
+    const bounds = gwBoundsForSeason(season, meta);
     setFilters((f) => ({
       ...f,
       season,
@@ -333,11 +360,11 @@ export function FplHistoricalData({
   const summary = useMemo(() => {
     if (!result) return "";
     return labels.results
-      .replace("{season}", result.seasonLabel)
+      .replace("{season}", seasonSummaryLabel(applied.season, labels))
       .replace("{from}", String(result.gwFrom))
       .replace("{to}", String(result.gwTo))
       .replace("{count}", String(result.total));
-  }, [result, labels.results]);
+  }, [result, applied, labels]);
 
   const openPlayerDetail = useCallback(
     async (row: HistoricalPlayerRow) => {
@@ -416,6 +443,7 @@ export function FplHistoricalData({
               onChange={(e) => onSeasonChange(e.target.value)}
               className={inputClass}
             >
+              <option value={HISTORICAL_SEASON_ALL}>{labels.seasonAll}</option>
               {meta.seasons.map((s) => (
                 <option key={s} value={s}>
                   {seasonDisplay(s)}

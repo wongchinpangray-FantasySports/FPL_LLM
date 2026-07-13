@@ -20,6 +20,7 @@ export default async function FplHistoricalPage({ params }: Props) {
 
   const labels = {
           season: t("season"),
+          seasonAll: t("seasonAll"),
           gwFrom: t("gwFrom"),
           gwTo: t("gwTo"),
           position: t("position"),

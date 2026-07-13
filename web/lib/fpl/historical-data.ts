@@ -36,6 +36,14 @@ export const HISTORICAL_SORT_FIELDS = [
 
 export type HistoricalSortField = (typeof HISTORICAL_SORT_FIELDS)[number];
 
+export const HISTORICAL_SEASON_ALL = "ALL";
+
+export function isHistoricalAllSeasons(
+  season: string | undefined | null,
+): boolean {
+  return season?.trim().toUpperCase() === HISTORICAL_SEASON_ALL;
+}
+
 export type HistoricalPlayerRow = {
   fpl_id: number;
   name: string;
@@ -122,6 +130,7 @@ function num(v: unknown): number {
 }
 
 function seasonLabel(season: string): string {
+  if (isHistoricalAllSeasons(season)) return "All seasons";
   const y = Number(season);
   if (!Number.isFinite(y)) return season;
   return `${season}/${String(y + 1).slice(-2)}`;
@@ -164,7 +173,11 @@ function parsePosition(raw: unknown): HistoricalPosition | undefined {
 export function parseHistoricalQueryParams(
   searchParams: URLSearchParams,
 ): HistoricalQueryParams {
-  const season = searchParams.get("season")?.trim() || undefined;
+  const seasonRaw = searchParams.get("season")?.trim();
+  const season =
+    seasonRaw?.toUpperCase() === HISTORICAL_SEASON_ALL
+      ? HISTORICAL_SEASON_ALL
+      : seasonRaw || undefined;
   const gwFromRaw = searchParams.get("gwFrom");
   const gwToRaw = searchParams.get("gwTo");
   const teamRaw = searchParams.get("teamId");
@@ -747,10 +760,67 @@ function sortRows(
   });
 }
 
-export async function queryHistoricalStats(
+function mergeHistoricalPlayerRows(
+  a: HistoricalPlayerRow,
+  b: HistoricalPlayerRow,
+): HistoricalPlayerRow {
+  const minutes = a.minutes + b.minutes;
+  const totalPoints = a.total_points + b.total_points;
+  const goals = a.goals_scored + b.goals_scored;
+  const xgi =
+    a.expected_goals +
+    a.expected_assists +
+    b.expected_goals +
+    b.expected_assists;
+  return {
+    fpl_id: a.fpl_id,
+    name: a.name,
+    web_name: a.web_name,
+    team: a.team,
+    team_id: a.team_id ?? b.team_id,
+    position: a.position || b.position,
+    appearances: a.appearances + b.appearances,
+    minutes,
+    total_points: totalPoints,
+    goals_scored: goals,
+    assists: a.assists + b.assists,
+    clean_sheets: a.clean_sheets + b.clean_sheets,
+    bonus: a.bonus + b.bonus,
+    bps: a.bps + b.bps,
+    expected_goals:
+      Math.round((a.expected_goals + b.expected_goals) * 100) / 100,
+    expected_assists:
+      Math.round((a.expected_assists + b.expected_assists) * 100) / 100,
+    ict_index: Math.round((a.ict_index + b.ict_index) * 10) / 10,
+    defensive_contribution:
+      a.defensive_contribution + b.defensive_contribution,
+    points_per90: per90(totalPoints, minutes),
+    goals_per90: per90(goals, minutes),
+    xgi_per90: per90(xgi, minutes),
+  };
+}
+
+function mergeWithSeasonPriority(
+  existing: HistoricalPlayerRow,
+  incoming: HistoricalPlayerRow,
+  existingSeason: string,
+  incomingSeason: string,
+): HistoricalPlayerRow {
+  const merged = mergeHistoricalPlayerRows(existing, incoming);
+  if (Number(incomingSeason) > Number(existingSeason)) {
+    merged.name = incoming.name;
+    merged.web_name = incoming.web_name;
+    merged.team = incoming.team;
+    merged.team_id = incoming.team_id;
+    merged.position = incoming.position;
+  }
+  return merged;
+}
+
+async function queryHistoricalStatsForSeason(
+  season: string,
   params: HistoricalQueryParams,
-): Promise<HistoricalQueryResult> {
-  const season = await resolveFplSeasonForTool(params.season);
+): Promise<{ gwFrom: number; gwTo: number; rows: HistoricalPlayerRow[] }> {
   if (!isFplSeasonKey(season)) {
     throw new Error("Invalid season");
   }
@@ -793,20 +863,99 @@ export async function queryHistoricalStats(
     rows = rows.filter((r) => r.appearances >= params.minAppearances!);
   }
 
+  return {
+    gwFrom: Math.min(gwFrom, gwTo),
+    gwTo: Math.max(gwFrom, gwTo),
+    rows,
+  };
+}
+
+async function resolvePlayerDetailSeason(
+  fplId: number,
+  gwFromInput: number | undefined,
+  gwToInput: number | undefined,
+): Promise<string> {
+  const seasons = await listAvailableFplSeasons();
+  const lo = gwFromInput != null && gwFromInput > 0 ? gwFromInput : 1;
+  const hi = gwToInput != null && gwToInput > 0 ? gwToInput : 38;
+  for (const season of seasons) {
+    const rows = await loadPlayerGwStatsDetail(
+      fplId,
+      season,
+      Math.min(lo, hi),
+      Math.max(lo, hi),
+    );
+    if (rows.length) return season;
+  }
+  return getCurrentFplSeason();
+}
+
+export async function queryHistoricalStats(
+  params: HistoricalQueryParams,
+): Promise<HistoricalQueryResult> {
   const sortBy = params.sortBy ?? "total_points";
   const sortDir = params.sortDir ?? "desc";
-  rows = sortRows(rows, sortBy, sortDir);
-
-  const total = rows.length;
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 50;
+
+  if (isHistoricalAllSeasons(params.season)) {
+    const seasons = await listAvailableFplSeasons();
+    const merged = new Map<
+      number,
+      { row: HistoricalPlayerRow; season: string }
+    >();
+    let gwFrom = 1;
+    let gwTo = 38;
+
+    for (const season of seasons) {
+      const result = await queryHistoricalStatsForSeason(season, {
+        ...params,
+        season,
+      });
+      gwFrom = Math.min(gwFrom, result.gwFrom);
+      gwTo = Math.max(gwTo, result.gwTo);
+      for (const row of result.rows) {
+        const cur = merged.get(row.fpl_id);
+        if (!cur) {
+          merged.set(row.fpl_id, { row, season });
+          continue;
+        }
+        merged.set(row.fpl_id, {
+          row: mergeWithSeasonPriority(cur.row, row, cur.season, season),
+          season:
+            Number(season) > Number(cur.season) ? season : cur.season,
+        });
+      }
+    }
+
+    let rows = [...merged.values()].map((entry) => entry.row);
+    rows = sortRows(rows, sortBy, sortDir);
+    const total = rows.length;
+    const page = rows.slice(offset, offset + limit);
+
+    return {
+      season: HISTORICAL_SEASON_ALL,
+      seasonLabel: seasonLabel(HISTORICAL_SEASON_ALL),
+      gwFrom,
+      gwTo,
+      total,
+      rows: page,
+    };
+  }
+
+  const season = await resolveFplSeasonForTool(params.season);
+  const { gwFrom, gwTo, rows: unsorted } =
+    await queryHistoricalStatsForSeason(season, params);
+  let rows = sortRows(unsorted, sortBy, sortDir);
+
+  const total = rows.length;
   const page = rows.slice(offset, offset + limit);
 
   return {
     season,
     seasonLabel: seasonLabel(season),
-    gwFrom: Math.min(gwFrom, gwTo),
-    gwTo: Math.max(gwFrom, gwTo),
+    gwFrom,
+    gwTo,
     total,
     rows: page,
   };
@@ -848,7 +997,9 @@ export async function loadHistoricalPlayerDetail(
 ): Promise<HistoricalPlayerDetail | null> {
   if (!Number.isFinite(fplId) || fplId <= 0) return null;
 
-  const season = await resolveFplSeasonForTool(seasonInput);
+  const season = isHistoricalAllSeasons(seasonInput)
+    ? await resolvePlayerDetailSeason(fplId, gwFromInput, gwToInput)
+    : await resolveFplSeasonForTool(seasonInput);
   if (!isFplSeasonKey(season)) return null;
 
   const activeSeason = await getCurrentFplSeason();
