@@ -395,8 +395,8 @@ function dedupeGwStatRows<T extends GwStatRow>(rows: T[]): T[] {
       (existing as GwStatRow)[field] = num(existing[field]) + num(row[field]);
     }
     if ("opponent_team_id" in row && "opponent_team_id" in existing) {
-      const detail = existing as GwStatDetailRow;
-      const incoming = row as GwStatDetailRow;
+      const detail = existing as unknown as GwStatDetailRow;
+      const incoming = row as unknown as GwStatDetailRow;
       if (detail.opponent_team_id == null && incoming.opponent_team_id != null) {
         detail.opponent_team_id = incoming.opponent_team_id;
       }
