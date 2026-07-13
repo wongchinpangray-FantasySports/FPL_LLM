@@ -368,6 +368,46 @@ type GwStatDetailRow = GwStatRow & {
   was_home: boolean | null;
 };
 
+const GW_SUM_FIELDS: (keyof GwStatRow)[] = [
+  "minutes",
+  "goals_scored",
+  "assists",
+  "clean_sheets",
+  "bonus",
+  "bps",
+  "expected_goals",
+  "expected_assists",
+  "total_points",
+  "ict_index",
+  "defensive_contribution",
+];
+
+function dedupeGwStatRows<T extends GwStatRow>(rows: T[]): T[] {
+  const deduped = new Map<string, T>();
+  for (const row of rows) {
+    const key = `${row.player_id}:${row.gw}`;
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, { ...row });
+      continue;
+    }
+    for (const field of GW_SUM_FIELDS) {
+      (existing as GwStatRow)[field] = num(existing[field]) + num(row[field]);
+    }
+    if ("opponent_team_id" in row && "opponent_team_id" in existing) {
+      const detail = existing as GwStatDetailRow;
+      const incoming = row as GwStatDetailRow;
+      if (detail.opponent_team_id == null && incoming.opponent_team_id != null) {
+        detail.opponent_team_id = incoming.opponent_team_id;
+      }
+      if (detail.was_home == null && incoming.was_home != null) {
+        detail.was_home = incoming.was_home;
+      }
+    }
+  }
+  return [...deduped.values()];
+}
+
 async function loadPlayerGwStatsDetail(
   fplId: number,
   season: string,
@@ -385,7 +425,7 @@ async function loadPlayerGwStatsDetail(
     .order("gw", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map((raw) => {
+  const mapped = (data ?? []).map((raw) => {
     const r = raw as unknown as Record<string, unknown>;
     return {
       player_id: Math.floor(num(r.player_id)),
@@ -413,6 +453,7 @@ async function loadPlayerGwStatsDetail(
               : null,
     };
   });
+  return dedupeGwStatRows(mapped);
 }
 
 function emptyGameweekStats() {
@@ -517,6 +558,7 @@ async function loadPlayerStaticForSeason(
         position: String(data.position ?? ""),
       };
     }
+    return null;
   }
 
   const { data: staticRow, error: staticErr } = await supa
@@ -645,7 +687,7 @@ async function loadGwStatsForPlayers(
     }
   }
 
-  return rows;
+  return dedupeGwStatRows(rows);
 }
 
 type HistoricalPlayerStatsRow = Omit<
@@ -757,16 +799,15 @@ function sortRows(
 ): HistoricalPlayerRow[] {
   const dir = sortDir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
+    const seasonCmp = b.season.localeCompare(a.season);
+    if (seasonCmp !== 0) return seasonCmp;
+
     const av = a[sortBy];
     const bv = b[sortBy];
     if (av == null && bv == null) return a.web_name.localeCompare(b.web_name);
     if (av == null) return 1;
     if (bv == null) return -1;
-    if (av === bv) {
-      const seasonCmp = b.season.localeCompare(a.season);
-      if (seasonCmp !== 0) return seasonCmp;
-      return a.web_name.localeCompare(b.web_name);
-    }
+    if (av === bv) return a.web_name.localeCompare(b.web_name);
     return av > bv ? dir : -dir;
   });
 }

@@ -17,6 +17,7 @@ import csv
 import io
 import json
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
@@ -27,6 +28,9 @@ from .common import get_supabase_client, upsert_batch
 
 VAASTAV_BASE = (
     "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
+)
+VAASTAV_CDN_BASE = (
+    "https://cdn.jsdelivr.net/gh/vaastav/Fantasy-Premier-League@master/data"
 )
 
 # FPL campaigns available in vaastav (folder name → skipped when using live API only).
@@ -90,26 +94,54 @@ def _decode_csv_bytes(raw: bytes) -> str:
     return text
 
 
-def _download_bytes(url: str) -> bytes:
+def _download_bytes(url: str, *, retries: int = 4) -> bytes:
     print(f"  GET {url}")
-    resp = requests.get(url, timeout=120)
-    resp.raise_for_status()
-    return resp.content
+    last_err: Exception | None = None
+    for attempt in range(retries):
+        try:
+            resp = requests.get(url, timeout=120)
+            resp.raise_for_status()
+            return resp.content
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 404:
+                raise
+            last_err = exc
+        except requests.RequestException as exc:
+            last_err = exc
+        if attempt + 1 >= retries:
+            break
+        wait = 2 ** attempt
+        print(f"  retry {attempt + 1}/{retries - 1} in {wait}s ({last_err})", file=sys.stderr)
+        time.sleep(wait)
+    raise last_err or RuntimeError(f"Failed to download {url}")
+
+
+def _download_bytes_with_fallback(path: str) -> bytes:
+    urls = [
+        f"{VAASTAV_BASE}/{path}",
+        f"{VAASTAV_CDN_BASE}/{path}",
+    ]
+    last_err: Exception | None = None
+    for url in urls:
+        try:
+            return _download_bytes(url)
+        except requests.RequestException as exc:
+            last_err = exc
+            print(f"  fallback after {url}", file=sys.stderr)
+    raise last_err or RuntimeError(f"Failed to download {path}")
 
 
 def _download_csv(folder: str, filename: str) -> List[Dict[str, str]]:
-    url = f"{VAASTAV_BASE}/{folder}/gws/{filename}"
-    text = _decode_csv_bytes(_download_bytes(url))
+    text = _decode_csv_bytes(_download_bytes_with_fallback(f"{folder}/gws/{filename}"))
     return list(csv.DictReader(io.StringIO(text)))
 
 
 def _download_season_csv(folder: str, filename: str) -> List[Dict[str, str]] | None:
-    url = f"{VAASTAV_BASE}/{folder}/{filename}"
-    resp = requests.get(url, timeout=120)
-    if resp.status_code == 404:
+    path = f"{folder}/{filename}"
+    try:
+        text = _decode_csv_bytes(_download_bytes_with_fallback(path))
+    except requests.RequestException:
         return None
-    resp.raise_for_status()
-    text = _decode_csv_bytes(resp.content)
     return list(csv.DictReader(io.StringIO(text)))
 
 
@@ -229,18 +261,11 @@ def _enrich_profiles_from_players_raw(
     team_by_id: Dict[int, str],
     team_by_code: Dict[str, str],
 ) -> None:
+
     for player_id, meta in players_raw.items():
         profile = profiles.get(player_id)
         if profile is None:
-            profile = {
-                "player_id": str(player_id),
-                "season": "",
-                "web_name": meta["web_name"],
-                "name": meta["name"],
-                "team": "",
-                "position": meta["position"],
-            }
-            profiles[player_id] = profile
+            continue
 
         if meta["name"]:
             if not profile.get("name") or _looks_like_slug_name(profile.get("name", "")):
@@ -250,6 +275,10 @@ def _enrich_profiles_from_players_raw(
                 profile.get("web_name", "")
             ):
                 profile["web_name"] = meta["web_name"]
+        elif meta["name"] and (
+            not profile.get("web_name") or _looks_like_slug_name(profile.get("web_name", ""))
+        ):
+            profile["web_name"] = meta["name"]
         if meta["position"] and not profile.get("position"):
             profile["position"] = meta["position"]
         if not profile.get("team"):
@@ -412,10 +441,11 @@ def backfill_season(
     *,
     skip_existing: bool = False,
     refresh_profiles: bool = False,
+    refresh_gw: bool = False,
 ) -> None:
     season = season_folder_to_start_year(folder)
     has_data = _season_has_data(supabase, season)
-    if skip_existing and has_data and not refresh_profiles:
+    if skip_existing and has_data and not refresh_profiles and not refresh_gw:
         print(f"Skipping {folder} ({season}) — rows already in player_gw_stats")
         return
 
@@ -449,11 +479,12 @@ def backfill_season(
     ]
 
     final_gw = _dedupe_gw_rows(gw_rows)
-    profiles_only = skip_existing and has_data
+    profiles_only = skip_existing and has_data and not refresh_gw
     print(
         f"  {len(final_gw)} GW rows, {len(profile_rows)} player profiles "
         f"(from {len(gw_rows)} raw CSV rows)"
         + (" — profiles only" if profiles_only else "")
+        + (" — refresh GW" if refresh_gw and has_data else "")
     )
 
     try:
@@ -503,6 +534,11 @@ def main() -> None:
         action="store_true",
         help="Re-upsert player_season_profiles even when GW stats already exist",
     )
+    parser.add_argument(
+        "--refresh-gw",
+        action="store_true",
+        help="Re-upsert player_gw_stats from vaastav even when rows already exist",
+    )
     args = parser.parse_args()
 
     supabase = get_supabase_client()
@@ -513,6 +549,7 @@ def main() -> None:
                 folder,
                 skip_existing=args.skip_existing,
                 refresh_profiles=args.refresh_profiles,
+                refresh_gw=args.refresh_gw,
             )
         except Exception as exc:
             print(f"  FAILED {folder}: {exc}", file=sys.stderr)

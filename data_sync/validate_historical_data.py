@@ -23,6 +23,7 @@ ARCHIVED_SEASON_FOLDERS: Tuple[str, ...] = (
     "2021-22",
     "2022-23",
     "2023-24",
+    "2024-25",
 )
 from .backfill_vaastav_seasons import (
     _dedupe_gw_rows,
