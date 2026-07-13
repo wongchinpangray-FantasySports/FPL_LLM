@@ -41,6 +41,7 @@ type Labels = {
   openProfile: string;
   note: string;
   colPlayer: string;
+  colSeason: string;
   colTeam: string;
   colPos: string;
   colApps: string;
@@ -375,7 +376,7 @@ export function FplHistoricalData({
       try {
         const p = new URLSearchParams({
           playerId: String(row.fpl_id),
-          season: applied.season,
+          season: row.season,
           gwFrom: String(applied.gwFrom),
           gwTo: String(applied.gwTo),
         });
@@ -391,7 +392,7 @@ export function FplHistoricalData({
         setDetailLoading(false);
       }
     },
-    [applied, labels.detailError],
+    [applied.gwFrom, applied.gwTo, labels.detailError],
   );
 
   const closePlayerDetail = useCallback(() => {
@@ -643,6 +644,7 @@ export function FplHistoricalData({
           <thead>
             <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
               <th className="px-3 py-2.5 font-medium">{labels.colPlayer}</th>
+              <th className="px-3 py-2.5 font-medium">{labels.colSeason}</th>
               <th className="px-3 py-2.5 font-medium">{labels.colTeam}</th>
               <th className="px-3 py-2.5 font-medium">{labels.colPos}</th>
               <th className="px-3 py-2.5 font-medium tabular-nums">{labels.colApps}</th>
@@ -662,20 +664,20 @@ export function FplHistoricalData({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={16} className="px-3 py-8 text-center text-muted-foreground">
                   {labels.loading}
                 </td>
               </tr>
             ) : !result?.rows.length ? (
               <tr>
-                <td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={16} className="px-3 py-8 text-center text-muted-foreground">
                   {labels.noResults}
                 </td>
               </tr>
             ) : (
               result.rows.map((row) => (
                 <HistoricalRow
-                  key={row.fpl_id}
+                  key={`${row.fpl_id}-${row.season}`}
                   row={row}
                   labels={labels}
                   onOpenDetail={() => void openPlayerDetail(row)}
@@ -746,6 +748,7 @@ function HistoricalRow({
       <td className="px-3 py-2.5 font-medium text-foreground">
         {row.web_name || row.name}
       </td>
+      <td className="px-3 py-2.5 text-muted-foreground">{row.seasonLabel}</td>
       <td className="px-3 py-2.5 text-muted-foreground">{row.team}</td>
       <td className="px-3 py-2.5 text-muted-foreground">{row.position}</td>
       <td className="px-3 py-2.5 tabular-nums">{row.appearances}</td>

@@ -46,6 +46,7 @@ export default async function FplHistoricalPage({ params }: Props) {
           openProfile: t("openProfile"),
           note: t("note"),
           colPlayer: t("colPlayer"),
+          colSeason: t("colSeason"),
           colTeam: t("colTeam"),
           colPos: t("colPos"),
           colApps: t("colApps"),

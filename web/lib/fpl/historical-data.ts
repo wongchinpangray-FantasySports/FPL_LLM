@@ -46,6 +46,8 @@ export function isHistoricalAllSeasons(
 
 export type HistoricalPlayerRow = {
   fpl_id: number;
+  season: string;
+  seasonLabel: string;
   name: string;
   web_name: string;
   team: string;
@@ -646,10 +648,15 @@ async function loadGwStatsForPlayers(
   return rows;
 }
 
+type HistoricalPlayerStatsRow = Omit<
+  HistoricalPlayerRow,
+  "season" | "seasonLabel"
+>;
+
 function aggregateRows(
   players: PlayerStatic[],
   gwRows: GwStatRow[],
-): HistoricalPlayerRow[] {
+): HistoricalPlayerStatsRow[] {
   const byPlayer = new Map<number, PlayerStatic>();
   for (const p of players) byPlayer.set(p.fpl_id, p);
 
@@ -704,7 +711,7 @@ function aggregateRows(
     bucket.defensive_contribution += row.defensive_contribution;
   }
 
-  const out: HistoricalPlayerRow[] = [];
+  const out: HistoricalPlayerStatsRow[] = [];
   for (const [playerId, stats] of acc) {
     const meta = byPlayer.get(playerId) ?? {
       fpl_id: playerId,
@@ -755,66 +762,13 @@ function sortRows(
     if (av == null && bv == null) return a.web_name.localeCompare(b.web_name);
     if (av == null) return 1;
     if (bv == null) return -1;
-    if (av === bv) return a.web_name.localeCompare(b.web_name);
+    if (av === bv) {
+      const seasonCmp = b.season.localeCompare(a.season);
+      if (seasonCmp !== 0) return seasonCmp;
+      return a.web_name.localeCompare(b.web_name);
+    }
     return av > bv ? dir : -dir;
   });
-}
-
-function mergeHistoricalPlayerRows(
-  a: HistoricalPlayerRow,
-  b: HistoricalPlayerRow,
-): HistoricalPlayerRow {
-  const minutes = a.minutes + b.minutes;
-  const totalPoints = a.total_points + b.total_points;
-  const goals = a.goals_scored + b.goals_scored;
-  const xgi =
-    a.expected_goals +
-    a.expected_assists +
-    b.expected_goals +
-    b.expected_assists;
-  return {
-    fpl_id: a.fpl_id,
-    name: a.name,
-    web_name: a.web_name,
-    team: a.team,
-    team_id: a.team_id ?? b.team_id,
-    position: a.position || b.position,
-    appearances: a.appearances + b.appearances,
-    minutes,
-    total_points: totalPoints,
-    goals_scored: goals,
-    assists: a.assists + b.assists,
-    clean_sheets: a.clean_sheets + b.clean_sheets,
-    bonus: a.bonus + b.bonus,
-    bps: a.bps + b.bps,
-    expected_goals:
-      Math.round((a.expected_goals + b.expected_goals) * 100) / 100,
-    expected_assists:
-      Math.round((a.expected_assists + b.expected_assists) * 100) / 100,
-    ict_index: Math.round((a.ict_index + b.ict_index) * 10) / 10,
-    defensive_contribution:
-      a.defensive_contribution + b.defensive_contribution,
-    points_per90: per90(totalPoints, minutes),
-    goals_per90: per90(goals, minutes),
-    xgi_per90: per90(xgi, minutes),
-  };
-}
-
-function mergeWithSeasonPriority(
-  existing: HistoricalPlayerRow,
-  incoming: HistoricalPlayerRow,
-  existingSeason: string,
-  incomingSeason: string,
-): HistoricalPlayerRow {
-  const merged = mergeHistoricalPlayerRows(existing, incoming);
-  if (Number(incomingSeason) > Number(existingSeason)) {
-    merged.name = incoming.name;
-    merged.web_name = incoming.web_name;
-    merged.team = incoming.team;
-    merged.team_id = incoming.team_id;
-    merged.position = incoming.position;
-  }
-  return merged;
 }
 
 async function queryHistoricalStatsForSeason(
@@ -866,7 +820,11 @@ async function queryHistoricalStatsForSeason(
   return {
     gwFrom: Math.min(gwFrom, gwTo),
     gwTo: Math.max(gwFrom, gwTo),
-    rows,
+    rows: rows.map((row) => ({
+      ...row,
+      season,
+      seasonLabel: seasonLabel(season),
+    })),
   };
 }
 
@@ -900,12 +858,9 @@ export async function queryHistoricalStats(
 
   if (isHistoricalAllSeasons(params.season)) {
     const seasons = await listAvailableFplSeasons();
-    const merged = new Map<
-      number,
-      { row: HistoricalPlayerRow; season: string }
-    >();
     let gwFrom = 1;
     let gwTo = 38;
+    const allRows: HistoricalPlayerRow[] = [];
 
     for (const season of seasons) {
       const result = await queryHistoricalStatsForSeason(season, {
@@ -914,22 +869,10 @@ export async function queryHistoricalStats(
       });
       gwFrom = Math.min(gwFrom, result.gwFrom);
       gwTo = Math.max(gwTo, result.gwTo);
-      for (const row of result.rows) {
-        const cur = merged.get(row.fpl_id);
-        if (!cur) {
-          merged.set(row.fpl_id, { row, season });
-          continue;
-        }
-        merged.set(row.fpl_id, {
-          row: mergeWithSeasonPriority(cur.row, row, cur.season, season),
-          season:
-            Number(season) > Number(cur.season) ? season : cur.season,
-        });
-      }
+      allRows.push(...result.rows);
     }
 
-    let rows = [...merged.values()].map((entry) => entry.row);
-    rows = sortRows(rows, sortBy, sortDir);
+    let rows = sortRows(allRows, sortBy, sortDir);
     const total = rows.length;
     const page = rows.slice(offset, offset + limit);
 
@@ -1032,8 +975,13 @@ export async function loadHistoricalPlayerDetail(
   if (!player) return null;
 
   const aggregated = aggregateRows([player], gwRows);
-  const summary = aggregated[0];
-  if (!summary) return null;
+  const stats = aggregated[0];
+  if (!stats) return null;
+  const summary: HistoricalPlayerRow = {
+    ...stats,
+    season,
+    seasonLabel: seasonLabel(season),
+  };
 
   const [teamMap, playerTeamId, playerFixturesByGw] = await Promise.all([
     loadSeasonTeamIdMap(season),
