@@ -819,7 +819,6 @@ async function loadPlayerCandidatesGroupedBySeason(
   params: HistoricalQueryParams,
   teams: TeamRow[],
 ): Promise<Map<string, PlayerStatic[]>> {
-  const supa = getServerSupabase();
   const tokens = nameQueryTokens(params.name);
   const hasNameFilter = Boolean(params.playerKey?.trim()) || tokens.length > 0;
   const team =
@@ -827,32 +826,21 @@ async function loadPlayerCandidatesGroupedBySeason(
       ? teams.find((t) => t.id === params.teamId)
       : undefined;
 
-  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
-    const { data, error } = await supa
-      .from("player_season_profiles")
-      .select("player_id,season,web_name,name,team,position")
-      .range(from, to);
-    return {
-      data: (data ?? []) as Record<string, unknown>[],
-      error: error ? new Error(error.message) : null,
-    };
-  });
+  const rows = await loadProfileSearchRows(null);
 
   const grouped = new Map<string, PlayerStatic[]>();
   for (const row of rows) {
-    const season = String(row.season ?? "").trim();
+    const season = row.season;
     if (!season) continue;
-    if (params.position && String(row.position ?? "") !== params.position) {
-      continue;
-    }
+    if (params.position && row.position !== params.position) continue;
     if (!profileMatchesTeam(row, team)) continue;
     if (
       hasNameFilter &&
       !matchesNameFilter(
         {
-          name: String(row.name ?? ""),
-          web_name: String(row.web_name ?? row.name ?? ""),
-          team: String(row.team ?? ""),
+          name: row.name,
+          web_name: row.web_name,
+          team: row.team,
         },
         params,
       )
@@ -861,12 +849,12 @@ async function loadPlayerCandidatesGroupedBySeason(
     }
 
     const player: PlayerStatic = {
-      fpl_id: Math.floor(num(row.player_id)),
-      name: String(row.name ?? ""),
-      web_name: String(row.web_name ?? row.name ?? ""),
-      team: String(row.team ?? ""),
+      fpl_id: row.player_id,
+      name: row.name,
+      web_name: row.web_name,
+      team: row.team,
       team_id: null,
-      position: String(row.position ?? ""),
+      position: row.position,
     };
     const bucket = grouped.get(season);
     if (bucket) bucket.push(player);
@@ -885,6 +873,120 @@ async function loadHistoricalTeams(): Promise<TeamRow[]> {
     name: String(t.name ?? ""),
     short_name: String(t.short_name ?? ""),
   }));
+}
+
+type ProfileSearchRow = {
+  player_id: number;
+  season: string;
+  web_name: string;
+  name: string;
+  team: string;
+  position: string;
+};
+
+function mapProfileSearchRow(raw: Record<string, unknown>): ProfileSearchRow {
+  return {
+    player_id: Math.floor(num(raw.player_id)),
+    season: String(raw.season ?? "").trim(),
+    web_name: String(raw.web_name ?? raw.name ?? ""),
+    name: String(raw.name ?? ""),
+    team: String(raw.team ?? ""),
+    position: String(raw.position ?? ""),
+  };
+}
+
+async function loadStaticProfileSearchRows(
+  season: string,
+): Promise<ProfileSearchRow[]> {
+  const supa = getServerSupabase();
+  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+    const { data, error } = await supa
+      .from("players_static")
+      .select(PLAYER_COLS)
+      .range(from, to);
+    return {
+      data: (data ?? []) as Record<string, unknown>[],
+      error: error ? new Error(error.message) : null,
+    };
+  });
+
+  return rows.map((row) => ({
+    player_id: Math.floor(num(row.fpl_id)),
+    season,
+    web_name: String(row.web_name ?? row.name ?? ""),
+    name: String(row.name ?? ""),
+    team: String(row.team ?? ""),
+    position: String(row.position ?? ""),
+  }));
+}
+
+async function seasonHasGwStats(season: string): Promise<boolean> {
+  const supa = getServerSupabase();
+  const { count, error } = await supa
+    .from("player_gw_stats")
+    .select("player_id", { count: "exact", head: true })
+    .eq("season", season);
+  if (error) return false;
+  return (count ?? 0) > 0;
+}
+
+async function loadProfileSearchRows(
+  seasonFilter: string | null,
+): Promise<ProfileSearchRow[]> {
+  const activeSeason = await getCurrentFplSeason();
+
+  if (seasonFilter) {
+    if (await seasonUsesProfiles(seasonFilter)) {
+      const supa = getServerSupabase();
+      const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+        const { data, error } = await supa
+          .from("player_season_profiles")
+          .select("player_id,season,web_name,name,team,position")
+          .eq("season", seasonFilter)
+          .range(from, to);
+        return {
+          data: (data ?? []) as Record<string, unknown>[],
+          error: error ? new Error(error.message) : null,
+        };
+      });
+      return rows.map(mapProfileSearchRow).filter((row) => row.season);
+    }
+    if (
+      seasonFilter === activeSeason ||
+      (await seasonHasGwStats(seasonFilter))
+    ) {
+      return loadStaticProfileSearchRows(seasonFilter);
+    }
+    return [];
+  }
+
+  const supa = getServerSupabase();
+  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+    const { data, error } = await supa
+      .from("player_season_profiles")
+      .select("player_id,season,web_name,name,team,position")
+      .range(from, to);
+    return {
+      data: (data ?? []) as Record<string, unknown>[],
+      error: error ? new Error(error.message) : null,
+    };
+  });
+  const mapped = rows.map(mapProfileSearchRow).filter((row) => row.season);
+  const seasons = await listAvailableFplSeasons();
+  const seen = new Set(mapped.map((row) => `${row.season}:${row.player_id}`));
+  for (const season of seasons) {
+    if (await seasonUsesProfiles(season)) continue;
+    if (!(await seasonHasGwStats(season))) continue;
+    const liveRows = await loadStaticProfileSearchRows(season);
+    for (const row of liveRows) {
+      const key = `${row.season}:${row.player_id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mapped.push(row);
+      }
+    }
+  }
+  return mapped;
 }
 
 async function loadGwStatsForPlayers(
@@ -1157,19 +1259,7 @@ export async function searchHistoricalPlayerSuggestions(params: {
       ? await resolveFplSeasonForTool(params.season)
       : null;
 
-  const supa = getServerSupabase();
-  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
-    let query = supa
-      .from("player_season_profiles")
-      .select("player_id,season,web_name,name,team,position")
-      .range(from, to);
-    if (seasonFilter) query = query.eq("season", seasonFilter);
-    const { data, error } = await query;
-    return {
-      data: (data ?? []) as Record<string, unknown>[],
-      error: error ? new Error(error.message) : null,
-    };
-  });
+  const rows = await loadProfileSearchRows(seasonFilter);
 
   type Group = {
     key: string;
@@ -1183,18 +1273,18 @@ export async function searchHistoricalPlayerSuggestions(params: {
   const groups: Group[] = [];
 
   for (const row of rows) {
-    const season = String(row.season ?? "").trim();
+    const season = row.season;
     if (!season) continue;
-    if (params.position && String(row.position ?? "") !== params.position) {
+    if (params.position && row.position !== params.position) {
       continue;
     }
     if (!profileMatchesTeam(row, team)) continue;
 
-    const webName = String(row.web_name ?? "");
-    const name = String(row.name ?? "");
+    const webName = row.web_name;
+    const name = row.name;
     if (
       !matchesNameTokens(
-        { name, web_name: webName, team: String(row.team ?? "") },
+        { name, web_name: webName, team: row.team },
         tokens,
       )
     ) {
@@ -1226,7 +1316,7 @@ export async function searchHistoricalPlayerSuggestions(params: {
       }
     }
 
-    if (row.team) group.teams.add(String(row.team));
+    if (row.team) group.teams.add(row.team);
     group.seasons.add(season);
     group.key =
       [...group.aliases].sort((a, b) => b.length - a.length)[0] ?? group.key;
