@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuthForApi } from "@/lib/auth/require-auth-api";
 import {
   HISTORICAL_SEASON_ALL,
   isHistoricalAllSeasons,
@@ -7,6 +8,9 @@ import {
 } from "@/lib/fpl/historical-data";
 
 export async function GET(req: Request) {
+  const access = await requireAuthForApi();
+  if (access instanceof NextResponse) return access;
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const seasonRaw = searchParams.get("season")?.trim();
