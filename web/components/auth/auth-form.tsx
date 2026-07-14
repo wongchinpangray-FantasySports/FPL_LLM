@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { stripLocalePrefix } from "@/i18n/routing";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,8 +83,8 @@ export function AuthForm({
         return;
       }
 
-      const dest = nextPath?.startsWith("/") ? nextPath : "/";
-      router.push(dest);
+      const dest = nextPath?.startsWith("/") ? stripLocalePrefix(nextPath) : "/";
+      router.push(dest || "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("genericError"));
     } finally {

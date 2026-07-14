@@ -1,5 +1,6 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { stripLocalePrefix } from "@/i18n/routing";
 
 const ACCOUNT_PROTECTED_PREFIXES = [
   "/onboarding",
@@ -20,10 +21,6 @@ export const FPL_FEATURE_PREFIXES = [
   "/player",
   "/chat",
 ];
-
-export function stripLocalePrefix(pathname: string): string {
-  return pathname.replace(/^\/(en|zh)(?=\/|$)/, "") || pathname;
-}
 
 export function isAdminPath(pathname: string): boolean {
   const path = stripLocalePrefix(pathname);

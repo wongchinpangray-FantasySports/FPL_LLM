@@ -8,6 +8,7 @@ import {
   isFplProtectedApiPath,
   isProtectedPath,
 } from "./lib/supabase/middleware";
+import { stripLocalePrefix } from "./i18n/routing";
 import { isAdminEmail } from "./lib/auth/admin";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -81,7 +82,7 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath(pathname) && !user) {
     const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("next", stripLocalePrefix(pathname));
     return NextResponse.redirect(loginUrl);
   }
 
