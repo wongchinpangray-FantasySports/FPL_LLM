@@ -8,6 +8,7 @@ import {
   type HistoricalMeta,
   type HistoricalPlayerDetail,
   type HistoricalPlayerRow,
+  type HistoricalPlayerSuggestion,
   type HistoricalPosition,
   type HistoricalQueryResult,
   type HistoricalSortField,
@@ -24,6 +25,10 @@ type Labels = {
   teamAll: string;
   name: string;
   namePlaceholder: string;
+  nameHint: string;
+  nameSearching: string;
+  nameNoSuggestions: string;
+  nameSeasons: string;
   minMinutes: string;
   minAppearances: string;
   sortBy: string;
@@ -115,6 +120,7 @@ type Filters = {
   position: HistoricalPosition | "ALL";
   teamId: number | "ALL";
   name: string;
+  playerKey: string;
   minMinutes: string;
   minAppearances: string;
   sortBy: HistoricalSortField;
@@ -183,7 +189,8 @@ function buildQuery(filters: Filters, offset: number, limit: number): string {
   p.set("gwTo", String(filters.gwTo));
   if (filters.position !== "ALL") p.set("position", filters.position);
   if (filters.teamId !== "ALL") p.set("teamId", String(filters.teamId));
-  if (filters.name.trim().length >= 2) p.set("name", filters.name.trim());
+  if (filters.playerKey.trim()) p.set("playerKey", filters.playerKey.trim());
+  else if (filters.name.trim().length >= 2) p.set("name", filters.name.trim());
   if (filters.minMinutes.trim()) p.set("minMinutes", filters.minMinutes.trim());
   if (filters.minAppearances.trim()) {
     p.set("minAppearances", filters.minAppearances.trim());
@@ -205,6 +212,7 @@ function defaultFilters(meta: HistoricalMeta): Filters {
     position: "ALL",
     teamId: "ALL",
     name: "",
+    playerKey: "",
     minMinutes: "",
     minAppearances: "1",
     sortBy: "total_points",
@@ -263,6 +271,11 @@ export function FplHistoricalData({
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detail, setDetail] = useState<HistoricalPlayerDetail | null>(null);
+  const [nameSuggestions, setNameSuggestions] = useState<
+    HistoricalPlayerSuggestion[]
+  >([]);
+  const [nameSuggestionsOpen, setNameSuggestionsOpen] = useState(false);
+  const [nameSuggestionsLoading, setNameSuggestionsLoading] = useState(false);
   const limit = 50;
 
   useEffect(() => {
@@ -301,6 +314,47 @@ export function FplHistoricalData({
   }, [initialMeta]);
 
   const gwBounds = gwBoundsForSeason(filters.season, meta);
+
+  const fetchNameSuggestions = useCallback(
+    async (query: string, active: Filters) => {
+      const trimmed = query.trim();
+      if (trimmed.length < 2) {
+        setNameSuggestions([]);
+        return;
+      }
+      setNameSuggestionsLoading(true);
+      try {
+        const p = new URLSearchParams();
+        p.set("q", trimmed);
+        p.set("season", active.season);
+        if (active.position !== "ALL") p.set("position", active.position);
+        if (active.teamId !== "ALL") p.set("teamId", String(active.teamId));
+        p.set("limit", "12");
+        const res = await fetch(`/api/fpl/historical/players?${p.toString()}`);
+        const data = (await res.json()) as {
+          suggestions?: HistoricalPlayerSuggestion[];
+        };
+        setNameSuggestions(data.suggestions ?? []);
+      } catch {
+        setNameSuggestions([]);
+      } finally {
+        setNameSuggestionsLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (filters.playerKey.trim()) {
+      setNameSuggestions([]);
+      setNameSuggestionsOpen(false);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      void fetchNameSuggestions(filters.name, filters);
+    }, 220);
+    return () => window.clearTimeout(id);
+  }, [filters, fetchNameSuggestions]);
 
   const fetchData = useCallback(
     async (active: Filters, pageOffset: number) => {
@@ -346,6 +400,7 @@ export function FplHistoricalData({
   function applyFilters() {
     setOffset(0);
     setApplied({ ...filters });
+    setNameSuggestionsOpen(false);
   }
 
   function resetFilters() {
@@ -353,6 +408,30 @@ export function FplHistoricalData({
     setFilters(next);
     setApplied(next);
     setOffset(0);
+    setNameSuggestions([]);
+    setNameSuggestionsOpen(false);
+  }
+
+  function selectPlayerSuggestion(suggestion: HistoricalPlayerSuggestion) {
+    const next = {
+      ...filters,
+      name: suggestion.label,
+      playerKey: suggestion.key,
+    };
+    setFilters(next);
+    setApplied(next);
+    setOffset(0);
+    setNameSuggestions([]);
+    setNameSuggestionsOpen(false);
+  }
+
+  function onNameInputChange(value: string) {
+    setFilters((f) => ({
+      ...f,
+      name: value,
+      playerKey: "",
+    }));
+    setNameSuggestionsOpen(true);
   }
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / limit)) : 1;
@@ -533,16 +612,68 @@ export function FplHistoricalData({
             </select>
           </FilterField>
 
-          <FilterField label={labels.name}>
+          <FilterField label={labels.name} className="relative sm:col-span-2">
             <input
               type="search"
               value={filters.name}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, name: e.target.value }))
-              }
+              autoComplete="off"
+              onChange={(e) => onNameInputChange(e.target.value)}
+              onFocus={() => {
+                if (!filters.playerKey.trim() && filters.name.trim().length >= 2) {
+                  setNameSuggestionsOpen(true);
+                }
+              }}
+              onBlur={() => {
+                window.setTimeout(() => setNameSuggestionsOpen(false), 150);
+              }}
               placeholder={labels.namePlaceholder}
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-muted-foreground">{labels.nameHint}</p>
+            {nameSuggestionsOpen &&
+            !filters.playerKey.trim() &&
+            filters.name.trim().length >= 2 ? (
+              <div className="absolute left-0 right-0 top-[calc(100%-0.25rem)] z-20 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+                {nameSuggestionsLoading ? (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">
+                    {labels.nameSearching}
+                  </p>
+                ) : nameSuggestions.length === 0 ? (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">
+                    {labels.nameNoSuggestions}
+                  </p>
+                ) : (
+                  <ul className="max-h-64 overflow-y-auto">
+                    {nameSuggestions.map((suggestion) => (
+                      <li key={suggestion.key}>
+                        <button
+                          type="button"
+                          className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => selectPlayerSuggestion(suggestion)}
+                        >
+                          <span className="font-medium text-foreground">
+                            {suggestion.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {suggestion.fullName !== suggestion.label
+                              ? `${suggestion.fullName} · `
+                              : ""}
+                            {suggestion.position || "—"}
+                            {suggestion.teams.length
+                              ? ` · ${suggestion.teams.join(" / ")}`
+                              : ""}
+                            {suggestion.seasonCount > 0
+                              ? ` · ${labels.nameSeasons.replace("{count}", String(suggestion.seasonCount))}`
+                              : ""}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
           </FilterField>
 
           <FilterField label={labels.minMinutes}>
