@@ -33,7 +33,7 @@ function HubSection({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           {eyebrow ? (
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-accent/90">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-accent">
               {eyebrow}
             </p>
           ) : null}
@@ -172,9 +172,9 @@ function TodayTicker({
       <Link
         key="fpl"
         href="/planner"
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-foreground/90 no-underline hover:border-emerald-400/40"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brand-accent/25 bg-brand-accent/10 px-3 py-1.5 text-sm text-foreground/90 no-underline hover:border-brand-accent/40"
       >
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
           {labels.fplDeadline}
         </span>
         <span>
@@ -416,7 +416,7 @@ function HomeMatchRow({
           <span className="truncate">{m.home_name}</span>
           <WcFlag code={m.home_code} size={18} title={m.home_name} />
         </span>
-        <span className="shrink-0 tabular-nums font-semibold text-foreground">
+        <span className="shrink-0 tabular-nums font-semibold text-brand-accent">
           {finished ? `${m.home_score} - ${m.away_score}` : "vs"}
         </span>
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -1046,7 +1046,7 @@ function FplSection({
             snapshotLoading ? (
               <div className="h-20 animate-pulse rounded-xl border border-border bg-card" />
             ) : snapshot ? (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <div className="rounded-xl border border-brand-accent/25 bg-brand-accent/10 p-4">
                 <p className="font-medium text-foreground">
                   {squadDisplayName(snapshot) ?? `#${entryId}`}
                 </p>

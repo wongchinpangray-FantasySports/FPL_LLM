@@ -1,5 +1,8 @@
 import { DEFAULT_THEME, type TeamTheme } from "@/lib/team-themes";
 
+/** FPL neon green — always used for highlights, links, and accent text. */
+const HIGHLIGHT_ACCENT = DEFAULT_THEME.primary;
+
 function hexToRgb(hex: string): string {
   const h = hex.replace("#", "");
   if (h.length !== 6) return "0, 255, 135";
@@ -7,25 +10,6 @@ function hexToRgb(hex: string): string {
   const g = parseInt(h.slice(2, 4), 16);
   const b = parseInt(h.slice(4, 6), 16);
   return `${r}, ${g}, ${b}`;
-}
-
-function relativeLuminance(hex: string): number {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return 0;
-  const channels = [0, 2, 4].map((i) => {
-    const c = parseInt(h.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-}
-
-/** UI accent — legible on dark app chrome when kit primary is white/yellow. */
-function uiAccentColor(theme: TeamTheme): string {
-  if (relativeLuminance(theme.primary) > 0.62) {
-    if (relativeLuminance(theme.secondary) < 0.62) return theme.secondary;
-    return theme.accent === theme.primary ? theme.secondary : theme.accent;
-  }
-  return theme.primary;
 }
 
 function hexToHslTriplet(hex: string): string {
@@ -54,7 +38,6 @@ function isCustomTeamTheme(theme: TeamTheme): boolean {
 export function applyTeamThemeToDocument(theme: TeamTheme | null): void {
   if (typeof document === "undefined") return;
   const t = theme ?? DEFAULT_THEME;
-  const accent = uiAccentColor(t);
   const root = document.documentElement;
   const custom = isCustomTeamTheme(t);
 
@@ -65,15 +48,16 @@ export function applyTeamThemeToDocument(theme: TeamTheme | null): void {
     delete root.dataset.teamLabel;
   }
 
-  root.style.setProperty("--brand-accent", accent);
-  root.style.setProperty("--brand-accent-rgb", hexToRgb(accent));
-  root.style.setProperty("--brand-accent-fg", t.accent);
+  // Keep UI highlights on the bright FPL green; kit colours only tint chrome/backgrounds.
+  root.style.setProperty("--brand-accent", HIGHLIGHT_ACCENT);
+  root.style.setProperty("--brand-accent-rgb", hexToRgb(HIGHLIGHT_ACCENT));
+  root.style.setProperty("--brand-accent-fg", DEFAULT_THEME.accent);
   root.style.setProperty("--team-primary", t.primary);
   root.style.setProperty("--team-primary-rgb", hexToRgb(t.primary));
   root.style.setProperty("--team-secondary", t.secondary);
   root.style.setProperty("--team-secondary-rgb", hexToRgb(t.secondary));
   root.style.setProperty("--team-accent", t.accent);
-  root.style.setProperty("--ring", hexToHslTriplet(accent));
+  root.style.setProperty("--ring", hexToHslTriplet(HIGHLIGHT_ACCENT));
 }
 
 export function clearTeamThemeOnDocument(): void {
