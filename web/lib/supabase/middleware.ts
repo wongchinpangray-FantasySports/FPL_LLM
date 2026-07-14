@@ -8,20 +8,17 @@ const ACCOUNT_PROTECTED_PREFIXES = [
   "/admin",
 ];
 
-/** FPL hub, tools, and AI chat — require a signed-in account. */
-export const FPL_PROTECTED_PREFIXES = [
-  "/fpl",
+/** FPL hub landing page — public; features under these paths require sign-in. */
+export const FPL_HUB_PATH = "/fpl";
+
+/** FPL tools linked from the hub (excluding the hub page itself). */
+export const FPL_FEATURE_PREFIXES = [
   "/dashboard",
   "/manager",
   "/planner",
   "/players",
   "/player",
   "/chat",
-];
-
-const PROTECTED_PREFIXES = [
-  ...ACCOUNT_PROTECTED_PREFIXES,
-  ...FPL_PROTECTED_PREFIXES,
 ];
 
 export function stripLocalePrefix(pathname: string): string {
@@ -33,9 +30,11 @@ export function isAdminPath(pathname: string): boolean {
   return path === "/admin" || path.startsWith("/admin/");
 }
 
-export function isFplProtectedPath(pathname: string): boolean {
+export function isFplFeaturePath(pathname: string): boolean {
   const path = stripLocalePrefix(pathname);
-  return FPL_PROTECTED_PREFIXES.some(
+  if (path === FPL_HUB_PATH) return false;
+  if (path.startsWith(`${FPL_HUB_PATH}/`)) return true;
+  return FPL_FEATURE_PREFIXES.some(
     (p) => path === p || path.startsWith(`${p}/`),
   );
 }
@@ -54,9 +53,14 @@ export function isFplProtectedApiPath(pathname: string): boolean {
 
 export function isProtectedPath(pathname: string): boolean {
   const path = stripLocalePrefix(pathname);
-  return PROTECTED_PREFIXES.some(
-    (p) => path === p || path.startsWith(`${p}/`),
-  );
+  if (
+    ACCOUNT_PROTECTED_PREFIXES.some(
+      (p) => path === p || path.startsWith(`${p}/`),
+    )
+  ) {
+    return true;
+  }
+  return isFplFeaturePath(pathname);
 }
 
 export async function updateSupabaseSession(request: NextRequest) {
