@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { useTranslations, useLocale } from "next-intl";
+import { getPathname } from "@/i18n/navigation";
 import { stripLocalePrefix } from "@/i18n/routing";
-import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Mode = "login" | "signup";
+
+type AccountMe = {
+  user?: { id: string } | null;
+  profile?: { onboarding_completed_at?: string | null } | null;
+};
 
 async function authRequest(
   mode: Mode,
@@ -19,11 +23,31 @@ async function authRequest(
   const res = await fetch(`/api/auth/${mode === "signup" ? "signup" : "login"}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ email, password }),
   });
   const data = (await res.json()) as { error?: string };
   if (!res.ok) return { error: data.error ?? "Request failed" };
   return {};
+}
+
+async function fetchAccountMe(): Promise<AccountMe | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch("/api/account/me", { credentials: "include" });
+    if (res.ok) {
+      return (await res.json()) as AccountMe;
+    }
+    if (attempt === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+  return null;
+}
+
+function safeNextPath(nextPath?: string): string | null {
+  if (!nextPath?.startsWith("/") || nextPath.startsWith("//")) return null;
+  const stripped = stripLocalePrefix(nextPath);
+  return stripped || "/";
 }
 
 export function AuthForm({
@@ -34,13 +58,16 @@ export function AuthForm({
   nextPath?: string;
 }) {
   const t = useTranslations("auth");
-  const router = useRouter();
-  const { refresh } = useAuth();
+  const locale = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function redirectTo(href: string) {
+    window.location.assign(getPathname({ locale, href }));
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,39 +83,32 @@ export function AuthForm({
     }
 
     setLoading(true);
+    let redirecting = false;
     try {
       const trimmed = email.trim();
       const result = await authRequest(mode, trimmed, password);
       if (result.error) throw new Error(result.error);
 
-      await refresh();
-
       if (mode === "signup") {
-        router.push("/onboarding");
+        redirecting = true;
+        redirectTo("/onboarding");
         return;
       }
 
-      let meRes = await fetch("/api/account/me");
-      if (!meRes.ok) {
-        await new Promise((r) => setTimeout(r, 300));
-        meRes = await fetch("/api/account/me");
-        await refresh();
-      }
-      const me = (await meRes.json()) as {
-        user?: { id: string } | null;
-        profile?: { onboarding_completed_at?: string | null } | null;
-      };
-      if (me.user && !me.profile?.onboarding_completed_at) {
-        router.push("/onboarding");
-        return;
-      }
+      const me = await fetchAccountMe();
+      const needsOnboarding = Boolean(
+        me?.user && !me.profile?.onboarding_completed_at,
+      );
+      const dest = needsOnboarding
+        ? "/onboarding"
+        : safeNextPath(nextPath) ?? "/";
 
-      const dest = nextPath?.startsWith("/") ? stripLocalePrefix(nextPath) : "/";
-      router.push(dest || "/");
+      redirecting = true;
+      redirectTo(dest);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("genericError"));
     } finally {
-      setLoading(false);
+      if (!redirecting) setLoading(false);
     }
   }
 
