@@ -147,6 +147,66 @@ function sanitizeName(q: string): string {
     .slice(0, 48);
 }
 
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function nameQueryTokens(raw: string | undefined): string[] {
+  const normalized = normalizeSearchText(sanitizeName(raw ?? ""));
+  if (!normalized) return [];
+  return normalized.split(" ").filter((token) => token.length >= 2);
+}
+
+function matchesNameTokens(
+  row: { name?: string; web_name?: string; team?: string },
+  tokens: string[],
+): boolean {
+  if (!tokens.length) return true;
+  const haystack = normalizeSearchText(
+    `${row.web_name ?? ""} ${row.name ?? ""} ${row.team ?? ""}`,
+  );
+  return tokens.every((token) => haystack.includes(token));
+}
+
+function profileMatchesTeam(
+  row: { team?: string },
+  team: { name: string; short_name: string } | undefined,
+): boolean {
+  if (!team) return true;
+  const playerTeam = normalizeSearchText(row.team ?? "");
+  const names = [
+    normalizeSearchText(team.name),
+    normalizeSearchText(team.short_name),
+  ].filter(Boolean);
+  return names.some(
+    (label) => playerTeam.includes(label) || label.includes(playerTeam),
+  );
+}
+
+async function fetchAllRows<T extends Record<string, unknown>>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: Error | null }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await fetchPage(from, from + pageSize - 1);
+    if (error) throw error;
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+    if (from > 50000) break;
+  }
+  return rows;
+}
+
 function per90(total: number, minutes: number): number | null {
   if (minutes <= 0) return null;
   return Math.round((total / minutes) * 90 * 100) / 100;
@@ -589,59 +649,159 @@ async function loadPlayerCandidates(
 ): Promise<PlayerStatic[]> {
   const supa = getServerSupabase();
   const useProfiles = await seasonUsesProfiles(season);
+  const tokens = nameQueryTokens(params.name);
+  const team =
+    params.teamId != null && params.teamId > 0
+      ? teams.find((t) => t.id === params.teamId)
+      : undefined;
 
   if (useProfiles) {
-    let query = supa
-      .from("player_season_profiles")
-      .select("player_id,web_name,name,team,position")
-      .eq("season", season);
+    const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+      const { data, error } = await supa
+        .from("player_season_profiles")
+        .select("player_id,web_name,name,team,position")
+        .eq("season", season)
+        .range(from, to);
+      return {
+        data: (data ?? []) as Record<string, unknown>[],
+        error: error ? new Error(error.message) : null,
+      };
+    });
 
-    if (params.position) query = query.eq("position", params.position);
-    if (params.teamId != null && params.teamId > 0) {
-      const team = teams.find((t) => t.id === params.teamId);
-      if (team) {
-        query = query.or(
-          `team.ilike.%${team.name}%,team.ilike.%${team.short_name}%`,
-        );
-      }
-    }
-    const name = params.name?.trim();
-    if (name && name.length >= 2) {
-      query = query.or(`web_name.ilike.%${name}%,name.ilike.%${name}%`);
-    }
+    return rows
+      .filter(
+        (row) =>
+          !params.position || String(row.position ?? "") === params.position,
+      )
+      .filter((row) => profileMatchesTeam(row, team))
+      .filter((row) =>
+        matchesNameTokens(
+          {
+            name: String(row.name ?? ""),
+            web_name: String(row.web_name ?? row.name ?? ""),
+            team: String(row.team ?? ""),
+          },
+          tokens,
+        ),
+      )
+      .map((row) => ({
+        fpl_id: Math.floor(num(row.player_id)),
+        name: String(row.name ?? ""),
+        web_name: String(row.web_name ?? row.name ?? ""),
+        team: String(row.team ?? ""),
+        team_id: null,
+        position: String(row.position ?? ""),
+      }));
+  }
 
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => ({
-      fpl_id: Math.floor(num(r.player_id)),
-      name: String(r.name ?? ""),
-      web_name: String(r.web_name ?? r.name ?? ""),
-      team: String(r.team ?? ""),
-      team_id: null,
-      position: String(r.position ?? ""),
+  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+    const { data, error } = await supa
+      .from("players_static")
+      .select(PLAYER_COLS)
+      .range(from, to);
+    return {
+      data: (data ?? []) as Record<string, unknown>[],
+      error: error ? new Error(error.message) : null,
+    };
+  });
+
+  return rows
+    .filter(
+      (row) => !params.position || String(row.position ?? "") === params.position,
+    )
+    .filter((row) => {
+      if (!team) return true;
+      const teamId =
+        row.team_id != null ? Math.floor(num(row.team_id)) : null;
+      return teamId === team.id;
+    })
+    .filter((row) =>
+      matchesNameTokens(
+        {
+          name: String(row.name ?? ""),
+          web_name: String(row.web_name ?? row.name ?? ""),
+          team: String(row.team ?? ""),
+        },
+        tokens,
+      ),
+    )
+    .map((row) => ({
+      fpl_id: Math.floor(num(row.fpl_id)),
+      name: String(row.name ?? ""),
+      web_name: String(row.web_name ?? row.name ?? ""),
+      team: String(row.team ?? ""),
+      team_id: row.team_id != null ? Math.floor(num(row.team_id)) : null,
+      position: String(row.position ?? ""),
     }));
+}
+
+async function loadPlayerCandidatesGroupedBySeason(
+  params: HistoricalQueryParams,
+  teams: TeamRow[],
+): Promise<Map<string, PlayerStatic[]>> {
+  const supa = getServerSupabase();
+  const tokens = nameQueryTokens(params.name);
+  const team =
+    params.teamId != null && params.teamId > 0
+      ? teams.find((t) => t.id === params.teamId)
+      : undefined;
+
+  const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
+    const { data, error } = await supa
+      .from("player_season_profiles")
+      .select("player_id,season,web_name,name,team,position")
+      .range(from, to);
+    return {
+      data: (data ?? []) as Record<string, unknown>[],
+      error: error ? new Error(error.message) : null,
+    };
+  });
+
+  const grouped = new Map<string, PlayerStatic[]>();
+  for (const row of rows) {
+    const season = String(row.season ?? "").trim();
+    if (!season) continue;
+    if (params.position && String(row.position ?? "") !== params.position) {
+      continue;
+    }
+    if (!profileMatchesTeam(row, team)) continue;
+    if (
+      !matchesNameTokens(
+        {
+          name: String(row.name ?? ""),
+          web_name: String(row.web_name ?? row.name ?? ""),
+          team: String(row.team ?? ""),
+        },
+        tokens,
+      )
+    ) {
+      continue;
+    }
+
+    const player: PlayerStatic = {
+      fpl_id: Math.floor(num(row.player_id)),
+      name: String(row.name ?? ""),
+      web_name: String(row.web_name ?? row.name ?? ""),
+      team: String(row.team ?? ""),
+      team_id: null,
+      position: String(row.position ?? ""),
+    };
+    const bucket = grouped.get(season);
+    if (bucket) bucket.push(player);
+    else grouped.set(season, [player]);
   }
 
-  let query = supa.from("players_static").select(PLAYER_COLS);
+  return grouped;
+}
 
-  if (params.position) query = query.eq("position", params.position);
-  if (params.teamId != null && params.teamId > 0) {
-    query = query.eq("team_id", params.teamId);
-  }
-  const name = params.name?.trim();
-  if (name && name.length >= 2) {
-    query = query.or(`web_name.ilike.%${name}%,name.ilike.%${name}%`);
-  }
-
-  const { data, error } = await query;
+async function loadHistoricalTeams(): Promise<TeamRow[]> {
+  const supa = getServerSupabase();
+  const { data, error } = await supa.from("teams").select("id,name,short_name");
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => ({
-    fpl_id: Math.floor(num(r.fpl_id)),
-    name: String(r.name ?? ""),
-    web_name: String(r.web_name ?? r.name ?? ""),
-    team: String(r.team ?? ""),
-    team_id: r.team_id != null ? Math.floor(num(r.team_id)) : null,
-    position: String(r.position ?? ""),
+  return (data ?? []).map((t) => ({
+    id: Math.floor(num(t.id)),
+    name: String(t.name ?? ""),
+    short_name: String(t.short_name ?? ""),
   }));
 }
 
@@ -694,6 +854,24 @@ type HistoricalPlayerStatsRow = Omit<
   HistoricalPlayerRow,
   "season" | "seasonLabel"
 >;
+
+function filterHistoricalRows(
+  rows: HistoricalPlayerStatsRow[],
+  params: HistoricalQueryParams,
+): HistoricalPlayerStatsRow[] {
+  const tokens = nameQueryTokens(params.name);
+  let filtered = rows;
+  if (tokens.length) {
+    filtered = filtered.filter((row) => matchesNameTokens(row, tokens));
+  }
+  if (params.minMinutes != null && params.minMinutes > 0) {
+    filtered = filtered.filter((r) => r.minutes >= params.minMinutes!);
+  }
+  if (params.minAppearances != null && params.minAppearances > 0) {
+    filtered = filtered.filter((r) => r.appearances >= params.minAppearances!);
+  }
+  return filtered;
+}
 
 function aggregateRows(
   players: PlayerStatic[],
@@ -815,6 +993,7 @@ function sortRows(
 async function queryHistoricalStatsForSeason(
   season: string,
   params: HistoricalQueryParams,
+  options?: { players?: PlayerStatic[]; teams?: TeamRow[] },
 ): Promise<{ gwFrom: number; gwTo: number; rows: HistoricalPlayerRow[] }> {
   if (!isFplSeasonKey(season)) {
     throw new Error("Invalid season");
@@ -832,15 +1011,10 @@ async function queryHistoricalStatsForSeason(
     params.gwTo != null && params.gwTo > 0 ? params.gwTo : bounds.max,
   );
 
-  const supa = getServerSupabase();
-  const teamsRes = await supa.from("teams").select("id,name,short_name");
-  const teams: TeamRow[] = (teamsRes.data ?? []).map((t) => ({
-    id: Math.floor(num(t.id)),
-    name: String(t.name ?? ""),
-    short_name: String(t.short_name ?? ""),
-  }));
-
-  const players = await loadPlayerCandidates(params, season, teams);
+  const teams = options?.teams ?? (await loadHistoricalTeams());
+  const players =
+    options?.players ??
+    (await loadPlayerCandidates(params, season, teams));
   const playerIds = players.map((p) => p.fpl_id);
   const gwRows = await loadGwStatsForPlayers(
     playerIds,
@@ -849,14 +1023,7 @@ async function queryHistoricalStatsForSeason(
     Math.max(gwFrom, gwTo),
   );
 
-  let rows = aggregateRows(players, gwRows);
-
-  if (params.minMinutes != null && params.minMinutes > 0) {
-    rows = rows.filter((r) => r.minutes >= params.minMinutes!);
-  }
-  if (params.minAppearances != null && params.minAppearances > 0) {
-    rows = rows.filter((r) => r.appearances >= params.minAppearances!);
-  }
+  let rows = filterHistoricalRows(aggregateRows(players, gwRows), params);
 
   return {
     gwFrom: Math.min(gwFrom, gwTo),
@@ -899,18 +1066,32 @@ export async function queryHistoricalStats(
 
   if (isHistoricalAllSeasons(params.season)) {
     const seasons = await listAvailableFplSeasons();
+    const tokens = nameQueryTokens(params.name);
     let gwFrom = 1;
     let gwTo = 38;
     const allRows: HistoricalPlayerRow[] = [];
 
-    for (const season of seasons) {
-      const result = await queryHistoricalStatsForSeason(season, {
-        ...params,
-        season,
-      });
-      gwFrom = Math.min(gwFrom, result.gwFrom);
-      gwTo = Math.max(gwTo, result.gwTo);
-      allRows.push(...result.rows);
+    if (tokens.length) {
+      const teams = await loadHistoricalTeams();
+      const grouped = await loadPlayerCandidatesGroupedBySeason(params, teams);
+      for (const season of seasons) {
+        const players = grouped.get(season) ?? [];
+        if (!players.length) continue;
+        const result = await queryHistoricalStatsForSeason(season, params, {
+          players,
+          teams,
+        });
+        gwFrom = Math.min(gwFrom, result.gwFrom);
+        gwTo = Math.max(gwTo, result.gwTo);
+        allRows.push(...result.rows);
+      }
+    } else {
+      for (const season of seasons) {
+        const result = await queryHistoricalStatsForSeason(season, params);
+        gwFrom = Math.min(gwFrom, result.gwFrom);
+        gwTo = Math.max(gwTo, result.gwTo);
+        allRows.push(...result.rows);
+      }
     }
 
     let rows = sortRows(allRows, sortBy, sortDir);
