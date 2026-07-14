@@ -48,7 +48,6 @@ export default async function FplHistoricalPage({ params }: Props) {
           prev: t("prev"),
           next: t("next"),
           openProfile: t("openProfile"),
-          note: t("note"),
           colPlayer: t("colPlayer"),
           colSeason: t("colSeason"),
           colTeam: t("colTeam"),
@@ -99,7 +98,6 @@ export default async function FplHistoricalPage({ params }: Props) {
       backLabel={t("backFpl")}
       eyebrow={t("eyebrow")}
       title={t("title")}
-      description={t("description")}
       width="6xl"
     >
       <FplHistoricalData meta={meta} labels={labels} />

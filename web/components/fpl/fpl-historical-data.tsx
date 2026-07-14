@@ -44,7 +44,6 @@ type Labels = {
   prev: string;
   next: string;
   openProfile: string;
-  note: string;
   colPlayer: string;
   colSeason: string;
   colTeam: string;
@@ -513,8 +512,6 @@ export function FplHistoricalData({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm text-muted-foreground">{labels.note}</p>
-
       <section className="rounded-xl border border-border bg-card/50 p-4 md:p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FilterField label={labels.season}>
