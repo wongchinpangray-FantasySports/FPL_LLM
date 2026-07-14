@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 function isFplPath(pathname: string): boolean {
   return (
     pathname === "/fpl" ||
+    pathname.startsWith("/fpl/") ||
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/") ||
     pathname === "/manager" ||

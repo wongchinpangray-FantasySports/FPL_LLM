@@ -3,14 +3,53 @@ import createIntlMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
 import { getSupabaseAuthEnv } from "./lib/supabase/auth-config";
-import { isProtectedPath, isAdminPath } from "./lib/supabase/middleware";
+import {
+  isAdminPath,
+  isFplProtectedApiPath,
+  isProtectedPath,
+} from "./lib/supabase/middleware";
 import { isAdminEmail } from "./lib/auth/admin";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+async function getRequestUser(request: NextRequest) {
+  const authEnv = getSupabaseAuthEnv();
+  if (!authEnv) return null;
+
+  try {
+    const supabase = createServerClient(authEnv.url, authEnv.key, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(_cookiesToSet: Parameters<SetAllCookies>[0]) {
+          /* API auth checks do not need to refresh cookies here */
+        },
+      },
+    });
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
-  let response = intlMiddleware(request);
   const pathname = request.nextUrl.pathname;
+  const isApiRoute = pathname.startsWith("/api/");
+
+  if (isApiRoute) {
+    if (!isFplProtectedApiPath(pathname)) {
+      return NextResponse.next();
+    }
+    const user = await getRequestUser(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
+  let response = intlMiddleware(request);
 
   const authEnv = getSupabaseAuthEnv();
 
@@ -54,5 +93,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: [
+    "/((?!_next|_vercel|.*\\..*).*)",
+  ],
 };
