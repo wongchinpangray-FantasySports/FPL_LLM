@@ -43,6 +43,11 @@ export default async function FplPreseasonPage({ params }: Props) {
           kickoffTbd: t("preseasonKickoffTbd"),
           assist: t("preseasonAssist"),
           noGoalDetails: t("preseasonNoGoalDetails"),
+          scorersTitle: t("preseasonScorersTitle"),
+          assistsTitle: t("preseasonAssistsTitle"),
+          leaderboardPlayer: t("preseasonLeaderboardPlayer"),
+          leaderboardClub: t("preseasonLeaderboardClub"),
+          leaderboardEmpty: t("preseasonLeaderboardEmpty"),
         }}
       />
     </PageShell>

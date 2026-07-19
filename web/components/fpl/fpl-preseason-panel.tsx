@@ -11,6 +11,8 @@ import {
   preseasonOpponentLabel,
   preseasonVenueLabel,
   splitPreseasonMatches,
+  buildPreseasonLeaderboards,
+  type PreseasonLeaderboardRow,
 } from "@/lib/fpl/preseason";
 
 type Labels = {
@@ -27,6 +29,11 @@ type Labels = {
   kickoffTbd: string;
   assist: string;
   noGoalDetails: string;
+  scorersTitle: string;
+  assistsTitle: string;
+  leaderboardPlayer: string;
+  leaderboardClub: string;
+  leaderboardEmpty: string;
 };
 
 function ClubStripe({ code, className }: { code: string; className?: string }) {
@@ -400,6 +407,101 @@ function ClubSection({
   );
 }
 
+function LeaderboardTable({
+  title,
+  rows,
+  statLabel,
+  labels,
+}: {
+  title: string;
+  rows: PreseasonLeaderboardRow[];
+  statLabel: string;
+  labels: Pick<Labels, "leaderboardPlayer" | "leaderboardClub" | "leaderboardEmpty">;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card/60">
+      <div className="border-b border-border/60 px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">{labels.leaderboardEmpty}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[16rem] text-sm">
+            <thead>
+              <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="w-8 px-3 py-2 font-semibold">#</th>
+                <th className="px-3 py-2 font-semibold">{labels.leaderboardPlayer}</th>
+                <th className="px-3 py-2 font-semibold">{labels.leaderboardClub}</th>
+                <th className="w-12 px-3 py-2 text-right font-semibold">{statLabel}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr
+                  key={row.key}
+                  className="border-b border-border/40 last:border-b-0 hover:bg-muted/20"
+                >
+                  <td className="px-3 py-2 tabular-nums text-muted-foreground">{i + 1}</td>
+                  <td className="px-3 py-2 font-medium text-foreground">{row.name}</td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-2">
+                      <ClubTag code={row.pl_code} />
+                      <span className="hidden text-muted-foreground sm:inline">{row.pl_name}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-brand-accent">
+                    {row.count}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreseasonLeaderboards({
+  matches,
+  labels,
+}: {
+  matches: PreseasonMatch[];
+  labels: Pick<
+    Labels,
+    | "scorersTitle"
+    | "assistsTitle"
+    | "leaderboardPlayer"
+    | "leaderboardClub"
+    | "leaderboardEmpty"
+  >;
+}) {
+  const { scorers, assists } = useMemo(
+    () => buildPreseasonLeaderboards(matches),
+    [matches],
+  );
+
+  if (scorers.length === 0 && assists.length === 0) return null;
+
+  return (
+    <section className="grid gap-4 lg:grid-cols-2">
+      <LeaderboardTable
+        title={labels.scorersTitle}
+        rows={scorers}
+        statLabel="G"
+        labels={labels}
+      />
+      <LeaderboardTable
+        title={labels.assistsTitle}
+        rows={assists}
+        statLabel="A"
+        labels={labels}
+      />
+    </section>
+  );
+}
+
 export function FplPreseasonPanel({
   clubs,
   locale,
@@ -457,6 +559,8 @@ export function FplPreseasonPanel({
           </div>
         </section>
       ) : null}
+
+      <PreseasonLeaderboards matches={allMatches} labels={labels} />
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-foreground">{labels.allClubs}</h2>

@@ -166,3 +166,82 @@ export function preseasonVenueLabel(match: PreseasonMatch): string | null {
   }
   return null;
 }
+
+export type PreseasonLeaderboardRow = {
+  key: string;
+  name: string;
+  pl_code: string;
+  pl_name: string;
+  count: number;
+};
+
+function normPreseasonPlayerName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\s+/g, " ");
+}
+
+function pickDisplayName(current: string, next: string): string {
+  if (!current) return next;
+  if (next.length > current.length) return next;
+  return current;
+}
+
+export function buildPreseasonLeaderboards(matches: PreseasonMatch[]): {
+  scorers: PreseasonLeaderboardRow[];
+  assists: PreseasonLeaderboardRow[];
+} {
+  const scorerMap = new Map<string, PreseasonLeaderboardRow>();
+  const assistMap = new Map<string, PreseasonLeaderboardRow>();
+
+  for (const match of matches) {
+    if (match.status !== "finished") continue;
+    for (const goal of match.goals) {
+      if (goal.side !== "pl") continue;
+
+      const scorerKey = `${match.pl_code}:${normPreseasonPlayerName(goal.scorer)}`;
+      const scorerRow = scorerMap.get(scorerKey);
+      if (scorerRow) {
+        scorerRow.count += 1;
+        scorerRow.name = pickDisplayName(scorerRow.name, goal.scorer);
+      } else {
+        scorerMap.set(scorerKey, {
+          key: scorerKey,
+          name: goal.scorer,
+          pl_code: match.pl_code,
+          pl_name: match.pl_name,
+          count: 1,
+        });
+      }
+
+      const assistName = goal.assist?.trim();
+      if (!assistName) continue;
+
+      const assistKey = `${match.pl_code}:${normPreseasonPlayerName(assistName)}`;
+      const assistRow = assistMap.get(assistKey);
+      if (assistRow) {
+        assistRow.count += 1;
+        assistRow.name = pickDisplayName(assistRow.name, assistName);
+      } else {
+        assistMap.set(assistKey, {
+          key: assistKey,
+          name: assistName,
+          pl_code: match.pl_code,
+          pl_name: match.pl_name,
+          count: 1,
+        });
+      }
+    }
+  }
+
+  const sortRows = (rows: PreseasonLeaderboardRow[]) =>
+    rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  return {
+    scorers: sortRows([...scorerMap.values()]),
+    assists: sortRows([...assistMap.values()]),
+  };
+}
