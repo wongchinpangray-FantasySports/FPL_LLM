@@ -1,7 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplPreseasonPanel } from "@/components/fpl/fpl-preseason-panel";
-import { getPreseasonBundle, groupPreseasonByClub } from "@/lib/fpl/preseason";
+import { groupPreseasonByClub, loadPreseasonBundle } from "@/lib/fpl/preseason";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +13,8 @@ export default async function FplPreseasonPage({ params }: Props) {
     locale: params.locale,
     namespace: "fplHub",
   });
-  const bundle = getPreseasonBundle();
-  const clubs = groupPreseasonByClub();
+  const bundle = await loadPreseasonBundle();
+  const clubs = groupPreseasonByClub(bundle.matches);
 
   return (
     <PageShell
@@ -33,12 +33,16 @@ export default async function FplPreseasonPage({ params }: Props) {
           upcoming: t("preseasonUpcoming"),
           results: t("preseasonResults"),
           allClubs: t("preseasonAllClubs"),
-          home: t("fixturesHome"),
-          away: t("fixturesAway"),
           vs: t("preseasonVs"),
           noMatches: t("preseasonEmpty"),
           sourceNote: t("preseasonSourceNote"),
           expandClub: t("preseasonExpandClub"),
+          tickerUpcoming: t("preseasonTickerUpcoming"),
+          tickerResult: t("preseasonTickerResult"),
+          kickoffBeijing: t("preseasonKickoffBeijing"),
+          kickoffTbd: t("preseasonKickoffTbd"),
+          assist: t("preseasonAssist"),
+          noGoalDetails: t("preseasonNoGoalDetails"),
         }}
       />
     </PageShell>

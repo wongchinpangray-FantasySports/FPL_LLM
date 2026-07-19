@@ -1,5 +1,9 @@
 import preseasonData from "@/data/epl-preseason-2627.json";
 import { getEpl2627Season } from "@/lib/fpl/epl-2627";
+import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
+import { enrichPreseasonMatches } from "@/lib/fpl/preseason-enrich";
+
+export type { PreseasonGoal };
 
 export type PreseasonMatch = {
   id: string;
@@ -13,6 +17,8 @@ export type PreseasonMatch = {
   status: "finished" | "scheduled";
   pl_goals: number | null;
   opp_goals: number | null;
+  kickoff_time: string | null;
+  goals: PreseasonGoal[];
 };
 
 export type PreseasonBundle = {
@@ -28,17 +34,41 @@ export type PreseasonClubGroup = {
   matches: PreseasonMatch[];
 };
 
-const bundle = preseasonData as PreseasonBundle;
+const rawBundle = preseasonData as Omit<PreseasonBundle, "matches"> & {
+  matches: Array<
+    Omit<PreseasonMatch, "kickoff_time" | "goals"> & {
+      kickoff_time?: string | null;
+      goals?: PreseasonGoal[];
+    }
+  >;
+};
+
+function normalizeMatch(
+  m: (typeof rawBundle.matches)[number],
+): PreseasonMatch {
+  return {
+    ...m,
+    kickoff_time: m.kickoff_time ?? null,
+    goals: m.goals ?? [],
+  };
+}
 
 export function getPreseasonBundle(): PreseasonBundle {
-  return bundle;
+  return {
+    ...rawBundle,
+    matches: rawBundle.matches.map(normalizeMatch),
+  };
 }
 
-export function getPreseasonMatches(): PreseasonMatch[] {
-  return bundle.matches;
+export async function loadPreseasonBundle(): Promise<PreseasonBundle> {
+  const base = getPreseasonBundle();
+  const matches = await enrichPreseasonMatches(base.matches);
+  return { ...base, matches };
 }
 
-export function groupPreseasonByClub(): PreseasonClubGroup[] {
+export function groupPreseasonByClub(
+  matches: PreseasonMatch[],
+): PreseasonClubGroup[] {
   const teamOrder = getEpl2627Season().teams.map((t) => t.code);
   const byCode = new Map<string, PreseasonClubGroup>();
 
@@ -48,7 +78,7 @@ export function groupPreseasonByClub(): PreseasonClubGroup[] {
     byCode.set(code, { code, name: team.name, matches: [] });
   }
 
-  for (const match of bundle.matches) {
+  for (const match of matches) {
     const group = byCode.get(match.pl_code);
     if (group) {
       group.matches.push(match);
@@ -74,7 +104,11 @@ export function splitPreseasonMatches(matches: PreseasonMatch[]): {
     if (m.status === "finished") results.push(m);
     else upcoming.push(m);
   }
-  upcoming.sort((a, b) => a.date.localeCompare(b.date));
+  upcoming.sort((a, b) => {
+    const ka = a.kickoff_time ?? `${a.date}T12:00:00Z`;
+    const kb = b.kickoff_time ?? `${b.date}T12:00:00Z`;
+    return ka.localeCompare(kb);
+  });
   results.sort((a, b) => b.date.localeCompare(a.date));
   return { upcoming, results };
 }
@@ -91,6 +125,27 @@ export function formatPreseasonDate(date: string, locale: string): string {
   }
 }
 
+export function formatPreseasonKickoffBeijing(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Shanghai",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(d);
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("month")} ${get("day")}, ${get("hour")}:${get("minute")}`;
+  } catch {
+    return null;
+  }
+}
+
 export function formatPreseasonScore(match: PreseasonMatch): string | null {
   if (match.status !== "finished") return null;
   if (match.pl_goals == null || match.opp_goals == null) return null;
@@ -101,7 +156,13 @@ export function formatPreseasonScore(match: PreseasonMatch): string | null {
 }
 
 export function preseasonOpponentLabel(match: PreseasonMatch): string {
-  const parts = [match.opponent];
-  if (match.venue) parts.push(`(${match.venue})`);
-  return parts.join(" ");
+  return match.opponent;
+}
+
+export function preseasonVenueLabel(match: PreseasonMatch): string | null {
+  if (match.venue) return match.venue;
+  if (match.note && !match.note.toLowerCase().includes("closed")) {
+    return match.note;
+  }
+  return null;
 }
