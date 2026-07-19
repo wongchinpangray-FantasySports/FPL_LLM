@@ -106,18 +106,33 @@ export function getFplTeamTheme(shortName: string | null | undefined): TeamTheme
   return FPL_THEMES[shortName.toUpperCase()] ?? DEFAULT_THEME;
 }
 
+function hexLuminance(hex: string): number {
+  const raw = hex.replace("#", "").trim();
+  if (raw.length !== 6) return 0;
+  const channels = [0, 2, 4].map((i) => parseInt(raw.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = channels.map((c) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+  );
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 /** Readable badge / fixture chip styling from official club colours. */
 export function getFplTeamBadgeStyle(
   shortName: string | null | undefined,
 ): FplBadgeStyle {
   const t = getFplTeamTheme(shortName);
+  const lightKit = hexLuminance(t.primary) > 0.72;
   return {
     bg: t.primary,
     color: t.accent,
     stripe: t.secondary,
-    rowTint: `${t.primary}20`,
+    rowTint: lightKit
+      ? `color-mix(in srgb, ${t.secondary} 14%, transparent)`
+      : `${t.primary}20`,
     chipBg: `linear-gradient(145deg, ${t.primary} 0%, color-mix(in srgb, ${t.primary} 72%, ${t.secondary}) 100%)`,
-    chipBorder: `color-mix(in srgb, ${t.primary} 55%, transparent)`,
+    chipBorder: lightKit
+      ? `color-mix(in srgb, ${t.secondary} 40%, transparent)`
+      : `color-mix(in srgb, ${t.primary} 55%, transparent)`,
   };
 }
 

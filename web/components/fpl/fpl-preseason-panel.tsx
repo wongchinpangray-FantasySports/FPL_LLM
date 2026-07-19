@@ -44,11 +44,11 @@ function ClubTag({ code }: { code: string }) {
   const badge = getFplTeamBadgeStyle(code);
   return (
     <span
-      className="inline-flex min-w-[2.25rem] items-center justify-center rounded border px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
+      className="inline-flex min-w-[2.25rem] items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums shadow-sm"
       style={{
-        borderColor: badge.chipBorder,
-        background: badge.rowTint,
+        background: badge.chipBg,
         color: badge.color,
+        boxShadow: `inset 0 0 0 1px ${badge.chipBorder}`,
       }}
     >
       {code}
@@ -262,11 +262,11 @@ function PreseasonTicker({
           {kind === "result" ? labels.tickerResult : labels.tickerUpcoming}
         </span>
         <span
-          className="rounded border px-1.5 py-0.5 text-[10px] font-bold"
+          className="rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-sm"
           style={{
-            borderColor: badge.chipBorder,
-            background: badge.rowTint,
+            background: badge.chipBg,
             color: badge.color,
+            boxShadow: `inset 0 0 0 1px ${badge.chipBorder}`,
           }}
         >
           {match.pl_code}
@@ -325,7 +325,9 @@ function ClubMatchRow({
   return (
     <div
       className="border-b border-border/60 px-3 py-2.5 last:border-b-0"
-      style={{ background: getFplTeamBadgeStyle(match.pl_code).rowTint }}
+      style={{
+        background: `linear-gradient(90deg, ${getFplTeamBadgeStyle(match.pl_code).rowTint} 0%, transparent 55%)`,
+      }}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <ClubStripe code={match.pl_code} className="h-8" />
