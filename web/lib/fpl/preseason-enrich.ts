@@ -220,7 +220,10 @@ export async function enrichPreseasonMatch(
         fx.fixture.status.short === "PEN")
     ) {
       const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
-      if (fetched.length > 0) goals = fetched;
+      // Prefer API events when they add detail; keep curated static rows otherwise.
+      if (fetched.length >= (base.goals?.length ?? 0)) {
+        goals = fetched.length > 0 ? fetched : base.goals;
+      }
     }
 
     return { kickoff_time, goals };

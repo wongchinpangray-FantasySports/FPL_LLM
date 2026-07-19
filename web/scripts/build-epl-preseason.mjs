@@ -2,6 +2,10 @@
  * Build epl-preseason-2627.json from Premier League official pre-season list.
  * Source: https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results
  *
+ * Optional per-row `goals` and `kickoff_time` are curated from club match reports,
+ * BBC/Sky/local press, and FotMob where minutes are published. API-Football may
+ * override these at runtime when API_FOOTBALL_KEY is set.
+ *
  * Run: node web/scripts/build-epl-preseason.mjs
  */
 import { writeFileSync } from "node:fs";
@@ -14,34 +18,145 @@ const OUT = join(__dirname, "../data/epl-preseason-2627.json");
 const SOURCE_URL =
   "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results";
 
-/** @type {Array<{ date: string, pl: string, opponent: string, home: boolean, pl_goals?: number, opp_goals?: number, venue?: string, note?: string }>} */
+/**
+ * @param {string} scorer
+ * @param {'pl'|'opp'} side
+ * @param {string} [minute]
+ * @param {string|null} [assist]
+ */
+function g(scorer, side, minute = "", assist = null) {
+  return { minute, scorer, assist, side };
+}
+
+/**
+ * @type {Array<{
+ *   date: string,
+ *   pl: string,
+ *   opponent: string,
+ *   home: boolean,
+ *   pl_goals?: number,
+ *   opp_goals?: number,
+ *   venue?: string,
+ *   note?: string,
+ *   kickoff_time?: string,
+ *   goals?: Array<{ minute: string, scorer: string, assist: string | null, side: 'pl' | 'opp' }>,
+ * }>}
+ */
 const ROWS = [
   // Brentford
-  { date: "2026-07-15", pl: "BRE", opponent: "AFC Wimbledon", home: true, pl_goals: 3, opp_goals: 2 },
+  {
+    date: "2026-07-15",
+    pl: "BRE",
+    opponent: "AFC Wimbledon",
+    home: true,
+    pl_goals: 3,
+    opp_goals: 2,
+    goals: [
+      g("Iwan Morgan", "pl", "", "Gustavo Nunes"),
+      g("Jaidon Anthony", "pl"),
+      g("Mikkel Damsgaard", "pl", "", "Dango Ouattara"),
+    ],
+  },
   // Coventry
-  { date: "2026-07-11", pl: "COV", opponent: "Wimbledon", home: false, pl_goals: 2, opp_goals: 3, note: "Behind closed doors" },
-  { date: "2026-07-18", pl: "COV", opponent: "Northampton Town", home: false, pl_goals: 0, opp_goals: 0 },
+  {
+    date: "2026-07-11",
+    pl: "COV",
+    opponent: "Wimbledon",
+    home: false,
+    pl_goals: 2,
+    opp_goals: 3,
+    note: "Behind closed doors",
+    goals: [
+      g("Marcus Browne", "opp"),
+      g("Aron Sasu", "opp"),
+      g("Norman Bassette", "pl"),
+      g("Milan Van Ewijk", "pl"),
+      g("Harry Hedges", "opp"),
+    ],
+  },
+  {
+    date: "2026-07-18",
+    pl: "COV",
+    opponent: "Northampton Town",
+    home: false,
+    pl_goals: 0,
+    opp_goals: 0,
+    goals: [],
+  },
   { date: "2026-08-08", pl: "COV", opponent: "Espanyol", home: true },
   { date: "2026-08-14", pl: "COV", opponent: "Monaco", home: true },
   // Crystal Palace
-  { date: "2026-07-18", pl: "CRY", opponent: "Swindon", home: true, pl_goals: 5, opp_goals: 1, venue: "Crystal Palace Academy" },
+  {
+    date: "2026-07-18",
+    pl: "CRY",
+    opponent: "Swindon",
+    home: true,
+    pl_goals: 5,
+    opp_goals: 1,
+    venue: "Crystal Palace Academy",
+    goals: [
+      g("Eddie Nketiah", "pl", "9'"),
+      g("Eddie Nketiah", "pl", "21'"),
+      g("Fletcher Holman", "opp", "33'"),
+      g("Matheus França", "pl", "56'"),
+      g("Matheus França", "pl", "59'"),
+      g("Matheus França", "pl", "82'"),
+    ],
+  },
   { date: "2026-07-28", pl: "CRY", opponent: "Lens", home: false, venue: "Lake Como" },
   { date: "2026-07-28", pl: "CRY", opponent: "Famalicao", home: false, venue: "Lake Como" },
   // Brighton
-  { date: "2026-07-18", pl: "BHA", opponent: "Wycombe Wanderers", home: true, pl_goals: 4, opp_goals: 1 },
+  {
+    date: "2026-07-18",
+    pl: "BHA",
+    opponent: "Wycombe Wanderers",
+    home: true,
+    pl_goals: 4,
+    opp_goals: 1,
+    goals: [
+      g("Babis Kostoulas", "pl"),
+      g("Babis Kostoulas", "pl", "25'", "Ibrahim Osman"),
+      g("Ibrahim Osman", "pl", "35'", "Sean Keogh"),
+      g("Georginio Rutter", "pl", "", "Olivier Boscagli"),
+    ],
+  },
   { date: "2026-07-25", pl: "BHA", opponent: "Annecy", home: true, note: "Behind closed doors" },
   { date: "2026-08-01", pl: "BHA", opponent: "Strasbourg", home: true, note: "Behind closed doors" },
   { date: "2026-08-08", pl: "BHA", opponent: "Roma", home: true },
   { date: "2026-08-15", pl: "BHA", opponent: "Bologna", home: true },
   // Everton
-  { date: "2026-07-18", pl: "EVE", opponent: "Dundee", home: false, pl_goals: 4, opp_goals: 0 },
+  {
+    date: "2026-07-18",
+    pl: "EVE",
+    opponent: "Dundee",
+    home: false,
+    pl_goals: 4,
+    opp_goals: 0,
+    goals: [
+      g("Beto", "pl", "38'"),
+      g("Thierno Barry", "pl", "69'"),
+      g("Harvey Foster", "pl", "82'"),
+      g("Dwight McNeil", "pl", "89'", "Carlos Alcaraz"),
+    ],
+  },
   { date: "2026-07-25", pl: "EVE", opponent: "Bolton", home: false },
   { date: "2026-07-28", pl: "EVE", opponent: "Stoke", home: false },
   { date: "2026-08-01", pl: "EVE", opponent: "Hamburg", home: false },
   { date: "2026-08-08", pl: "EVE", opponent: "Stuttgart", home: false },
   { date: "2026-08-12", pl: "EVE", opponent: "Newcastle", home: true, venue: "Edinburgh" },
   // Nott'm Forest
-  { date: "2026-07-18", pl: "NFO", opponent: "Notts County", home: false, pl_goals: 2, opp_goals: 0 },
+  {
+    date: "2026-07-18",
+    pl: "NFO",
+    opponent: "Notts County",
+    home: false,
+    pl_goals: 2,
+    opp_goals: 0,
+    goals: [
+      g("Igor Jesus", "pl", "26'", "Morgan Gibbs-White"),
+      g("Arnaud Kalimuendo", "pl", "54'", "Eric da Silva Moreira"),
+    ],
+  },
   { date: "2026-07-22", pl: "NFO", opponent: "Blackburn", home: true, venue: "Albufeira" },
   { date: "2026-07-26", pl: "NFO", opponent: "Vitoria", home: true, note: "Behind closed doors" },
   { date: "2026-07-31", pl: "NFO", opponent: "Sporting", home: true, venue: "Faro" },
@@ -50,7 +165,20 @@ const ROWS = [
   { date: "2026-08-12", pl: "NFO", opponent: "Bayer Leverkusen", home: true },
   { date: "2026-08-16", pl: "NFO", opponent: "Brest", home: true },
   // Newcastle
-  { date: "2026-07-18", pl: "NEW", opponent: "Darlington", home: true, pl_goals: 3, opp_goals: 0, note: "Behind closed doors" },
+  {
+    date: "2026-07-18",
+    pl: "NEW",
+    opponent: "Darlington",
+    home: true,
+    pl_goals: 3,
+    opp_goals: 0,
+    note: "Behind closed doors",
+    goals: [
+      g("Joe Willock", "pl", "29'", "Jacob Murphy"),
+      g("William Osula", "pl", "35'"),
+      g("Sean Neave", "pl"),
+    ],
+  },
   { date: "2026-07-25", pl: "NEW", opponent: "Gateshead", home: false },
   { date: "2026-07-29", pl: "NEW", opponent: "Bristol City", home: false },
   { date: "2026-08-08", pl: "NEW", opponent: "Valencia", home: false },
@@ -58,7 +186,23 @@ const ROWS = [
   { date: "2026-08-15", pl: "NEW", opponent: "Bayer Leverkusen", home: true },
   { date: "2026-08-16", pl: "NEW", opponent: "Strasbourg", home: true },
   // Sunderland
-  { date: "2026-07-18", pl: "SUN", opponent: "York City", home: false, pl_goals: 5, opp_goals: 1, venue: "York" },
+  {
+    date: "2026-07-18",
+    pl: "SUN",
+    opponent: "York City",
+    home: false,
+    pl_goals: 5,
+    opp_goals: 1,
+    venue: "York",
+    goals: [
+      g("Enzo Le Fée", "pl", "7'"),
+      g("Chris Rigg", "pl", "37'"),
+      g("Timur Tuterov", "pl", "43'"),
+      g("Enzo Le Fée", "pl", "44'", "Timur Tuterov"),
+      g("Greg Olley", "opp", "55'"),
+      g("Tom Proctor", "pl", "56'", "Charlie Dinsdale"),
+    ],
+  },
   { date: "2026-07-25", pl: "SUN", opponent: "Liverpool", home: true, venue: "Nashville" },
   { date: "2026-07-30", pl: "SUN", opponent: "Leeds", home: true, venue: "New Jersey" },
   { date: "2026-08-02", pl: "SUN", opponent: "Wrexham", home: true, venue: "Philadelphia" },
@@ -66,7 +210,16 @@ const ROWS = [
   { date: "2026-08-08", pl: "SUN", opponent: "Lens", home: false, venue: "Lens" },
   { date: "2026-08-15", pl: "SUN", opponent: "Rennes", home: true, venue: "Stadium of Light" },
   // Man Utd
-  { date: "2026-07-18", pl: "MUN", opponent: "Wrexham", home: true, pl_goals: 0, opp_goals: 1, venue: "Helsinki" },
+  {
+    date: "2026-07-18",
+    pl: "MUN",
+    opponent: "Wrexham",
+    home: true,
+    pl_goals: 0,
+    opp_goals: 1,
+    venue: "Helsinki",
+    goals: [g("Sam Smith", "opp", "39'", "Lewis O'Brien")],
+  },
   { date: "2026-07-24", pl: "MUN", opponent: "Rosenborg", home: false, venue: "Trondheim" },
   { date: "2026-08-01", pl: "MUN", opponent: "Atletico Madrid", home: true, venue: "Stockholm" },
   { date: "2026-08-08", pl: "MUN", opponent: "Paris Saint-Germain", home: true, venue: "Gothenburg" },
@@ -167,7 +320,7 @@ const PL_NAMES = {
 
 const matches = ROWS.map((row, i) => {
   const finished = row.pl_goals != null && row.opp_goals != null;
-  return {
+  const match = {
     id: `${row.pl.toLowerCase()}-${row.date}-${i}`,
     date: row.date,
     pl_code: row.pl,
@@ -179,7 +332,10 @@ const matches = ROWS.map((row, i) => {
     status: finished ? "finished" : "scheduled",
     pl_goals: row.pl_goals ?? null,
     opp_goals: row.opp_goals ?? null,
+    kickoff_time: row.kickoff_time ?? null,
+    goals: row.goals ?? [],
   };
+  return match;
 });
 
 matches.sort((a, b) => a.date.localeCompare(b.date) || a.pl_code.localeCompare(b.pl_code));
