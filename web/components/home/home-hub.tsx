@@ -287,8 +287,8 @@ function YourFootballSection({
   const name = profile?.display_name ?? user.email?.split("@")[0] ?? "";
 
   return (
-    <section className="rounded-xl border border-border bg-card/50">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <section className="home-hub-card rounded-xl border">
+      <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
           {name ? (
@@ -470,8 +470,8 @@ function HomeNewsSidebar({
 }) {
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
-      <section className="rounded-xl border border-border bg-card/50">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <section className="home-hub-card rounded-xl border">
+        <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">{labels.newsTitle}</h2>
           <Link
             href="/news"
@@ -480,7 +480,7 @@ function HomeNewsSidebar({
             {labels.seeAll}
           </Link>
         </div>
-        <div className="divide-y divide-border px-4">
+        <div className="home-hub-divider divide-y px-4">
           {news.length > 0 ? (
             news.map((item) => <HomeNewsSidebarItem key={item.id} item={item} />)
           ) : (
@@ -490,8 +490,8 @@ function HomeNewsSidebar({
       </section>
 
       {transfers.length > 0 ? (
-        <section className="rounded-xl border border-border bg-card/50">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <section className="home-hub-card rounded-xl border">
+          <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
             <h2 className="text-sm font-semibold text-foreground">{labels.transfersTitle}</h2>
             <Link
               href="/news?category=transfer"
@@ -500,7 +500,7 @@ function HomeNewsSidebar({
               {labels.seeTransfers}
             </Link>
           </div>
-          <div className="divide-y divide-border px-4">
+          <div className="home-hub-divider divide-y px-4">
             {transfers.map((item) => (
               <HomeNewsSidebarItem key={item.id} item={item} />
             ))}
@@ -1039,12 +1039,14 @@ function FplSection({
   }, [entryId]);
 
   return (
-    <section className="rounded-xl border border-border bg-card/50">
-      <div className="border-b border-border px-4 py-3">
+    <section className="home-hub-card home-hub-card-hero rounded-xl border">
+      <div aria-hidden className="home-hub-glow-primary" />
+      <div aria-hidden className="home-hub-glow-secondary" />
+      <div className="home-hub-card-inner home-hub-divider border-b px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">{labels.description}</p>
       </div>
-      <div className="flex flex-col gap-4 p-4">
+      <div className="home-hub-card-inner flex flex-col gap-4 p-4">
         <div>
           <EntryIdForm
             redirectTo={(id) => `/dashboard/${id}`}
@@ -1074,7 +1076,7 @@ function FplSection({
               ].filter(Boolean);
 
               return (
-                <div className="rounded-lg border border-brand-accent/20 bg-brand-accent/5 px-3 py-3">
+                <div className="home-hub-snapshot rounded-lg border px-3 py-3">
                   <p className="text-sm font-medium text-foreground">
                     {squadDisplayName(snapshot) ?? `#${entryId}`}
                   </p>
@@ -1095,18 +1097,29 @@ function FplSection({
 
 type FeatureLink = { href: string; label: string };
 
-function FeatureGroup({ title, items }: { title: string; items: FeatureLink[] }) {
+function FeatureGroup({
+  title,
+  items,
+  variant,
+}: {
+  title: string;
+  items: FeatureLink[];
+  variant: number;
+}) {
   return (
-    <section className="rounded-xl border border-border bg-card/40">
-      <h3 className="border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <section
+      className="home-hub-feature-group rounded-xl border"
+      data-variant={String(variant % 4)}
+    >
+      <h3 className="home-hub-feature-title home-hub-divider border-b px-4 py-2.5 text-xs font-semibold uppercase tracking-wide">
         {title}
       </h3>
-      <ul className="divide-y divide-border">
+      <ul className="home-hub-divider divide-y">
         {items.map((item) => (
           <li key={`${item.href}-${item.label}`}>
             <Link
               href={item.href}
-              className="group flex items-center justify-between gap-3 px-4 py-2.5 text-sm no-underline transition-colors hover:bg-card/60"
+              className="home-hub-feature-link group flex items-center justify-between gap-3 px-4 py-2.5 text-sm no-underline transition-colors"
             >
               <span className="text-foreground group-hover:text-brand-accent">{item.label}</span>
               <span className="shrink-0 text-muted-foreground group-hover:text-brand-accent">
@@ -1164,10 +1177,10 @@ function HomeFeatureGroups({
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <FeatureGroup title={labels.manage} items={manage} />
-      <FeatureGroup title={labels.research} items={research} />
-      <FeatureGroup title={labels.tools} items={tools} />
-      <FeatureGroup title={labels.game} items={game} />
+      <FeatureGroup title={labels.manage} items={manage} variant={0} />
+      <FeatureGroup title={labels.research} items={research} variant={1} />
+      <FeatureGroup title={labels.tools} items={tools} variant={2} />
+      <FeatureGroup title={labels.game} items={game} variant={3} />
     </div>
   );
 }
@@ -1246,9 +1259,9 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
       {hub.today.fpl.gw != null ? (
         <Link
           href="/planner"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-accent/25 bg-brand-accent/10 px-4 py-2.5 no-underline transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/15"
+          className="home-hub-deadline flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-2.5 no-underline"
         >
-          <span className="text-sm font-semibold text-brand-accent">
+          <span className="home-hub-deadline-label text-sm font-semibold">
             {t("todayFpl")} · {t("todayFplGw", { gw: String(hub.today.fpl.gw) })}
           </span>
           <span className="text-sm text-foreground/90">

@@ -125,6 +125,185 @@ html.team-themed .nav-link-active {
   );
 }
 
+/* Logged-in home hub — kit-coloured card gradients (--team-* from account theme). */
+.home-hub-card {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--team-primary) 24%, hsl(var(--border)));
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--team-primary) 10%, transparent),
+    hsl(var(--card) / 0.58),
+    color-mix(in srgb, var(--team-secondary) 7%, transparent)
+  );
+}
+
+.home-hub-card-hero {
+  border-color: color-mix(in srgb, var(--team-primary) 30%, hsl(var(--border)));
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--team-primary) 14%, transparent),
+    hsl(var(--card) / 0.62),
+    color-mix(in srgb, var(--team-secondary) 10%, transparent)
+  );
+}
+
+.home-hub-card-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--team-stripe, linear-gradient(90deg, var(--team-secondary), var(--team-primary), var(--team-secondary)));
+  opacity: 0.85;
+}
+
+html:not(.team-themed) .home-hub-card-hero::after {
+  opacity: 0;
+}
+
+.home-hub-glow-primary {
+  pointer-events: none;
+  position: absolute;
+  top: -3rem;
+  right: -2rem;
+  z-index: 0;
+  height: 10rem;
+  width: 10rem;
+  border-radius: 9999px;
+  opacity: 0.32;
+  filter: blur(48px);
+  background: var(--team-primary);
+}
+
+.home-hub-glow-secondary {
+  pointer-events: none;
+  position: absolute;
+  bottom: -4rem;
+  left: 20%;
+  z-index: 0;
+  height: 8rem;
+  width: 12rem;
+  border-radius: 9999px;
+  opacity: 0.22;
+  filter: blur(48px);
+  background: var(--team-secondary);
+}
+
+.home-hub-card-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.home-hub-divider {
+  border-color: color-mix(in srgb, var(--team-primary) 16%, hsl(var(--border)));
+}
+
+.home-hub-feature-group {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-hub-feature-group:hover {
+  box-shadow: 0 4px 20px rgba(var(--team-primary-rgb), 0.08);
+}
+
+.home-hub-feature-group[data-variant="0"] {
+  border-color: color-mix(in srgb, var(--team-primary) 28%, hsl(var(--border)));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--team-primary) 13%, transparent),
+    hsl(var(--card) / 0.5) 52%,
+    color-mix(in srgb, var(--team-secondary) 6%, transparent)
+  );
+}
+
+.home-hub-feature-group[data-variant="1"] {
+  border-color: color-mix(in srgb, var(--team-secondary) 28%, hsl(var(--border)));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--team-secondary) 11%, transparent),
+    hsl(var(--card) / 0.5) 52%,
+    color-mix(in srgb, var(--team-primary) 7%, transparent)
+  );
+}
+
+.home-hub-feature-group[data-variant="2"] {
+  border-color: color-mix(in srgb, var(--team-primary) 22%, hsl(var(--border)));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--team-primary) 9%, transparent),
+    color-mix(in srgb, var(--team-secondary) 10%, transparent) 45%,
+    hsl(var(--card) / 0.48) 100%
+  );
+}
+
+.home-hub-feature-group[data-variant="3"] {
+  border-color: color-mix(in srgb, var(--team-secondary) 24%, hsl(var(--border)));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--team-secondary) 9%, transparent),
+    color-mix(in srgb, var(--team-primary) 8%, transparent) 45%,
+    hsl(var(--card) / 0.48) 100%
+  );
+}
+
+.home-hub-feature-title {
+  color: color-mix(in srgb, var(--team-primary) 72%, hsl(var(--muted-foreground)));
+}
+
+html.team-themed .home-hub-feature-title {
+  color: color-mix(in srgb, var(--team-primary) 88%, hsl(var(--foreground)));
+}
+
+.home-hub-feature-link:hover {
+  background: color-mix(in srgb, var(--team-primary) 8%, transparent);
+}
+
+.home-hub-snapshot {
+  border-color: color-mix(in srgb, var(--team-primary) 28%, hsl(var(--border)));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--team-primary) 12%, transparent),
+    color-mix(in srgb, var(--team-secondary) 6%, transparent)
+  );
+}
+
+.home-hub-deadline {
+  border-color: color-mix(in srgb, var(--team-primary) 32%, hsl(var(--border)));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--team-primary) 14%, transparent),
+    color-mix(in srgb, var(--team-secondary) 8%, transparent)
+  );
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.home-hub-deadline:hover {
+  border-color: color-mix(in srgb, var(--team-primary) 45%, hsl(var(--border)));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--team-primary) 18%, transparent),
+    color-mix(in srgb, var(--team-secondary) 12%, transparent)
+  );
+}
+
+.home-hub-deadline-label {
+  color: color-mix(in srgb, var(--team-primary) 90%, hsl(var(--foreground)));
+}
+
+html.team-themed .home-hub-card {
+  border-color: color-mix(in srgb, var(--team-primary) 32%, hsl(var(--border)));
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--team-primary) 13%, transparent),
+    hsl(var(--card) / 0.55),
+    color-mix(in srgb, var(--team-secondary) 9%, transparent)
+  );
+}
+
 ::selection {
   background-color: rgba(var(--brand-accent-rgb), 0.25);
   color: hsl(var(--foreground));
