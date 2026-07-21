@@ -8,7 +8,21 @@ import { NewsThumb } from "@/components/news/news-thumb";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 
-function GuestNewsCard({ item }: { item: WcNewsItem }) {
+/** Soft card gradients — distinct tints, readable in light and dark themes. */
+const FEATURE_GRADIENTS = [
+  "border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-card/55 to-card/35 hover:border-emerald-400/40",
+  "border-sky-500/25 bg-gradient-to-br from-sky-500/15 via-card/55 to-card/35 hover:border-sky-400/40",
+  "border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card/55 to-card/35 hover:border-violet-400/40",
+] as const;
+
+const NEWS_GRADIENTS = [
+  "border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-card/45 to-card/30 hover:border-emerald-400/35",
+  "border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-card/45 to-card/30 hover:border-sky-400/35",
+  "border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-card/45 to-card/30 hover:border-amber-400/35",
+  "border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-card/45 to-card/30 hover:border-violet-400/35",
+] as const;
+
+function GuestNewsCard({ item, index }: { item: WcNewsItem; index: number }) {
   const hasImage = Boolean(proxiedNewsImageUrl(item.image_url));
 
   return (
@@ -16,7 +30,10 @@ function GuestNewsCard({ item }: { item: WcNewsItem }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex w-[16rem] shrink-0 snap-start gap-3 rounded-lg border border-border bg-card/40 px-3 py-3 no-underline transition-colors hover:border-brand-accent/25 hover:bg-card/70 sm:w-[18rem]"
+      className={cn(
+        "group flex w-[16rem] shrink-0 snap-start gap-3 rounded-lg border px-3 py-3 no-underline transition-[border-color,box-shadow] hover:shadow-sm sm:w-[18rem]",
+        NEWS_GRADIENTS[index % NEWS_GRADIENTS.length],
+      )}
     >
       {hasImage ? (
         <NewsThumb
@@ -42,24 +59,37 @@ function FeatureRow({
   href,
   title,
   body,
+  gradient,
 }: {
   href: string;
   title: string;
   body: string;
+  gradient: string;
 }) {
   return (
     <Link
       href={href}
-      className="group flex items-start justify-between gap-4 rounded-lg border border-border bg-card/40 px-4 py-3.5 no-underline transition-colors hover:border-brand-accent/25 hover:bg-card/70"
+      className={cn(
+        "group relative flex items-start justify-between gap-4 overflow-hidden rounded-lg border px-4 py-3.5 no-underline transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:shadow-md",
+        gradient,
+      )}
     >
-      <div className="min-w-0">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+        aria-hidden
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 100% 0%, rgba(var(--brand-accent-rgb), 0.12), transparent 55%)",
+        }}
+      />
+      <div className="relative min-w-0">
         <h2 className="text-sm font-semibold text-foreground group-hover:text-brand-accent">
           {title}
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
       </div>
       <span
-        className="mt-0.5 shrink-0 text-sm text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-brand-accent"
+        className="relative mt-0.5 shrink-0 text-sm text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-brand-accent"
         aria-hidden
       >
         →
@@ -91,7 +121,18 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-2 md:gap-8">
-      <section className="rounded-xl border border-border bg-card/50 px-5 py-6 md:px-6 md:py-7">
+      <section className="relative overflow-hidden rounded-xl border border-brand-accent/20 bg-gradient-to-br from-brand-accent/12 via-card/60 to-card/40 px-5 py-6 md:px-6 md:py-7">
+        <div
+          className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full opacity-40 blur-3xl"
+          aria-hidden
+          style={{ background: "rgba(var(--brand-accent-rgb), 0.35)" }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-16 left-1/3 h-32 w-48 rounded-full opacity-25 blur-3xl"
+          aria-hidden
+          style={{ background: "rgba(56, 189, 248, 0.25)" }}
+        />
+        <div className="relative">
         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand-accent">
           {t("guestEyebrow")}
         </p>
@@ -118,15 +159,17 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
             {t("guestBrowseFpl")} →
           </Link>
         </div>
+        </div>
       </section>
 
       <section className="grid gap-2 md:grid-cols-3 md:gap-3">
-        {features.map((feature) => (
+        {features.map((feature, index) => (
           <FeatureRow
             key={feature.href}
             href={feature.href}
             title={feature.title}
             body={feature.body}
+            gradient={FEATURE_GRADIENTS[index % FEATURE_GRADIENTS.length]}
           />
         ))}
       </section>
@@ -152,8 +195,8 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
         ) : (
           <div className="-mx-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:thin] snap-x snap-mandatory [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
             <div className="flex gap-2.5">
-              {news.map((item) => (
-                <GuestNewsCard key={item.id} item={item} />
+              {news.map((item, index) => (
+                <GuestNewsCard key={item.id} item={item} index={index} />
               ))}
             </div>
           </div>
