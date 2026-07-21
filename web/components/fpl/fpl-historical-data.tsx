@@ -264,7 +264,7 @@ export function FplHistoricalData({
     defaultFilters(initialMeta ?? emptyMeta()),
   );
   const [result, setResult] = useState<HistoricalQueryResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -375,11 +375,6 @@ export function FplHistoricalData({
     [limit],
   );
 
-  useEffect(() => {
-    if (!metaReady) return;
-    void fetchData(applied, offset);
-  }, [applied, offset, fetchData, metaReady]);
-
   if (!metaReady) {
     return (
       <p className="text-sm text-muted-foreground">{labels.loading}</p>
@@ -397,9 +392,11 @@ export function FplHistoricalData({
   }
 
   function applyFilters() {
+    const next = { ...filters };
     setOffset(0);
-    setApplied({ ...filters });
+    setApplied(next);
     setNameSuggestionsOpen(false);
+    void fetchData(next, 0);
   }
 
   function resetFilters() {
@@ -409,6 +406,7 @@ export function FplHistoricalData({
     setOffset(0);
     setNameSuggestions([]);
     setNameSuggestionsOpen(false);
+    setResult(null);
   }
 
   function selectPlayerSuggestion(suggestion: HistoricalPlayerSuggestion) {
@@ -422,6 +420,7 @@ export function FplHistoricalData({
     setOffset(0);
     setNameSuggestions([]);
     setNameSuggestionsOpen(false);
+    void fetchData(next, 0);
   }
 
   function onNameInputChange(value: string) {
@@ -821,7 +820,11 @@ export function FplHistoricalData({
           <button
             type="button"
             disabled={offset <= 0}
-            onClick={() => setOffset((o) => Math.max(0, o - limit))}
+            onClick={() => {
+              const nextOffset = Math.max(0, offset - limit);
+              setOffset(nextOffset);
+              void fetchData(applied, nextOffset);
+            }}
             className={cn(
               "rounded-lg border border-border px-3 py-1.5 text-sm",
               offset <= 0
@@ -837,7 +840,11 @@ export function FplHistoricalData({
           <button
             type="button"
             disabled={offset + limit >= result.total}
-            onClick={() => setOffset((o) => o + limit)}
+            onClick={() => {
+              const nextOffset = offset + limit;
+              setOffset(nextOffset);
+              void fetchData(applied, nextOffset);
+            }}
             className={cn(
               "rounded-lg border border-border px-3 py-1.5 text-sm",
               offset + limit >= result.total

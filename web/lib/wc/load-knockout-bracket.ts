@@ -1,5 +1,5 @@
 import { fetchFifaRounds } from "@/lib/wc/fifa-rounds";
-import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
+import { loadWcMatchesForDisplay } from "@/lib/wc/match-stats-store";
 import {
   buildKnockoutBracket,
   type KnockoutBracket,
@@ -9,10 +9,11 @@ export async function loadKnockoutBracket(
   locale: string,
 ): Promise<KnockoutBracket | null> {
   try {
-    const [{ matches }, fifaRounds] = await Promise.all([
-      buildWcMatchesWithStats(),
-      fetchFifaRounds(),
+    const [matches, fifaRounds] = await Promise.all([
+      loadWcMatchesForDisplay(),
+      fetchFifaRounds().catch(() => []),
     ]);
+    if (!fifaRounds.length) return null;
     const byId = new Map(matches.map((m) => [m.id, m]));
     return buildKnockoutBracket(fifaRounds, byId, locale);
   } catch {

@@ -1,10 +1,10 @@
-import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { WcFantasyApp } from "@/components/worldcup/wc-fantasy-app";
-import { loadKnockoutBracket } from "@/lib/wc/load-knockout-bracket";
 
-export const dynamic = "force-dynamic";
+/** Bracket/context load client-side — avoids FIFA SSR on Workers. */
+export const dynamic = "force-static";
+export const revalidate = 120;
 
 export default async function WorldCupPage({
   params,
@@ -13,10 +13,7 @@ export default async function WorldCupPage({
 }) {
   const { locale } = params;
   setRequestLocale(locale);
-  const [t, initialBracket] = await Promise.all([
-    getTranslations({ locale, namespace: "worldcupIndex" }),
-    loadKnockoutBracket(locale),
-  ]);
+  const t = await getTranslations({ locale, namespace: "worldcupIndex" });
 
   return (
     <PageShell
@@ -27,9 +24,7 @@ export default async function WorldCupPage({
       description={t("description")}
       width="6xl"
     >
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
-        <WcFantasyApp initialBracket={initialBracket} />
-      </Suspense>
+      <WcFantasyApp />
     </PageShell>
   );
 }

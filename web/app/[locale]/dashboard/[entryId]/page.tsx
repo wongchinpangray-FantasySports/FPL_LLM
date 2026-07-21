@@ -8,9 +8,9 @@ import {
 } from "@/lib/tools/team";
 import {
   allPremierTeamIds,
+  cachedAllClubsFixtureGrid,
   fdrClass,
   FPL_LAST_SEASON_GW,
-  teamsFixtureGrid,
 } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
 import {
@@ -132,7 +132,7 @@ export default async function DashboardPage({
   );
   const allTeamIds = await allPremierTeamIds();
   const fplSeason = await getCurrentFplSeason();
-  const grid = await teamsFixtureGrid(allTeamIds, startGw, horizon, fplSeason);
+  const grid = await cachedAllClubsFixtureGrid(startGw, horizon, fplSeason);
   const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
 
   const dgwTeamGw = await loadDoubleGameweekKeys(

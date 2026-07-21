@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 
@@ -96,6 +97,22 @@ export async function teamsFixtureGrid(
   }
 
   return result;
+}
+
+/** Cached full-league FDR ticker (same for every dashboard visit in a GW window). */
+export async function cachedAllClubsFixtureGrid(
+  startGw: number,
+  horizon: number,
+  fplSeason: string,
+): Promise<DashTeam[]> {
+  return unstable_cache(
+    async () => {
+      const ids = await allPremierTeamIds();
+      return teamsFixtureGrid(ids, startGw, horizon, fplSeason);
+    },
+    ["dash-all-clubs-grid", fplSeason, String(startGw), String(horizon)],
+    { revalidate: 600 },
+  )();
 }
 
 export function fdrClass(fdr: number | null): string {

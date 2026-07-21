@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       },
       {
         headers: {
-          "Cache-Control": "no-store, max-age=0",
+          "Cache-Control": "public, s-maxage=90, stale-while-revalidate=180",
         },
       },
     );

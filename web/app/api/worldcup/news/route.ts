@@ -18,7 +18,9 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const region = url.searchParams.get("region")?.toUpperCase() ?? "ALL";
     const editorialOnly = url.searchParams.get("editorial") === "1";
-    const refresh = url.searchParams.get("refresh") === "1";
+    const refresh =
+      url.searchParams.get("refresh") === "1" &&
+      process.env.NODE_ENV !== "production";
     const limit = Math.min(
       120,
       Math.max(10, Number(url.searchParams.get("limit") ?? "80")),

@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isNextProductionBuild } from "@/lib/next-build";
+import { isCacheOnlyDataRuntime } from "@/lib/worker-runtime";
 import {
   fetchWcNewsItems,
   type NewsCategory,
@@ -136,8 +137,8 @@ export async function getWcNewsForApi(opts?: {
     }
   }
 
-  // Cloudflare/OpenNext build: skip live RSS (many feeds → build timeout).
-  if (isNextProductionBuild() && !opts?.refresh) {
+  // Build + production Workers: DB/cache only (live RSS via sync-news cron).
+  if ((isNextProductionBuild() || isCacheOnlyDataRuntime()) && !opts?.refresh) {
     const db = await loadWcNewsFromDb();
     const items = db.items.length > 0 ? db.items : memCache?.items ?? [];
     const fetched_at =

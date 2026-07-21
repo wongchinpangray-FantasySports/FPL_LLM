@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { buildWcMatchesWithStats } from "@/lib/wc/match-stats-store";
+import { loadWcMatchesForDisplay } from "@/lib/wc/match-stats-store";
+import { buildWcMatchSchedule } from "@/lib/wc/fifa-rounds";
 import {
   localizeWcMatches,
   readLocaleFromRequest,
@@ -14,7 +15,15 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const roundFilter = url.searchParams.get("round");
 
-    const { rounds, matches } = await buildWcMatchesWithStats();
+    const [matches, schedule] = await Promise.all([
+      loadWcMatchesForDisplay(),
+      buildWcMatchSchedule().catch(() => ({ rounds: [] as number[], matches: [] })),
+    ]);
+    const rounds =
+      schedule.rounds.length > 0
+        ? schedule.rounds
+        : [...new Set(matches.map((m) => m.round_id))].sort((a, b) => a - b);
+
     let filtered = matches;
     if (roundFilter && roundFilter !== "ALL") {
       const rid = Number(roundFilter);
@@ -25,12 +34,19 @@ export async function GET(req: Request) {
 
     const localized = await localizeWcMatches(filtered, locale);
 
-    return NextResponse.json({
-      rounds,
-      matches: sortWcMatchesForDisplay(localized),
-      disclaimer:
-        "Schedule and scores from FIFA. Goal/card minutes from API-Football when configured.",
-    });
+    return NextResponse.json(
+      {
+        rounds,
+        matches: sortWcMatchesForDisplay(localized),
+        disclaimer:
+          "Schedule and scores from FIFA. Goal/card minutes from API-Football when configured.",
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=90, stale-while-revalidate=180",
+        },
+      },
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to load matches";
     return NextResponse.json({ error: message }, { status: 500 });

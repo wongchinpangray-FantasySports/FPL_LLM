@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isNextProductionBuild } from "@/lib/next-build";
+import { isCacheOnlyDataRuntime } from "@/lib/worker-runtime";
 import {
   fetchMatchEvents,
   isApiFootballConfigured,
@@ -147,9 +148,9 @@ export async function buildWcMatchesWithStats(): Promise<{
   };
 }
 
-/** Live FIFA schedule with Supabase fallback (retries on transient failures). */
+/** FIFA schedule with Supabase fallback (no live FIFA/API-Football on Workers). */
 export async function loadWcMatchesForDisplay(): Promise<WcMatchRow[]> {
-  if (isNextProductionBuild()) {
+  if (isNextProductionBuild() || isCacheOnlyDataRuntime()) {
     try {
       return await loadScheduleMatchesFromCache();
     } catch {

@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { entryId: string } },
 ) {
   const entryId = Number(params.entryId);
@@ -15,8 +15,13 @@ export async function GET(
     );
   }
 
+  const url = new URL(req.url);
+  const forceRefresh =
+    url.searchParams.get("refresh") === "1" ||
+    url.searchParams.get("refresh") === "true";
+
   try {
-    const team = await fetchTeamForUi(entryId);
+    const team = await fetchTeamForUi(entryId, forceRefresh);
     return new Response(JSON.stringify(teamPayloadForAssistant(team)), {
       headers: { "content-type": "application/json" },
     });

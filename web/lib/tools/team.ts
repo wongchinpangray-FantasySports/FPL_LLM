@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { isCacheOnlyDataRuntime } from "@/lib/worker-runtime";
 import {
   fplGet,
   fplGetSession,
@@ -421,40 +422,48 @@ export async function fetchAndCacheTeam(
 ): Promise<CachedTeam> {
   const supa = getServerSupabase();
 
-  if (!opts.forceRefresh) {
-    const { data: cached } = await supa
-      .from("user_teams")
-      .select("raw,fetched_at")
-      .eq("entry_id", entryId)
-      .maybeSingle();
+  const { data: cached } = await supa
+    .from("user_teams")
+    .select("raw,fetched_at")
+    .eq("entry_id", entryId)
+    .maybeSingle();
 
-    if (cached?.raw && cached.fetched_at) {
-      const age = Date.now() - new Date(cached.fetched_at).getTime();
-      if (age < CACHE_TTL_MS) {
-        const r = cached.raw as unknown as CachedTeam;
-        const merged: CachedTeam = {
-          ...r,
-          long_team_picks: r.long_team_picks ?? null,
-          long_team_gw: r.long_team_gw ?? null,
-          long_team_note: r.long_team_note ?? null,
-        };
-        const versionOk = (merged.team_raw_version ?? 0) >= TEAM_RAW_VERSION;
-        /** Pre-v2 cache or FH without revert squad: refetch so planner can show GW(n-1) baseline. */
-        const fhMissingRevert =
-          merged.picks_gw != null &&
-          merged.picks_gw > 1 &&
-          isFreeHitOnPicksGw(
-            merged.active_chip,
-            merged.picks_gw,
-            merged.chips_used ?? [],
-          ) &&
-          !merged.long_team_picks?.length;
-        if (versionOk && !fhMissingRevert) {
-          return merged;
-        }
-        // fall through to live FPL fetch
+  if (!opts.forceRefresh && cached?.raw && cached.fetched_at) {
+    const age = Date.now() - new Date(String(cached.fetched_at)).getTime();
+    if (age < CACHE_TTL_MS) {
+      const r = cached.raw as unknown as CachedTeam;
+      const merged: CachedTeam = {
+        ...r,
+        long_team_picks: r.long_team_picks ?? null,
+        long_team_gw: r.long_team_gw ?? null,
+        long_team_note: r.long_team_note ?? null,
+      };
+      const versionOk = (merged.team_raw_version ?? 0) >= TEAM_RAW_VERSION;
+      /** Pre-v2 cache or FH without revert squad: refetch so planner can show GW(n-1) baseline. */
+      const fhMissingRevert =
+        merged.picks_gw != null &&
+        merged.picks_gw > 1 &&
+        isFreeHitOnPicksGw(
+          merged.active_chip,
+          merged.picks_gw,
+          merged.chips_used ?? [],
+        ) &&
+        !merged.long_team_picks?.length;
+      if (versionOk && !fhMissingRevert) {
+        return merged;
       }
+      // fall through to live FPL fetch (or stale fallback below)
     }
+  }
+
+  if (!opts.forceRefresh && cached?.raw && isCacheOnlyDataRuntime()) {
+    const r = cached.raw as unknown as CachedTeam;
+    return {
+      ...r,
+      long_team_picks: r.long_team_picks ?? null,
+      long_team_gw: r.long_team_gw ?? null,
+      long_team_note: r.long_team_note ?? null,
+    };
   }
 
   const bust = opts.forceRefresh === true;
@@ -635,7 +644,7 @@ export async function fetchTeamForUi(
   let team = await fetchAndCacheTeam(entryId, {
     forceRefresh: forceRefreshFromQuery,
   });
-  if (forceRefreshFromQuery) return team;
+  if (forceRefreshFromQuery || isCacheOnlyDataRuntime()) return team;
 
   const fhMissingRevert =
     isFreeHitOnPicksGw(
