@@ -52,6 +52,10 @@ export async function middleware(request: NextRequest) {
 
   let response = intlMiddleware(request);
 
+  if (!isProtectedPath(pathname) && !isAdminPath(pathname)) {
+    return response;
+  }
+
   const authEnv = getSupabaseAuthEnv();
 
   let user = null;

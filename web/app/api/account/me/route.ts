@@ -29,7 +29,7 @@ export async function GET() {
     }
 
     const userId = authData.user.id;
-    await recordLoginDay(userId);
+    void recordLoginDay(userId).catch(() => {});
 
     const admin = getServerSupabase();
 

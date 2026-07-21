@@ -1014,7 +1014,7 @@ function FplSection({
     let cancelled = false;
     setSnapshotLoading(true);
     setSnapshotError(null);
-    fetch(`/api/team/${entryId}`)
+    fetch(`/api/team/${entryId}/summary`)
       .then(async (res) => {
         const data = (await res.json()) as SquadSnapshot & { error?: string };
         if (!res.ok) throw new Error(data.error ?? labels.snapshotError);
@@ -1180,6 +1180,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const [hubError, setHubError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     let cancelled = false;
 
     async function fetchHub(attempt = 0): Promise<void> {
@@ -1210,8 +1212,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when locale changes
-  }, [locale]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when locale or auth settles
+  }, [locale, authLoading]);
 
   const hub = data ?? {
     today: { ticker: [], fpl: { gw: null, deadline: null, open: false } },
