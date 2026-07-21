@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
+import { HomeGuestLanding } from "@/components/home/home-guest-landing";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
@@ -1109,11 +1110,11 @@ function FplSection({
 
 const EXPLORE_TILES = [
   { href: "/chat", key: "chat" },
-  { href: "/mini", key: "mini" },
+  { href: "/fpl/preseason", key: "preseason" },
+  { href: "/fpl/fixtures", key: "fixtures" },
   { href: "/players", key: "players" },
-  { href: "/worldcup?tab=scouting", key: "scouting" },
-  { href: "/worldcup?tab=matches", key: "matches" },
-  { href: "/worldcup?tab=tables", key: "tables" },
+  { href: "/fpl/historical", key: "historical" },
+  { href: "/mini", key: "mini" },
 ] as const;
 
 function ExploreSection({
@@ -1147,9 +1148,9 @@ function ExploreSection({
 export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<HomeHubData | null>(initialData ?? null);
   const [hubError, setHubError] = useState<string | null>(null);
-  const [hubLoading, setHubLoading] = useState(!initialData);
 
   useEffect(() => {
     let cancelled = false;
@@ -1157,7 +1158,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     async function fetchHub(attempt = 0): Promise<void> {
       if (attempt === 0) {
         setHubError(null);
-        if (!data) setHubLoading(true);
       }
       try {
         const res = await fetch(`/api/home/hub?locale=${encodeURIComponent(locale)}`);
@@ -1176,8 +1176,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         if (!cancelled) {
           setHubError(e instanceof Error ? e.message : "Failed to load");
         }
-      } finally {
-        if (!cancelled) setHubLoading(false);
       }
     }
 
@@ -1198,76 +1196,105 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     },
     news: [],
     transferNews: [],
+    eplNews: [],
   };
+
+  if (!authLoading && !user) {
+    return <HomeGuestLanding news={hub.eplNews.length > 0 ? hub.eplNews : hub.news} />;
+  }
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <div className="h-14 animate-pulse rounded-xl border border-border bg-card" />
+        <div className="h-48 animate-pulse rounded-xl border border-border bg-card" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6">
-      <section className="flex flex-col gap-4">
-        {hubLoading && !data ? (
-          <div className="h-12 animate-pulse rounded-xl border border-border bg-card" />
-        ) : (
-          <>
-            <TodayTicker
-              items={hub.today.ticker}
-              fpl={hub.today.fpl}
-              locale={locale}
-              labels={{
-                result: t("todayResult"),
-                upcoming: t("todayUpcoming"),
-                fplDeadline: t("todayFpl"),
-                fplGw: t("todayFplGw", { gw: String(hub.today.fpl.gw ?? "—") }),
-                noItems: t("todayEmpty"),
-              }}
-            />
-            {hubError ? (
-              <p className="text-xs text-muted-foreground">{hubError}</p>
-            ) : null}
-          </>
-        )}
-      </section>
+      {hub.today.fpl.gw != null ? (
+        <Link
+          href="/planner"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-accent/25 bg-brand-accent/10 px-4 py-3 no-underline transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/15"
+        >
+          <span className="text-sm font-semibold text-brand-accent">
+            {t("todayFpl")} · {t("todayFplGw", { gw: String(hub.today.fpl.gw) })}
+          </span>
+          <span className="text-sm text-foreground/90">
+            {hub.today.fpl.deadline
+              ? fmtDeadline(hub.today.fpl.deadline, locale)
+              : t("todayEmpty")}
+          </span>
+        </Link>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <HubChip href="/worldcup" variant="accent">
-          {t("ctaWorldCup")}
+        <HubChip href="/fpl" variant="accent">
+          {t("ctaFpl")}
         </HubChip>
-        <HubChip href="/fpl">{t("ctaFpl")}</HubChip>
+        <HubChip href="/planner">{t("fplOpenPlanner")}</HubChip>
         <HubChip href="/news">{t("ctaNews")}</HubChip>
         <HubChip href="/news?category=transfer">{t("ctaTransfers")}</HubChip>
-        <HubChip href="/play">{t("ctaPlay")}</HubChip>
+        <HubChip href="/chat">{t("openChat")}</HubChip>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem]">
-        <HomeWcMain
-          wc={hub.wc}
-          ticker={hub.today.ticker}
-          locale={locale}
-          labels={{
-            title: t("wcPanelTitle"),
-            allMatches: t("wcAllMatches"),
-            allTables: t("wcAllTables"),
-            group: t("wcGroup"),
-            scorers: t("wcScorers"),
-            assists: t("wcAssists"),
-            empty: t("wcEmpty"),
-            result: t("todayResult"),
-            upcoming: t("todayUpcoming"),
-            tableCols: {
-              group: t("wcGroup"),
-              team: t("wcTeam"),
-              p: t("wcColP"),
-              w: t("wcColW"),
-              d: t("wcColD"),
-              l: t("wcColL"),
-              gf: t("wcColGf"),
-              ga: t("wcColGa"),
-              gd: t("wcColGd"),
-              pts: t("wcColPts"),
-            },
-          }}
-        />
+        <div className="flex flex-col gap-6">
+          <FplSection
+            todayFpl={hub.today.fpl}
+            locale={locale}
+            labels={{
+              eyebrow: t("fplEyebrow"),
+              title: t("fplTitle"),
+              description: t("fplDescription"),
+              entryHint: t("entryHint"),
+              deadline: t("fplDeadline"),
+              gw: t("fplGw"),
+              snapshotLoading: t("fplSnapshotLoading"),
+              snapshotRank: t("fplSnapshotRank"),
+              snapshotPoints: t("fplSnapshotPoints"),
+              snapshotGw: t("fplSnapshotGw"),
+              openDashboard: t("fplOpenDashboard"),
+              openPlanner: t("fplOpenPlanner"),
+              shortcuts: t("fplShortcuts"),
+            }}
+          />
+
+          <ExploreSection
+            labels={{
+              title: t("exploreTitle"),
+              tiles: {
+                chat: { title: t("exploreChatTitle"), body: t("exploreChatBody") },
+                preseason: {
+                  title: t("explorePreseasonTitle"),
+                  body: t("explorePreseasonBody"),
+                },
+                fixtures: {
+                  title: t("exploreFixturesTitle"),
+                  body: t("exploreFixturesBody"),
+                },
+                players: {
+                  title: t("explorePlayersTitle"),
+                  body: t("explorePlayersBody"),
+                },
+                historical: {
+                  title: t("exploreHistoricalTitle"),
+                  body: t("exploreHistoricalBody"),
+                },
+                mini: { title: t("exploreMiniTitle"), body: t("exploreMiniBody") },
+              },
+            }}
+          />
+
+          {hubError ? (
+            <p className="text-xs text-muted-foreground">{hubError}</p>
+          ) : null}
+        </div>
 
         <HomeNewsSidebar
-          news={hub.news}
+          news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
           transfers={hub.transferNews}
           labels={{
             newsTitle: t("sidebarNews"),
@@ -1278,6 +1305,20 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           }}
         />
       </div>
+
+      <YourFootballSection
+        labels={{
+          title: t("yourFootballTitle"),
+          guestTitle: t("yourFootballGuestTitle"),
+          guestBody: t("yourFootballGuestBody"),
+          signUp: t("yourFootballSignUp"),
+          signIn: t("yourFootballSignIn"),
+          inboxCta: t("yourFootballInbox"),
+          empty: t("yourFootballEmpty"),
+          loading: t("loading"),
+          unread: t("yourFootballUnread"),
+        }}
+      />
     </div>
   );
 }

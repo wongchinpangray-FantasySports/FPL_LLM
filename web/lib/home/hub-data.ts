@@ -54,6 +54,7 @@ export type HomeHubData = {
   };
   news: WcNewsItem[];
   transferNews: WcNewsItem[];
+  eplNews: WcNewsItem[];
 };
 
 function toSnippet(m: WcMatchRow): HomeMatchSnippet {
@@ -144,12 +145,14 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
 }
 
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
-  const [wcResult, newsResult, transferResult, fplResult] = await Promise.allSettled([
-    loadWcHub(locale),
-    getWcNewsForApi({ limit: 10, editorialOnly: false, category: "trending" }),
-    getWcNewsForApi({ limit: 8, editorialOnly: false, category: "transfer" }),
-    getMiniGameweekContext(),
-  ]);
+  const [wcResult, newsResult, transferResult, eplNewsResult, fplResult] =
+    await Promise.allSettled([
+      loadWcHub(locale),
+      getWcNewsForApi({ limit: 10, editorialOnly: false, category: "trending" }),
+      getWcNewsForApi({ limit: 8, editorialOnly: false, category: "transfer" }),
+      getWcNewsForApi({ limit: 12, editorialOnly: false, category: "epl" }),
+      getMiniGameweekContext(),
+    ]);
 
   const wcBundle =
     wcResult.status === "fulfilled"
@@ -169,6 +172,11 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
     transferResult.status === "fulfilled"
       ? transferResult.value.items.slice(0, 5)
       : [];
+
+  const eplNewsItems =
+    eplNewsResult.status === "fulfilled"
+      ? eplNewsResult.value.items.slice(0, 12)
+      : newsItems;
 
   const fplCtx =
     fplResult.status === "fulfilled"
@@ -196,6 +204,7 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
     },
     news: newsItems,
     transferNews: transferItems,
+    eplNews: eplNewsItems,
   };
 }
 
