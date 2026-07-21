@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadHomeHubDataCached } from "@/lib/home/hub-data";
+import { loadHomeHubDataLiteCached } from "@/lib/home/hub-data";
 import { readLocaleFromRequest } from "@/lib/wc/localize-players";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   try {
     const locale = readLocaleFromRequest(req);
-    const data = await loadHomeHubDataCached(locale);
+    const data = await loadHomeHubDataLiteCached(locale);
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "public, s-maxage=90, stale-while-revalidate=180",

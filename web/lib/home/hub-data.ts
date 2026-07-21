@@ -208,10 +208,74 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
   };
 }
 
+/** Home hub only needs FPL deadline + news — skip WC match/standings work (Worker CPU). */
+export async function loadHomeHubDataLite(_locale = "en"): Promise<HomeHubData> {
+  const [newsResult, fplResult] = await Promise.allSettled([
+    getWcNewsForApi({ limit: 150, editorialOnly: false, category: "ALL" }),
+    getMiniGameweekContext(),
+  ]);
+
+  const allNews =
+    newsResult.status === "fulfilled" ? newsResult.value.items : [];
+
+  const trending = [...allNews]
+    .sort((a, b) => {
+      const ta = a.published_at ? Date.parse(a.published_at) : 0;
+      const tb = b.published_at ? Date.parse(b.published_at) : 0;
+      return tb - ta;
+    })
+    .slice(0, 8);
+
+  const transferItems = allNews
+    .filter((i) => i.category === "transfer")
+    .slice(0, 5);
+
+  const eplNewsItems = allNews
+    .filter((i) => i.category === "epl")
+    .slice(0, 12);
+
+  const fplCtx =
+    fplResult.status === "fulfilled"
+      ? fplResult.value
+      : {
+          submission_gw: null,
+          submission_open: false,
+          deadline_time: null,
+        };
+
+  return {
+    today: {
+      ticker: [],
+      fpl: {
+        gw: fplCtx.submission_gw,
+        deadline: fplCtx.deadline_time,
+        open: fplCtx.submission_open,
+      },
+    },
+    wc: {
+      nextMatches: [],
+      groupsPreview: [],
+      topScorers: [],
+      topAssists: [],
+    },
+    news: trending.length > 0 ? trending : allNews.slice(0, 8),
+    transferNews: transferItems,
+    eplNews: eplNewsItems.length > 0 ? eplNewsItems : trending,
+  };
+}
+
 export function loadHomeHubDataCached(locale: string): Promise<HomeHubData> {
   return unstable_cache(
     () => loadHomeHubData(locale),
     ["home-hub", locale],
+    { revalidate: 90 },
+  )();
+}
+
+export function loadHomeHubDataLiteCached(locale: string): Promise<HomeHubData> {
+  return unstable_cache(
+    () => loadHomeHubDataLite(locale),
+    ["home-hub-lite", locale],
     { revalidate: 90 },
   )();
 }
