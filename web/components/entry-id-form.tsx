@@ -11,9 +11,12 @@ export { useEntryId } from "./entry-id-context";
 
 export function EntryIdForm({
   redirectTo = "/dashboard",
+  showQuickLinks = true,
 }: {
   /** After save: open this path. Use a function for e.g. `/planner/123` without a query. */
   redirectTo?: string | ((entryId: string) => string);
+  /** Hide dashboard / planner shortcuts (e.g. when links exist elsewhere on the page). */
+  showQuickLinks?: boolean;
 }) {
   const t = useTranslations("entryForm");
   const router = useRouter();
@@ -57,7 +60,7 @@ export function EntryIdForm({
         </label>
         <div className="flex flex-wrap gap-2">
           <Button type="submit">{t("continue")}</Button>
-          {entryId && (
+          {showQuickLinks && entryId && (
             <Button
               type="button"
               variant="secondary"
@@ -66,7 +69,7 @@ export function EntryIdForm({
               {t("viewDashboard")}
             </Button>
           )}
-          {entryId && (
+          {showQuickLinks && entryId && (
             <Button
               type="button"
               variant="secondary"

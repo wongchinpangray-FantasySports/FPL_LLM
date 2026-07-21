@@ -287,60 +287,65 @@ function YourFootballSection({
   const name = profile?.display_name ?? user.email?.split("@")[0] ?? "";
 
   return (
-    <HubSection
-      title={labels.title}
-      description={name ? `${name}` : undefined}
-      action={
-        unreadCount > 0 ? (
-          <span className="rounded-full bg-brand-accent/15 px-2.5 py-1 text-xs font-medium text-brand-accent">
+    <section className="rounded-xl border border-border bg-card/50">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
+          {name ? (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{name}</p>
+          ) : null}
+        </div>
+        {unreadCount > 0 ? (
+          <span className="shrink-0 rounded-full bg-brand-accent/15 px-2 py-0.5 text-[11px] font-medium text-brand-accent">
             {labels.unread.replace("{n}", String(unreadCount))}
           </span>
-        ) : null
-      }
-    >
-      {loading ? (
-        <p className="text-sm text-muted-foreground">{labels.loading}</p>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{labels.empty}</p>
-      ) : (
-        <ul className="divide-y divide-white/[0.06] rounded-xl border border-border bg-card/50">
-          {items.map((n) => (
-            <li key={n.id}>
-              {n.href ? (
-                <Link
-                  href={n.href}
-                  className="block px-4 py-3 no-underline hover:bg-card"
-                >
-                  <p
-                    className={cn(
-                      "text-sm",
-                      n.read_at ? "text-muted-foreground" : "font-medium text-foreground",
-                    )}
+        ) : null}
+      </div>
+      <div className="px-4 py-3">
+        {loading ? (
+          <p className="text-sm text-muted-foreground">{labels.loading}</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{labels.empty}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {items.map((n) => (
+              <li key={n.id}>
+                {n.href ? (
+                  <Link
+                    href={n.href}
+                    className="block py-2.5 no-underline hover:opacity-90"
                   >
-                    {n.title}
-                  </p>
-                  {n.body ? (
-                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                      {n.body}
+                    <p
+                      className={cn(
+                        "text-sm leading-snug",
+                        n.read_at ? "text-muted-foreground" : "font-medium text-foreground",
+                      )}
+                    >
+                      {n.title}
                     </p>
-                  ) : null}
-                </Link>
-              ) : (
-                <div className="px-4 py-3">
-                  <p className="text-sm text-foreground">{n.title}</p>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link
-        href="/inbox"
-        className="text-sm font-medium text-brand-accent no-underline hover:underline"
-      >
-        {labels.inboxCta} →
-      </Link>
-    </HubSection>
+                    {n.body ? (
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {n.body}
+                      </p>
+                    ) : null}
+                  </Link>
+                ) : (
+                  <div className="py-2.5">
+                    <p className="text-sm text-foreground">{n.title}</p>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link
+          href="/inbox"
+          className="mt-2 inline-block text-xs font-medium text-brand-accent no-underline hover:underline"
+        >
+          {labels.inboxCta} →
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -949,61 +954,80 @@ type SquadSnapshot = {
     player_last_name?: string;
     summary_overall_rank?: number;
     summary_overall_points?: number;
+    current_event?: number;
   };
-  picks_gw?: number;
+  picks_gw?: number | null;
+  current_gw?: number | null;
 };
 
 function squadDisplayName(s: SquadSnapshot): string | null {
   const e = s.entry;
   if (!e) return null;
-  if (e.name) return e.name;
+  const teamName = e.name?.trim();
+  if (teamName) return teamName;
   const parts = [e.player_first_name, e.player_last_name].filter(Boolean);
   return parts.length ? parts.join(" ") : null;
 }
 
+function formatSnapshotRank(rank: number | undefined, locale: string): string | null {
+  if (rank == null || rank <= 0) return null;
+  return rank.toLocaleString(locale);
+}
+
+function formatSnapshotPoints(points: number | undefined): string | null {
+  if (points == null || points < 0) return null;
+  return String(points);
+}
+
+function snapshotPlanningGw(s: SquadSnapshot): number | null {
+  const gw = s.picks_gw ?? s.current_gw ?? s.entry?.current_event ?? null;
+  return gw != null && gw > 0 ? gw : null;
+}
+
 function FplSection({
-  todayFpl,
-  locale,
   labels,
 }: {
-  todayFpl: HomeHubData["today"]["fpl"];
-  locale: string;
   labels: {
-    eyebrow: string;
     title: string;
     description: string;
     entryHint: string;
-    deadline: string;
-    gw: string;
     snapshotLoading: string;
     snapshotRank: string;
     snapshotPoints: string;
     snapshotGw: string;
-    openDashboard: string;
-    openPlanner: string;
-    shortcuts: string;
+    snapshotError: string;
+    snapshotEmpty: string;
   };
 }) {
   const { entryId } = useEntryId();
   const [snapshot, setSnapshot] = useState<SquadSnapshot | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
-  const tNav = useTranslations("nav");
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
+  const locale = useLocale();
 
   useEffect(() => {
     if (!entryId) {
       setSnapshot(null);
+      setSnapshotError(null);
       return;
     }
     let cancelled = false;
     setSnapshotLoading(true);
+    setSnapshotError(null);
     fetch(`/api/team/${entryId}`)
       .then(async (res) => {
         const data = (await res.json()) as SquadSnapshot & { error?: string };
-        if (!res.ok) throw new Error(data.error);
-        if (!cancelled) setSnapshot(data);
+        if (!res.ok) throw new Error(data.error ?? labels.snapshotError);
+        if (!cancelled) {
+          setSnapshot(data);
+          setSnapshotError(null);
+        }
       })
-      .catch(() => {
-        if (!cancelled) setSnapshot(null);
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setSnapshot(null);
+          setSnapshotError(err instanceof Error ? err.message : labels.snapshotError);
+        }
       })
       .finally(() => {
         if (!cancelled) setSnapshotLoading(false);
@@ -1011,137 +1035,140 @@ function FplSection({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch when entry id changes
   }, [entryId]);
 
-  const shortcuts = [
-    { href: entryId ? `/dashboard/${entryId}` : "/dashboard", label: tNav("dashboard") },
-    { href: entryId ? `/planner/${entryId}` : "/planner", label: tNav("planner") },
-    { href: entryId ? `/manager/${entryId}` : "/manager", label: tNav("manager") },
-    { href: "/players", label: tNav("players") },
-    { href: "/mini", label: tNav("mini") },
-  ];
-
   return (
-    <HubSection
-      eyebrow={labels.eyebrow}
-      title={labels.title}
-      description={labels.description}
-    >
-      <div className="flex max-w-xl flex-col gap-4">
-          {todayFpl.gw != null && todayFpl.deadline ? (
-            <p className="text-sm text-muted-foreground">
-              {labels.gw.replace("{gw}", String(todayFpl.gw))} ·{" "}
-              {labels.deadline}{" "}
-              <span className="text-foreground/70">
-                {fmtDeadline(todayFpl.deadline, locale)}
-              </span>
-            </p>
-          ) : null}
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <EntryIdForm redirectTo={(id) => `/dashboard/${id}`} />
-            <p className="mt-2 text-xs text-muted-foreground">{labels.entryHint}</p>
-          </div>
-
-          {entryId ? (
-            snapshotLoading ? (
-              <div className="h-20 animate-pulse rounded-xl border border-border bg-card" />
-            ) : snapshot ? (
-              <div className="rounded-xl border border-brand-accent/25 bg-brand-accent/10 p-4">
-                <p className="font-medium text-foreground">
-                  {squadDisplayName(snapshot) ?? `#${entryId}`}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {labels.snapshotRank.replace(
-                    "{rank}",
-                    snapshot.entry?.summary_overall_rank != null
-                      ? snapshot.entry.summary_overall_rank.toLocaleString(locale)
-                      : "—",
-                  )}{" "}
-                  ·{" "}
-                  {labels.snapshotPoints.replace(
-                    "{pts}",
-                    String(snapshot.entry?.summary_overall_points ?? "—"),
-                  )}
-                  {snapshot.picks_gw
-                    ? ` · ${labels.snapshotGw.replace("{gw}", String(snapshot.picks_gw))}`
-                    : ""}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={`/dashboard/${entryId}`}
-                    className={cn(
-                      buttonVariants({ variant: "secondary", size: "sm" }),
-                      "no-underline",
-                    )}
-                  >
-                    {labels.openDashboard}
-                  </Link>
-                  <Link
-                    href={`/planner/${entryId}`}
-                    className={cn(
-                      buttonVariants({ variant: "secondary", size: "sm" }),
-                      "no-underline",
-                    )}
-                  >
-                    {labels.openPlanner}
-                  </Link>
-                </div>
-              </div>
-            ) : null
-          ) : null}
-
-          <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {labels.shortcuts}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {shortcuts.map((s) => (
-                <HubChip key={s.href} href={s.href}>
-                  {s.label}
-                </HubChip>
-              ))}
-            </div>
-          </div>
+    <section className="rounded-xl border border-border bg-card/50">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">{labels.description}</p>
       </div>
-    </HubSection>
+      <div className="flex flex-col gap-4 p-4">
+        <div>
+          <EntryIdForm
+            redirectTo={(id) => `/dashboard/${id}`}
+            showQuickLinks={false}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">{labels.entryHint}</p>
+        </div>
+
+        {entryId ? (
+          snapshotLoading ? (
+            <div className="rounded-lg border border-border bg-card/80 px-3 py-3">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="mt-2 h-3 w-48 animate-pulse rounded bg-muted" />
+              <p className="mt-2 text-xs text-muted-foreground">{labels.snapshotLoading}</p>
+            </div>
+          ) : snapshotError ? (
+            <p className="text-xs text-destructive">{snapshotError}</p>
+          ) : snapshot ? (
+            (() => {
+              const rank = formatSnapshotRank(snapshot.entry?.summary_overall_rank, locale);
+              const points = formatSnapshotPoints(snapshot.entry?.summary_overall_points);
+              const gw = snapshotPlanningGw(snapshot);
+              const stats = [
+                rank != null ? labels.snapshotRank.replace("{rank}", rank) : null,
+                points != null ? labels.snapshotPoints.replace("{pts}", points) : null,
+                gw != null ? labels.snapshotGw.replace("{gw}", String(gw)) : null,
+              ].filter(Boolean);
+
+              return (
+                <div className="rounded-lg border border-brand-accent/20 bg-brand-accent/5 px-3 py-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {squadDisplayName(snapshot) ?? `#${entryId}`}
+                  </p>
+                  {stats.length > 0 ? (
+                    <p className="mt-1 text-xs text-muted-foreground">{stats.join(" · ")}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">{labels.snapshotEmpty}</p>
+                  )}
+                </div>
+              );
+            })()
+          ) : null
+        ) : null}
+      </div>
+    </section>
   );
 }
 
-const EXPLORE_TILES = [
-  { href: "/chat", key: "chat" },
-  { href: "/fpl/preseason", key: "preseason" },
-  { href: "/fpl/fixtures", key: "fixtures" },
-  { href: "/players", key: "players" },
-  { href: "/fpl/historical", key: "historical" },
-  { href: "/mini", key: "mini" },
-] as const;
+type FeatureLink = { href: string; label: string };
 
-function ExploreSection({
+function FeatureGroup({ title, items }: { title: string; items: FeatureLink[] }) {
+  return (
+    <section className="rounded-xl border border-border bg-card/40">
+      <h3 className="border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <ul className="divide-y divide-border">
+        {items.map((item) => (
+          <li key={`${item.href}-${item.label}`}>
+            <Link
+              href={item.href}
+              className="group flex items-center justify-between gap-3 px-4 py-2.5 text-sm no-underline transition-colors hover:bg-card/60"
+            >
+              <span className="text-foreground group-hover:text-brand-accent">{item.label}</span>
+              <span className="shrink-0 text-muted-foreground group-hover:text-brand-accent">
+                →
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function HomeFeatureGroups({
   labels,
 }: {
   labels: {
-    title: string;
-    tiles: Record<(typeof EXPLORE_TILES)[number]["key"], { title: string; body: string }>;
+    manage: string;
+    research: string;
+    tools: string;
+    game: string;
+    dashboard: string;
+    planner: string;
+    manager: string;
+    players: string;
+    fixtures: string;
+    preseason: string;
+    historical: string;
+    chat: string;
+    mini: string;
+    news: string;
   };
 }) {
+  const { entryId } = useEntryId();
+
+  const manage: FeatureLink[] = [
+    { href: entryId ? `/dashboard/${entryId}` : "/dashboard", label: labels.dashboard },
+    { href: entryId ? `/planner/${entryId}` : "/planner", label: labels.planner },
+    { href: entryId ? `/manager/${entryId}` : "/manager", label: labels.manager },
+  ];
+
+  const research: FeatureLink[] = [
+    { href: "/players", label: labels.players },
+    { href: "/fpl/fixtures", label: labels.fixtures },
+    { href: "/fpl/preseason", label: labels.preseason },
+    { href: "/fpl/historical", label: labels.historical },
+  ];
+
+  const tools: FeatureLink[] = [
+    { href: "/chat", label: labels.chat },
+    { href: "/news", label: labels.news },
+  ];
+
+  const game: FeatureLink[] = [{ href: "/mini", label: labels.mini }];
+
   return (
-    <HubSection title={labels.title}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {EXPLORE_TILES.map(({ href, key }) => (
-          <Link
-            key={key}
-            href={href}
-            className="group rounded-xl border border-border bg-card p-4 no-underline transition-colors hover:border-brand-accent/25 hover:bg-card"
-          >
-            <h3 className="font-semibold text-foreground group-hover:text-brand-accent">
-              {labels.tiles[key].title}
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">{labels.tiles[key].body}</p>
-          </Link>
-        ))}
-      </div>
-    </HubSection>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <FeatureGroup title={labels.manage} items={manage} />
+      <FeatureGroup title={labels.research} items={research} />
+      <FeatureGroup title={labels.tools} items={tools} />
+      <FeatureGroup title={labels.game} items={game} />
+    </div>
   );
 }
 
@@ -1217,7 +1244,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
       {hub.today.fpl.gw != null ? (
         <Link
           href="/planner"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-accent/25 bg-brand-accent/10 px-4 py-3 no-underline transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/15"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-accent/25 bg-brand-accent/10 px-4 py-2.5 no-underline transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/15"
         >
           <span className="text-sm font-semibold text-brand-accent">
             {t("todayFpl")} · {t("todayFplGw", { gw: String(hub.today.fpl.gw) })}
@@ -1230,61 +1257,38 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         </Link>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <HubChip href="/fpl" variant="accent">
-          {t("ctaFpl")}
-        </HubChip>
-        <HubChip href="/planner">{t("fplOpenPlanner")}</HubChip>
-        <HubChip href="/news">{t("ctaNews")}</HubChip>
-        <HubChip href="/news?category=transfer">{t("ctaTransfers")}</HubChip>
-        <HubChip href="/chat">{t("openChat")}</HubChip>
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem]">
-        <div className="flex flex-col gap-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(20rem,24rem)] xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div className="flex flex-col gap-5">
           <FplSection
-            todayFpl={hub.today.fpl}
-            locale={locale}
             labels={{
-              eyebrow: t("fplEyebrow"),
               title: t("fplTitle"),
               description: t("fplDescription"),
               entryHint: t("entryHint"),
-              deadline: t("fplDeadline"),
-              gw: t("fplGw"),
               snapshotLoading: t("fplSnapshotLoading"),
               snapshotRank: t("fplSnapshotRank"),
               snapshotPoints: t("fplSnapshotPoints"),
               snapshotGw: t("fplSnapshotGw"),
-              openDashboard: t("fplOpenDashboard"),
-              openPlanner: t("fplOpenPlanner"),
-              shortcuts: t("fplShortcuts"),
+              snapshotError: t("fplSnapshotError"),
+              snapshotEmpty: t("fplSnapshotEmpty"),
             }}
           />
 
-          <ExploreSection
+          <HomeFeatureGroups
             labels={{
-              title: t("exploreTitle"),
-              tiles: {
-                chat: { title: t("exploreChatTitle"), body: t("exploreChatBody") },
-                preseason: {
-                  title: t("explorePreseasonTitle"),
-                  body: t("explorePreseasonBody"),
-                },
-                fixtures: {
-                  title: t("exploreFixturesTitle"),
-                  body: t("exploreFixturesBody"),
-                },
-                players: {
-                  title: t("explorePlayersTitle"),
-                  body: t("explorePlayersBody"),
-                },
-                historical: {
-                  title: t("exploreHistoricalTitle"),
-                  body: t("exploreHistoricalBody"),
-                },
-                mini: { title: t("exploreMiniTitle"), body: t("exploreMiniBody") },
-              },
+              manage: t("homeGroupManage"),
+              research: t("homeGroupResearch"),
+              tools: t("homeGroupTools"),
+              game: t("homeGroupGame"),
+              dashboard: t("fplOpenDashboard"),
+              planner: t("fplOpenPlanner"),
+              manager: t("homeGroupManager"),
+              players: t("explorePlayersTitle"),
+              fixtures: t("exploreFixturesTitle"),
+              preseason: t("explorePreseasonTitle"),
+              historical: t("exploreHistoricalTitle"),
+              chat: t("exploreChatTitle"),
+              mini: t("exploreMiniTitle"),
+              news: t("sidebarNews"),
             }}
           />
 
@@ -1293,32 +1297,33 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           ) : null}
         </div>
 
-        <HomeNewsSidebar
-          news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
-          transfers={hub.transferNews}
-          labels={{
-            newsTitle: t("sidebarNews"),
-            transfersTitle: t("sidebarTransfers"),
-            seeAll: t("newsAll"),
-            seeTransfers: t("ctaTransfers"),
-            empty: t("newsEmpty"),
-          }}
-        />
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
+          <YourFootballSection
+            labels={{
+              title: t("yourFootballTitle"),
+              guestTitle: t("yourFootballGuestTitle"),
+              guestBody: t("yourFootballGuestBody"),
+              signUp: t("yourFootballSignUp"),
+              signIn: t("yourFootballSignIn"),
+              inboxCta: t("yourFootballInbox"),
+              empty: t("yourFootballEmpty"),
+              loading: t("loading"),
+              unread: t("yourFootballUnread"),
+            }}
+          />
+          <HomeNewsSidebar
+            news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
+            transfers={hub.transferNews}
+            labels={{
+              newsTitle: t("sidebarNews"),
+              transfersTitle: t("sidebarTransfers"),
+              seeAll: t("newsAll"),
+              seeTransfers: t("ctaTransfers"),
+              empty: t("newsEmpty"),
+            }}
+          />
+        </aside>
       </div>
-
-      <YourFootballSection
-        labels={{
-          title: t("yourFootballTitle"),
-          guestTitle: t("yourFootballGuestTitle"),
-          guestBody: t("yourFootballGuestBody"),
-          signUp: t("yourFootballSignUp"),
-          signIn: t("yourFootballSignIn"),
-          inboxCta: t("yourFootballInbox"),
-          empty: t("yourFootballEmpty"),
-          loading: t("loading"),
-          unread: t("yourFootballUnread"),
-        }}
-      />
     </div>
   );
 }
