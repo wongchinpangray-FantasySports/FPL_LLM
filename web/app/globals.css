@@ -196,10 +196,6 @@ html:not(.team-themed) .home-hub-card-hero::after {
   z-index: 1;
 }
 
-.home-hub-divider {
-  border-color: color-mix(in srgb, var(--team-primary) 16%, hsl(var(--border)));
-}
-
 .home-hub-feature-group {
   position: relative;
   overflow: hidden;
@@ -263,7 +259,6 @@ html.team-themed .home-hub-feature-title {
 }
 
 .home-hub-snapshot {
-  border-color: color-mix(in srgb, var(--team-primary) 28%, hsl(var(--border)));
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--team-primary) 12%, transparent),

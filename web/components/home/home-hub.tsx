@@ -288,7 +288,7 @@ function YourFootballSection({
 
   return (
     <section className="home-hub-card rounded-xl border">
-      <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
+      <div className="flex items-center justify-between px-4 pb-2 pt-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
           {name ? (
@@ -301,13 +301,13 @@ function YourFootballSection({
           </span>
         ) : null}
       </div>
-      <div className="px-4 py-3">
+      <div className="px-4 pb-3 pt-0">
         {loading ? (
           <p className="text-sm text-muted-foreground">{labels.loading}</p>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{labels.empty}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="space-y-1">
             {items.map((n) => (
               <li key={n.id}>
                 {n.href ? (
@@ -471,7 +471,7 @@ function HomeNewsSidebar({
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
       <section className="home-hub-card rounded-xl border">
-        <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
+        <div className="flex items-center justify-between px-4 pb-2 pt-3">
           <h2 className="text-sm font-semibold text-foreground">{labels.newsTitle}</h2>
           <Link
             href="/news"
@@ -480,7 +480,7 @@ function HomeNewsSidebar({
             {labels.seeAll}
           </Link>
         </div>
-        <div className="home-hub-divider divide-y px-4">
+        <div className="space-y-1 px-4 pb-3">
           {news.length > 0 ? (
             news.map((item) => <HomeNewsSidebarItem key={item.id} item={item} />)
           ) : (
@@ -491,7 +491,7 @@ function HomeNewsSidebar({
 
       {transfers.length > 0 ? (
         <section className="home-hub-card rounded-xl border">
-          <div className="flex items-center justify-between home-hub-divider border-b px-4 py-3">
+          <div className="flex items-center justify-between px-4 pb-2 pt-3">
             <h2 className="text-sm font-semibold text-foreground">{labels.transfersTitle}</h2>
             <Link
               href="/news?category=transfer"
@@ -500,7 +500,7 @@ function HomeNewsSidebar({
               {labels.seeTransfers}
             </Link>
           </div>
-          <div className="home-hub-divider divide-y px-4">
+          <div className="space-y-1 px-4 pb-3">
             {transfers.map((item) => (
               <HomeNewsSidebarItem key={item.id} item={item} />
             ))}
@@ -1042,11 +1042,11 @@ function FplSection({
     <section className="home-hub-card home-hub-card-hero rounded-xl border">
       <div aria-hidden className="home-hub-glow-primary" />
       <div aria-hidden className="home-hub-glow-secondary" />
-      <div className="home-hub-card-inner home-hub-divider border-b px-4 py-3">
+      <div className="home-hub-card-inner px-4 pb-2 pt-3">
         <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">{labels.description}</p>
       </div>
-      <div className="home-hub-card-inner flex flex-col gap-4 p-4">
+      <div className="home-hub-card-inner flex flex-col gap-4 px-4 pb-4 pt-1">
         <div>
           <EntryIdForm
             redirectTo={(id) => `/dashboard/${id}`}
@@ -1076,7 +1076,7 @@ function FplSection({
               ].filter(Boolean);
 
               return (
-                <div className="home-hub-snapshot rounded-lg border px-3 py-3">
+                <div className="home-hub-snapshot rounded-lg px-3 py-3">
                   <p className="text-sm font-medium text-foreground">
                     {squadDisplayName(snapshot) ?? `#${entryId}`}
                   </p>
@@ -1111,10 +1111,10 @@ function FeatureGroup({
       className="home-hub-feature-group rounded-xl border"
       data-variant={String(variant % 4)}
     >
-      <h3 className="home-hub-feature-title home-hub-divider border-b px-4 py-2.5 text-xs font-semibold uppercase tracking-wide">
+      <h3 className="home-hub-feature-title px-4 pb-1.5 pt-2.5 text-xs font-semibold uppercase tracking-wide">
         {title}
       </h3>
-      <ul className="home-hub-divider divide-y">
+      <ul className="pb-1">
         {items.map((item) => (
           <li key={`${item.href}-${item.label}`}>
             <Link
