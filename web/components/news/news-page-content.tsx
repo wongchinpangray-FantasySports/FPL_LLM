@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import type { NewsCategory } from "@/lib/wc/news-feeds";
 import { WcNewsPanel } from "@/components/worldcup/wc-news-panel";
+import { NewsSubNav } from "@/components/news/news-sub-nav";
 
 export function NewsPageContent({ defaultCategory = "trending" }: { defaultCategory?: NewsCategory }) {
   const locale = useLocale();
@@ -10,7 +11,9 @@ export function NewsPageContent({ defaultCategory = "trending" }: { defaultCateg
   const tIndex = useTranslations("newsIndex");
 
   return (
-    <WcNewsPanel
+    <div className="flex flex-col gap-4">
+      <NewsSubNav />
+      <WcNewsPanel
       locale={locale}
       title=""
       summary=""
@@ -46,6 +49,7 @@ export function NewsPageContent({ defaultCategory = "trending" }: { defaultCateg
           events: tIndex("catEvents"),
         },
       }}
-    />
+      />
+    </div>
   );
 }

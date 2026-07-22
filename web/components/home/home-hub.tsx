@@ -497,14 +497,12 @@ function HomeNewsSidebar({
         <section className="home-hub-card rounded-xl border">
           <div className="flex items-center justify-between px-4 pb-2 pt-3">
             <h2 className="text-sm font-semibold text-foreground">{labels.fplXTitle}</h2>
-            <a
-              href="https://x.com/search?q=FPL%20(injury%20OR%20lineup%20OR%20transfer)&src=typed_query&f=live"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/news/fpl-x"
               className="text-xs font-medium text-brand-accent no-underline hover:underline"
             >
               {labels.seeFplX}
-            </a>
+            </Link>
           </div>
           <div className="space-y-1 px-4 pb-3">
             {fplTweets.map((item) => (

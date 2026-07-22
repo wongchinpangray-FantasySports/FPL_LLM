@@ -167,6 +167,26 @@ function categorizeFplTweet(text: string): NewsCategory {
   return "epl";
 }
 
+export type FplXTopic = "all" | "injury" | "lineup" | "transfer";
+
+export function matchesFplXTopic(text: string, topic: FplXTopic): boolean {
+  if (topic === "all") return true;
+  if (topic === "injury") return INJURY_RE.test(text);
+  if (topic === "lineup") return LINEUP_RE.test(text);
+  if (topic === "transfer") return TRANSFER_RE.test(text);
+  return true;
+}
+
+export function filterFplXItems(
+  items: WcNewsItem[],
+  topic: FplXTopic,
+): WcNewsItem[] {
+  if (topic === "all") return items;
+  return items.filter((item) =>
+    matchesFplXTopic(`${item.title} ${item.summary}`, topic),
+  );
+}
+
 function mapSyndicationTweet(
   tweet: SyndicationTweet,
   source: { outlet: string; alwaysInclude: boolean },

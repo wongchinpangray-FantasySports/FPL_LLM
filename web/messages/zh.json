@@ -18,6 +18,7 @@
     "worldcup": "世界杯",
     "worldcupCentre": "赛事中心",
     "news": "新闻",
+    "newsFplX": "FPL 动态",
     "play": "游戏",
     "playSection": "小游戏",
     "miniFpl": "Mini 5 · FPL",
@@ -1061,7 +1062,17 @@
     "catEpl": "英超 / FPL",
     "catWorldCup": "世界杯",
     "catLeagues": "联赛",
-    "catEvents": "赛事"
+    "catEvents": "赛事",
+    "navAllNews": "全部新闻",
+    "navFplX": "FPL 动态",
+    "fplXTitle": "FPL 动态",
+    "fplXSummary": "FPL 官方及精选 X 账号 —— 伤病、首发预测、转会等范特西相关动态。",
+    "fplXEmpty": "暂无缓存动态 —— 同步任务每 20 分钟运行一次，请稍后刷新或再访问。",
+    "fplXOpenOnX": "在 X 上搜索",
+    "fplXTopicAll": "全部",
+    "fplXTopicInjury": "伤病",
+    "fplXTopicLineup": "首发",
+    "fplXTopicTransfer": "转会"
   },
   "fplHub": {
     "title": "英超范特西 FPL",

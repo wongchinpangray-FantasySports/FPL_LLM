@@ -208,7 +208,15 @@ export function SiteHeader() {
                 <MenuLink
                   href="/news"
                   label={t("news")}
-                  active={pathname === "/news" || pathname.startsWith("/news/")}
+                  active={
+                    pathname === "/news" ||
+                    (pathname.startsWith("/news") && !pathname.startsWith("/news/fpl-x"))
+                  }
+                />
+                <MenuLink
+                  href="/news/fpl-x"
+                  label={t("newsFplX")}
+                  active={pathname.startsWith("/news/fpl-x")}
                 />
               </MenuSection>
 

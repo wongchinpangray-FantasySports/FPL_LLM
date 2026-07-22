@@ -139,6 +139,9 @@ export function SiteNav() {
       <NavLink href="/news" active={pathname === "/news"}>
         {t("news")}
       </NavLink>
+      <NavLink href="/news/fpl-x" active={pathname.startsWith("/news/fpl-x")}>
+        {t("newsFplX")}
+      </NavLink>
     </nav>
   );
 }
