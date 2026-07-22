@@ -3,6 +3,11 @@ import {
   loadCachedPreseasonExternalResults,
   mergeExternalResultsOntoMatch,
 } from "@/lib/fpl/preseason-sources";
+import {
+  fetchGoalsForFinishedMatch,
+  findReportUrlsForMatch,
+  needsPreseasonGoalFetch,
+} from "@/lib/fpl/preseason-scorers";
 
 const API_BASE = "https://v3.football.api-sports.io";
 
@@ -354,6 +359,26 @@ export async function enrichPreseasonMatchesFromSources<
         status = api.status;
         pl_goals = api.pl_goals;
         opp_goals = api.opp_goals;
+      }
+    }
+
+    const enriched = {
+      ...m,
+      kickoff_time,
+      goals,
+      status,
+      pl_goals,
+      opp_goals,
+    };
+
+    if (needsPreseasonGoalFetch(enriched)) {
+      const reportUrls = findReportUrlsForMatch(enriched, external);
+      const fetchedGoals = await fetchGoalsForFinishedMatch(
+        enriched,
+        reportUrls,
+      );
+      if (fetchedGoals.length > goals.length) {
+        goals = fetchedGoals;
       }
     }
 

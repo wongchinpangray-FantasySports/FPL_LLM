@@ -379,7 +379,38 @@
       "pl_goals": 5,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Brian Madjo",
+          "assist": "Kosta Nedeljković",
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Brian Madjo",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "George Hemmings",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Luka Lynch",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Aidan Borland",
+          "assist": "Luka Lynch",
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "nfo-2026-07-22-20",

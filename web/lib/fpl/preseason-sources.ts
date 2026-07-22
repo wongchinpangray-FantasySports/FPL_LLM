@@ -80,6 +80,7 @@ export type PreseasonExternalResult = {
   awayGoals: number;
   source: "pl-official" | "rss";
   feedId?: string;
+  reportUrl?: string;
 };
 
 export type PreseasonMatchRef = {
@@ -354,6 +355,8 @@ function parseRssXml(xml: string, feedId: string): PreseasonExternalResult[] {
       "";
     parsed.date = isoDateOnly(pub) ?? parsed.date;
     parsed.feedId = feedId;
+    parsed.reportUrl =
+      item.match(/<link>([^<]+)<\/link>/i)?.[1]?.trim() ?? undefined;
     if (!parsed.date) continue;
 
     results.push(parsed);

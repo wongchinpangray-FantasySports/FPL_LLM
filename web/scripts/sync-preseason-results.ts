@@ -38,6 +38,7 @@ async function main() {
       `external_results=${result.external_results}`,
       `updated=${result.updated}`,
       `newly_finished=${result.newly_finished}`,
+      `goals_updated=${result.goals_updated}`,
       `wrote_file=${result.wrote_file}`,
     ].join(" "),
   );

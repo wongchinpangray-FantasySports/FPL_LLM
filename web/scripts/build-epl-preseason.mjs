@@ -238,6 +238,13 @@ const ROWS = [
     home: false,
     pl_goals: 5,
     opp_goals: 0,
+    goals: [
+      g("Brian Madjo", "pl", "", "Kosta Nedeljković"),
+      g("Brian Madjo", "pl"),
+      g("George Hemmings", "pl"),
+      g("Luka Lynch", "pl"),
+      g("Aidan Borland", "pl", "", "Luka Lynch"),
+    ],
   },
   { date: "2026-07-25", pl: "AVL", opponent: "Porto", home: false },
   { date: "2026-07-28", pl: "AVL", opponent: "Real Sociedad", home: true, venue: "Walsall" },

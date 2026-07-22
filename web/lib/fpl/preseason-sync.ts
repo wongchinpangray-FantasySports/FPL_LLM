@@ -12,12 +12,19 @@ import {
   preseasonMatchChanged,
   resolvePreseasonMatchFromApi,
 } from "@/lib/fpl/preseason-enrich";
+import {
+  fetchGoalsForFinishedMatch,
+  findReportUrlsForMatch,
+  needsPreseasonGoalFetch,
+  preseasonGoalsChanged,
+} from "@/lib/fpl/preseason-scorers";
 
 export type PreseasonSyncResult = {
   path: string;
   total: number;
   updated: number;
   newly_finished: number;
+  goals_updated: number;
   external_results: number;
   wrote_file: boolean;
 };
@@ -32,10 +39,17 @@ function normalizeMatch(
   };
 }
 
+function matchSyncChanged(before: PreseasonMatch, after: PreseasonMatch): boolean {
+  return (
+    preseasonAppliedChanged(before, after) ||
+    preseasonGoalsChanged(before.goals, after.goals)
+  );
+}
+
 async function resolveMatchUpdates(
   before: PreseasonMatch,
   externalResults: Awaited<ReturnType<typeof fetchAllPreseasonExternalResults>>,
-): Promise<PreseasonMatch> {
+): Promise<{ match: PreseasonMatch; goals_updated: boolean }> {
   let next = mergeExternalResultsOntoMatch(before, externalResults);
 
   if (process.env.API_FOOTBALL_KEY?.trim()) {
@@ -45,7 +59,17 @@ async function resolveMatchUpdates(
     }
   }
 
-  return next;
+  let goals_updated = false;
+  if (needsPreseasonGoalFetch(next)) {
+    const reportUrls = findReportUrlsForMatch(next, externalResults);
+    const goals = await fetchGoalsForFinishedMatch(next, reportUrls);
+    if (preseasonGoalsChanged(next.goals, goals)) {
+      next = { ...next, goals };
+      goals_updated = true;
+    }
+  }
+
+  return { match: next, goals_updated };
 }
 
 export async function syncPreseasonResultsJson(
@@ -60,16 +84,21 @@ export async function syncPreseasonResultsJson(
 
   let updated = 0;
   let newly_finished = 0;
+  let goals_updated = 0;
   const matches: PreseasonMatch[] = [];
 
   for (const raw of bundle.matches) {
     const before = normalizeMatch(raw);
-    const next = await resolveMatchUpdates(before, externalResults);
+    const resolved = await resolveMatchUpdates(before, externalResults);
+    const next = resolved.match;
 
-    if (preseasonAppliedChanged(before, next)) {
+    if (matchSyncChanged(before, next)) {
       updated += 1;
       if (before.status === "scheduled" && next.status === "finished") {
         newly_finished += 1;
+      }
+      if (resolved.goals_updated) {
+        goals_updated += 1;
       }
     }
 
@@ -91,6 +120,7 @@ export async function syncPreseasonResultsJson(
     total: bundle.matches.length,
     updated,
     newly_finished,
+    goals_updated,
     external_results: externalResults.length,
     wrote_file,
   };
