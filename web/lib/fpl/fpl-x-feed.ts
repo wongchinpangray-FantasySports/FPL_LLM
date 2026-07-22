@@ -35,6 +35,21 @@ const FPL_X_ACCOUNTS = [
   { handle: "_pauljoyce", outlet: "Paul Joyce", alwaysInclude: false },
 ] as const;
 
+export type FplXAccount = (typeof FPL_X_ACCOUNTS)[number];
+
+export function resolveFplXAccount(
+  handle: string,
+): { outlet: string; alwaysInclude: boolean } | null {
+  const normalized = handle.replace(/^@/, "").trim().toLowerCase();
+  if (!normalized) return null;
+  const account = FPL_X_ACCOUNTS.find(
+    (row) => row.handle.toLowerCase() === normalized,
+  );
+  return account
+    ? { outlet: account.outlet, alwaysInclude: account.alwaysInclude }
+    : null;
+}
+
 export const FPL_X_ACCOUNT_COUNT = FPL_X_ACCOUNTS.length;
 export const FPL_X_WEEK_DAYS = 7;
 const FPL_OFFICIAL_OUTLET = "FPL Official";
@@ -280,10 +295,15 @@ function mapSyndicationTweet(
   };
 }
 
+function syndicationDelayMs(): number {
+  const raw = Number(process.env.FPL_X_SYNDICATION_DELAY_MS ?? "4000");
+  return Number.isFinite(raw) ? Math.max(1500, Math.min(12_000, raw)) : 4000;
+}
+
 async function fetchSyndicationProfile(
   handle: string,
   perAccount: number,
-): Promise<SyndicationTweet[]> {
+): Promise<{ tweets: SyndicationTweet[]; rateLimited: boolean }> {
   const url = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}`;
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -299,15 +319,16 @@ async function fetchSyndicationProfile(
       });
       if (res.status === 429) {
         await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
+        if (attempt === 1) return { tweets: [], rateLimited: true };
         continue;
       }
-      if (!res.ok) return [];
+      if (!res.ok) return { tweets: [], rateLimited: false };
 
       const html = await res.text();
       const m = html.match(
         /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/,
       );
-      if (!m?.[1]) return [];
+      if (!m?.[1]) return { tweets: [], rateLimited: false };
 
       const data = JSON.parse(m[1]) as {
         props?: {
@@ -326,50 +347,119 @@ async function fetchSyndicationProfile(
         if (tweet) out.push(tweet);
         if (out.length >= perAccount) break;
       }
-      return out;
+      return { tweets: out, rateLimited: false };
     } catch {
-      if (attempt === 1) return [];
+      if (attempt === 1) return { tweets: [], rateLimited: false };
       await new Promise((r) => setTimeout(r, 1500));
     }
   }
-  return [];
+  return { tweets: [], rateLimited: false };
+}
+
+async function fetchSyndicationTweetById(
+  tweetId: string,
+): Promise<SyndicationTweet | null> {
+  const url = `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&lang=en&token=1`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        ...FETCH_HEADERS,
+        Accept: "application/json",
+        Referer: "https://platform.twitter.com/",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const tweet = (await res.json()) as SyndicationTweet;
+    if (tweet.__typename === "TweetTombstone" || !tweet.id_str?.trim()) {
+      return null;
+    }
+    return tweet;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshCachedFplXTweets(
+  cachedItems: WcNewsItem[],
+  limit: number,
+): Promise<WcNewsItem[]> {
+  const candidates = cachedItems
+    .filter((item) => item.feed_id === FEED_ID)
+    .slice(0, limit);
+  const out: WcNewsItem[] = [];
+
+  for (const item of candidates) {
+    const tweetId = item.id.replace(`${FEED_ID}:`, "");
+    if (!tweetId) {
+      out.push(item);
+      continue;
+    }
+
+    const tweet = await fetchSyndicationTweetById(tweetId);
+    if (!tweet) {
+      out.push(item);
+      continue;
+    }
+
+    const handle = tweet.user?.screen_name?.trim() ?? "";
+    const account =
+      resolveFplXAccount(handle) ??
+      ({ outlet: item.outlet, alwaysInclude: false } as const);
+    const mapped = mapSyndicationTweet(tweet, account);
+    out.push(mapped ?? item);
+    await new Promise((r) => setTimeout(r, 350));
+  }
+
+  return out;
 }
 
 async function fetchSyndicationTweets(limit: number): Promise<WcNewsItem[]> {
-  const official = FPL_X_ACCOUNTS[0]!;
-  const others = FPL_X_ACCOUNTS.slice(1);
-  const officialCap = Math.min(15, Math.max(8, Math.ceil(limit * 0.35)));
-  const out: WcNewsItem[] = [];
-
-  const officialTweets = await fetchSyndicationProfile(
-    official.handle,
-    officialCap,
+  // Official accounts are covered by premierleague.com embeds — skip them here to
+  // save syndication budget for community / journalist accounts.
+  const accounts = FPL_X_ACCOUNTS.filter(
+    (account) => account.outlet !== FPL_OFFICIAL_OUTLET,
   );
-  for (const tweet of officialTweets) {
-    const item = mapSyndicationTweet(tweet, official);
-    if (item) out.push(item);
-  }
+  const perAccount = Math.max(2, Math.ceil(limit / accounts.length));
+  const out: WcNewsItem[] = [];
+  let consecutiveRateLimits = 0;
+  const delayMs = syndicationDelayMs();
 
-  const perOther = Math.max(2, Math.ceil((limit - officialCap) / others.length));
-  const batchSize = 4;
+  const batchSize = Math.max(
+    3,
+    Math.min(
+      8,
+      Number(process.env.FPL_X_SYNDICATION_BATCH_SIZE ?? "5") || 5,
+    ),
+  );
+  const batchCount = Math.max(1, Math.ceil(accounts.length / batchSize));
+  const runBucket = Math.floor(Date.now() / (10 * 60 * 1000));
+  const batchIndex = runBucket % batchCount;
+  const batch = accounts.slice(
+    batchIndex * batchSize,
+    batchIndex * batchSize + batchSize,
+  );
 
-  for (let i = 0; i < others.length; i += batchSize) {
-    const batch = others.slice(i, i + batchSize);
-    const batches = await Promise.all(
-      batch.map(async (account) => {
-        const tweets = await fetchSyndicationProfile(account.handle, perOther);
-        const items: WcNewsItem[] = [];
-        for (const tweet of tweets) {
-          const item = mapSyndicationTweet(tweet, account);
-          if (item) items.push(item);
-        }
-        return items;
-      }),
+  for (const account of batch) {
+    const { tweets, rateLimited } = await fetchSyndicationProfile(
+      account.handle,
+      perAccount,
     );
-    out.push(...batches.flat());
-    if (i + batchSize < others.length) {
-      await new Promise((r) => setTimeout(r, 600));
+
+    if (rateLimited) {
+      consecutiveRateLimits += 1;
+      if (consecutiveRateLimits >= 3) break;
+    } else {
+      consecutiveRateLimits = 0;
     }
+
+    for (const tweet of tweets) {
+      const item = mapSyndicationTweet(tweet, account);
+      if (item) out.push(item);
+    }
+
+    await new Promise((r) => setTimeout(r, delayMs));
   }
 
   return out;
@@ -478,17 +568,39 @@ function finalizeFplXFeed(items: WcNewsItem[], limit: number): WcNewsItem[] {
   const thisWeek = deduped.filter((item) => isFplXWithinWeek(item.published_at));
   const pool =
     thisWeek.length >= Math.min(8, limit) ? thisWeek : deduped;
-  return sortFplXItems(pool).slice(0, limit);
+  const sorted = sortFplXItems(pool);
+  const official = sorted.filter((item) => item.outlet === FPL_OFFICIAL_OUTLET);
+  const community = sorted.filter((item) => item.outlet !== FPL_OFFICIAL_OUTLET);
+
+  if (community.length === 0) {
+    return sorted.slice(0, limit);
+  }
+
+  const communityCap = Math.min(
+    community.length,
+    Math.max(12, Math.floor(limit * 0.55)),
+  );
+  const officialCap = Math.min(official.length, limit - communityCap);
+  return sortFplXItems([
+    ...official.slice(0, officialCap),
+    ...community.slice(0, communityCap),
+  ]).slice(0, limit);
 }
 
 /** FPL-related X posts: official account + injuries, line-ups, transfers (GitHub Actions sync). */
 export async function fetchFplXTweets(opts?: {
   limit?: number;
+  cachedItems?: WcNewsItem[];
 }): Promise<WcNewsItem[]> {
   const limit = Math.min(60, Math.max(5, opts?.limit ?? 45));
 
   const { fetchFplXFromPlEmbeds } = await import("@/lib/fpl/fpl-x-pl-embeds");
-  const plEmbeds = await fetchFplXFromPlEmbeds({ limit: 20, weekOnly: false });
+  const [plEmbeds, cachedRefresh] = await Promise.all([
+    fetchFplXFromPlEmbeds({ limit: 20, weekOnly: false }),
+    opts?.cachedItems?.length
+      ? refreshCachedFplXTweets(opts.cachedItems, 30)
+      : Promise.resolve([] as WcNewsItem[]),
+  ]);
 
   const syndication = await fetchSyndicationTweets(limit);
 
@@ -498,7 +610,7 @@ export async function fetchFplXTweets(opts?: {
   );
 
   return finalizeFplXFeed(
-    [...plEmbeds, ...syndication, ...rssBatches.flat()],
+    [...plEmbeds, ...syndication, ...rssBatches.flat(), ...cachedRefresh],
     limit,
   );
 }

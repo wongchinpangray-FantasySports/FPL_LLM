@@ -9,6 +9,10 @@ import { getWcNewsForApi } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import { filterFplXThisWeek, sortFplXItems } from "@/lib/fpl/fpl-x-feed";
 import {
+  loadFplXDigestFromDb,
+  londonDigestDateIso,
+} from "@/lib/fpl/fpl-x-digest";
+import {
   buildGroupTablesFromFifaMatches,
   buildLeaderboardsFromFifaMatches,
   loadTeamsByCode,
@@ -38,6 +42,12 @@ export type TodayTickerItem = {
   match: HomeMatchSnippet;
 };
 
+export type HomeFplDailyTeaser = {
+  digest_date: string;
+  summary: string;
+  source_count: number;
+};
+
 export type HomeHubData = {
   today: {
     ticker: TodayTickerItem[];
@@ -57,6 +67,7 @@ export type HomeHubData = {
   transferNews: WcNewsItem[];
   eplNews: WcNewsItem[];
   fplTweets: WcNewsItem[];
+  fplDailyDigest: HomeFplDailyTeaser | null;
 };
 
 function toSnippet(m: WcMatchRow): HomeMatchSnippet {
@@ -163,14 +174,31 @@ function pickFplTweets(sources: WcNewsItem[][], limit = 8): WcNewsItem[] {
   );
 }
 
+async function loadFplDailyTeaser(
+  locale: string,
+): Promise<HomeFplDailyTeaser | null> {
+  const digest = await loadFplXDigestFromDb(londonDigestDateIso());
+  if (!digest?.summary_en) return null;
+  const summary =
+    locale.toLowerCase().startsWith("zh") && digest.summary_zh
+      ? digest.summary_zh
+      : digest.summary_en;
+  return {
+    digest_date: digest.digest_date,
+    summary,
+    source_count: digest.source_items.length,
+  };
+}
+
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
-  const [wcResult, newsResult, transferResult, eplNewsResult, fplResult] =
+  const [wcResult, newsResult, transferResult, eplNewsResult, fplResult, digestResult] =
     await Promise.allSettled([
       loadWcHub(locale),
       getWcNewsForApi({ limit: 10, editorialOnly: false, category: "trending" }),
       getWcNewsForApi({ limit: 8, editorialOnly: false, category: "transfer" }),
       getWcNewsForApi({ limit: 12, editorialOnly: false, category: "epl" }),
       getMiniGameweekContext(),
+      loadFplDailyTeaser(locale),
     ]);
 
   const wcBundle =
@@ -235,14 +263,17 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
     transferNews: transferItems,
     eplNews: eplNewsItems,
     fplTweets: fplTweetItems,
+    fplDailyDigest:
+      digestResult.status === "fulfilled" ? digestResult.value : null,
   };
 }
 
 /** Home hub only needs FPL deadline + news — skip WC match/standings work (Worker CPU). */
-export async function loadHomeHubDataLite(_locale = "en"): Promise<HomeHubData> {
-  const [newsResult, fplResult] = await Promise.allSettled([
+export async function loadHomeHubDataLite(locale = "en"): Promise<HomeHubData> {
+  const [newsResult, fplResult, digestResult] = await Promise.allSettled([
     getWcNewsForApi({ limit: 150, editorialOnly: false, category: "ALL" }),
     getMiniGameweekContext(),
+    loadFplDailyTeaser(locale),
   ]);
 
   const allNews =
@@ -294,6 +325,8 @@ export async function loadHomeHubDataLite(_locale = "en"): Promise<HomeHubData> 
     transferNews: transferItems,
     eplNews: eplNewsItems.length > 0 ? eplNewsItems : trending,
     fplTweets: fplTweetItems,
+    fplDailyDigest:
+      digestResult.status === "fulfilled" ? digestResult.value : null,
   };
 }
 

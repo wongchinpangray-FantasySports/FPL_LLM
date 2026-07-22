@@ -624,6 +624,7 @@ async function mapWithConcurrency<T, R>(
 export async function fetchWcNewsItems(opts?: {
   limit?: number;
   editorialOnly?: boolean;
+  cachedFplXItems?: WcNewsItem[];
 }): Promise<WcNewsItem[]> {
   const limit = Math.min(150, Math.max(20, opts?.limit ?? 100));
   const editorialOnly = opts?.editorialOnly ?? false;
@@ -632,7 +633,10 @@ export async function fetchWcNewsItems(opts?: {
   const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
   const [plItems, fplTweetItems] = await Promise.all([
     fetchPremierLeagueNewsItems({ limit: 35 }).catch(() => [] as WcNewsItem[]),
-    fetchFplXTweets({ limit: 45 }).catch(() => [] as WcNewsItem[]),
+    fetchFplXTweets({
+      limit: 45,
+      cachedItems: opts?.cachedFplXItems,
+    }).catch(() => [] as WcNewsItem[]),
   ]);
   const plBudget = Math.min(plItems.length, 35);
   const fplTweetBudget = Math.min(fplTweetItems.length, 45);

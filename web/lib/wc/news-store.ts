@@ -86,13 +86,24 @@ export async function saveWcNewsToDb(items: WcNewsItem[]): Promise<string> {
 export async function syncWcNews(): Promise<{
   count: number;
   fpl_x_count: number;
+  fpl_x_community_count: number;
   fetched_at: string;
 }> {
-  const items = await fetchWcNewsItems({ limit: 150, editorialOnly: false });
+  const existing = await loadWcNewsFromDb();
+  const cachedFplX = existing.items.filter((item) => item.feed_id === "fpl-x");
+  const items = await fetchWcNewsItems({
+    limit: 150,
+    editorialOnly: false,
+    cachedFplXItems: cachedFplX,
+  });
   const fetched_at = await saveWcNewsToDb(items);
   memCache = { at: Date.now(), items, fetched_at };
-  const fpl_x_count = items.filter((i) => i.feed_id === "fpl-x").length;
-  return { count: items.length, fpl_x_count, fetched_at };
+  const fplItems = items.filter((i) => i.feed_id === "fpl-x");
+  const fpl_x_count = fplItems.length;
+  const fpl_x_community_count = fplItems.filter(
+    (i) => i.outlet !== "FPL Official",
+  ).length;
+  return { count: items.length, fpl_x_count, fpl_x_community_count, fetched_at };
 }
 
 export async function getWcNewsForApi(opts?: {

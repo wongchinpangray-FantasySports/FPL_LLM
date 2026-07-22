@@ -1,5 +1,9 @@
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
-import { isFplXWithinWeek } from "@/lib/fpl/fpl-x-feed";
+import {
+  isFplRelevantTweet,
+  isFplXWithinWeek,
+  resolveFplXAccount,
+} from "@/lib/fpl/fpl-x-feed";
 
 const PL_API = "https://api.premierleague.com";
 const PL_SITE = "https://www.premierleague.com";
@@ -77,12 +81,17 @@ function parseTweetEmbedsFromBody(
     const tweetId = statusMatch?.[1];
     if (!tweetId) continue;
 
-    const handleMatch = block.match(/@([A-Za-z0-9_]+)\)/);
+    const handleMatch =
+      block.match(/(?:twitter\.com|x\.com)\/(\w+)\/status/i) ??
+      block.match(/@([A-Za-z0-9_]+)\)/);
     const handle = handleMatch?.[1] ?? "OfficialFPL";
 
     const paragraph = block.match(/<p[^>]*dir="ltr"[^>]*>([\s\S]*?)<\/p>/i);
     const text = stripHtml(paragraph?.[1] ?? "").slice(0, 400);
     if (!text) continue;
+
+    const account = resolveFplXAccount(handle);
+    if (!account && !isFplRelevantTweet(text)) continue;
 
     const published_at =
       parseBlockquoteDate(block) ?? parseTweetDate(article.date ?? null);
@@ -94,7 +103,7 @@ function parseTweetEmbedsFromBody(
       summary: text,
       image_url: article.imageUrl?.trim() || null,
       published_at,
-      outlet: "FPL Official",
+      outlet: account?.outlet ?? `@${handle}`,
       region: "UK",
       lang: "en",
       feed_id: FEED_ID,
@@ -127,6 +136,10 @@ function isFplArticle(article: PlArticleListItem): boolean {
   return FPL_ARTICLE_RE.test(text);
 }
 
+function articlePriority(article: PlArticleListItem): number {
+  return isFplArticle(article) ? 0 : 1;
+}
+
 /** Official @OfficialFPL posts embedded on premierleague.com FPL articles. */
 export async function fetchFplXFromPlEmbeds(opts?: {
   limit?: number;
@@ -146,8 +159,13 @@ export async function fetchFplXFromPlEmbeds(opts?: {
 
   const candidates = pages
     .flatMap((list) => list?.content ?? [])
-    .filter((a) => a.type === "text" && isFplArticle(a))
-    .slice(0, 18);
+    .filter((a) => a.type === "text")
+    .sort(
+      (a, b) =>
+        articlePriority(a) - articlePriority(b) ||
+        Date.parse(b.date ?? "") - Date.parse(a.date ?? ""),
+    )
+    .slice(0, 24);
 
   const bodies = await Promise.all(
     candidates.map(async (article) => {

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -46,6 +46,17 @@ jobs:
           done
           echo "RSSHub not ready — syndication-only sync"
           echo "FPL_X_RSSHUB_BASE=" >> "$GITHUB_ENV"
+
+      - name: Check RSSHub Twitter route (FPL X community accounts)
+        run: |
+          if [ -z "${{ secrets.TWITTER_AUTH_TOKEN }}" ]; then
+            echo "::warning::TWITTER_AUTH_TOKEN is not set — curated FPL X accounts may not sync (official @OfficialFPL still works via PL embeds)."
+          fi
+          code=$(curl -s -o /tmp/rsshub-x.json -w "%{http_code}" "http://localhost:1200/twitter/user/LetsTalk_FPL" || true)
+          echo "RSSHub LetsTalk_FPL HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::RSSHub Twitter route failed ($code). Add TWITTER_AUTH_TOKEN (+ optional TWITTER_USERNAME/PASSWORD) in repo secrets for community X posts."
+          fi
 
       - name: Install web deps
         working-directory: web

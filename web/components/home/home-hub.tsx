@@ -457,23 +457,65 @@ function HomeNewsSidebar({
   news,
   transfers,
   fplTweets,
+  fplDailyDigest,
   labels,
 }: {
   news: WcNewsItem[];
   transfers: WcNewsItem[];
   fplTweets: WcNewsItem[];
+  fplDailyDigest: {
+    digest_date: string;
+    summary: string;
+    source_count: number;
+  } | null;
   labels: {
     newsTitle: string;
     transfersTitle: string;
     fplXTitle: string;
+    fplDailyTitle: string;
     seeAll: string;
     seeTransfers: string;
     seeFplX: string;
+    seeFplDaily: string;
+    fplDailySources: string;
     empty: string;
   };
 }) {
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
+      {fplDailyDigest ? (
+        <section className="home-hub-card rounded-xl border border-brand-accent/25 bg-brand-accent/5">
+          <div className="flex items-center justify-between px-4 pb-2 pt-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              {labels.fplDailyTitle}
+            </h2>
+            <Link
+              href="/news/fpl-daily"
+              className="text-xs font-medium text-brand-accent no-underline hover:underline"
+            >
+              {labels.seeFplDaily}
+            </Link>
+          </div>
+          <Link
+            href="/news/fpl-daily"
+            className="block px-4 pb-3 no-underline transition-opacity hover:opacity-90"
+          >
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              {fplDailyDigest.digest_date}
+            </p>
+            <p className="mt-1.5 line-clamp-5 text-sm leading-relaxed text-foreground/90">
+              {fplDailyDigest.summary}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {labels.fplDailySources.replace(
+                "{n}",
+                String(fplDailyDigest.source_count),
+              )}
+            </p>
+          </Link>
+        </section>
+      ) : null}
+
       <section className="home-hub-card rounded-xl border">
         <div className="flex items-center justify-between px-4 pb-2 pt-3">
           <h2 className="text-sm font-semibold text-foreground">{labels.newsTitle}</h2>
@@ -1263,6 +1305,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     transferNews: [],
     eplNews: [],
     fplTweets: [],
+    fplDailyDigest: null,
   };
 
   if (!authLoading && !user) {
@@ -1354,13 +1397,17 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
             news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
             transfers={hub.transferNews}
             fplTweets={hub.fplTweets}
+            fplDailyDigest={hub.fplDailyDigest}
             labels={{
               newsTitle: t("sidebarNews"),
               transfersTitle: t("sidebarTransfers"),
               fplXTitle: t("sidebarFplX"),
+              fplDailyTitle: t("sidebarFplDaily"),
               seeAll: t("newsAll"),
               seeTransfers: t("ctaTransfers"),
               seeFplX: t("sidebarFplXSee"),
+              seeFplDaily: t("sidebarFplDailySee"),
+              fplDailySources: t("sidebarFplDailySources"),
               empty: t("newsEmpty"),
             }}
           />

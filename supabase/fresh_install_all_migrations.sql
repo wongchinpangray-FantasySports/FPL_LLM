@@ -460,3 +460,29 @@ create index if not exists wc_players_season_club_null_idx
   on public.wc_players (id)
   where season_club is null;
 
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- 0023_fpl_x_digests.sql
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+create table if not exists public.fpl_x_digests (
+  digest_date          date primary key,
+  window_start         timestamptz not null,
+  window_end           timestamptz not null,
+  summary_json         jsonb not null default '{}'::jsonb,
+  source_items         jsonb not null default '[]'::jsonb,
+  source_fingerprint   text not null default '',
+  model                text,
+  generated_at         timestamptz not null default now(),
+  updated_at           timestamptz not null default now()
+);
+
+create index if not exists fpl_x_digests_generated_at_idx
+  on public.fpl_x_digests (generated_at desc);
+
+alter table public.fpl_x_digests enable row level security;
+
+create policy "fpl_x_digests read"
+  on public.fpl_x_digests for select
+  using (true);
+
