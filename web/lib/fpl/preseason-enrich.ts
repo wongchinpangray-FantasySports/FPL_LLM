@@ -1,5 +1,5 @@
 /**
- * Enrich pre-season rows with kickoff times and goal events from API-Football.
+ * Enrich pre-season rows with kickoff times, scores, and goal events from API-Football.
  */
 
 const API_BASE = "https://v3.football.api-sports.io";
@@ -27,6 +27,8 @@ const PL_API_TEAM_IDS: Record<string, number> = {
   TOT: 47,
 };
 
+const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
+
 type ApiFixture = {
   fixture: { id: number; date: string; status: { short: string } };
   teams: { home: { name: string }; away: { name: string } };
@@ -52,6 +54,22 @@ export type PreseasonGoal = {
 export type PreseasonMatchEnriched = {
   kickoff_time: string | null;
   goals: PreseasonGoal[];
+  status: "finished" | "scheduled";
+  pl_goals: number | null;
+  opp_goals: number | null;
+};
+
+export type PreseasonMatchInput = {
+  date: string;
+  pl_code: string;
+  pl_name: string;
+  opponent: string;
+  pl_home: boolean;
+  status: "finished" | "scheduled" | string;
+  pl_goals?: number | null;
+  opp_goals?: number | null;
+  kickoff_time?: string | null;
+  goals?: PreseasonGoal[];
 };
 
 let fixtureCache: {
@@ -135,16 +153,62 @@ function findFixture(
   opponent: string,
   date: string,
 ): ApiFixture | null {
-  for (const fx of fixtures) {
-    if (fx.fixture.date.slice(0, 10) !== date) continue;
-    if (
-      opponentMatches(fx.teams.home.name, opponent) ||
-      opponentMatches(fx.teams.away.name, opponent)
-    ) {
-      return fx;
+  const tryDates = [date];
+  const d = new Date(`${date}T12:00:00Z`);
+  if (!Number.isNaN(d.getTime())) {
+    const prev = new Date(d);
+    prev.setUTCDate(prev.getUTCDate() - 1);
+    const next = new Date(d);
+    next.setUTCDate(next.getUTCDate() + 1);
+    tryDates.push(prev.toISOString().slice(0, 10), next.toISOString().slice(0, 10));
+  }
+
+  for (const day of tryDates) {
+    for (const fx of fixtures) {
+      if (fx.fixture.date.slice(0, 10) !== day) continue;
+      if (
+        opponentMatches(fx.teams.home.name, opponent) ||
+        opponentMatches(fx.teams.away.name, opponent)
+      ) {
+        return fx;
+      }
     }
   }
   return null;
+}
+
+function isFixtureFinished(status: string): boolean {
+  return FINISHED_STATUSES.has(status);
+}
+
+function scoresFromFixture(
+  fx: ApiFixture,
+  plHome: boolean,
+): { pl_goals: number; opp_goals: number } | null {
+  const home = fx.goals.home;
+  const away = fx.goals.away;
+  if (home == null || away == null) return null;
+  return plHome
+    ? { pl_goals: home, opp_goals: away }
+    : { pl_goals: away, opp_goals: home };
+}
+
+function goalsWithMinutes(goals: PreseasonGoal[]): number {
+  return goals.filter((g) => g.minute.trim().length > 0).length;
+}
+
+function pickGoals(
+  existing: PreseasonGoal[],
+  fetched: PreseasonGoal[],
+): PreseasonGoal[] {
+  if (fetched.length === 0) return existing;
+  const existingMinutes = goalsWithMinutes(existing);
+  const fetchedMinutes = goalsWithMinutes(fetched);
+  if (fetchedMinutes > existingMinutes) return fetched;
+  if (fetched.length > existing.length && fetchedMinutes >= existingMinutes) {
+    return fetched;
+  }
+  return existing.length > 0 ? existing : fetched;
 }
 
 async function loadGoalEvents(
@@ -183,73 +247,84 @@ async function loadGoalEvents(
   return goals;
 }
 
-export async function enrichPreseasonMatch(
-  match: {
-    date: string;
-    pl_code: string;
-    pl_name: string;
-    opponent: string;
-    pl_home: boolean;
-    status: string;
-    kickoff_time?: string | null;
-    goals?: PreseasonGoal[];
-  },
-): Promise<PreseasonMatchEnriched> {
-  const base: PreseasonMatchEnriched = {
+function baseEnrichment(match: PreseasonMatchInput): PreseasonMatchEnriched {
+  return {
     kickoff_time: match.kickoff_time ?? null,
     goals: match.goals ?? [],
+    status: match.status === "finished" ? "finished" : "scheduled",
+    pl_goals: match.pl_goals ?? null,
+    opp_goals: match.opp_goals ?? null,
   };
+}
 
-  if (!apiKey()) return base;
+/** Clear in-memory fixture cache (for sync scripts). */
+export function clearPreseasonFixtureCache(): void {
+  fixtureCache = null;
+}
+
+export async function resolvePreseasonMatchFromApi(
+  match: PreseasonMatchInput,
+): Promise<PreseasonMatchEnriched | null> {
+  if (!apiKey()) return null;
 
   const teamId = PL_API_TEAM_IDS[match.pl_code];
-  if (!teamId) return base;
+  if (!teamId) return null;
 
   try {
     const fixtures = await loadTeamFixtures(teamId);
     const fx = findFixture(fixtures, match.opponent, match.date);
-    if (!fx) return base;
+    if (!fx) return null;
 
+    const base = baseEnrichment(match);
     const kickoff_time = fx.fixture.date;
-    let goals = base.goals;
+    let { status, pl_goals, opp_goals, goals } = base;
 
-    if (
-      match.status === "finished" &&
-      (fx.fixture.status.short === "FT" ||
-        fx.fixture.status.short === "AET" ||
-        fx.fixture.status.short === "PEN")
-    ) {
-      const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
-      // Prefer API events when they add detail; keep curated static rows otherwise.
-      if (fetched.length >= (base.goals?.length ?? 0)) {
-        goals = fetched.length > 0 ? fetched : base.goals;
+    if (isFixtureFinished(fx.fixture.status.short)) {
+      const scores = scoresFromFixture(fx, match.pl_home);
+      if (scores) {
+        status = "finished";
+        pl_goals = scores.pl_goals;
+        opp_goals = scores.opp_goals;
+        const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
+        goals = pickGoals(base.goals, fetched);
       }
+    } else if (status === "finished") {
+      const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
+      goals = pickGoals(base.goals, fetched);
     }
 
-    return { kickoff_time, goals };
+    return { kickoff_time, goals, status, pl_goals, opp_goals };
   } catch {
-    return base;
+    return null;
   }
 }
 
+export function preseasonMatchChanged(
+  before: PreseasonMatchInput,
+  after: PreseasonMatchEnriched,
+): boolean {
+  return (
+    (before.kickoff_time ?? null) !== after.kickoff_time ||
+    before.status !== after.status ||
+    (before.pl_goals ?? null) !== after.pl_goals ||
+    (before.opp_goals ?? null) !== after.opp_goals ||
+    JSON.stringify(before.goals ?? []) !== JSON.stringify(after.goals)
+  );
+}
+
+export async function enrichPreseasonMatch(
+  match: PreseasonMatchInput,
+): Promise<PreseasonMatchEnriched> {
+  const base = baseEnrichment(match);
+  const resolved = await resolvePreseasonMatchFromApi(match);
+  return resolved ?? base;
+}
+
 export async function enrichPreseasonMatches<
-  T extends {
-    date: string;
-    pl_code: string;
-    pl_name: string;
-    opponent: string;
-    pl_home: boolean;
-    status: string;
-    kickoff_time?: string | null;
-    goals?: PreseasonGoal[];
-  },
+  T extends PreseasonMatchInput,
 >(matches: T[]): Promise<(T & PreseasonMatchEnriched)[]> {
   if (!apiKey()) {
-    return matches.map((m) => ({
-      ...m,
-      kickoff_time: m.kickoff_time ?? null,
-      goals: m.goals ?? [],
-    }));
+    return matches.map((m) => ({ ...m, ...baseEnrichment(m) }));
   }
 
   const out: (T & PreseasonMatchEnriched)[] = [];
