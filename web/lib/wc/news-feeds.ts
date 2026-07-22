@@ -632,10 +632,10 @@ export async function fetchWcNewsItems(opts?: {
   const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
   const [plItems, fplTweetItems] = await Promise.all([
     fetchPremierLeagueNewsItems({ limit: 35 }).catch(() => [] as WcNewsItem[]),
-    fetchFplXTweets({ limit: 20 }).catch(() => [] as WcNewsItem[]),
+    fetchFplXTweets({ limit: 35 }).catch(() => [] as WcNewsItem[]),
   ]);
   const plBudget = Math.min(plItems.length, 35);
-  const fplTweetBudget = Math.min(fplTweetItems.length, 20);
+  const fplTweetBudget = Math.min(fplTweetItems.length, 35);
   const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget);
 
   const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {

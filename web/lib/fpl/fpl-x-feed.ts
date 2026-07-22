@@ -16,11 +16,25 @@ const FPL_X_ACCOUNTS = [
   { handle: "BenCrellin", outlet: "Ben Crellin", alwaysInclude: false },
   { handle: "FFScout", outlet: "FFScout", alwaysInclude: false },
   { handle: "FPLGeneral", outlet: "FPL General", alwaysInclude: false },
+  { handle: "FPLFocal", outlet: "FPL Focal", alwaysInclude: false },
+  { handle: "LetsTalk_FPL", outlet: "Let's Talk FPL", alwaysInclude: false },
+  { handle: "Always_182", outlet: "Always182", alwaysInclude: false },
+  { handle: "FPLMate", outlet: "FPL Mate", alwaysInclude: false },
+  { handle: "AllAboutFPL", outlet: "All About FPL", alwaysInclude: false },
+  { handle: "FPLFamily", outlet: "FPL Family", alwaysInclude: false },
+  { handle: "FPLHints", outlet: "FPL Hints", alwaysInclude: false },
+  { handle: "TotalFPL", outlet: "Total FPL", alwaysInclude: false },
   { handle: "PremierInjury", outlet: "Premier Injuries", alwaysInclude: false },
   { handle: "PhysioRoom", outlet: "PhysioRoom", alwaysInclude: false },
+  { handle: "FootballInjuries", outlet: "Football Injuries", alwaysInclude: false },
+  { handle: "premierleague", outlet: "Premier League", alwaysInclude: false },
+  { handle: "SkySportsPL", outlet: "Sky Sports PL", alwaysInclude: false },
   { handle: "FabrizioRomano", outlet: "Fabrizio Romano", alwaysInclude: false },
   { handle: "David_Ornstein", outlet: "David Ornstein", alwaysInclude: false },
+  { handle: "_pauljoyce", outlet: "Paul Joyce", alwaysInclude: false },
 ] as const;
+
+export const FPL_X_ACCOUNT_COUNT = FPL_X_ACCOUNTS.length;
 
 const FPL_RE =
   /\bFPL\b|fantasy premier league|gameweek|(?:^|\s)GW\s?\d|deadline|price change|wildcard|bench boost|triple captain|free hit|clean sheet|bonus point|expected points|\bxP\b/i;
@@ -285,22 +299,44 @@ async function fetchSyndicationProfile(
 }
 
 async function fetchSyndicationTweets(limit: number): Promise<WcNewsItem[]> {
-  const perAccount = Math.max(3, Math.ceil(limit / FPL_X_ACCOUNTS.length));
+  const perAccount = Math.max(2, Math.ceil(limit / FPL_X_ACCOUNTS.length));
   const out: WcNewsItem[] = [];
+  const batchSize = 4;
 
-  for (let i = 0; i < FPL_X_ACCOUNTS.length; i++) {
-    const account = FPL_X_ACCOUNTS[i]!;
-    const tweets = await fetchSyndicationProfile(account.handle, perAccount);
-    for (const tweet of tweets) {
-      const item = mapSyndicationTweet(tweet, account);
-      if (item) out.push(item);
-    }
-    if (i < FPL_X_ACCOUNTS.length - 1) {
-      await new Promise((r) => setTimeout(r, 800));
+  for (let i = 0; i < FPL_X_ACCOUNTS.length; i += batchSize) {
+    const batch = FPL_X_ACCOUNTS.slice(i, i + batchSize);
+    const batches = await Promise.all(
+      batch.map(async (account) => {
+        const tweets = await fetchSyndicationProfile(account.handle, perAccount);
+        const items: WcNewsItem[] = [];
+        for (const tweet of tweets) {
+          const item = mapSyndicationTweet(tweet, account);
+          if (item) items.push(item);
+        }
+        return items;
+      }),
+    );
+    out.push(...batches.flat());
+    if (i + batchSize < FPL_X_ACCOUNTS.length) {
+      await new Promise((r) => setTimeout(r, 600));
     }
   }
 
   return out;
+}
+
+function buildRsshubUrls(base: string): string[] {
+  const root = base.replace(/\/$/, "");
+  const urls = FPL_X_ACCOUNTS.map(
+    (account) => `${root}/twitter/user/${account.handle}`,
+  );
+  urls.push(
+    `${root}/twitter/keyword/FPL%20injury`,
+    `${root}/twitter/keyword/FPL%20lineup`,
+    `${root}/twitter/keyword/FPL%20transfer`,
+    `${root}/twitter/hashtag/FPL`,
+  );
+  return urls;
 }
 
 function parseRssUrls(): string[] {
@@ -318,6 +354,8 @@ function parseRssUrls(): string[] {
   if (single) urls.push(single);
   const fallback = process.env.FPL_X_RSS_FALLBACK_URL?.trim();
   if (fallback) urls.push(fallback);
+  const rsshubBase = process.env.FPL_X_RSSHUB_BASE?.trim();
+  if (rsshubBase) urls.push(...buildRsshubUrls(rsshubBase));
   return [...new Set(urls)];
 }
 
@@ -394,7 +432,7 @@ function dedupeFplTweets(items: WcNewsItem[]): WcNewsItem[] {
 export async function fetchFplXTweets(opts?: {
   limit?: number;
 }): Promise<WcNewsItem[]> {
-  const limit = Math.min(30, Math.max(5, opts?.limit ?? 20));
+  const limit = Math.min(50, Math.max(5, opts?.limit ?? 35));
 
   const syndication = await fetchSyndicationTweets(limit);
 

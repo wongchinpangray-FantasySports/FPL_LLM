@@ -1068,7 +1068,7 @@
     "navFplX": "FPL on X",
     "fplXTitle": "FPL on X",
     "fplXSummary": "Official FPL posts plus injuries, predicted line-ups, and transfer news from curated X accounts.",
-    "fplXEmpty": "No FPL posts cached yet — the sync job runs every 20 minutes. Try refresh or check back shortly.",
+    "fplXEmpty": "No FPL posts cached yet — the sync job runs every 10 minutes. Try refresh or check back shortly.",
     "fplXOpenOnX": "Search live on X",
     "fplXTopicAll": "All",
     "fplXTopicInjury": "Injuries",
