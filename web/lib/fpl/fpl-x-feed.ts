@@ -13,6 +13,7 @@ const FETCH_HEADERS: Record<string, string> = {
 /** Curated X accounts — official + FPL team news, injuries, transfers. */
 const FPL_X_ACCOUNTS = [
   { handle: "FantasyPremierLeague", outlet: "FPL Official", alwaysInclude: true },
+  { handle: "OfficialFPL", outlet: "FPL Official", alwaysInclude: true },
   { handle: "BenCrellin", outlet: "Ben Crellin", alwaysInclude: false },
   { handle: "FFScout", outlet: "FFScout", alwaysInclude: false },
   { handle: "FPLGeneral", outlet: "FPL General", alwaysInclude: false },
@@ -486,6 +487,9 @@ export async function fetchFplXTweets(opts?: {
 }): Promise<WcNewsItem[]> {
   const limit = Math.min(60, Math.max(5, opts?.limit ?? 45));
 
+  const { fetchFplXFromPlEmbeds } = await import("@/lib/fpl/fpl-x-pl-embeds");
+  const plEmbeds = await fetchFplXFromPlEmbeds({ limit: 20, weekOnly: false });
+
   const syndication = await fetchSyndicationTweets(limit);
 
   const rssUrls = parseRssUrls();
@@ -493,7 +497,10 @@ export async function fetchFplXTweets(opts?: {
     rssUrls.map((url) => fetchRssTweets(url, limit)),
   );
 
-  return finalizeFplXFeed([...syndication, ...rssBatches.flat()], limit);
+  return finalizeFplXFeed(
+    [...plEmbeds, ...syndication, ...rssBatches.flat()],
+    limit,
+  );
 }
 
 /** @deprecated Use fetchFplXTweets */

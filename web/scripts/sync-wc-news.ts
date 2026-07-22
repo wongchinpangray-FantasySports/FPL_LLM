@@ -30,7 +30,10 @@ loadEnvLocal();
 
 async function main() {
   const result = await syncWcNews();
-  console.log(`Synced ${result.count} news items at ${result.fetched_at}`);
+  const fplCount = result.fpl_x_count ?? 0;
+  console.log(
+    `Synced ${result.count} news items (${fplCount} FPL X) at ${result.fetched_at}`,
+  );
 }
 
 main().catch((e) => {

@@ -85,12 +85,14 @@ export async function saveWcNewsToDb(items: WcNewsItem[]): Promise<string> {
 
 export async function syncWcNews(): Promise<{
   count: number;
+  fpl_x_count: number;
   fetched_at: string;
 }> {
   const items = await fetchWcNewsItems({ limit: 150, editorialOnly: false });
   const fetched_at = await saveWcNewsToDb(items);
   memCache = { at: Date.now(), items, fetched_at };
-  return { count: items.length, fetched_at };
+  const fpl_x_count = items.filter((i) => i.feed_id === "fpl-x").length;
+  return { count: items.length, fpl_x_count, fetched_at };
 }
 
 export async function getWcNewsForApi(opts?: {
