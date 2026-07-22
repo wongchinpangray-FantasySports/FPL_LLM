@@ -1,5 +1,6 @@
 /**
  * Sync pre-season friendly scores into epl-preseason-2627.json (GitHub Actions / manual).
+ * Uses Premier League official article + RSS feeds — no API-Football subscription required.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -28,16 +29,13 @@ function loadEnvLocal(): void {
 loadEnvLocal();
 
 async function main() {
-  if (!process.env.API_FOOTBALL_KEY?.trim()) {
-    throw new Error("API_FOOTBALL_KEY is required");
-  }
-
   const result = await syncPreseasonResultsJson();
   console.log(
     [
       "Pre-season sync complete.",
       `path=${result.path}`,
       `total=${result.total}`,
+      `external_results=${result.external_results}`,
       `updated=${result.updated}`,
       `newly_finished=${result.newly_finished}`,
       `wrote_file=${result.wrote_file}`,

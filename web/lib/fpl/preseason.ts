@@ -1,7 +1,7 @@
 import preseasonData from "@/data/epl-preseason-2627.json";
 import { getEpl2627Season } from "@/lib/fpl/epl-2627";
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
-import { enrichPreseasonMatches } from "@/lib/fpl/preseason-enrich";
+import { loadPreseasonBundleWithSources } from "@/lib/fpl/preseason-enrich";
 
 export type { PreseasonGoal };
 
@@ -61,9 +61,7 @@ export function getPreseasonBundle(): PreseasonBundle {
 }
 
 export async function loadPreseasonBundle(): Promise<PreseasonBundle> {
-  const base = getPreseasonBundle();
-  const matches = await enrichPreseasonMatches(base.matches);
-  return { ...base, matches };
+  return loadPreseasonBundleWithSources(getPreseasonBundle());
 }
 
 export function groupPreseasonByClub(

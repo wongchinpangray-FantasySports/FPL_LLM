@@ -17,8 +17,6 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +30,7 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Sync pre-season scores from API-Football
+      - name: Sync pre-season scores from PL official + RSS
         working-directory: web
         run: npx tsx scripts/sync-preseason-results.ts
 
@@ -45,9 +43,9 @@ jobs:
             echo "No pre-season data changes to commit."
           else
             git commit -m "$(cat <<'EOF'
-Sync pre-season friendly results from API-Football.
+Sync pre-season friendly results from PL official article and RSS.
 
-Automated score and goal updates for the bundled pre-season JSON.
+Automated score updates for the bundled pre-season JSON without API-Football.
 EOF
 )"
             git push

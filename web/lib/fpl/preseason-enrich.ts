@@ -1,6 +1,8 @@
-/**
- * Enrich pre-season rows with kickoff times, scores, and goal events from API-Football.
- */
+import type { PreseasonBundle } from "@/lib/fpl/preseason";
+import {
+  loadCachedPreseasonExternalResults,
+  mergeExternalResultsOntoMatch,
+} from "@/lib/fpl/preseason-sources";
 
 const API_BASE = "https://v3.football.api-sports.io";
 
@@ -323,16 +325,56 @@ export async function enrichPreseasonMatch(
 export async function enrichPreseasonMatches<
   T extends PreseasonMatchInput,
 >(matches: T[]): Promise<(T & PreseasonMatchEnriched)[]> {
-  if (!apiKey()) {
-    return matches.map((m) => ({ ...m, ...baseEnrichment(m) }));
+  return enrichPreseasonMatchesFromSources(matches);
+}
+
+export async function enrichPreseasonMatchesFromSources<
+  T extends PreseasonMatchInput,
+>(matches: T[]): Promise<(T & PreseasonMatchEnriched)[]> {
+  const external = await loadCachedPreseasonExternalResults();
+  const out: (T & PreseasonMatchEnriched)[] = [];
+
+  for (const m of matches) {
+    const merged = mergeExternalResultsOntoMatch(m, external);
+    const base = baseEnrichment(merged);
+    const api = apiKey() ? await resolvePreseasonMatchFromApi(merged) : null;
+
+    let kickoff_time = base.kickoff_time;
+    let goals = base.goals;
+    let status = base.status;
+    let pl_goals = base.pl_goals;
+    let opp_goals = base.opp_goals;
+
+    if (api) {
+      kickoff_time = api.kickoff_time ?? kickoff_time;
+      if (api.goals.length >= goals.length) {
+        goals = api.goals.length > 0 ? api.goals : goals;
+      }
+      if (status !== "finished" && api.status === "finished") {
+        status = api.status;
+        pl_goals = api.pl_goals;
+        opp_goals = api.opp_goals;
+      }
+    }
+
+    out.push({
+      ...m,
+      kickoff_time,
+      goals,
+      status,
+      pl_goals,
+      opp_goals,
+    });
   }
 
-  const out: (T & PreseasonMatchEnriched)[] = [];
-  for (const m of matches) {
-    const enriched = await enrichPreseasonMatch(m);
-    out.push({ ...m, ...enriched });
-  }
   return out;
+}
+
+export async function loadPreseasonBundleWithSources(
+  base: PreseasonBundle,
+): Promise<PreseasonBundle> {
+  const matches = await enrichPreseasonMatchesFromSources(base.matches);
+  return { ...base, matches };
 }
 
 export function isPreseasonApiConfigured(): boolean {

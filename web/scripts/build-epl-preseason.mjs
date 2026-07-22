@@ -3,8 +3,8 @@
  * Source: https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results
  *
  * Optional per-row `goals` and `kickoff_time` are curated from club match reports,
- * BBC/Sky/local press, and FotMob where minutes are published. API-Football may
- * override these at runtime when API_FOOTBALL_KEY is set.
+ * BBC/Sky/local press, and FotMob where minutes are published. Automated sync
+ * (scripts/sync-preseason-results.ts) merges PL official article + RSS scores.
  *
  * Run: node web/scripts/build-epl-preseason.mjs
  */
@@ -231,7 +231,14 @@ const ROWS = [
   { date: "2026-08-09", pl: "ARS", opponent: "Borussia Dortmund", home: true },
   { date: "2026-08-16", pl: "ARS", opponent: "Man City", home: true, venue: "Cardiff", note: "FA Community Shield" },
   // Aston Villa
-  { date: "2026-07-21", pl: "AVL", opponent: "Walsall", home: false },
+  {
+    date: "2026-07-21",
+    pl: "AVL",
+    opponent: "Walsall",
+    home: false,
+    pl_goals: 5,
+    opp_goals: 0,
+  },
   { date: "2026-07-25", pl: "AVL", opponent: "Porto", home: false },
   { date: "2026-07-28", pl: "AVL", opponent: "Real Sociedad", home: true, venue: "Walsall" },
   { date: "2026-08-01", pl: "AVL", opponent: "Indonesia All-Stars", home: true, venue: "Jakarta" },
