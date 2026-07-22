@@ -456,15 +456,19 @@ function HomeNewsSidebarItem({ item }: { item: WcNewsItem }) {
 function HomeNewsSidebar({
   news,
   transfers,
+  fplTweets,
   labels,
 }: {
   news: WcNewsItem[];
   transfers: WcNewsItem[];
+  fplTweets: WcNewsItem[];
   labels: {
     newsTitle: string;
     transfersTitle: string;
+    fplXTitle: string;
     seeAll: string;
     seeTransfers: string;
+    seeFplX: string;
     empty: string;
   };
 }) {
@@ -488,6 +492,27 @@ function HomeNewsSidebar({
           )}
         </div>
       </section>
+
+      {fplTweets.length > 0 ? (
+        <section className="home-hub-card rounded-xl border">
+          <div className="flex items-center justify-between px-4 pb-2 pt-3">
+            <h2 className="text-sm font-semibold text-foreground">{labels.fplXTitle}</h2>
+            <a
+              href="https://x.com/search?q=FPL%20(injury%20OR%20lineup%20OR%20transfer)&src=typed_query&f=live"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-brand-accent no-underline hover:underline"
+            >
+              {labels.seeFplX}
+            </a>
+          </div>
+          <div className="space-y-1 px-4 pb-3">
+            {fplTweets.map((item) => (
+              <HomeNewsSidebarItem key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {transfers.length > 0 ? (
         <section className="home-hub-card rounded-xl border">
@@ -1239,6 +1264,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     news: [],
     transferNews: [],
     eplNews: [],
+    fplTweets: [],
   };
 
   if (!authLoading && !user) {
@@ -1329,11 +1355,14 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           <HomeNewsSidebar
             news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
             transfers={hub.transferNews}
+            fplTweets={hub.fplTweets}
             labels={{
               newsTitle: t("sidebarNews"),
               transfersTitle: t("sidebarTransfers"),
+              fplXTitle: t("sidebarFplX"),
               seeAll: t("newsAll"),
               seeTransfers: t("ctaTransfers"),
+              seeFplX: t("sidebarFplXSee"),
               empty: t("newsEmpty"),
             }}
           />

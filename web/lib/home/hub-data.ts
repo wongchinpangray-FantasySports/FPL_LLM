@@ -55,6 +55,7 @@ export type HomeHubData = {
   news: WcNewsItem[];
   transferNews: WcNewsItem[];
   eplNews: WcNewsItem[];
+  fplTweets: WcNewsItem[];
 };
 
 function toSnippet(m: WcMatchRow): HomeMatchSnippet {
@@ -144,6 +145,26 @@ async function loadWcHub(locale = "en"): Promise<HomeHubData["wc"] & { ticker: T
   };
 }
 
+function pickFplTweets(sources: WcNewsItem[][], limit = 8): WcNewsItem[] {
+  const seen = new Set<string>();
+  const out: WcNewsItem[] = [];
+  for (const items of sources) {
+    for (const item of items) {
+      if (item.feed_id !== "fpl-x") continue;
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      out.push(item);
+    }
+  }
+  return out
+    .sort((a, b) => {
+      const ta = a.published_at ? Date.parse(a.published_at) : 0;
+      const tb = b.published_at ? Date.parse(b.published_at) : 0;
+      return tb - ta;
+    })
+    .slice(0, limit);
+}
+
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
   const [wcResult, newsResult, transferResult, eplNewsResult, fplResult] =
     await Promise.allSettled([
@@ -170,13 +191,23 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
 
   const transferItems =
     transferResult.status === "fulfilled"
-      ? transferResult.value.items.slice(0, 5)
+      ? transferResult.value.items
+          .filter((i) => i.feed_id !== "fpl-x")
+          .slice(0, 5)
       : [];
 
   const eplNewsItems =
     eplNewsResult.status === "fulfilled"
-      ? eplNewsResult.value.items.slice(0, 12)
+      ? eplNewsResult.value.items
+          .filter((i) => i.feed_id !== "fpl-x")
+          .slice(0, 12)
       : newsItems;
+
+  const fplTweetItems = pickFplTweets([
+    newsResult.status === "fulfilled" ? newsResult.value.items : [],
+    transferResult.status === "fulfilled" ? transferResult.value.items : [],
+    eplNewsResult.status === "fulfilled" ? eplNewsResult.value.items : [],
+  ]);
 
   const fplCtx =
     fplResult.status === "fulfilled"
@@ -205,6 +236,7 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
     news: newsItems,
     transferNews: transferItems,
     eplNews: eplNewsItems,
+    fplTweets: fplTweetItems,
   };
 }
 
@@ -227,12 +259,14 @@ export async function loadHomeHubDataLite(_locale = "en"): Promise<HomeHubData> 
     .slice(0, 8);
 
   const transferItems = allNews
-    .filter((i) => i.category === "transfer")
+    .filter((i) => i.category === "transfer" && i.feed_id !== "fpl-x")
     .slice(0, 5);
 
   const eplNewsItems = allNews
-    .filter((i) => i.category === "epl")
+    .filter((i) => i.category === "epl" && i.feed_id !== "fpl-x")
     .slice(0, 12);
+
+  const fplTweetItems = pickFplTweets([allNews]);
 
   const fplCtx =
     fplResult.status === "fulfilled"
@@ -261,6 +295,7 @@ export async function loadHomeHubDataLite(_locale = "en"): Promise<HomeHubData> 
     news: trending.length > 0 ? trending : allNews.slice(0, 8),
     transferNews: transferItems,
     eplNews: eplNewsItems.length > 0 ? eplNewsItems : trending,
+    fplTweets: fplTweetItems,
   };
 }
 

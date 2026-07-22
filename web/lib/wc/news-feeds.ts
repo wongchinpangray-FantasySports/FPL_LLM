@@ -629,11 +629,14 @@ export async function fetchWcNewsItems(opts?: {
   const editorialOnly = opts?.editorialOnly ?? false;
 
   const { fetchPremierLeagueNewsItems } = await import("@/lib/wc/premierleague-news");
-  const plItems = await fetchPremierLeagueNewsItems({ limit: 35 }).catch(
-    () => [] as WcNewsItem[],
-  );
+  const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
+  const [plItems, fplTweetItems] = await Promise.all([
+    fetchPremierLeagueNewsItems({ limit: 35 }).catch(() => [] as WcNewsItem[]),
+    fetchFplXTweets({ limit: 20 }).catch(() => [] as WcNewsItem[]),
+  ]);
   const plBudget = Math.min(plItems.length, 35);
-  const rssLimit = Math.max(20, limit - plBudget);
+  const fplTweetBudget = Math.min(fplTweetItems.length, 20);
+  const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget);
 
   const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
@@ -697,7 +700,11 @@ export async function fetchWcNewsItems(opts?: {
 
   const merged: WcNewsItem[] = [];
   const seenFinal = new Set<string>();
-  for (const item of [...plItems, ...rssMerged.slice(0, rssLimit)]) {
+  for (const item of [
+    ...plItems,
+    ...fplTweetItems,
+    ...rssMerged.slice(0, rssLimit),
+  ]) {
     const key = dedupeKey(item.title, item.url);
     if (seenFinal.has(key)) continue;
     seenFinal.add(key);
@@ -708,6 +715,9 @@ export async function fetchWcNewsItems(opts?: {
     const aPl = a.feed_id === "pl-official" ? 1 : 0;
     const bPl = b.feed_id === "pl-official" ? 1 : 0;
     if (bPl !== aPl) return bPl - aPl;
+    const aFplX = a.feed_id === "fpl-x" ? 1 : 0;
+    const bFplX = b.feed_id === "fpl-x" ? 1 : 0;
+    if (bFplX !== aFplX) return bFplX - aFplX;
     if (b.editorial_score !== a.editorial_score) {
       return b.editorial_score - a.editorial_score;
     }

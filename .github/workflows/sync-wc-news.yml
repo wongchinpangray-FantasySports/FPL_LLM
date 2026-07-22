@@ -12,10 +12,23 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      FPL_X_RSS_URLS: >-
+        http://localhost:1200/twitter/user/FantasyPremierLeague,
+        http://localhost:1200/twitter/user/BenCrellin,
+        http://localhost:1200/twitter/user/FFScout,
+        http://localhost:1200/twitter/user/PremierInjury,
+        http://localhost:1200/twitter/keyword/FPL%20injury,
+        http://localhost:1200/twitter/keyword/FPL%20lineup,
+        http://localhost:1200/twitter/hashtag/FPL
+    services:
+      rsshub:
+        image: diygod/rsshub
+        ports:
+          - 1200:1200
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +37,18 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: web/package-lock.json
+
+      - name: Wait for RSSHub (FPL X fallback)
+        run: |
+          for i in $(seq 1 18); do
+            if curl -sf "http://localhost:1200/" >/dev/null; then
+              echo "RSSHub ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "RSSHub not ready — syndication-only sync"
+          echo "FPL_X_RSS_URLS=" >> "$GITHUB_ENV"
 
       - name: Install web deps
         working-directory: web
