@@ -23,6 +23,8 @@ export default async function FplXNewsPage({ params }: Props) {
           count: tWc("newsCount"),
           updating: tWc("newsUpdating"),
           openOnX: t("fplXOpenOnX"),
+          thisWeekNote: t("fplXThisWeek"),
+          showAllCached: t("fplXShowAll"),
           topics: {
             all: t("fplXTopicAll"),
             injury: t("fplXTopicInjury"),

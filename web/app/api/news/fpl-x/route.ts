@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getWcNewsForApi } from "@/lib/wc/news-store";
 import type { FplXTopic } from "@/lib/fpl/fpl-x-feed";
-import { filterFplXItems } from "@/lib/fpl/fpl-x-feed";
+import {
+  filterFplXItems,
+  filterFplXThisWeek,
+  sortFplXItems,
+} from "@/lib/fpl/fpl-x-feed";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +21,10 @@ export async function GET(req: Request) {
     const refresh =
       url.searchParams.get("refresh") === "1" &&
       process.env.NODE_ENV !== "production";
+    const weekOnly = url.searchParams.get("week") !== "all";
     const limit = Math.min(
-      40,
-      Math.max(5, Number(url.searchParams.get("limit") ?? "30")),
+      50,
+      Math.max(5, Number(url.searchParams.get("limit") ?? "40")),
     );
 
     const { items, cached, fetched_at, source } = await getWcNewsForApi({
@@ -29,10 +34,12 @@ export async function GET(req: Request) {
       category: "ALL",
     });
 
-    const fplItems = filterFplXItems(
-      items.filter((i) => i.feed_id === "fpl-x"),
-      topic,
-    ).slice(0, limit);
+    let fplItems = items.filter((i) => i.feed_id === "fpl-x");
+    if (weekOnly) {
+      fplItems = filterFplXThisWeek(fplItems, { fallbackToAll: true });
+    }
+    fplItems = filterFplXItems(fplItems, topic);
+    fplItems = sortFplXItems(fplItems).slice(0, limit);
 
     return NextResponse.json(
       {
@@ -42,6 +49,7 @@ export async function GET(req: Request) {
         cached,
         fetched_at,
         source,
+        week_only: weekOnly,
         disclaimer:
           "Posts from @FantasyPremierLeague and curated FPL accounts on X. Open links to read on x.com.",
       },

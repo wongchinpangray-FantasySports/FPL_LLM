@@ -7,6 +7,7 @@ import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { getWcNewsForApi } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
+import { filterFplXThisWeek, sortFplXItems } from "@/lib/fpl/fpl-x-feed";
 import {
   buildGroupTablesFromFifaMatches,
   buildLeaderboardsFromFifaMatches,
@@ -156,13 +157,10 @@ function pickFplTweets(sources: WcNewsItem[][], limit = 8): WcNewsItem[] {
       out.push(item);
     }
   }
-  return out
-    .sort((a, b) => {
-      const ta = a.published_at ? Date.parse(a.published_at) : 0;
-      const tb = b.published_at ? Date.parse(b.published_at) : 0;
-      return tb - ta;
-    })
-    .slice(0, limit);
+  return sortFplXItems(filterFplXThisWeek(out, { fallbackToAll: true })).slice(
+    0,
+    limit,
+  );
 }
 
 export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {

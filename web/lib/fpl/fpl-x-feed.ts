@@ -35,6 +35,8 @@ const FPL_X_ACCOUNTS = [
 ] as const;
 
 export const FPL_X_ACCOUNT_COUNT = FPL_X_ACCOUNTS.length;
+export const FPL_X_WEEK_DAYS = 7;
+const FPL_OFFICIAL_OUTLET = "FPL Official";
 
 const FPL_RE =
   /\bFPL\b|fantasy premier league|gameweek|(?:^|\s)GW\s?\d|deadline|price change|wildcard|bench boost|triple captain|free hit|clean sheet|bonus point|expected points|\bxP\b/i;
@@ -201,6 +203,40 @@ export function filterFplXItems(
   );
 }
 
+export function fplXWeekCutoffMs(now = Date.now()): number {
+  return now - FPL_X_WEEK_DAYS * 24 * 60 * 60 * 1000;
+}
+
+export function isFplXWithinWeek(
+  published_at: string | null,
+  now = Date.now(),
+): boolean {
+  if (!published_at) return true;
+  const ts = Date.parse(published_at);
+  if (!Number.isFinite(ts)) return true;
+  return ts >= fplXWeekCutoffMs(now);
+}
+
+export function filterFplXThisWeek(
+  items: WcNewsItem[],
+  opts?: { fallbackToAll?: boolean },
+): WcNewsItem[] {
+  const thisWeek = items.filter((item) => isFplXWithinWeek(item.published_at));
+  if (thisWeek.length > 0 || !opts?.fallbackToAll) return thisWeek;
+  return items;
+}
+
+export function sortFplXItems(items: WcNewsItem[]): WcNewsItem[] {
+  return [...items].sort((a, b) => {
+    const aOfficial = a.outlet === FPL_OFFICIAL_OUTLET ? 1 : 0;
+    const bOfficial = b.outlet === FPL_OFFICIAL_OUTLET ? 1 : 0;
+    if (bOfficial !== aOfficial) return bOfficial - aOfficial;
+    const ta = a.published_at ? Date.parse(a.published_at) : 0;
+    const tb = b.published_at ? Date.parse(b.published_at) : 0;
+    return tb - ta;
+  });
+}
+
 function mapSyndicationTweet(
   tweet: SyndicationTweet,
   source: { outlet: string; alwaysInclude: boolean },
@@ -299,15 +335,28 @@ async function fetchSyndicationProfile(
 }
 
 async function fetchSyndicationTweets(limit: number): Promise<WcNewsItem[]> {
-  const perAccount = Math.max(2, Math.ceil(limit / FPL_X_ACCOUNTS.length));
+  const official = FPL_X_ACCOUNTS[0]!;
+  const others = FPL_X_ACCOUNTS.slice(1);
+  const officialCap = Math.min(15, Math.max(8, Math.ceil(limit * 0.35)));
   const out: WcNewsItem[] = [];
+
+  const officialTweets = await fetchSyndicationProfile(
+    official.handle,
+    officialCap,
+  );
+  for (const tweet of officialTweets) {
+    const item = mapSyndicationTweet(tweet, official);
+    if (item) out.push(item);
+  }
+
+  const perOther = Math.max(2, Math.ceil((limit - officialCap) / others.length));
   const batchSize = 4;
 
-  for (let i = 0; i < FPL_X_ACCOUNTS.length; i += batchSize) {
-    const batch = FPL_X_ACCOUNTS.slice(i, i + batchSize);
+  for (let i = 0; i < others.length; i += batchSize) {
+    const batch = others.slice(i, i + batchSize);
     const batches = await Promise.all(
       batch.map(async (account) => {
-        const tweets = await fetchSyndicationProfile(account.handle, perAccount);
+        const tweets = await fetchSyndicationProfile(account.handle, perOther);
         const items: WcNewsItem[] = [];
         for (const tweet of tweets) {
           const item = mapSyndicationTweet(tweet, account);
@@ -317,7 +366,7 @@ async function fetchSyndicationTweets(limit: number): Promise<WcNewsItem[]> {
       }),
     );
     out.push(...batches.flat());
-    if (i + batchSize < FPL_X_ACCOUNTS.length) {
+    if (i + batchSize < others.length) {
       await new Promise((r) => setTimeout(r, 600));
     }
   }
@@ -380,11 +429,10 @@ async function fetchRssTweets(rssUrl: string, limit: number): Promise<WcNewsItem
 
       const handle = extractHandleFromUrl(url) ?? "i";
       const text = row.summary || title;
-      if (!isFplRelevantTweet(text)) continue;
-
       const account = FPL_X_ACCOUNTS.find(
         (a) => a.handle.toLowerCase() === handle.toLowerCase(),
       );
+      if (!isFplRelevantTweet(text, account?.alwaysInclude ?? false)) continue;
 
       out.push({
         id: `${FEED_ID}:${tweetId}`,
@@ -421,18 +469,22 @@ function dedupeFplTweets(items: WcNewsItem[]): WcNewsItem[] {
     seen.add(key);
     out.push(item);
   }
-  return out.sort((a, b) => {
-    const ta = a.published_at ? Date.parse(a.published_at) : 0;
-    const tb = b.published_at ? Date.parse(b.published_at) : 0;
-    return tb - ta;
-  });
+  return sortFplXItems(out);
+}
+
+function finalizeFplXFeed(items: WcNewsItem[], limit: number): WcNewsItem[] {
+  const deduped = dedupeFplTweets(items);
+  const thisWeek = deduped.filter((item) => isFplXWithinWeek(item.published_at));
+  const pool =
+    thisWeek.length >= Math.min(8, limit) ? thisWeek : deduped;
+  return sortFplXItems(pool).slice(0, limit);
 }
 
 /** FPL-related X posts: official account + injuries, line-ups, transfers (GitHub Actions sync). */
 export async function fetchFplXTweets(opts?: {
   limit?: number;
 }): Promise<WcNewsItem[]> {
-  const limit = Math.min(50, Math.max(5, opts?.limit ?? 35));
+  const limit = Math.min(60, Math.max(5, opts?.limit ?? 45));
 
   const syndication = await fetchSyndicationTweets(limit);
 
@@ -441,7 +493,7 @@ export async function fetchFplXTweets(opts?: {
     rssUrls.map((url) => fetchRssTweets(url, limit)),
   );
 
-  return dedupeFplTweets([...syndication, ...rssBatches.flat()]).slice(0, limit);
+  return finalizeFplXFeed([...syndication, ...rssBatches.flat()], limit);
 }
 
 /** @deprecated Use fetchFplXTweets */

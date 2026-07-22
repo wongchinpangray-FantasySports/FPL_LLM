@@ -1072,7 +1072,9 @@
     "fplXTopicAll": "全部",
     "fplXTopicInjury": "伤病",
     "fplXTopicLineup": "首发",
-    "fplXTopicTransfer": "转会"
+    "fplXTopicTransfer": "转会",
+    "fplXThisWeek": "本周",
+    "fplXShowAll": "全部缓存"
   },
   "fplHub": {
     "title": "英超范特西 FPL",

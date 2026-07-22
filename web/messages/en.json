@@ -1073,7 +1073,9 @@
     "fplXTopicAll": "All",
     "fplXTopicInjury": "Injuries",
     "fplXTopicLineup": "Line-ups",
-    "fplXTopicTransfer": "Transfers"
+    "fplXTopicTransfer": "Transfers",
+    "fplXThisWeek": "This week",
+    "fplXShowAll": "All cached"
   },
   "fplHub": {
     "title": "Fantasy Premier League",

@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import type { FplXTopic } from "@/lib/fpl/fpl-x-feed";
-import { filterFplXItems } from "@/lib/fpl/fpl-x-feed";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsSubNav } from "@/components/news/news-sub-nav";
 
@@ -104,6 +103,7 @@ type FplXPayload = {
   total: number;
   fetched_at?: string;
   disclaimer?: string;
+  week_only?: boolean;
   error?: string;
 };
 
@@ -123,9 +123,12 @@ export function FplXPanel({
     updating: string;
     openOnX: string;
     topics: Record<FplXTopic, string>;
+    thisWeekNote: string;
+    showAllCached: string;
   };
 }) {
   const [topic, setTopic] = useState<FplXTopic>("all");
+  const [weekOnly, setWeekOnly] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +139,8 @@ export function FplXPanel({
     else setLoading(true);
     setError(null);
     try {
-      const q = new URLSearchParams({ limit: "40" });
+      const q = new URLSearchParams({ limit: "40", topic });
+      if (!weekOnly) q.set("week", "all");
       if (refresh) q.set("refresh", "1");
       const res = await fetch(`/api/news/fpl-x?${q.toString()}`);
       const json = (await res.json()) as FplXPayload;
@@ -148,16 +152,13 @@ export function FplXPanel({
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [topic, weekOnly]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const items = useMemo(
-    () => filterFplXItems(data?.items ?? [], topic),
-    [data?.items, topic],
-  );
+  const items = data?.items ?? [];
 
   return (
     <section className="flex flex-col gap-4">
@@ -192,6 +193,18 @@ export function FplXPanel({
           )}
         >
           {labels.refresh}
+        </button>
+        <button
+          type="button"
+          onClick={() => setWeekOnly((v) => !v)}
+          className={cn(
+            "rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+            weekOnly
+              ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
+              : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {weekOnly ? labels.thisWeekNote : labels.showAllCached}
         </button>
         <a
           href="https://x.com/search?q=FPL%20(injury%20OR%20lineup%20OR%20transfer)&src=typed_query&f=live"
