@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { LocaleHtmlLang } from "@/components/locale-html-lang";
 import { HomeSignupPrompt } from "@/components/auth/signup-prompt-modal";
+import { SignupPromptProvider } from "@/components/auth/signup-prompt-context";
 import { SiteHeader } from "@/components/site-header";
 
 type Props = {
@@ -38,16 +39,18 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleHtmlLang locale={locale} />
-      <HomeSignupPrompt />
-      <SiteHeader />
-      <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
-        {children}
-      </main>
-      <footer className="site-footer border-t border-border bg-background/40">
-        <div className="container py-5 text-xs text-muted-foreground md:py-8">
-          <p>{t("legal")}</p>
-        </div>
-      </footer>
+      <SignupPromptProvider>
+        <HomeSignupPrompt />
+        <SiteHeader />
+        <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
+          {children}
+        </main>
+        <footer className="site-footer border-t border-border bg-background/40">
+          <div className="container py-5 text-xs text-muted-foreground md:py-8">
+            <p>{t("legal")}</p>
+          </div>
+        </footer>
+      </SignupPromptProvider>
     </NextIntlClientProvider>
   );
 }

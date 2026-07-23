@@ -66,13 +66,11 @@ export function FplDigestDayBlock({
           {digest.digest_date}
         </span>
         <span className="text-xs text-muted-foreground">
-          {labels.windowLabel.replace(
-            "{window}",
-            fmtLondonDigestWindow(
-              digest.window_start,
-              digest.window_end,
-              locale,
-            ),
+          {labels.windowLabel}:{" "}
+          {fmtLondonDigestWindow(
+            digest.window_start,
+            digest.window_end,
+            locale,
           )}
         </span>
       </header>
@@ -86,13 +84,11 @@ export function FplDigestDayBlock({
       </div>
 
       <p className="mt-4 text-[11px] text-muted-foreground">
-        {labels.generatedAt.replace(
-          "{time}",
-          fmtLondonDigestWindow(
-            digest.generated_at,
-            digest.generated_at,
-            locale,
-          ),
+        {labels.generatedAt}{" "}
+        {fmtLondonDigestWindow(
+          digest.generated_at,
+          digest.generated_at,
+          locale,
         )}
       </p>
 
@@ -102,10 +98,7 @@ export function FplDigestDayBlock({
           open={defaultSourcesOpen}
         >
           <summary className="cursor-pointer text-sm font-medium text-foreground">
-            {labels.sourcesTitle.replace(
-              "{n}",
-              String(digest.source_items.length),
-            )}
+            {labels.sourcesTitle} ({digest.source_items.length})
           </summary>
           <ul className="mt-3 space-y-2 pl-1">
             {digest.source_items.map((source) => (

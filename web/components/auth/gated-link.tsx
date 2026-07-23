@@ -9,15 +9,10 @@ import { useTranslations } from "next-intl";
 
 type GatedLinkProps = ComponentProps<typeof Link>;
 
-export function GatedLink({ href, onClick, ...props }: GatedLinkProps) {
-  const path = typeof href === "string" ? href : (href.pathname ?? "");
+function FplGatedLink({ href, onClick, ...props }: GatedLinkProps) {
   const { user, loading } = useAuth();
   const { openSignupPrompt } = useSignupPrompt();
   const t = useTranslations("signupPrompt");
-
-  if (!isFplNewsPath(path)) {
-    return <Link href={href} onClick={onClick} {...props} />;
-  }
 
   return (
     <Link
@@ -34,4 +29,14 @@ export function GatedLink({ href, onClick, ...props }: GatedLinkProps) {
       }}
     />
   );
+}
+
+export function GatedLink({ href, onClick, ...props }: GatedLinkProps) {
+  const path = typeof href === "string" ? href : (href.pathname ?? "");
+
+  if (!isFplNewsPath(path)) {
+    return <Link href={href} onClick={onClick} {...props} />;
+  }
+
+  return <FplGatedLink href={href} onClick={onClick} {...props} />;
 }

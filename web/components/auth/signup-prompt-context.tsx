@@ -30,7 +30,10 @@ const SignupPromptContext = createContext<SignupPromptContextValue | null>(null)
 export function useSignupPrompt(): SignupPromptContextValue {
   const ctx = useContext(SignupPromptContext);
   if (!ctx) {
-    throw new Error("useSignupPrompt must be used within SignupPromptProvider");
+    return {
+      openSignupPrompt: () => {},
+      closeSignupPrompt: () => {},
+    };
   }
   return ctx;
 }
@@ -57,17 +60,15 @@ export function SignupPromptProvider({ children }: { children: React.ReactNode }
   return (
     <SignupPromptContext.Provider value={value}>
       {children}
-      <SignupPromptDialog open={open} copy={copy} onClose={closeSignupPrompt} />
+      {open ? <SignupPromptDialog copy={copy} onClose={closeSignupPrompt} /> : null}
     </SignupPromptContext.Provider>
   );
 }
 
 function SignupPromptDialog({
-  open,
   copy,
   onClose,
 }: {
-  open: boolean;
   copy: SignupPromptCopy | null;
   onClose: () => void;
 }) {
@@ -79,15 +80,14 @@ function SignupPromptDialog({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [onClose]);
 
-  if (!open || !mounted) return null;
+  if (!mounted) return null;
 
   const title = copy?.title ?? t("title");
   const body = copy?.body ?? t("body");
