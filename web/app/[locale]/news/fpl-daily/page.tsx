@@ -19,9 +19,9 @@ export default async function FplDailyNewsPage({ params }: Props) {
           empty: t("fplDailyEmpty"),
           windowLabel: t("fplDailyWindow"),
           sourcesTitle: t("fplDailySources"),
-          archiveTitle: t("fplDailyArchive"),
           generatedAt: t("fplDailyGenerated"),
           disclaimer: t("fplDailyDisclaimer"),
+          archiveLink: t("fplDailyArchiveLink"),
         }}
       />
     </PageShell>

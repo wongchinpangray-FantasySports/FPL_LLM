@@ -11,6 +11,7 @@ import { filterFplXThisWeek, sortFplXItems } from "@/lib/fpl/fpl-x-feed";
 import {
   loadFplXDigestFromDb,
   londonDigestDateIso,
+  pickDigestSummary,
 } from "@/lib/fpl/fpl-x-digest";
 import {
   buildGroupTablesFromFifaMatches,
@@ -179,10 +180,7 @@ async function loadFplDailyTeaser(
 ): Promise<HomeFplDailyTeaser | null> {
   const digest = await loadFplXDigestFromDb(londonDigestDateIso());
   if (!digest?.summary_en) return null;
-  const summary =
-    locale.toLowerCase().startsWith("zh") && digest.summary_zh
-      ? digest.summary_zh
-      : digest.summary_en;
+  const summary = pickDigestSummary(digest, locale);
   return {
     digest_date: digest.digest_date,
     summary,

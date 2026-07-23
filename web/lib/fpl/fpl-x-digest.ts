@@ -371,20 +371,7 @@ async function loadCachedDigest(
     if (error || !data) return null;
     if (data.source_fingerprint !== fingerprint) return null;
 
-    const summaryJson =
-      (data.summary_json as Record<string, string | null> | null) ?? {};
-    return {
-      digest_date: digestDate,
-      window_start: data.window_start as string,
-      window_end: data.window_end as string,
-      summary_en: summaryJson.en ?? "",
-      summary_zh: summaryJson.zh ?? null,
-      source_items: (data.source_items as FplXDigestSource[]) ?? [],
-      source_fingerprint: data.source_fingerprint as string,
-      model: (data.model as string | null) ?? null,
-      generated_at: data.generated_at as string,
-      source: "cache",
-    };
+    return rowToFplXDigestRecord(data as Record<string, unknown>, digestDate);
   } catch {
     return null;
   }
@@ -517,20 +504,7 @@ export async function loadFplXDigestFromDb(
       .eq("digest_date", digestDate)
       .maybeSingle();
     if (!error && data) {
-      const summaryJson =
-        (data.summary_json as Record<string, string | null> | null) ?? {};
-      return {
-        digest_date: digestDate,
-        window_start: data.window_start as string,
-        window_end: data.window_end as string,
-        summary_en: summaryJson.en ?? "",
-        summary_zh: summaryJson.zh ?? null,
-        source_items: (data.source_items as FplXDigestSource[]) ?? [],
-        source_fingerprint: data.source_fingerprint as string,
-        model: (data.model as string | null) ?? null,
-        generated_at: data.generated_at as string,
-        source: "cache",
-      };
+      return rowToFplXDigestRecord(data as Record<string, unknown>, digestDate);
     }
 
     const { data: fb, error: fbErr } = await supa
@@ -543,6 +517,81 @@ export async function loadFplXDigestFromDb(
     return { ...raw, source: "cache" };
   } catch {
     return null;
+  }
+}
+
+export function pickDigestSummary(
+  record: Pick<FplXDigestRecord, "summary_en" | "summary_zh">,
+  locale = "en",
+): string {
+  return locale.toLowerCase().startsWith("zh") && record.summary_zh
+    ? record.summary_zh
+    : record.summary_en;
+}
+
+function rowToFplXDigestRecord(
+  data: Record<string, unknown>,
+  digestDate?: string,
+): FplXDigestRecord {
+  const summaryJson =
+    (data.summary_json as Record<string, string | null> | null) ?? {};
+  return {
+    digest_date: (digestDate ?? data.digest_date) as string,
+    window_start: data.window_start as string,
+    window_end: data.window_end as string,
+    summary_en: summaryJson.en ?? "",
+    summary_zh: summaryJson.zh ?? null,
+    source_items: (data.source_items as FplXDigestSource[]) ?? [],
+    source_fingerprint: data.source_fingerprint as string,
+    model: (data.model as string | null) ?? null,
+    generated_at: data.generated_at as string,
+    source: "cache",
+  };
+}
+
+export async function listArchivedFplXDigests(opts?: {
+  limit?: number;
+  locale?: string;
+  beforeDate?: string;
+}): Promise<Array<FplXDigestRecord & { summary: string }>> {
+  const limit = opts?.limit ?? 30;
+  const beforeDate = opts?.beforeDate ?? londonDigestDateIso();
+  const locale = opts?.locale ?? "en";
+
+  try {
+    const supa = getServerSupabase();
+    const { data, error } = await supa
+      .from("fpl_x_digests")
+      .select("*")
+      .lt("digest_date", beforeDate)
+      .order("digest_date", { ascending: false })
+      .limit(limit);
+
+    if (!error && data?.length) {
+      return data.map((row) => {
+        const record = rowToFplXDigestRecord(row as Record<string, unknown>);
+        return { ...record, summary: pickDigestSummary(record, locale) };
+      });
+    }
+
+    const { data: fb } = await supa
+      .from("wc_news_cache")
+      .select("id, items, fetched_at")
+      .like("id", "fpl-digest:%")
+      .order("fetched_at", { ascending: false })
+      .limit(limit + 5);
+
+    const out: Array<FplXDigestRecord & { summary: string }> = [];
+    for (const row of fb ?? []) {
+      const raw = row.items as Omit<FplXDigestRecord, "source">;
+      if (!raw?.digest_date || raw.digest_date >= beforeDate) continue;
+      const record: FplXDigestRecord = { ...raw, source: "cache" };
+      out.push({ ...record, summary: pickDigestSummary(record, locale) });
+      if (out.length >= limit) break;
+    }
+    return out.sort((a, b) => b.digest_date.localeCompare(a.digest_date));
+  } catch {
+    return [];
   }
 }
 

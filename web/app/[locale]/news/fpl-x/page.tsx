@@ -16,21 +16,15 @@ export default async function FplXNewsPage({ params }: Props) {
       <FplXPanel
         locale={params.locale}
         labels={{
-          readMore: tWc("newsReadMore"),
           loading: tWc("loading"),
           empty: t("fplXEmpty"),
-          refresh: tWc("newsRefresh"),
-          count: tWc("newsCount"),
-          updating: tWc("newsUpdating"),
+          windowLabel: t("fplDailyWindow"),
+          sourcesTitle: t("fplDailySources"),
+          generatedAt: t("fplDailyGenerated"),
+          todayNote: t("fplXTodayNote"),
+          seeDaily: t("navFplDaily"),
+          disclaimer: t("fplDailyDisclaimer"),
           openOnX: t("fplXOpenOnX"),
-          thisWeekNote: t("fplXThisWeek"),
-          showAllCached: t("fplXShowAll"),
-          topics: {
-            all: t("fplXTopicAll"),
-            injury: t("fplXTopicInjury"),
-            lineup: t("fplXTopicLineup"),
-            transfer: t("fplXTopicTransfer"),
-          },
         }}
       />
     </PageShell>

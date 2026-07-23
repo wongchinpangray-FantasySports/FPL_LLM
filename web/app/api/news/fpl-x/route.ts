@@ -1,66 +1,44 @@
 import { NextResponse } from "next/server";
-import { getWcNewsForApi } from "@/lib/wc/news-store";
-import type { FplXTopic } from "@/lib/fpl/fpl-x-feed";
 import {
-  filterFplXItems,
-  filterFplXThisWeek,
-  sortFplXItems,
-} from "@/lib/fpl/fpl-x-feed";
+  listArchivedFplXDigests,
+  londonDigestDateIso,
+} from "@/lib/fpl/fpl-x-digest";
 
 export const dynamic = "force-dynamic";
-
-const TOPICS = new Set<FplXTopic>(["all", "injury", "lineup", "transfer"]);
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const topicParam = url.searchParams.get("topic")?.toLowerCase() ?? "all";
-    const topic = TOPICS.has(topicParam as FplXTopic)
-      ? (topicParam as FplXTopic)
-      : "all";
-    const refresh =
-      url.searchParams.get("refresh") === "1" &&
-      process.env.NODE_ENV !== "production";
-    const weekOnly = url.searchParams.get("week") !== "all";
+    const locale = url.searchParams.get("locale")?.toLowerCase() ?? "en";
     const limit = Math.min(
-      50,
-      Math.max(5, Number(url.searchParams.get("limit") ?? "40")),
+      60,
+      Math.max(5, Number(url.searchParams.get("limit") ?? "30")),
     );
+    const today = londonDigestDateIso();
 
-    const { items, cached, fetched_at, source } = await getWcNewsForApi({
-      limit: 150,
-      editorialOnly: false,
-      refresh,
-      category: "ALL",
+    const days = await listArchivedFplXDigests({
+      limit,
+      locale,
+      beforeDate: today,
     });
-
-    let fplItems = items.filter((i) => i.feed_id === "fpl-x");
-    if (weekOnly) {
-      fplItems = filterFplXThisWeek(fplItems, { fallbackToAll: true });
-    }
-    fplItems = filterFplXItems(fplItems, topic);
-    fplItems = sortFplXItems(fplItems).slice(0, limit);
 
     return NextResponse.json(
       {
-        items: fplItems,
-        total: fplItems.length,
-        topic,
-        cached,
-        fetched_at,
-        source,
-        week_only: weekOnly,
+        days,
+        total: days.length,
+        today,
         disclaimer:
-          "Posts from @FantasyPremierLeague and curated FPL accounts on X. Open links to read on x.com.",
+          "Archived FPL daily briefings — AI summary and sources from each past 24-hour window.",
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
       },
     );
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to load FPL posts";
+    const message =
+      e instanceof Error ? e.message : "Failed to load FPL archive";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

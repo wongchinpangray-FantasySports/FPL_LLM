@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
-  listRecentFplXDigests,
   loadFplXDigestFromDb,
   londonDigestDateIso,
+  pickDigestSummary,
 } from "@/lib/fpl/fpl-x-digest";
 
 export const dynamic = "force-dynamic";
@@ -15,29 +15,21 @@ export async function GET(req: Request) {
     const digestDate = dateParam ?? londonDigestDateIso();
 
     const digest = await loadFplXDigestFromDb(digestDate);
-    const recent = await listRecentFplXDigests(14);
 
     if (!digest) {
       return NextResponse.json({
         digest: null,
         digest_date: digestDate,
-        recent,
       });
     }
-
-    const summary =
-      locale.startsWith("zh") && digest.summary_zh
-        ? digest.summary_zh
-        : digest.summary_en;
 
     return NextResponse.json(
       {
         digest: {
           ...digest,
-          summary,
+          summary: pickDigestSummary(digest, locale),
         },
         digest_date: digestDate,
-        recent,
       },
       {
         headers: {
