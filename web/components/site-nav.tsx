@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { GatedLink } from "@/components/auth/gated-link";
 import { useEntryId } from "@/components/entry-id-context";
 import { cn } from "@/lib/utils";
 
@@ -139,9 +140,17 @@ export function SiteNav() {
       <NavLink href="/news" active={pathname === "/news"}>
         {t("news")}
       </NavLink>
-      <NavLink href="/news/fpl-x" active={pathname.startsWith("/news/fpl-x")}>
+      <GatedLink
+        href="/news/fpl-x"
+        className={cn(
+          "relative block rounded-md px-2 py-1.5 text-xs transition-colors sm:text-sm",
+          pathname.startsWith("/news/fpl-x")
+            ? "text-foreground after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-brand-accent after:shadow-[0_0_12px_rgba(0,255,135,0.6)]"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
         {t("newsFplX")}
-      </NavLink>
+      </GatedLink>
     </nav>
   );
 }

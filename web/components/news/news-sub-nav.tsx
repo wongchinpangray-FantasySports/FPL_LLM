@@ -1,8 +1,9 @@
 "use client";
 
-import { Link, usePathname } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { GatedLink } from "@/components/auth/gated-link";
 
 export function NewsSubNav() {
   const t = useTranslations("newsIndex");
@@ -25,7 +26,7 @@ export function NewsSubNav() {
   return (
     <div className="flex gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((tab) => (
-        <Link
+        <GatedLink
           key={tab.href}
           href={tab.href}
           className={cn(
@@ -36,7 +37,7 @@ export function NewsSubNav() {
           )}
         >
           {tab.label}
-        </Link>
+        </GatedLink>
       ))}
     </div>
   );

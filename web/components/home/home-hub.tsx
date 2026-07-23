@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { GatedLink } from "@/components/auth/gated-link";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { EntryIdForm } from "@/components/entry-id-form";
@@ -481,6 +482,9 @@ function HomeNewsSidebar({
     empty: string;
   };
 }) {
+  const { user } = useAuth();
+  const tSignup = useTranslations("signupPrompt");
+
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
       {fplDailyDigest ? (
@@ -489,30 +493,36 @@ function HomeNewsSidebar({
             <h2 className="text-sm font-semibold text-foreground">
               {labels.fplDailyTitle}
             </h2>
-            <Link
+            <GatedLink
               href="/news/fpl-daily"
               className="text-xs font-medium text-brand-accent no-underline hover:underline"
             >
               {labels.seeFplDaily}
-            </Link>
+            </GatedLink>
           </div>
-          <Link
-            href="/news/fpl-daily"
-            className="block px-4 pb-3 no-underline transition-opacity hover:opacity-90"
-          >
-            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {fplDailyDigest.digest_date}
+          {user ? (
+            <GatedLink
+              href="/news/fpl-daily"
+              className="block px-4 pb-3 no-underline transition-opacity hover:opacity-90"
+            >
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {fplDailyDigest.digest_date}
+              </p>
+              <p className="mt-1.5 line-clamp-5 text-sm leading-relaxed text-foreground/90">
+                {fplDailyDigest.summary}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {labels.fplDailySources.replace(
+                  "{n}",
+                  String(fplDailyDigest.source_count),
+                )}
+              </p>
+            </GatedLink>
+          ) : (
+            <p className="px-4 pb-3 text-sm text-muted-foreground">
+              {tSignup("fplNewsSignInHint")}
             </p>
-            <p className="mt-1.5 line-clamp-5 text-sm leading-relaxed text-foreground/90">
-              {fplDailyDigest.summary}
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {labels.fplDailySources.replace(
-                "{n}",
-                String(fplDailyDigest.source_count),
-              )}
-            </p>
-          </Link>
+          )}
         </section>
       ) : null}
 
@@ -539,18 +549,24 @@ function HomeNewsSidebar({
         <section className="home-hub-card rounded-xl border">
           <div className="flex items-center justify-between px-4 pb-2 pt-3">
             <h2 className="text-sm font-semibold text-foreground">{labels.fplXTitle}</h2>
-            <Link
+            <GatedLink
               href="/news/fpl-x"
               className="text-xs font-medium text-brand-accent no-underline hover:underline"
             >
               {labels.seeFplX}
-            </Link>
+            </GatedLink>
           </div>
-          <div className="space-y-1 px-4 pb-3">
-            {fplTweets.map((item) => (
-              <HomeNewsSidebarItem key={item.id} item={item} />
-            ))}
-          </div>
+          {user ? (
+            <div className="space-y-1 px-4 pb-3">
+              {fplTweets.map((item) => (
+                <HomeNewsSidebarItem key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <p className="px-4 pb-3 text-sm text-muted-foreground">
+              {tSignup("fplNewsSignInHint")}
+            </p>
+          )}
         </section>
       ) : null}
 

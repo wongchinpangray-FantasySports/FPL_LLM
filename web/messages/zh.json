@@ -1025,7 +1025,11 @@
     "signup": "免费注册",
     "signin": "已有账户，登录",
     "dismiss": "稍后再说",
-    "close": "关闭"
+    "close": "关闭",
+    "fplNewsTitle": "解锁 FPL 日报与 X 动态归档",
+    "fplNewsBody": "免费注册即可阅读 AI 每日简报与按日归档的 FPL X 动态。",
+    "fplNewsLoading": "正在验证账号…",
+    "fplNewsSignInHint": "注册或登录后即可阅读 FPL 日报与 FPL 动态归档。"
   },
   "admin": {
     "eyebrow": "管理",

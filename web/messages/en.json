@@ -1026,7 +1026,11 @@
     "signup": "Create free account",
     "signin": "I already have an account",
     "dismiss": "Maybe later",
-    "close": "Close"
+    "close": "Close",
+    "fplNewsTitle": "Unlock FPL daily & X briefings",
+    "fplNewsBody": "Create a free account to read AI daily summaries and the day-by-day FPL on X archive.",
+    "fplNewsLoading": "Checking your account…",
+    "fplNewsSignInHint": "Sign up or log in to read FPL daily briefings and the FPL on X archive."
   },
   "admin": {
     "eyebrow": "Admin",

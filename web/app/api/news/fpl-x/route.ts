@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuthForApi } from "@/lib/auth/require-auth-api";
 import {
   listArchivedFplXDigests,
   londonDigestDateIso,
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const access = await requireAuthForApi();
+    if (access instanceof NextResponse) return access;
+
     const url = new URL(req.url);
     const locale = url.searchParams.get("locale")?.toLowerCase() ?? "en";
     const limit = Math.min(

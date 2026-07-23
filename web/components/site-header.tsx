@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { GatedLink } from "@/components/auth/gated-link";
 import { useEntryId } from "@/components/entry-id-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -56,13 +57,16 @@ function MenuLink({
   href,
   label,
   active,
+  gated = false,
 }: {
   href: string;
   label: string;
   active: boolean;
+  gated?: boolean;
 }) {
+  const LinkComponent = gated ? GatedLink : Link;
   return (
-    <Link
+    <LinkComponent
       href={href}
       className={cn(
         "rounded-lg px-3 py-2 text-sm transition-colors",
@@ -72,7 +76,7 @@ function MenuLink({
       )}
     >
       {label}
-    </Link>
+    </LinkComponent>
   );
 }
 
@@ -217,6 +221,7 @@ export function SiteHeader() {
                   href="/news/fpl-x"
                   label={t("newsFplX")}
                   active={pathname.startsWith("/news/fpl-x")}
+                  gated
                 />
               </MenuSection>
 

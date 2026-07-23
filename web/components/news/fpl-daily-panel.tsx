@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "@/i18n/navigation";
+import { GatedLink } from "@/components/auth/gated-link";
+import { RequireAuthGate } from "@/components/auth/require-auth-gate";
 import type { FplXDigestRecord } from "@/lib/fpl/fpl-x-digest";
 import {
   FplDigestDayBlock,
@@ -56,7 +57,8 @@ export function FplDailyPanel({
   }, [load]);
 
   return (
-    <section className="flex flex-col gap-4">
+    <RequireAuthGate>
+      <section className="flex flex-col gap-4">
       <NewsSubNav />
 
       {loading && !digest ? (
@@ -78,17 +80,18 @@ export function FplDailyPanel({
       ) : null}
 
       <p className="text-sm">
-        <Link
+        <GatedLink
           href="/news/fpl-x"
           className="font-medium text-brand-accent no-underline hover:underline"
         >
           {labels.archiveLink}
-        </Link>
+        </GatedLink>
       </p>
 
       <p className="text-xs leading-relaxed text-muted-foreground/80">
         {labels.disclaimer}
       </p>
     </section>
+    </RequireAuthGate>
   );
 }

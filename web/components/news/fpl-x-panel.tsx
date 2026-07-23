@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "@/i18n/navigation";
+import { GatedLink } from "@/components/auth/gated-link";
+import { RequireAuthGate } from "@/components/auth/require-auth-gate";
 import type { FplXDigestRecord } from "@/lib/fpl/fpl-x-digest";
 import {
   FplDigestDayBlock,
@@ -58,17 +59,18 @@ export function FplXPanel({
   const days = data?.days ?? [];
 
   return (
-    <section className="flex flex-col gap-4">
+    <RequireAuthGate>
+      <section className="flex flex-col gap-4">
       <NewsSubNav />
 
       <p className="rounded-lg border border-border bg-card/40 px-3 py-2 text-sm text-muted-foreground">
         {labels.todayNote}{" "}
-        <Link
+        <GatedLink
           href="/news/fpl-daily"
           className="font-medium text-brand-accent no-underline hover:underline"
         >
           {labels.seeDaily}
-        </Link>
+        </GatedLink>
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -113,5 +115,6 @@ export function FplXPanel({
         {data?.disclaimer ?? labels.disclaimer}
       </p>
     </section>
+    </RequireAuthGate>
   );
 }
