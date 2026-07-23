@@ -2,6 +2,7 @@ import preseasonData from "@/data/epl-preseason-2627.json";
 import { getEpl2627Season } from "@/lib/fpl/epl-2627";
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
 import { loadPreseasonBundleWithSources } from "@/lib/fpl/preseason-enrich";
+import { needsPreseasonGoalFetch } from "@/lib/fpl/preseason-scorers";
 
 export type { PreseasonGoal };
 
@@ -60,8 +61,40 @@ export function getPreseasonBundle(): PreseasonBundle {
   };
 }
 
+function londonTodayIso(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function matchNeedsRuntimeEnrichment(
+  match: PreseasonMatch,
+  today: string,
+): boolean {
+  if (match.status === "finished") {
+    return needsPreseasonGoalFetch(match);
+  }
+  return match.date < today;
+}
+
 export async function loadPreseasonBundle(): Promise<PreseasonBundle> {
-  return loadPreseasonBundleWithSources(getPreseasonBundle());
+  const base = getPreseasonBundle();
+  const today = londonTodayIso();
+  const stale = base.matches.filter((m) => matchNeedsRuntimeEnrichment(m, today));
+  if (stale.length === 0) return base;
+
+  const enriched = await loadPreseasonBundleWithSources({
+    ...base,
+    matches: stale,
+  });
+  const byId = new Map(enriched.matches.map((m) => [m.id, m]));
+  return {
+    ...base,
+    matches: base.matches.map((m) => byId.get(m.id) ?? m),
+  };
 }
 
 export function groupPreseasonByClub(

@@ -2,6 +2,8 @@
  * Free pre-season result sources: Premier League official article + RSS headlines.
  */
 
+import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
+
 const PL_API = "https://api.premierleague.com";
 const PL_SITE = "https://www.premierleague.com";
 const PL_PRESEASON_ARTICLE_ID = 4606700;
@@ -132,6 +134,7 @@ function teamMatches(a: string, b: string): boolean {
   if (!x || !y) return false;
   if (x === y) return true;
   if (x.includes(y) || y.includes(x)) return true;
+  if (opponentNamesMatch(a, b)) return true;
   const yTokens = y.split(" ").filter((t) => t.length > 2);
   if (yTokens.length === 0) return false;
   return yTokens.every((t) => x.includes(t));
@@ -286,6 +289,10 @@ function parseScoreFromText(text: string): PreseasonExternalResult | null {
   const cleaned = text
     .replace(/^pre-season:\s*/i, "")
     .replace(/\s+-\s+.*$/, "")
+    .replace(
+      /\s+(?:behind closed doors|friendly details|pre-season friendly|friendly|match report).*$/i,
+      "",
+    )
     .trim();
 
   const patterns = [

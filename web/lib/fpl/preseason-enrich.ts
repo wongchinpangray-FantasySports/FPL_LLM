@@ -1,4 +1,5 @@
 import type { PreseasonBundle } from "@/lib/fpl/preseason";
+import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import {
   loadCachedPreseasonExternalResults,
   mergeExternalResultsOntoMatch,
@@ -101,13 +102,7 @@ function norm(s: string): string {
 }
 
 function opponentMatches(apiName: string, opponent: string): boolean {
-  const a = norm(apiName);
-  const b = norm(opponent);
-  if (!a || !b) return false;
-  if (a.includes(b) || b.includes(a)) return true;
-  const bTokens = b.split(" ").filter((t) => t.length > 2);
-  if (bTokens.length === 0) return false;
-  return bTokens.every((t) => a.includes(t));
+  return opponentNamesMatch(apiName, opponent);
 }
 
 async function apiFetch<T>(path: string): Promise<T> {

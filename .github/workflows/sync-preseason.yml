@@ -1,9 +1,9 @@
 name: Pre-season results sync
 
-# Every 6 hours during Jul–Aug (UTC). Also run manually after match days.
+# Every 2 hours during Jul–Aug (UTC). Also run manually after match days.
 on:
   schedule:
-    - cron: "0 */6 * 7,8 *"
+    - cron: "0 */2 * 7,8 *"
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +16,9 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +32,7 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Sync pre-season scores from PL official + RSS
+      - name: Sync pre-season scores and scorers
         working-directory: web
         run: npx tsx scripts/sync-preseason-results.ts
 
@@ -42,11 +44,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No pre-season data changes to commit."
           else
-            git commit -m "$(cat <<'EOF'
-Sync pre-season friendly results from PL official article and RSS.
-
-Automated score updates for the bundled pre-season JSON without API-Football.
-EOF
-)"
+            git commit -m "Sync pre-season friendly results and scorers."
             git push
           fi

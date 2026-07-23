@@ -339,6 +339,16 @@ export async function fetchGoalsForFinishedMatch(
     return match.goals ?? [];
   }
 
+  if (process.env.API_FOOTBALL_KEY?.trim()) {
+    const { resolvePreseasonMatchFromApi } = await import(
+      "@/lib/fpl/preseason-enrich"
+    );
+    const api = await resolvePreseasonMatchFromApi(match);
+    if (api?.goals?.length) {
+      return api.goals;
+    }
+  }
+
   const candidates = [
     ...reportUrls,
     await discoverEspnReportUrl(match),

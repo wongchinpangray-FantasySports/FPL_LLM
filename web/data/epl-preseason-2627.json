@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-07-22",
+  "updated_at": "2026-07-23",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -421,11 +421,30 @@
       "pl_home": true,
       "venue": "Albufeira",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "40'",
+          "scorer": "Igor Jesus",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "48'",
+          "scorer": "Arnaud Kalimuendo",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "50'",
+          "scorer": "Taiwo Awoniyi",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "tot-2026-07-22-96",
@@ -436,11 +455,18 @@
       "pl_home": true,
       "venue": null,
       "note": "Behind closed doors",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "3'",
+          "scorer": "Mateus Fernandes",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "bou-2026-07-24-58",

@@ -1,6 +1,7 @@
 /**
- * Sync pre-season friendly scores into epl-preseason-2627.json (GitHub Actions / manual).
- * Uses Premier League official article + RSS feeds — no API-Football subscription required.
+ * Sync pre-season friendly scores and scorers into epl-preseason-2627.json.
+ * Uses PL official article + RSS; API-Football (when API_FOOTBALL_KEY is set) fills
+ * behind-closed-doors results and goal details.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
