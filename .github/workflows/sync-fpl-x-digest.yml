@@ -2,8 +2,8 @@ name: FPL daily digest
 
 on:
   schedule:
-    # 12:30 UTC ≈ after 12:00 Europe/London year-round (13:30 BST / 12:30 GMT)
-    - cron: "30 12 * * *"
+    # Daily refresh — rolling 24h X digest (13:00 UTC)
+    - cron: "0 13 * * *"
   workflow_dispatch:
 
 concurrency:

@@ -1,5 +1,5 @@
 /**
- * Generate today's FPL morning digest (Europe/London 00:00–12:00) via Gemini.
+ * Generate today's FPL daily digest (past 24 hours of X feeds + headlines) via Gemini.
  * Requires: SUPABASE_* , GEMINI_API_KEY, migration 0023_fpl_x_digests.sql
  */
 import { readFileSync, existsSync } from "node:fs";
@@ -36,7 +36,7 @@ async function main() {
   const dateArg = process.argv.find((a) => /^\d{4}-\d{2}-\d{2}$/.test(a));
   const digestDate = dateArg ?? londonDigestDateIso();
 
-  console.log(`Generating FPL digest for ${digestDate} (London morning window)…`);
+  console.log(`Generating FPL digest for ${digestDate} (past 24 hours)…`);
   const result = await syncFplXDigest({ digestDate, force });
   console.log(
     `Done (${result.source}): ${result.source_items.length} sources, ${result.summary_en.length} chars`,

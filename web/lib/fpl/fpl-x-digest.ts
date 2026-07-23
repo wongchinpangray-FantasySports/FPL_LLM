@@ -5,7 +5,7 @@ import { loadWcNewsFromDb } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 
 export const FPL_DIGEST_TZ = "Europe/London";
-export const FPL_DIGEST_MORNING_HOUR = 12;
+export const FPL_DIGEST_WINDOW_HOURS = 24;
 
 export type FplXDigestSource = {
   outlet: string;
@@ -32,10 +32,6 @@ const FFSCOUT_RSS = "https://www.fantasyfootballscout.co.uk/feed/";
 const FPL_HEADLINE_RE =
   /\bFPL\b|fantasy premier league|gameweek|\bGW\s?\d|price change|wildcard|deadline|mini-league|expected points|\bxP\b/i;
 
-function pad2(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
 export function londonDigestDateIso(date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: FPL_DIGEST_TZ,
@@ -45,55 +41,16 @@ export function londonDigestDateIso(date = new Date()): string {
   }).format(date);
 }
 
-function formatLondonLocal(d: Date): string {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: FPL_DIGEST_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(d);
-  const get = (type: string) =>
-    parts.find((p) => p.type === type)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
-}
-
-function zonedLocalToUtc(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-): Date {
-  const target = `${year}-${pad2(month)}-${pad2(day)}T${pad2(hour)}:${pad2(minute)}:00`;
-  let utc = Date.UTC(year, month - 1, day, hour, minute, 0);
-
-  for (let i = 0; i < 6; i++) {
-    const formatted = formatLondonLocal(new Date(utc));
-    if (formatted === target) return new Date(utc);
-    const [tDate, tTime] = target.split("T");
-    const [fDate, fTime] = formatted.split("T");
-    const tMs = Date.parse(`${tDate}T${tTime}Z`);
-    const fMs = Date.parse(`${fDate}T${fTime}Z`);
-    utc += tMs - fMs;
-  }
-
-  return new Date(utc);
-}
-
-export function londonMorningWindowBounds(digestDate: string): {
+/** Rolling window: past 24 hours ending at `now`. */
+export function rolling24HourWindowBounds(now = new Date()): {
   window_start: string;
   window_end: string;
 } {
-  const [y, m, d] = digestDate.split("-").map(Number);
-  const start = zonedLocalToUtc(y!, m!, d!, 0, 0);
-  const end = zonedLocalToUtc(y!, m!, d!, FPL_DIGEST_MORNING_HOUR, 0);
+  const endMs = now.getTime();
+  const startMs = endMs - FPL_DIGEST_WINDOW_HOURS * 60 * 60 * 1000;
   return {
-    window_start: start.toISOString(),
-    window_end: end.toISOString(),
+    window_start: new Date(startMs).toISOString(),
+    window_end: new Date(endMs).toISOString(),
   };
 }
 
@@ -105,7 +62,7 @@ function inWindow(
   if (!published_at) return false;
   const ts = Date.parse(published_at);
   if (!Number.isFinite(ts)) return false;
-  return ts >= startMs && ts < endMs;
+  return ts >= startMs && ts <= endMs;
 }
 
 function mapNewsItemToSource(
@@ -189,31 +146,30 @@ async function fetchFfscoutHeadlines(limit: number): Promise<FplXDigestSource[]>
   }
 }
 
-export async function collectFplXDigestSources(opts: {
-  digestDate: string;
-  extendToNow?: boolean;
+export async function collectFplXDigestSources(opts?: {
+  asOf?: Date;
 }): Promise<{
   sources: FplXDigestSource[];
   window_start: string;
   window_end: string;
 }> {
-  const { window_start, window_end } = londonMorningWindowBounds(opts.digestDate);
-  let endMs = Date.parse(window_end);
+  const asOf = opts?.asOf ?? new Date();
+  const { window_start, window_end } = rolling24HourWindowBounds(asOf);
   const startMs = Date.parse(window_start);
-
-  if (opts.extendToNow) {
-    const now = Date.now();
-    const londonToday = londonDigestDateIso(new Date(now));
-    if (londonToday === opts.digestDate && now > endMs) {
-      endMs = now;
-    }
-  }
+  const endMs = Date.parse(window_end);
 
   const sources: FplXDigestSource[] = [];
 
   const { fetchFplXFromPlEmbeds } = await import("@/lib/fpl/fpl-x-pl-embeds");
-  const embeds = await fetchFplXFromPlEmbeds({ limit: 25, weekOnly: false });
-  for (const item of embeds) {
+  const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
+
+  const [embeds, liveTweets] = await Promise.all([
+    fetchFplXFromPlEmbeds({ limit: 25, weekOnly: false }),
+    fetchFplXTweets({ limit: 45 }).catch(() => [] as WcNewsItem[]),
+  ]);
+
+  for (const item of [...embeds, ...liveTweets]) {
+    if (item.feed_id !== "fpl-x") continue;
     if (inWindow(item.published_at, startMs, endMs)) {
       sources.push(mapNewsItemToSource(item, "tweet"));
     }
@@ -250,27 +206,10 @@ export async function collectFplXDigestSources(opts: {
     sources.push(item);
   }
 
-  let deduped = dedupeSources(sources);
-
-  if (deduped.length < 2 && opts.extendToNow) {
-    const relaxed: FplXDigestSource[] = [];
-    for (const item of embeds) {
-      relaxed.push(mapNewsItemToSource(item, "tweet"));
-    }
-    for (const item of cached.items) {
-      if (item.feed_id !== "fpl-x") continue;
-      relaxed.push(mapNewsItemToSource(item, "tweet"));
-    }
-    for (const item of ffscout.slice(0, 6)) {
-      relaxed.push(item);
-    }
-    deduped = dedupeSources(relaxed).slice(0, 24);
-  }
-
   return {
-    sources: deduped,
+    sources: dedupeSources(sources),
     window_start,
-    window_end: new Date(endMs).toISOString(),
+    window_end,
   };
 }
 
@@ -323,7 +262,7 @@ function templateDigest(
       .map((s) => s.text.replace(/pic\.twitter\.com\/\S+/g, "").trim())
       .filter(Boolean);
     paras.push(
-      `Official FPL (@OfficialFPL) highlighted ${bits.length > 1 ? "several updates" : "an update"} this morning: ${bits.join(" ")}`,
+      `Official FPL (@OfficialFPL) posted ${bits.length > 1 ? "several updates" : "an update"} in the past 24 hours: ${bits.join(" ")}`,
     );
   }
 
@@ -331,7 +270,7 @@ function templateDigest(
     const ff = headlines.filter((s) => /ffscout/i.test(s.outlet));
     if (ff.length) {
       paras.push(
-        `FFScout flagged ${ff[0]!.text}${ff.length > 1 ? `, plus ${ff.length - 1} more FPL headline${ff.length > 2 ? "s" : ""} in the same window` : ""}.`,
+        `FFScout flagged ${ff[0]!.text}${ff.length > 1 ? `, plus ${ff.length - 1} more FPL headline${ff.length > 2 ? "s" : ""} in the same period` : ""}.`,
       );
     } else {
       paras.push(
@@ -353,7 +292,7 @@ function templateDigest(
   }
 
   if (!paras.length) {
-    return `FPL morning briefing — ${digestDate}. Quiet morning in the London window; check back after the next sync or on X for live updates.`;
+    return `FPL daily briefing — ${digestDate}. Quiet 24 hours on X and FPL news; check back after the next sync.`;
   }
 
   return paras.join("\n\n");
@@ -373,8 +312,8 @@ async function generateDigestWithGemini(
 
     const prompt =
       locale === "zh"
-        ? `请根据以下素材撰写 FPL（Fantasy Premier League）早间简报。
-时间窗口：${digestDate}，欧洲/伦敦 00:00–12:00（约 ${windowLabel}）。
+        ? `请根据以下素材撰写 FPL（Fantasy Premier League）每日简报。
+时间窗口：过去 24 小时（约 ${windowLabel}，以 ${digestDate} 为发布日）。
 仅使用所给素材，不得编造转会、伤病或官方公告。
 
 素材：
@@ -386,9 +325,9 @@ ${facts}
 - 语气专业、简洁，面向 FPL 经理
 - 提及来源时使用 @账号 或媒体名
 - 不要使用项目符号，用连贯段落
-- 若素材很少，如实说明“今晨消息较少”并概括已有内容`
-        : `Write an FPL (Fantasy Premier League) morning briefing for managers.
-Window: ${digestDate}, Europe/London midnight–noon (approx ${windowLabel}).
+- 若素材很少，如实说明“过去 24 小时消息较少”并概括已有内容`
+        : `Write an FPL (Fantasy Premier League) daily briefing for managers.
+Window: the past 24 hours (approx ${windowLabel}; digest date ${digestDate}).
 Use ONLY the sources below — do not invent injuries, transfers, or official announcements.
 
 Sources:
@@ -513,12 +452,12 @@ async function saveDigest(record: Omit<FplXDigestRecord, "source">): Promise<voi
 export async function getOrCreateFplXDigest(opts?: {
   digestDate?: string;
   force?: boolean;
-  extendToNow?: boolean;
+  asOf?: Date;
 }): Promise<FplXDigestRecord> {
-  const digestDate = opts?.digestDate ?? londonDigestDateIso();
+  const asOf = opts?.asOf ?? new Date();
+  const digestDate = opts?.digestDate ?? londonDigestDateIso(asOf);
   const { sources, window_start, window_end } = await collectFplXDigestSources({
-    digestDate,
-    extendToNow: opts?.extendToNow ?? true,
+    asOf,
   });
   const fingerprint = digestSourceFingerprint(sources);
 
@@ -651,10 +590,11 @@ export async function listRecentFplXDigests(limit = 7): Promise<
 export async function syncFplXDigest(opts?: {
   digestDate?: string;
   force?: boolean;
+  asOf?: Date;
 }): Promise<FplXDigestRecord> {
   return getOrCreateFplXDigest({
     digestDate: opts?.digestDate,
     force: opts?.force,
-    extendToNow: true,
+    asOf: opts?.asOf,
   });
 }
