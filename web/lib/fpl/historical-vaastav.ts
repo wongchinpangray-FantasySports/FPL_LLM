@@ -1,4 +1,4 @@
-import { fplTeamShortByCode, fplTeamShortLabel } from "./fpl-team-codes";
+import { fplTeamShortByCode, fplTeamShortLabel, fplTeamFullName } from "./fpl-team-codes";
 
 const VAASTAV_BASE =
   "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data";
@@ -430,4 +430,74 @@ export function formatOpponents(
   return sides
     .map((s) => opponentLabel(teamMap, s.opponentId, s.wasHome))
     .join(" · ");
+}
+
+const VAASTAV_POSITION: Record<number, string> = {
+  1: "GKP",
+  2: "DEF",
+  3: "MID",
+  4: "FWD",
+};
+
+/** Archived squad list when DB profiles are missing (team ids are season-specific). */
+export async function loadVaastavPlayerSummariesForTeamIds(
+  season: string,
+  teamIds: number[],
+): Promise<
+  Array<{
+    fpl_id: number;
+    web_name: string;
+    name: string;
+    team: string;
+    position: string;
+  }>
+> {
+  if (!teamIds.length) return [];
+
+  const folder = seasonToVaastavFolder(season);
+  if (
+    !VAASTAV_SEASON_FOLDERS.includes(
+      folder as (typeof VAASTAV_SEASON_FOLDERS)[number],
+    )
+  ) {
+    return [];
+  }
+
+  const allowed = new Set(teamIds);
+  const teamMap = await loadSeasonTeamIdMap(season);
+  const rows = await loadCsv(`${folder}/players_raw.csv`);
+  const out: Array<{
+    fpl_id: number;
+    web_name: string;
+    name: string;
+    team: string;
+    position: string;
+  }> = [];
+
+  for (const row of rows) {
+    const teamId = Number(row.team);
+    const id = Number(row.id);
+    if (!Number.isFinite(id) || id <= 0 || !allowed.has(teamId)) continue;
+
+    const first = String(row.first_name ?? "").trim();
+    const second = String(row.second_name ?? "").trim();
+    const fullName = `${first} ${second}`.trim();
+    const webName = String(row.web_name ?? "").trim() || fullName;
+    const pos = VAASTAV_POSITION[Number(row.element_type)] ?? "";
+    const code = String(row.team_code ?? "").trim();
+    const teamLabel =
+      fplTeamFullName(code) ??
+      teamMap.get(teamId) ??
+      shortCode(String(row.short_name ?? ""));
+
+    out.push({
+      fpl_id: id,
+      web_name: webName,
+      name: fullName || webName,
+      team: teamLabel,
+      position: pos,
+    });
+  }
+
+  return out;
 }

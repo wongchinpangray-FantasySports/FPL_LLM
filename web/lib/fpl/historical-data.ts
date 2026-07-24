@@ -5,10 +5,12 @@ import {
   loadPlayerTeamIdForSeason,
   loadSeasonTeamIdMap,
   loadTeamFixturesByGw,
+  loadVaastavPlayerSummariesForTeamIds,
   mergeFixtureMaps,
   opponentLabel,
   type FixtureSide,
 } from "@/lib/fpl/historical-vaastav";
+import { FPL_TEAM_CODES } from "@/lib/fpl/fpl-team-codes";
 import {
   getCurrentFplSeason,
   isFplSeasonKey,
@@ -254,13 +256,53 @@ function profileMatchesTeam(
 ): boolean {
   if (!team) return true;
   const playerTeam = normalizeSearchText(row.team ?? "");
-  const names = [
-    normalizeSearchText(team.name),
-    normalizeSearchText(team.short_name),
-  ].filter(Boolean);
+  const names = teamFilterLabels(team);
   return names.some(
     (label) => playerTeam.includes(label) || label.includes(playerTeam),
   );
+}
+
+function teamFilterLabels(team: { name: string; short_name: string }): string[] {
+  const labels = new Set<string>();
+  for (const value of [team.name, team.short_name]) {
+    const normalized = normalizeSearchText(value);
+    if (normalized) labels.add(normalized);
+  }
+  const short = team.short_name.trim().toUpperCase();
+  for (const entry of FPL_TEAM_CODES) {
+    if (entry.short_name.toUpperCase() !== short) continue;
+    const name = normalizeSearchText(entry.name);
+    if (name) labels.add(name);
+  }
+  return [...labels];
+}
+
+async function resolveSeasonTeamIdsForFilter(
+  season: string,
+  team: { short_name: string },
+): Promise<number[]> {
+  const map = await loadSeasonTeamIdMap(season);
+  const short = team.short_name.trim().toUpperCase();
+  const ids: number[] = [];
+  for (const [id, label] of map) {
+    if (label.toUpperCase() === short) ids.push(id);
+  }
+  return ids;
+}
+
+function playerRowMatchesTeamFilter(
+  row: { team?: string; team_id?: number | null },
+  team: TeamRow | undefined,
+  seasonTeamIds: number[],
+): boolean {
+  if (!team) return true;
+  if (profileMatchesTeam(row, team)) return true;
+  const teamId = row.team_id != null ? Math.floor(num(row.team_id)) : null;
+  if (teamId != null) {
+    if (seasonTeamIds.includes(teamId)) return true;
+    if (seasonTeamIds.length === 0 && teamId === team.id) return true;
+  }
+  return false;
 }
 
 async function fetchAllRows<T extends Record<string, unknown>>(
@@ -772,6 +814,41 @@ async function loadPlayerCandidates(
       }));
   }
 
+  const seasonTeamIds = team
+    ? await resolveSeasonTeamIdsForFilter(season, team)
+    : [];
+
+  if (team && seasonTeamIds.length > 0) {
+    const vaastavPlayers = await loadVaastavPlayerSummariesForTeamIds(
+      season,
+      seasonTeamIds,
+    );
+    if (vaastavPlayers.length > 0) {
+      return vaastavPlayers
+        .filter((row) => !params.position || row.position === params.position)
+        .filter((row) =>
+          hasNameFilter
+            ? matchesNameFilter(
+                {
+                  name: row.name,
+                  web_name: row.web_name,
+                  team: row.team,
+                },
+                params,
+              )
+            : true,
+        )
+        .map((row) => ({
+          fpl_id: row.fpl_id,
+          name: row.name,
+          web_name: row.web_name,
+          team: row.team,
+          team_id: null,
+          position: row.position,
+        }));
+    }
+  }
+
   const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
     const { data, error } = await supa
       .from("players_static")
@@ -789,9 +866,15 @@ async function loadPlayerCandidates(
     )
     .filter((row) => {
       if (!team) return true;
-      const teamId =
-        row.team_id != null ? Math.floor(num(row.team_id)) : null;
-      return teamId === team.id;
+      return playerRowMatchesTeamFilter(
+        {
+          team: String(row.team ?? ""),
+          team_id:
+            row.team_id != null ? Math.floor(num(row.team_id)) : null,
+        },
+        team,
+        seasonTeamIds,
+      );
     })
     .filter((row) =>
       hasNameFilter
@@ -1348,11 +1431,13 @@ export async function queryHistoricalStats(
     const seasons = await listAvailableFplSeasons();
     const hasNameFilter =
       Boolean(params.playerKey?.trim()) || nameQueryTokens(params.name).length > 0;
+    const hasTeamFilter =
+      params.teamId != null && params.teamId > 0;
     let gwFrom = 1;
     let gwTo = 38;
     const allRows: HistoricalPlayerRow[] = [];
 
-    if (hasNameFilter) {
+    if (hasNameFilter || hasTeamFilter) {
       const teams = await loadHistoricalTeams();
       const grouped = await loadPlayerCandidatesGroupedBySeason(params, teams);
       for (const season of seasons) {
