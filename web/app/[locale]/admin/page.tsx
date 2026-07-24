@@ -9,9 +9,15 @@ type Props = { params: { locale: string } };
 export default async function AdminPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations("admin");
+  const common = await getTranslations("common");
 
   return (
-    <PageShell title={t("title")} width="4xl">
+    <PageShell
+      backHref="/"
+      backLabel={common("backHome")}
+      title={t("title")}
+      width="4xl"
+    >
       <AdminUsersPanel locale={params.locale} />
     </PageShell>
   );

@@ -13,6 +13,10 @@ export default async function FplHistoricalPage({ params }: Props) {
     locale: params.locale,
     namespace: "fplHistorical",
   });
+  const common = await getTranslations({
+    locale: params.locale,
+    namespace: "common",
+  });
 
   let meta;
   try {
@@ -97,8 +101,8 @@ export default async function FplHistoricalPage({ params }: Props) {
 
   return (
     <PageShell
-      backHref="/fpl"
-      backLabel={t("backFpl")}
+      backHref="/"
+      backLabel={common("backHome")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       width="6xl"

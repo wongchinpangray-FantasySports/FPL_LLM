@@ -9,10 +9,14 @@ type Props = {
 export default async function FplXNewsPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "newsIndex" });
+  const common = await getTranslations({ locale: params.locale, namespace: "common" });
   const tWc = await getTranslations({ locale: params.locale, namespace: "worldcup" });
 
   return (
-    <PageShell title={t("fplXTitle")} description={t("fplXSummary")} width="6xl">
+    <PageShell
+      backHref="/"
+      backLabel={common("backHome")}
+      title={t("fplXTitle")} description={t("fplXSummary")} width="6xl">
       <FplXPanel
         locale={params.locale}
         labels={{

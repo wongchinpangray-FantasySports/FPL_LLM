@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { HomeBackLink } from "@/components/home-back-link";
 import { PageHeader } from "@/components/page-header";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { loadPlayerProfileBundle } from "@/lib/player-hub";
@@ -67,6 +68,7 @@ export default async function PlayerHubPage({
   if (!data) notFound();
 
   const t = await getTranslations({ locale, namespace: "playerPage" });
+  const common = await getTranslations({ locale, namespace: "common" });
   const { static: row, projection: p, currentGw, fromGw, toGw, radar } = data;
 
   const displayName = row.web_name ?? row.name ?? `#${fplId}`;
@@ -75,12 +77,7 @@ export default async function PlayerHubPage({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-8">
       <div className="flex flex-wrap gap-4 text-sm">
-        <Link
-          href="/"
-          className="text-muted-foreground transition-colors hover:text-brand-accent"
-        >
-          {t("backHome")}
-        </Link>
+        <HomeBackLink label={common("backHome")} />
         <Link
           href="/players"
           className="text-muted-foreground transition-colors hover:text-brand-accent"

@@ -9,11 +9,12 @@ type Props = { params: { locale: string } };
 export default async function PlayWcMiniPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "wcMiniIndex" });
+  const common = await getTranslations({ locale: params.locale, namespace: "common" });
 
   return (
     <PageShell
-      backHref="/play"
-      backLabel={t("backPlay")}
+      backHref="/"
+      backLabel={common("backHome")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       description={t("description")}

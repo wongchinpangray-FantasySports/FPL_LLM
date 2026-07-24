@@ -18,8 +18,8 @@ export default async function FplPreseasonPage({ params }: Props) {
 
   return (
     <PageShell
-      backHref="/fpl"
-      backLabel={t("preseasonBackFpl")}
+      backHref="/"
+      backLabel={t("backHome")}
       title={t("preseasonPageTitle")}
       description={t("preseasonPageDescription")}
       width="6xl"

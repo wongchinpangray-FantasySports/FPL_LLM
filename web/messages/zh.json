@@ -3,6 +3,9 @@
     "title": "Faleague The Football Hub",
     "description": "世界杯、FPL 工具、全球足球新闻与 AI —— 你的足球中心。"
   },
+  "common": {
+    "backHome": "← 返回首页"
+  },
   "nav": {
     "home": "首页",
     "chat": "AI 对话",

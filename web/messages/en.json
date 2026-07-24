@@ -3,6 +3,9 @@
     "title": "Faleague The Football Hub",
     "description": "World Cup live, FPL tools, global football news, and AI — your football hub in one place."
   },
+  "common": {
+    "backHome": "← Home"
+  },
   "nav": {
     "home": "Home",
     "chat": "AI Chat",

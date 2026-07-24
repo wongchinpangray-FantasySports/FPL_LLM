@@ -20,12 +20,19 @@ type Props = {
 export default async function NewsPage({ params, searchParams }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "newsIndex" });
+  const common = await getTranslations({ locale: params.locale, namespace: "common" });
   const raw = searchParams?.category?.toLowerCase();
   const category =
     raw && CATEGORIES.has(raw as NewsCategory) ? (raw as NewsCategory) : "trending";
 
   return (
-    <PageShell title={t("title")} description={t("summary")} width="6xl">
+    <PageShell
+      backHref="/"
+      backLabel={common("backHome")}
+      title={t("title")}
+      description={t("summary")}
+      width="6xl"
+    >
       <NewsPageContent defaultCategory={category} />
     </PageShell>
   );

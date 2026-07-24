@@ -12,8 +12,8 @@ export default async function PlayMiniFplPage({ params }: Props) {
 
   return (
     <PageShell
-      backHref="/play"
-      backLabel={t("backPlay")}
+      backHref="/"
+      backLabel={t("backHome")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       description={t("description")}

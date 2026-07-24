@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { HomeBackLink } from "@/components/home-back-link";
 import { AuthForm } from "@/components/auth/auth-form";
 
 type Props = {
@@ -9,17 +10,21 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const t = await getTranslations("auth");
+  const common = await getTranslations("common");
   const nextPath = searchParams.next;
 
   return (
-    <div className="flex flex-col gap-6">
-      <AuthForm mode="login" nextPath={nextPath} />
-      <p className="text-center text-sm text-muted-foreground">
-        {t("noAccount")}{" "}
-        <Link href="/auth/signup" className="text-brand-accent hover:underline">
-          {t("signupLink")}
-        </Link>
-      </p>
+    <div className="flex flex-col gap-5 md:gap-6">
+      <HomeBackLink label={common("backHome")} />
+      <div className="flex flex-col gap-6">
+        <AuthForm mode="login" nextPath={nextPath} />
+        <p className="text-center text-sm text-muted-foreground">
+          {t("noAccount")}{" "}
+          <Link href="/auth/signup" className="text-brand-accent hover:underline">
+            {t("signupLink")}
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

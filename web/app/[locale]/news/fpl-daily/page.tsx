@@ -9,9 +9,13 @@ type Props = {
 export default async function FplDailyNewsPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "newsIndex" });
+  const common = await getTranslations({ locale: params.locale, namespace: "common" });
 
   return (
-    <PageShell title={t("fplDailyTitle")} description={t("fplDailySummary")} width="6xl">
+    <PageShell
+      backHref="/"
+      backLabel={common("backHome")}
+      title={t("fplDailyTitle")} description={t("fplDailySummary")} width="6xl">
       <FplDailyPanel
         locale={params.locale}
         labels={{
