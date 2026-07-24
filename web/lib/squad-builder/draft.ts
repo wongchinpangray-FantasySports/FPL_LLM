@@ -73,10 +73,15 @@ export function loadOrCreateDraft(
 ): SquadBuilderDraftV2 {
   const existing = loadV2();
   if (existing) {
+    const planningGw = clampGw(
+      existing.planningGw >= fromGw ? existing.planningGw : fromGw,
+      fromGw,
+      horizon,
+    );
     return {
       ...existing,
       horizon,
-      planningGw: clampGw(existing.planningGw, fromGw, horizon),
+      planningGw,
     };
   }
 

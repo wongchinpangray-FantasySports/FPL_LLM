@@ -84,6 +84,7 @@ export function SquadBuilderPlayerPanel({
   const [sort, setSort] = useState<SortKey>("price");
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState<BrowsePlayer[]>([]);
+  const [lastSeasonKey, setLastSeasonKey] = useState<string | null>(null);
   const [panelProj, setPanelProj] = useState<Record<string, PanelProjRow>>({});
   const [loading, setLoading] = useState(false);
   const [projLoading, setProjLoading] = useState(false);
@@ -99,7 +100,6 @@ export function SquadBuilderPlayerPanel({
       const params = new URLSearchParams({
         sort: sort === "xpts" ? "price" : sort,
         limit: "80",
-        max_price: String(Math.max(bank, 0.1)),
       });
       if (q.trim()) params.set("q", q.trim());
       if (position) params.set("position", position);
@@ -107,15 +107,19 @@ export function SquadBuilderPlayerPanel({
       const res = await fetch(`/api/squad-builder/players?${params}`, {
         cache: "no-store",
       });
-      const data = (await res.json()) as { players?: BrowsePlayer[] };
+      const data = (await res.json()) as {
+        players?: BrowsePlayer[];
+        lastSeasonKey?: string | null;
+      };
       setPlayers(data.players ?? []);
+      setLastSeasonKey(data.lastSeasonKey ?? null);
       setUpdatedAt(Date.now());
     } catch {
       setPlayers([]);
     } finally {
       setLoading(false);
     }
-  }, [q, position, teamId, sort, bank]);
+  }, [q, position, teamId, sort]);
 
   useEffect(() => {
     const timer = setTimeout(() => void loadPlayers(), 200);
@@ -170,7 +174,15 @@ export function SquadBuilderPlayerPanel({
     });
   }, [players, sort, mergedProj, planningGw]);
 
-  const showLoading = loading || projLoading;
+  const sortLabels: Record<SortKey, string> = {
+    price: labels.sortPrice,
+    points: labels.sortPoints,
+    ownership: labels.sortOwnership,
+    form: labels.sortForm,
+    xpts: labels.sortXpts,
+  };
+
+  const showLoading = loading || (projLoading && sortedPlayers.length === 0);
 
   return (
     <aside className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-4 lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
@@ -191,6 +203,17 @@ export function SquadBuilderPlayerPanel({
         <p className="mt-0.5 text-[10px] text-muted-foreground">
           {t("panelGwHint", { gw: planningGw })}
         </p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">
+          {t("panelSortHint", { sort: sortLabels[sort] })}
+        </p>
+        {lastSeasonKey ? (
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {t("panelLastSeasonHint", {
+              season: lastSeasonKey,
+              next: String(Number(lastSeasonKey) + 1).slice(-2),
+            })}
+          </p>
+        ) : null}
       </div>
 
       <Input

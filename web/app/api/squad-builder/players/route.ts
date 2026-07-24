@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { loadLastSeasonPointsForPlayers } from "@/lib/squad-builder/last-season-points";
 import { getServerSupabase } from "@/lib/supabase";
 
 const COLS =
-  "fpl_id,web_name,name,team,team_id,position,base_price,status,form,total_points,minutes,selected_by_percent,points_per_game";
+  "fpl_id,web_name,name,team,team_id,position,base_price,status,form,total_points,minutes,selected_by_percent,points_per_game,updated_at";
 
 const SORT_COLUMNS = {
   price: "base_price",
@@ -23,40 +23,12 @@ function sanitizeQuery(q: string): string {
     .slice(0, 48);
 }
 
-async function loadLastSeasonPoints(
-  fplIds: number[],
-): Promise<Map<number, number>> {
-  const out = new Map<number, number>();
-  if (fplIds.length === 0) return out;
-
-  const currentSeason = await getCurrentFplSeason();
-  const prevSeason = String(Number(currentSeason) - 1);
-  if (!Number.isFinite(Number(prevSeason))) return out;
-
-  const supa = getServerSupabase();
-  const { data, error } = await supa
-    .from("player_gw_stats")
-    .select("player_id,total_points")
-    .eq("season", prevSeason)
-    .in("player_id", fplIds);
-
-  if (error) return out;
-
-  for (const row of data ?? []) {
-    const id = Number(row.player_id);
-    if (!Number.isFinite(id)) continue;
-    out.set(id, (out.get(id) ?? 0) + Number(row.total_points ?? 0));
-  }
-  return out;
-}
-
 /** Browse players for Squad Builder (no min search length). */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("q") ?? "";
   const position = searchParams.get("position");
   const teamId = searchParams.get("team_id");
-  const maxPrice = searchParams.get("max_price");
   const sort = (searchParams.get("sort") ?? "price") as SortKey;
   const limit = Math.min(
     Math.max(Number(searchParams.get("limit") ?? 50) || 50, 10),
@@ -78,10 +50,6 @@ export async function GET(req: Request) {
     const tid = Number(teamId);
     if (Number.isFinite(tid)) query = query.eq("team_id", tid);
   }
-  if (maxPrice != null && maxPrice !== "") {
-    const p = Number(maxPrice);
-    if (Number.isFinite(p)) query = query.lte("base_price", p);
-  }
 
   const col = SORT_COLUMNS[sort] ?? SORT_COLUMNS.price;
   const ascending = sort === "price";
@@ -93,17 +61,23 @@ export async function GET(req: Request) {
   }
 
   const rows = data ?? [];
-  const lastSeasonMap = await loadLastSeasonPoints(
-    rows.map((r) => Number(r.fpl_id)).filter((id) => Number.isFinite(id)),
-  );
+  const fplIds = rows.map((r) => Number(r.fpl_id)).filter((id) => Number.isFinite(id));
+  const { season: lastSeasonKey, points: lastSeasonMap } =
+    await loadLastSeasonPointsForPlayers(fplIds);
 
   const players = rows.map((r) => ({
     ...r,
+    base_price:
+      r.base_price != null ? Math.round(Number(r.base_price) * 10) / 10 : null,
     last_season_points: lastSeasonMap.get(Number(r.fpl_id)) ?? null,
   }));
 
   return NextResponse.json(
-    { players },
+    {
+      players,
+      lastSeasonKey,
+      fetchedAt: new Date().toISOString(),
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

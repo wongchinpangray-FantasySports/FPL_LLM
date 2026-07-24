@@ -32,6 +32,7 @@ import {
   type GwSquadState,
   type SquadBuilderDraftV2,
 } from "@/lib/squad-builder/draft";
+import { SQUAD_BUILDER_FROM_GW } from "@/lib/squad-builder/projection-window";
 import {
   createEmptySquad,
   filledPicks,
@@ -41,6 +42,7 @@ import {
   squadSpendM,
   SQUAD_BUILDER_BUDGET_M,
 } from "@/lib/squad-builder/slots";
+import { targetSlotForPlayer } from "@/lib/squad-builder/target-slot";
 import {
   computeSingleGwSquadXpt,
   computeSquadGwXpt,
@@ -83,7 +85,7 @@ export function SquadBuilderApp({
   gwContext: GwContext;
 }) {
   const t = useTranslations("squadBuilderApp");
-  const fromGw = gwContext.fromGw;
+  const fromGw = SQUAD_BUILDER_FROM_GW;
 
   const [horizon, setHorizon] = useState(5);
   const [draft, setDraft] = useState<SquadBuilderDraftV2>(() =>
@@ -148,6 +150,9 @@ export function SquadBuilderApp({
 
   const projectionIds = useMemo(() => {
     const ids = new Set<number>();
+    if (squadValid) {
+      for (const p of filled) ids.add(p.fpl_id);
+    }
     for (const gw of gws) {
       const sq = resolveGwSquad(draft, gw, fromGw);
       const f = filledPicks(sq.picks);
@@ -155,9 +160,9 @@ export function SquadBuilderApp({
       for (const p of f) ids.add(p.fpl_id);
     }
     return [...ids];
-  }, [draft, gws, fromGw]);
+  }, [draft, gws, fromGw, squadValid, filled]);
 
-  const canProject = projectionIds.length >= 15;
+  const canProject = squadValid && projectionIds.length >= 15;
 
   const squadIssues = useMemo(() => {
     if (filled.length === 0) return [];
@@ -238,7 +243,10 @@ export function SquadBuilderApp({
   }, [picks, playerProjCache, planningGw, captainId]);
 
   const runProject = useCallback(async () => {
-    if (!canProject) return;
+    if (!canProject) {
+      setProjError(t("errFixSquadXp"));
+      return;
+    }
     setProjLoading(true);
     setProjError(null);
     try {
@@ -276,12 +284,6 @@ export function SquadBuilderApp({
       setProjLoading(false);
     }
   }, [canProject, projectionIds, fromGw, horizon, t]);
-
-  useEffect(() => {
-    if (!canProject) return;
-    const timer = setTimeout(() => void runProject(), 600);
-    return () => clearTimeout(timer);
-  }, [canProject, projectionIds, horizon, planningGw, runProject]);
 
   function fixCaptainVice(next: PlannerPickPayload[]) {
     let nextCaptain = captainId;
@@ -340,6 +342,20 @@ export function SquadBuilderApp({
     setNotice(null);
     fixCaptainVice(nextPicks);
     setSelectedSlot(firstEmptySlot(nextPicks));
+  }
+
+  function addPlayerFromPanel(p: BrowsePlayer) {
+    const slot = targetSlotForPlayer(picks, p, selectedSlot);
+    if (slot == null) {
+      setNotice(
+        t("valPosMismatch", {
+          pos: p.position ?? "?",
+          need: selectedSlot != null ? (slotPosition(selectedSlot) ?? "?") : "?",
+        }),
+      );
+      return;
+    }
+    applyPlayerToSlot(slot, p);
   }
 
   function removePlayer(slot: number) {
@@ -538,6 +554,10 @@ export function SquadBuilderApp({
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100/90">
           {formatSquadBuilderIssue(squadIssues[0], t)}
         </div>
+      ) : squadValid && !projMeta ? (
+        <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/10 px-3 py-2 text-sm text-foreground/90">
+          {t("showXptsHint")}
+        </div>
       ) : squadValid ? (
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100/90">
           {t("squadValidGw", { gw: planningGw })}
@@ -612,11 +632,24 @@ export function SquadBuilderApp({
         </label>
         <Button
           type="button"
+          variant="primary"
           size="sm"
           disabled={!canProject || projLoading}
           onClick={() => void runProject()}
         >
-          {projLoading ? t("projecting") : t("refreshXp")}
+          {projLoading ? t("projecting") : t("showXpts")}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={!squadValid}
+          onClick={() => {
+            saveDraftV2({ ...draft, planningGw, horizon });
+            setNotice(t("draftSaved"));
+          }}
+        >
+          {t("saveSquad")}
         </Button>
         <Button
           type="button"
@@ -750,11 +783,7 @@ export function SquadBuilderApp({
           projById={playerProjCache}
           squadFplIds={squadFplIds}
           teams={teams}
-          onPickPlayer={(p) => {
-            const slot =
-              selectedSlot ?? firstEmptySlot(picks) ?? picks[0]?.slot ?? 1;
-            applyPlayerToSlot(slot, p);
-          }}
+          onPickPlayer={addPlayerFromPanel}
           labels={panelLabels}
         />
       </div>

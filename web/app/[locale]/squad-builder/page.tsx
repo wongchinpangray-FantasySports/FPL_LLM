@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { HomeBackLink } from "@/components/home-back-link";
 import { SquadBuilderApp } from "@/components/squad-builder/squad-builder-app";
 import { listCurrentPlTeams } from "@/lib/fpl/epl-2627-clubs";
-import { resolvePlannerProjectionWindow } from "@/lib/planner/projection-window";
+import { resolveSquadBuilderWindow } from "@/lib/squad-builder/projection-window";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export default async function SquadBuilderPage({ params }: Props) {
   });
   const [teams, window] = await Promise.all([
     listCurrentPlTeams(),
-    resolvePlannerProjectionWindow(5),
+    resolveSquadBuilderWindow(5),
   ]);
 
   return (
