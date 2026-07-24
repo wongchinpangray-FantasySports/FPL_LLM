@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { getServerSupabase } from "@/lib/supabase";
 
 const COLS =
@@ -20,6 +21,33 @@ function sanitizeQuery(q: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 48);
+}
+
+async function loadLastSeasonPoints(
+  fplIds: number[],
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  if (fplIds.length === 0) return out;
+
+  const currentSeason = await getCurrentFplSeason();
+  const prevSeason = String(Number(currentSeason) - 1);
+  if (!Number.isFinite(Number(prevSeason))) return out;
+
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("player_gw_stats")
+    .select("player_id,total_points")
+    .eq("season", prevSeason)
+    .in("player_id", fplIds);
+
+  if (error) return out;
+
+  for (const row of data ?? []) {
+    const id = Number(row.player_id);
+    if (!Number.isFinite(id)) continue;
+    out.set(id, (out.get(id) ?? 0) + Number(row.total_points ?? 0));
+  }
+  return out;
 }
 
 /** Browse players for Squad Builder (no min search length). */
@@ -64,5 +92,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ players: data ?? [] });
+  const rows = data ?? [];
+  const lastSeasonMap = await loadLastSeasonPoints(
+    rows.map((r) => Number(r.fpl_id)).filter((id) => Number.isFinite(id)),
+  );
+
+  const players = rows.map((r) => ({
+    ...r,
+    last_season_points: lastSeasonMap.get(Number(r.fpl_id)) ?? null,
+  }));
+
+  return NextResponse.json(
+    { players },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

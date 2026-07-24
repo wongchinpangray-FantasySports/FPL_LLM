@@ -6,6 +6,7 @@ import { isFilledPick } from "@/lib/squad-builder/slots";
 
 type ProjRow = {
   xp_next_gw?: number;
+  by_gw?: { gw: number; xp: number }[];
 };
 
 export function SquadBuilderListView({
@@ -13,6 +14,7 @@ export function SquadBuilderListView({
   captainId,
   viceId,
   projById,
+  planningGw,
   selectedSlot,
   onSelectSlot,
   labels,
@@ -21,6 +23,7 @@ export function SquadBuilderListView({
   captainId: number | null;
   viceId: number | null;
   projById: Record<string, ProjRow>;
+  planningGw: number;
   selectedSlot: number | null;
   onSelectSlot: (slot: number) => void;
   labels: {
@@ -53,6 +56,7 @@ export function SquadBuilderListView({
             {rows.map((p) => {
               const filled = isFilledPick(p);
               const pr = filled ? projById[String(p.fpl_id)] : undefined;
+              const gwXp = pr?.by_gw?.find((c) => c.gw === planningGw)?.xp;
               const isC = captainId === p.fpl_id;
               const isV = viceId === p.fpl_id;
               return (
@@ -93,9 +97,7 @@ export function SquadBuilderListView({
                     –
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-brand-accent">
-                    {pr?.xp_next_gw != null
-                      ? pr.xp_next_gw.toFixed(1)
-                      : "–"}
+                    {gwXp != null ? gwXp.toFixed(1) : pr?.xp_next_gw != null ? pr.xp_next_gw.toFixed(1) : "–"}
                   </td>
                   <td className="px-2 py-2 text-center text-xs">
                     {p.is_starter ? "XI" : "BN"}
