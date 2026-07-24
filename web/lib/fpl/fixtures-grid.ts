@@ -4,11 +4,11 @@ import {
   getEpl2627Teams,
 } from "@/lib/fpl/epl-2627";
 import {
-  buildFplFdrLookup,
-  buildH2HStore,
-  loadTeamStrengthByCode,
-  lookupFplFdr,
-} from "@/lib/fpl/fdr";
+  buildShortToFplTeamIdMap,
+  loadOfficialFixtureByMatchMap,
+  officialFixtureMatchKey,
+  teamFdrFromOfficialRow,
+} from "@/lib/fpl/official-fdr";
 import { FPL_LAST_SEASON_GW } from "@/lib/dashboard";
 
 export type FplFixtureCell = {
@@ -52,6 +52,8 @@ export const FPL_GW_BLOCK_RANGES: [number, number][] = [
   [31, 38],
 ];
 
+const DEFAULT_FDR = 3;
+
 function buildGwBlocks(): FplGwBlock[] {
   return FPL_GW_BLOCK_RANGES.map(([fromGw, toGw]) => ({
     fromGw,
@@ -89,20 +91,10 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
   const endGw = FPL_LAST_SEASON_GW;
   const fplSeason = season.season;
 
-  const [h2hStore, strengths] = await Promise.all([
-    buildH2HStore(),
-    loadTeamStrengthByCode(),
+  const [officialByMatch, shortToFplId] = await Promise.all([
+    loadOfficialFixtureByMatchMap(startGw, endGw, fplSeason),
+    buildShortToFplTeamIdMap(),
   ]);
-
-  const fdrLookup = buildFplFdrLookup(
-    fixtures.map((fx) => ({
-      id: fx.id,
-      home: teams.get(fx.home_team_id)?.short ?? "",
-      away: teams.get(fx.away_team_id)?.short ?? "",
-    })),
-    h2hStore,
-    strengths,
-  );
 
   const teamIds = [...teams.keys()].sort((a, b) =>
     (teams.get(a)?.short ?? "").localeCompare(teams.get(b)?.short ?? ""),
@@ -126,13 +118,39 @@ export async function buildFplFixtureGrid(): Promise<FplFixtureGrid> {
 
       const oppId = isHome ? fx.away_team_id : fx.home_team_id;
       const opp = teams.get(oppId);
+      const homeShort = teams.get(fx.home_team_id)?.short?.toUpperCase() ?? "";
+      const awayShort = teams.get(fx.away_team_id)?.short?.toUpperCase() ?? "";
+      const fplHomeId = shortToFplId.get(homeShort);
+      const fplAwayId = shortToFplId.get(awayShort);
+      const fplTeamId = shortToFplId.get(team?.short?.toUpperCase() ?? "");
+
+      let fixtureId = fx.id;
+      let fdr = DEFAULT_FDR;
+
+      if (fplHomeId != null && fplAwayId != null) {
+        const official = officialByMatch.get(
+          officialFixtureMatchKey(fx.gw, fplHomeId, fplAwayId),
+        );
+        if (official) {
+          fixtureId = official.id;
+          if (fplTeamId != null) {
+            const officialFdr = teamFdrFromOfficialRow(official, fplTeamId);
+            if (officialFdr != null) fdr = officialFdr;
+          } else if (isHome && official.home_fdr != null) {
+            fdr = official.home_fdr;
+          } else if (!isHome && official.away_fdr != null) {
+            fdr = official.away_fdr;
+          }
+        }
+      }
+
       cells.push({
-        fixture_id: fx.id,
+        fixture_id: fixtureId,
         gw: fx.gw,
         opp: opp?.short ?? String(oppId),
         opp_name: opp?.name ?? String(oppId),
         home: isHome,
-        fdr: lookupFplFdr(fdrLookup, team?.short ?? "", fx.id),
+        fdr,
       });
     }
 
