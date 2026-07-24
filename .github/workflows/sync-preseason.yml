@@ -3,7 +3,7 @@ name: Pre-season results sync
 # Every hour during Jul–Aug (UTC). Also run manually after match days.
 on:
   schedule:
-    - cron: "0 * * * 7,8"
+    - cron: "0 * * 7,8 *"
   workflow_dispatch:
 
 concurrency:
