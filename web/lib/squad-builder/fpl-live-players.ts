@@ -130,19 +130,18 @@ export function filterOfficialFplPlayers(
     let cmp = 0;
     switch (sort) {
       case "points":
-        cmp = (a.total_points ?? Infinity) - (b.total_points ?? Infinity);
+        cmp = (b.total_points ?? -1) - (a.total_points ?? -1);
         break;
       case "ownership":
         cmp =
-          (a.selected_by_percent ?? Infinity) -
-          (b.selected_by_percent ?? Infinity);
+          (b.selected_by_percent ?? -1) - (a.selected_by_percent ?? -1);
         break;
       case "form":
-        cmp = (a.form ?? Infinity) - (b.form ?? Infinity);
+        cmp = (b.form ?? -1) - (a.form ?? -1);
         break;
       case "price":
       default:
-        cmp = (a.base_price ?? Infinity) - (b.base_price ?? Infinity);
+        cmp = (b.base_price ?? -1) - (a.base_price ?? -1);
         break;
     }
     if (cmp !== 0) return cmp;
