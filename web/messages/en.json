@@ -643,7 +643,7 @@
     "inSquad": "Already in squad",
     "panelLoading": "Loading…",
     "panelEmpty": "No players match filters.",
-    "trialist": "Trialist",
+    "emptyPlayer": "Player",
     "makeCaptain": "Captain",
     "makeVice": "Vice",
     "pitchTitle": "Your squad ({filled}/15)",

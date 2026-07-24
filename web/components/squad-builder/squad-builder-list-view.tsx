@@ -30,7 +30,7 @@ export function SquadBuilderListView({
     colPts: string;
     colXpts: string;
     colXi: string;
-    trialist: string;
+    emptyPlayer: string;
   };
 }) {
   const rows = [...picks].sort((a, b) => a.slot - b.slot);
@@ -70,7 +70,7 @@ export function SquadBuilderListView({
                         {p.slot}
                       </span>
                       <span className="font-medium text-foreground">
-                        {filled ? p.web_name : labels.trialist}
+                        {filled ? p.web_name : labels.emptyPlayer}
                       </span>
                       {filled ? (
                         <span className="text-xs text-muted-foreground">

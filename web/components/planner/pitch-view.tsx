@@ -88,6 +88,7 @@ function PlayerChip({
 }) {
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
+  const isEmpty = p.fpl_id <= 0;
 
   const hasStrip = gwStrip != null && gwStrip.length > 0;
   /** Match horizon totals: starter captain earns double in each GW on the strip. */
@@ -120,7 +121,8 @@ function PlayerChip({
         <GwStripRow cells={gwStripForDisplay} />
       ) : (
         <div className="truncate text-[7px] text-muted-foreground sm:text-[9px]">
-          {cardSubline ?? p.team ?? "–"}
+          {cardSubline ??
+            (isEmpty ? (p.position ?? "–") : (p.team ?? "–"))}
         </div>
       )}
       <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
@@ -133,9 +135,11 @@ function PlayerChip({
           )}
           title={showNextXp ? nextGwXpTitle : undefined}
         >
-          {showNextXp && nextXp != null && Number.isFinite(nextXp)
-            ? nextXp.toFixed(1)
-            : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
+          {isEmpty
+            ? "–"
+            : showNextXp && nextXp != null && Number.isFinite(nextXp)
+              ? nextXp.toFixed(1)
+              : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
         </span>
         {isC && (
           <span className="rounded bg-brand-accent/25 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
@@ -155,7 +159,9 @@ function PlayerChip({
     "min-w-[44px] max-w-[min(22vw,68px)] shrink rounded-md border px-0.5 py-0.5 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
     hasStrip &&
       "min-w-[52px] max-w-[min(28vw,88px)] sm:min-w-[88px] sm:max-w-[118px]",
-    "border-border bg-input backdrop-blur-sm",
+    isEmpty
+      ? "border-dashed border-white/25 bg-black/35 backdrop-blur-[2px]"
+      : "border-border bg-input backdrop-blur-sm",
     highlight &&
       "ring-2 ring-amber-400 ring-offset-1 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)] sm:ring-offset-2",
     selectedForReorder &&
@@ -220,6 +226,50 @@ function Line({
         />
       ))}
     </div>
+  );
+}
+
+function PitchMarkings({ gkAtTop }: { gkAtTop: boolean }) {
+  const boxSide = gkAtTop ? "top" : "bottom";
+  const farSide = gkAtTop ? "bottom" : "top";
+  const boxPos =
+    boxSide === "bottom"
+      ? "bottom-2 sm:bottom-3"
+      : "top-2 sm:top-3";
+  const farPos =
+    farSide === "bottom"
+      ? "bottom-[38%] sm:bottom-[36%]"
+      : "top-[38%] sm:top-[36%]";
+
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-2 rounded-sm border border-white/25 sm:inset-3" />
+      <div className="pointer-events-none absolute left-2 right-2 top-1/2 h-px -translate-y-1/2 bg-white/25 sm:left-3 sm:right-3" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[24%] w-[20%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35" />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 h-[18%] w-[42%] -translate-x-1/2 border border-white/20",
+          boxPos,
+          "border-b-0 sm:border-b-0",
+          boxSide === "bottom" ? "rounded-t-sm" : "rounded-b-sm border-t-0",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 h-[8%] w-[18%] -translate-x-1/2 border border-white/15",
+          boxPos,
+          boxSide === "bottom" ? "rounded-t-sm border-b-0" : "rounded-b-sm border-t-0",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 h-[10%] w-[28%] -translate-x-1/2 border border-white/10",
+          farPos,
+          farSide === "bottom" ? "rounded-t-sm border-b-0" : "rounded-b-sm border-t-0",
+        )}
+      />
+    </>
   );
 }
 
@@ -293,13 +343,19 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           ) : null}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-b from-emerald-950 via-emerald-900/95 to-emerald-950 shadow-lg sm:rounded-2xl">
-          {/* Decorative centre line */}
-          <div className="relative aspect-[5/2.55] flex flex-col justify-between px-1 py-1.5 sm:aspect-[5/3.1] sm:px-2 sm:py-3">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 bg-muted" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-border" />
+        <div className="overflow-hidden rounded-xl border border-emerald-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)] sm:rounded-2xl">
+          <div
+            className="relative aspect-[5/2.55] flex flex-col justify-between px-1 py-1.5 sm:aspect-[5/3.1] sm:px-2 sm:py-3"
+            style={{
+              backgroundImage: [
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12%)",
+                "linear-gradient(to bottom, rgb(5 70 55), rgb(4 58 48), rgb(5 70 55))",
+              ].join(", "),
+            }}
+          >
+            <PitchMarkings gkAtTop={gkAtTop} />
 
-            {/* XI rows: GK → DEF → MID → FWD (top to bottom); pass gkAtTop={false} for attack-first. */}
+            {/* XI rows: FWD → MID → DEF → GK (bottom) when gkAtTop=false. */}
             {(gkAtTop
               ? [
                   { key: "gk", players: gk },
@@ -332,7 +388,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           </div>
 
           {/* Bench */}
-          <div className="border-t border-border bg-black/25 px-1 py-1 sm:px-2 sm:py-2">
+          <div className="border-t border-white/10 bg-black/40 px-1 py-1 sm:px-2 sm:py-2">
             <div className="mb-0.5 text-[9px] uppercase tracking-wide text-muted-foreground sm:mb-1 sm:text-[10px]">
               {benchLabel}
             </div>

@@ -642,7 +642,7 @@
     "inSquad": "已在阵容中",
     "panelLoading": "加载中…",
     "panelEmpty": "没有符合条件的球员。",
-    "trialist": "试训",
+    "emptyPlayer": "球员",
     "makeCaptain": "队长",
     "makeVice": "副队",
     "pitchTitle": "你的阵容 ({filled}/15)",

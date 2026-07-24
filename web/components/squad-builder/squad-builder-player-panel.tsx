@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +41,6 @@ export function SquadBuilderPlayerPanel({
   onPickPlayer: (player: BrowsePlayer) => void;
   labels: {
     title: string;
-    slotHint: string;
     search: string;
     positionAll: string;
     clubAll: string;
@@ -57,6 +57,7 @@ export function SquadBuilderPlayerPanel({
     empty: string;
   };
 }) {
+  const t = useTranslations("squadBuilderApp");
   const [position, setPosition] = useState<string>("");
   const [teamId, setTeamId] = useState<string>("");
   const [sort, setSort] = useState<SortKey>("price");
@@ -99,10 +100,9 @@ export function SquadBuilderPlayerPanel({
       <div>
         <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {labels.slotHint.replace(
-            "{slot}",
-            selectedSlot != null ? String(selectedSlot) : "–",
-          )}
+          {t("panelSlotHint", {
+            slot: selectedSlot != null ? selectedSlot : "–",
+          })}
         </p>
       </div>
 

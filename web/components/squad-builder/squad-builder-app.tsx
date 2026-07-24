@@ -25,6 +25,7 @@ import {
   createEmptySquad,
   filledPicks,
   isFilledPick,
+  normalizeEmptySquadFormation,
   slotPosition,
   squadBankM,
   squadSpendM,
@@ -55,7 +56,7 @@ function loadDraft(): PlannerPickPayload[] | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PlannerPickPayload[];
     if (!Array.isArray(parsed) || parsed.length !== 15) return null;
-    return parsed;
+    return normalizeEmptySquadFormation(parsed);
   } catch {
     return null;
   }
@@ -370,12 +371,11 @@ export function SquadBuilderApp({ teams }: { teams: TeamOption[] }) {
   const pitchPicks = picks.map((p) =>
     isFilledPick(p)
       ? p
-      : { ...p, web_name: t("trialist"), base_price: 0 },
+      : { ...p, web_name: t("emptyPlayer"), base_price: 0 },
   );
 
   const panelLabels = {
     title: t("panelTitle"),
-    slotHint: t("panelSlotHint"),
     search: t("searchPlaceholder"),
     positionAll: t("filterPositionAll"),
     clubAll: t("filterClubAll"),
@@ -399,7 +399,7 @@ export function SquadBuilderApp({ teams }: { teams: TeamOption[] }) {
     colPts: t("colPts"),
     colXpts: t("colXpts"),
     colXi: t("colXi"),
-    trialist: t("trialist"),
+    emptyPlayer: t("emptyPlayer"),
   };
 
   return (
@@ -581,6 +581,7 @@ export function SquadBuilderApp({ teams }: { teams: TeamOption[] }) {
               nextGwXpTitle={t("nextGwXpTitle", { gw: projMeta?.fromGw ?? "–" })}
               benchLabel={t("benchLabel")}
               benchGkAbbrev={t("benchGk")}
+              gkAtTop={false}
             />
           ) : (
             <SquadBuilderListView
