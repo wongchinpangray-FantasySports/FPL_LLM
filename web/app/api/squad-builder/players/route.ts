@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { loadLastSeasonPointsForPlayers } from "@/lib/squad-builder/last-season-points";
-import { getServerSupabase } from "@/lib/supabase";
-
-const COLS =
-  "fpl_id,web_name,name,team,team_id,position,base_price,status,form,total_points,minutes,selected_by_percent,points_per_game,updated_at";
-
-const SORT_COLUMNS = {
-  price: "base_price",
-  points: "total_points",
-  ownership: "selected_by_percent",
-  form: "form",
-} as const;
-
-type SortKey = keyof typeof SORT_COLUMNS;
+import {
+  filterOfficialFplPlayers,
+  getOfficialFplBrowsePlayers,
+  type SquadBuilderPlayerSort,
+} from "@/lib/squad-builder/fpl-live-players";
 
 function sanitizeQuery(q: string): string {
   return q
@@ -23,61 +15,60 @@ function sanitizeQuery(q: string): string {
     .slice(0, 48);
 }
 
-/** Browse players for Squad Builder (no min search length). */
+/** Browse players from official FPL bootstrap-static (prices, ownership, form, season pts). */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("q") ?? "";
   const position = searchParams.get("position");
-  const teamId = searchParams.get("team_id");
-  const sort = (searchParams.get("sort") ?? "price") as SortKey;
+  const teamIdRaw = searchParams.get("team_id");
+  const sort = (searchParams.get("sort") ?? "price") as SquadBuilderPlayerSort;
   const limit = Math.min(
     Math.max(Number(searchParams.get("limit") ?? 50) || 50, 10),
     100,
   );
 
   const q = sanitizeQuery(raw);
-  const supa = getServerSupabase();
-  let query = supa.from("players_static").select(COLS).limit(limit);
+  const teamId =
+    teamIdRaw != null && teamIdRaw !== "" && Number.isFinite(Number(teamIdRaw))
+      ? Number(teamIdRaw)
+      : undefined;
 
-  if (q.length >= 1) {
-    query = query.or(`web_name.ilike.%${q}%,name.ilike.%${q}%`);
+  try {
+    const pool = await getOfficialFplBrowsePlayers();
+    const filtered = filterOfficialFplPlayers(pool, {
+      q,
+      position:
+        position && ["GKP", "DEF", "MID", "FWD"].includes(position)
+          ? position
+          : undefined,
+      teamId,
+      sort: ["price", "points", "ownership", "form"].includes(sort)
+        ? sort
+        : "price",
+      limit,
+    });
+
+    const fplIds = filtered.map((p) => p.fpl_id);
+    const { season: lastSeasonKey, points: lastSeasonMap } =
+      await loadLastSeasonPointsForPlayers(fplIds);
+
+    const players = filtered.map((p) => ({
+      ...p,
+      last_season_points: lastSeasonMap.get(p.fpl_id) ?? null,
+    }));
+
+    return NextResponse.json(
+      {
+        players,
+        lastSeasonKey,
+        source: "fpl_bootstrap_static",
+        fetchedAt: new Date().toISOString(),
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Failed to load official FPL players";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
-
-  if (position && ["GKP", "DEF", "MID", "FWD"].includes(position)) {
-    query = query.eq("position", position);
-  }
-  if (teamId != null && teamId !== "") {
-    const tid = Number(teamId);
-    if (Number.isFinite(tid)) query = query.eq("team_id", tid);
-  }
-
-  const col = SORT_COLUMNS[sort] ?? SORT_COLUMNS.price;
-  const ascending = sort === "price";
-  query = query.order(col, { ascending, nullsFirst: false });
-
-  const { data, error } = await query;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const rows = data ?? [];
-  const fplIds = rows.map((r) => Number(r.fpl_id)).filter((id) => Number.isFinite(id));
-  const { season: lastSeasonKey, points: lastSeasonMap } =
-    await loadLastSeasonPointsForPlayers(fplIds);
-
-  const players = rows.map((r) => ({
-    ...r,
-    base_price:
-      r.base_price != null ? Math.round(Number(r.base_price) * 10) / 10 : null,
-    last_season_points: lastSeasonMap.get(Number(r.fpl_id)) ?? null,
-  }));
-
-  return NextResponse.json(
-    {
-      players,
-      lastSeasonKey,
-      fetchedAt: new Date().toISOString(),
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
 }

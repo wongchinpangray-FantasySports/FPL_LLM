@@ -110,7 +110,13 @@ export function SquadBuilderPlayerPanel({
       const data = (await res.json()) as {
         players?: BrowsePlayer[];
         lastSeasonKey?: string | null;
+        source?: string;
+        error?: string;
       };
+      if (!res.ok) {
+        setPlayers([]);
+        return;
+      }
       setPlayers(data.players ?? []);
       setLastSeasonKey(data.lastSeasonKey ?? null);
       setUpdatedAt(Date.now());
