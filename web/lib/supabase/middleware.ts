@@ -17,6 +17,7 @@ export const FPL_FEATURE_PREFIXES = [
   "/dashboard",
   "/manager",
   "/planner",
+  "/squad-builder",
   "/players",
   "/player",
   "/chat",

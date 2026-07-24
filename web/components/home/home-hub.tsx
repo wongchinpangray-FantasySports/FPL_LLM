@@ -1227,6 +1227,7 @@ function HomeFeatureGroups({
     game: string;
     dashboard: string;
     planner: string;
+    squadBuilder: string;
     manager: string;
     players: string;
     fixtures: string;
@@ -1242,6 +1243,7 @@ function HomeFeatureGroups({
   const manage: FeatureLink[] = [
     { href: entryId ? `/dashboard/${entryId}` : "/dashboard", label: labels.dashboard },
     { href: entryId ? `/planner/${entryId}` : "/planner", label: labels.planner },
+    { href: "/squad-builder", label: labels.squadBuilder },
     { href: entryId ? `/manager/${entryId}` : "/manager", label: labels.manager },
   ];
 
@@ -1382,6 +1384,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               game: t("homeGroupGame"),
               dashboard: t("fplOpenDashboard"),
               planner: t("fplOpenPlanner"),
+              squadBuilder: t("fplOpenSquadBuilder"),
               manager: t("homeGroupManager"),
               players: t("explorePlayersTitle"),
               fixtures: t("exploreFixturesTitle"),
