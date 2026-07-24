@@ -127,17 +127,30 @@ export function filterOfficialFplPlayers(
 
   const sort = opts.sort ?? "price";
   rows = [...rows].sort((a, b) => {
+    let cmp = 0;
     switch (sort) {
       case "points":
-        return (b.total_points ?? -1) - (a.total_points ?? -1);
+        cmp = (a.total_points ?? Infinity) - (b.total_points ?? Infinity);
+        break;
       case "ownership":
-        return (b.selected_by_percent ?? -1) - (a.selected_by_percent ?? -1);
+        cmp =
+          (a.selected_by_percent ?? Infinity) -
+          (b.selected_by_percent ?? Infinity);
+        break;
       case "form":
-        return (b.form ?? -1) - (a.form ?? -1);
+        cmp = (a.form ?? Infinity) - (b.form ?? Infinity);
+        break;
       case "price":
       default:
-        return (a.base_price ?? 999) - (b.base_price ?? 999);
+        cmp = (a.base_price ?? Infinity) - (b.base_price ?? Infinity);
+        break;
     }
+    if (cmp !== 0) return cmp;
+    return (a.web_name ?? a.name ?? "").localeCompare(
+      b.web_name ?? b.name ?? "",
+      undefined,
+      { sensitivity: "base" },
+    );
   });
 
   const limit = opts.limit ?? 80;

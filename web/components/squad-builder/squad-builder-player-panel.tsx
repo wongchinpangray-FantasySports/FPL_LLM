@@ -174,9 +174,14 @@ export function SquadBuilderPlayerPanel({
   const sortedPlayers = useMemo(() => {
     if (sort !== "xpts") return players;
     return [...players].sort((a, b) => {
-      const ax = xpForGw(mergedProj[String(a.fpl_id)], planningGw) ?? -1;
-      const bx = xpForGw(mergedProj[String(b.fpl_id)], planningGw) ?? -1;
-      return bx - ax;
+      const ax = xpForGw(mergedProj[String(a.fpl_id)], planningGw) ?? Infinity;
+      const bx = xpForGw(mergedProj[String(b.fpl_id)], planningGw) ?? Infinity;
+      if (ax !== bx) return ax - bx;
+      return (a.web_name ?? a.name ?? "").localeCompare(
+        b.web_name ?? b.name ?? "",
+        undefined,
+        { sensitivity: "base" },
+      );
     });
   }, [players, sort, mergedProj, planningGw]);
 

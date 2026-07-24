@@ -643,7 +643,7 @@
     "sortXpts": "xPts",
     "panelGwHint": "xPts shown for GW{gw}",
     "panelUpdated": "FPL live",
-    "panelSortHint": "Sorted by {sort} · prices & stats from official FPL",
+    "panelSortHint": "Sorted by {sort} (ascending) · prices & stats from official FPL",
     "panelLastSeasonHint": "Last yr column: {season}/{next} season totals",
     "showXpts": "Show xPts",
     "showXptsHint": "Squad complete — click Show xPts to calculate projected points for this gameweek.",
