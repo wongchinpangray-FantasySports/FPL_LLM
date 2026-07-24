@@ -773,10 +773,18 @@ async function resolveHistoricalGwPlayerId(
   const context = ctx ?? (await loadHistoricalGwIdContext(season));
   if (!context) return player.fpl_id;
 
-  const code =
-    context.liveCodeById.get(player.fpl_id) ??
-    context.vaastavMeta.get(player.fpl_id)?.code ??
-    null;
+  const vaastavOccupant = context.vaastavMeta.get(player.fpl_id);
+  let code: number | null = null;
+
+  // Prefer vaastav code when this numeric id still refers to the same player in
+  // the archive — live bootstrap reuses ids for different players each season.
+  if (vaastavOccupant && playerMatchesVaastavIdentity(player, vaastavOccupant)) {
+    code = vaastavOccupant.code;
+  } else {
+    const liveCode = context.liveCodeById.get(player.fpl_id);
+    if (liveCode != null) code = liveCode;
+    else if (vaastavOccupant) code = vaastavOccupant.code;
+  }
 
   if (code != null) {
     const vaastavId = context.vaastavIdByCode.get(code);
@@ -794,6 +802,62 @@ async function resolveHistoricalGwPlayerId(
   }
 
   return player.fpl_id;
+}
+
+export type HistoricalRosterHint = {
+  web_name?: string;
+  name?: string;
+  team?: string;
+  position?: string;
+};
+
+function rosterHintMatchesPlayer(
+  hint: HistoricalRosterHint,
+  player: Pick<PlayerStatic, "web_name" | "name">,
+): boolean {
+  return identitiesMatch(
+    identityAliases(hint.web_name ?? "", hint.name ?? ""),
+    identityAliases(player.web_name ?? "", player.name ?? ""),
+  );
+}
+
+function playerFromRosterHint(
+  fplId: number,
+  hint: HistoricalRosterHint,
+): PlayerStatic {
+  return {
+    fpl_id: fplId,
+    name: String(hint.name ?? hint.web_name ?? ""),
+    web_name: String(hint.web_name ?? hint.name ?? ""),
+    team: String(hint.team ?? ""),
+    team_id: null,
+    position: String(hint.position ?? ""),
+  };
+}
+
+async function resolvePlayerForHistoricalDetail(
+  fplId: number,
+  season: string,
+  rosterHint?: HistoricalRosterHint | null,
+): Promise<PlayerStatic | null> {
+  const profile = await loadPlayerStaticForSeason(fplId, season);
+  const hint =
+    rosterHint &&
+    (rosterHint.web_name?.trim() ||
+      rosterHint.name?.trim() ||
+      rosterHint.team?.trim())
+      ? rosterHint
+      : null;
+
+  if (hint) {
+    const hinted = playerFromRosterHint(fplId, hint);
+    if (!profile || rosterHintMatchesPlayer(hint, profile)) {
+      return profile ?? hinted;
+    }
+    return hinted;
+  }
+
+  return profile;
 }
 
 async function seasonUsesProfiles(season: string): Promise<boolean> {
@@ -1637,6 +1701,7 @@ export async function loadHistoricalPlayerDetail(
   seasonInput: string | undefined,
   gwFromInput: number | undefined,
   gwToInput: number | undefined,
+  rosterHint?: HistoricalRosterHint | null,
 ): Promise<HistoricalPlayerDetail | null> {
   if (!Number.isFinite(fplId) || fplId <= 0) return null;
 
@@ -1660,8 +1725,11 @@ export async function loadHistoricalPlayerDetail(
   const hi = Math.max(gwFrom, gwTo);
 
   const supa = getServerSupabase();
-  let player = await loadPlayerStaticForSeason(fplId, season);
+  const player = await resolvePlayerForHistoricalDetail(fplId, season, rosterHint);
   if (!player) return null;
+  const gwCtx = await loadHistoricalGwIdContext(season);
+  const resolvedGwId =
+    (await resolveHistoricalGwPlayerId(season, player, gwCtx)) ?? player.fpl_id;
   const gwRows = await loadPlayerGwStatsDetail(player, season, lo, hi);
 
   const aggregated = aggregateRows([player], gwRows);
@@ -1675,8 +1743,8 @@ export async function loadHistoricalPlayerDetail(
 
   const [teamMap, playerTeamId, playerFixturesByGw] = await Promise.all([
     loadSeasonTeamIdMap(season),
-    loadPlayerTeamIdForSeason(season, fplId),
-    loadPlayerFixturesByGw(season, fplId),
+    loadPlayerTeamIdForSeason(season, resolvedGwId),
+    loadPlayerFixturesByGw(season, resolvedGwId),
   ]);
   let teamFixtures =
     playerTeamId != null

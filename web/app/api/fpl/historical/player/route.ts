@@ -17,11 +17,24 @@ export async function GET(req: Request) {
   }
 
   try {
+    const rosterHint =
+      searchParams.get("webName") ||
+      searchParams.get("name") ||
+      searchParams.get("team")
+        ? {
+            web_name: searchParams.get("webName") ?? undefined,
+            name: searchParams.get("name") ?? undefined,
+            team: searchParams.get("team") ?? undefined,
+            position: searchParams.get("position") ?? undefined,
+          }
+        : undefined;
+
     const detail = await loadHistoricalPlayerDetail(
       Math.floor(playerId),
       season,
       gwFrom != null ? Number(gwFrom) : undefined,
       gwTo != null ? Number(gwTo) : undefined,
+      rosterHint,
     );
     if (!detail) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });

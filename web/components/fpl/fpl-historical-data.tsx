@@ -457,6 +457,10 @@ export function FplHistoricalData({
           gwFrom: String(applied.gwFrom),
           gwTo: String(applied.gwTo),
         });
+        if (row.web_name) p.set("webName", row.web_name);
+        if (row.name) p.set("name", row.name);
+        if (row.team) p.set("team", row.team);
+        if (row.position) p.set("position", row.position);
         const res = await fetch(`/api/fpl/historical/player?${p.toString()}`);
         const data = (await res.json()) as HistoricalPlayerDetail & {
           error?: string;
