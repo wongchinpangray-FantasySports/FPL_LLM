@@ -9,6 +9,7 @@ import { useEntryId } from "@/components/entry-id-context";
 
 export default function ManagerIndexPage() {
   const t = useTranslations("managerIndex");
+  const mp = useTranslations("managerPage");
   const router = useRouter();
   const { entryId } = useEntryId();
 
@@ -20,7 +21,11 @@ export default function ManagerIndexPage() {
 
   if (entryId) {
     return (
-      <PageShell width="2xl">
+      <PageShell
+        backHref="/"
+        backLabel={mp("backHome")}
+        width="2xl"
+      >
         <div className="flex flex-col items-center py-16 text-muted-foreground">
           <p className="text-sm">{t("opening")}</p>
         </div>
@@ -30,6 +35,8 @@ export default function ManagerIndexPage() {
 
   return (
     <PageShell
+      backHref="/"
+      backLabel={mp("backHome")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       description={t("description")}

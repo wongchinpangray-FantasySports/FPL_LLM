@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
+import { HomeBackLink } from "@/components/home-back-link";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
 import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
@@ -135,21 +136,24 @@ export default async function PlannerPage({
   }
 
   return (
-    <PlannerApp
-      key={plannerSquadKey}
-      entryId={entryId}
-      entryName={team.entry.name}
-      initialBank={team.bank}
-      initialPicks={initialPicks}
-      baselineBanner={baselineBanner}
-      squadToggle={
-        hasRevert
-          ? {
-              useFreeHit: useFreeHitSquad,
-              pathBase: `/planner/${entryId}`,
-            }
-          : null
-      }
-    />
+    <div className="flex flex-col gap-5 md:gap-6">
+      <HomeBackLink label={pt("backHome")} />
+      <PlannerApp
+        key={plannerSquadKey}
+        entryId={entryId}
+        entryName={team.entry.name}
+        initialBank={team.bank}
+        initialPicks={initialPicks}
+        baselineBanner={baselineBanner}
+        squadToggle={
+          hasRevert
+            ? {
+                useFreeHit: useFreeHitSquad,
+                pathBase: `/planner/${entryId}`,
+              }
+            : null
+        }
+      />
+    </div>
   );
 }

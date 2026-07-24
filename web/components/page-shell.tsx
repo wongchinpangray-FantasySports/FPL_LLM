@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { HomeBackLink } from "@/components/home-back-link";
 import { cn } from "@/lib/utils";
 
 type Width = "2xl" | "4xl" | "6xl";
@@ -40,12 +41,16 @@ export function PageShell({
       )}
     >
       {backHref && backLabel ? (
-        <Link
-          href={backHref}
-          className="text-sm text-muted-foreground transition-colors hover:text-brand-accent"
-        >
-          {backLabel}
-        </Link>
+        backHref === "/" ? (
+          <HomeBackLink label={backLabel} />
+        ) : (
+          <Link
+            href={backHref}
+            className="text-sm text-muted-foreground transition-colors hover:text-brand-accent"
+          >
+            {backLabel}
+          </Link>
+        )
       ) : null}
 
       {title ? (

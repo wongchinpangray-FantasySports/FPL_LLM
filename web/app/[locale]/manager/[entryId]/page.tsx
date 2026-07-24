@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
+import { HomeBackLink } from "@/components/home-back-link";
 import { PageHeader } from "@/components/page-header";
 import { loadManagerPerformance } from "@/lib/manager-performance";
 import {
@@ -80,20 +81,7 @@ export default async function ManagerEntryPage({
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-10">
-      <div className="flex flex-wrap gap-4 text-sm">
-        <Link
-          href="/"
-          className="text-muted-foreground transition-colors hover:text-brand-accent"
-        >
-          {t("backHome")}
-        </Link>
-        <Link
-          href={`/dashboard/${entryId}`}
-          className="text-muted-foreground transition-colors hover:text-brand-accent"
-        >
-          {t("linkDashboard")}
-        </Link>
-      </div>
+      <HomeBackLink label={t("backHome")} />
 
       <PageHeader
         eyebrow={t("eyebrow")}
