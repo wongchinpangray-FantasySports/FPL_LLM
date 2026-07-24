@@ -581,7 +581,6 @@ export function SquadBuilderApp({ teams }: { teams: TeamOption[] }) {
               nextGwXpTitle={t("nextGwXpTitle", { gw: projMeta?.fromGw ?? "–" })}
               benchLabel={t("benchLabel")}
               benchGkAbbrev={t("benchGk")}
-              gkAtTop={false}
             />
           ) : (
             <SquadBuilderListView
