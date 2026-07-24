@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TeamTheme } from "@/lib/team-themes";
 import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
-import { FplSessionConnectForm } from "@/components/account/fpl-session-connect-form";
 import { FplClubSelectForm } from "@/components/account/fpl-club-select-form";
 
 type AccountDetails = {
@@ -29,10 +28,6 @@ type AccountDetails = {
   } | null;
   theme: TeamTheme;
   theme_team_type: "club" | "national";
-  fpl_session: {
-    connected: boolean;
-    connected_at: string | null;
-  };
 };
 
 function leagueLabel(id: string, t: (k: string) => string): string {
@@ -242,13 +237,6 @@ export function AccountPanel() {
                     : prev,
                 );
               }}
-            />
-            <FplSessionConnectForm
-              entryLinked={details.profile.fpl_entry_id != null}
-              initialStatus={details.fpl_session}
-              onStatusChange={(fpl_session) =>
-                setDetails((prev) => (prev ? { ...prev, fpl_session } : prev))
-              }
             />
             {details.profile.fpl_entry_id ? (
               <Link

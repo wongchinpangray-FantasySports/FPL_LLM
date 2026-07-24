@@ -5,7 +5,6 @@ import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { resolveAccountTheme } from "@/lib/team-themes";
 import { recordLoginDay } from "@/lib/auth/record-login-day";
 import { resolveFplClubFromPrefs } from "@/lib/auth/fpl-club-preference";
-import { getFplSessionStatus } from "@/lib/auth/fpl-access";
 
 export const dynamic = "force-dynamic";
 
@@ -80,8 +79,6 @@ export async function GET() {
       nationalTeamCode: nationalTeam?.code ?? null,
     });
 
-    const fplSession = await getFplSessionStatus(userId);
-
     return NextResponse.json({
       email: authData.user.email,
       profile: profile ?? {
@@ -90,7 +87,6 @@ export async function GET() {
         theme_team_type: "club",
         onboarding_completed_at: null,
       },
-      fpl_session: fplSession,
       preferences: prefs
         ? {
             national_team: nationalTeam,

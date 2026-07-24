@@ -333,7 +333,7 @@
     "playerDgwLine": "双赛 · GW{gws}",
     "playerCardOpenProfile": "打开球员资料：{name}",
     "emptySquadTitle": "尚未同步阵容",
-    "emptySquadBodyPreseason": "请在官方 FPL 网站保存 GW{picksGw} 阵容，然后在此点击刷新。公开阵容尚未发布前，可在账户设置中「连接 FPL 会话」以提前同步 Pick Team 页面。",
+    "emptySquadBodyPreseason": "请在官方 FPL 网站保存 GW{picksGw} 阵容，然后在此点击刷新。确认阵容后，FPL 公开 API 发布 picks 即可在此显示。",
     "emptySquadSaveOnFpl": "在 FPL 选阵",
     "emptySquadOpenPlanner": "打开情景规划器",
     "emptySquadSync": "从 FPL 同步"
@@ -1029,7 +1029,7 @@
     "newsRegions": "新闻地区",
     "notSet": "未设置",
     "fplTeamSection": "FPL 球队",
-    "fplTeamSectionHint": "关联 Entry ID 后，仪表盘、规划器与聊天将使用你的阵容。可选连接 FPL 浏览器会话，在截止前同步 Pick Team。",
+    "fplTeamSectionHint": "关联 Entry ID 后，仪表盘、规划器与聊天将通过官方 FPL 公开 API 读取你的阵容。",
     "fplEntryHint": "在 fantasy.premierleague.com → Points → 选择 gameweek，URL 中的数字即为 Entry ID。每个 Entry ID 只能绑定一个 Faleague 账户。",
     "fplEntryPlaceholder": "例如 56657",
     "fplEntrySave": "保存 Entry ID",

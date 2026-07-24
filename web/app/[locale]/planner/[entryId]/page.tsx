@@ -27,7 +27,7 @@ export default async function PlannerPage({
 
   setRequestLocale(resolvedParams.locale);
 
-  const { userId } = await ensureFplEntryPage(entryId, resolvedParams.locale);
+  await ensureFplEntryPage(entryId, resolvedParams.locale);
 
   const sp = await Promise.resolve(searchParams ?? {});
   const refreshRaw = sp.refresh;
@@ -52,7 +52,7 @@ export default async function PlannerPage({
 
   let team;
   try {
-    team = await fetchTeamForUi(entryId, { forceRefresh, userId });
+    team = await fetchTeamForUi(entryId, forceRefresh);
   } catch (err) {
     const msg = (err as Error).message;
     const show403 = /\b403\b/.test(msg);

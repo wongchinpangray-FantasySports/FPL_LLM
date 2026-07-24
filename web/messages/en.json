@@ -333,7 +333,7 @@
     "playerDgwLine": "DGW · GW{gws}",
     "playerCardOpenProfile": "Open player profile: {name}",
     "emptySquadTitle": "No squad synced yet",
-    "emptySquadBodyPreseason": "Save your GW{picksGw} team on the official FPL site, then hit Refresh here. Before public picks are live, connect your FPL session in Account → Connect FPL for early squad sync.",
+    "emptySquadBodyPreseason": "Save your GW{picksGw} team on the official FPL site, then hit Refresh here. Your squad appears once FPL publishes your picks (usually after you confirm your team).",
     "emptySquadSaveOnFpl": "Pick team on FPL",
     "emptySquadOpenPlanner": "Plan in scenario planner",
     "emptySquadSync": "Sync from FPL"
@@ -1030,7 +1030,7 @@
     "newsRegions": "News regions",
     "notSet": "Not set",
     "fplTeamSection": "FPL team",
-    "fplTeamSectionHint": "Link your Entry ID so dashboard, planner, and chat use your squad. Optionally connect your FPL browser session for pre-deadline Pick Team sync.",
+    "fplTeamSectionHint": "Link your Entry ID so dashboard, planner, and chat use your squad from the official FPL API.",
     "fplEntryHint": "Find this on fantasy.premierleague.com → Points → pick a gameweek (number in the URL). Each Entry ID can only be linked to one Faleague account.",
     "fplEntryPlaceholder": "e.g. 56657",
     "fplEntrySave": "Save Entry ID",

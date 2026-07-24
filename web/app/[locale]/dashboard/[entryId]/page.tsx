@@ -44,7 +44,7 @@ export default async function DashboardPage({
 
   setRequestLocale(params.locale);
 
-  const { userId } = await ensureFplEntryPage(entryId, params.locale);
+  await ensureFplEntryPage(entryId, params.locale);
 
   const dt = await getTranslations({
     locale: params.locale,
@@ -57,7 +57,7 @@ export default async function DashboardPage({
 
   let team;
   try {
-    team = await fetchTeamForUi(entryId, { forceRefresh, userId });
+    team = await fetchTeamForUi(entryId, forceRefresh);
   } catch (err) {
     const msg = (err as Error).message;
     const show403 = /\b403\b/.test(msg);

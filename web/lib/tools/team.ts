@@ -655,34 +655,18 @@ export async function fetchAndCacheTeam(
 /** Planner/dashboard loads: bypass stale rows where FH is active but `long_team_picks` never stored. */
 export type FetchTeamForUiOpts = {
   forceRefresh?: boolean;
-  userId?: string;
 };
 
 export async function fetchTeamForUi(
   entryId: number,
   forceRefreshOrOpts: boolean | FetchTeamForUiOpts = false,
 ): Promise<CachedTeam> {
-  let forceRefresh = false;
-  let sessionCookie: string | undefined;
+  const forceRefresh =
+    typeof forceRefreshOrOpts === "boolean"
+      ? forceRefreshOrOpts
+      : (forceRefreshOrOpts.forceRefresh ?? false);
 
-  if (typeof forceRefreshOrOpts === "boolean") {
-    forceRefresh = forceRefreshOrOpts;
-  } else {
-    forceRefresh = forceRefreshOrOpts.forceRefresh ?? false;
-    if (forceRefreshOrOpts.userId) {
-      const { resolveFplSessionCookieForUser } = await import(
-        "@/lib/auth/fpl-access"
-      );
-      sessionCookie = await resolveFplSessionCookieForUser(
-        forceRefreshOrOpts.userId,
-      );
-    }
-  }
-
-  let team = await fetchAndCacheTeam(entryId, {
-    forceRefresh,
-    sessionCookie,
-  });
+  let team = await fetchAndCacheTeam(entryId, { forceRefresh });
   if (forceRefresh || isCacheOnlyDataRuntime()) return team;
 
   const fhMissingRevert =
@@ -693,10 +677,7 @@ export async function fetchTeamForUi(
     ) && !team.long_team_picks?.length;
 
   if (fhMissingRevert) {
-    team = await fetchAndCacheTeam(entryId, {
-      forceRefresh: true,
-      sessionCookie,
-    });
+    team = await fetchAndCacheTeam(entryId, { forceRefresh: true });
   }
   return team;
 }
@@ -724,7 +705,6 @@ const getMyTeam: ToolHandler = {
     const entryId = await resolveEntryId(ctx, input.entry_id);
     const team = await fetchTeamForUi(entryId, {
       forceRefresh: Boolean(input.force_refresh),
-      userId: ctx.userId ?? undefined,
     });
     return teamPayloadForAssistant(team);
   },

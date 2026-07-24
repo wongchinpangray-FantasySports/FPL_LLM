@@ -16,9 +16,8 @@ export async function GET(
     );
   }
 
-  let userId: string;
   try {
-    ({ userId } = await requireFplEntryAccess(entryId));
+    await requireFplEntryAccess(entryId);
   } catch (err) {
     const status =
       err instanceof FplAccessError ? err.status : 403;
@@ -34,7 +33,7 @@ export async function GET(
     url.searchParams.get("refresh") === "true";
 
   try {
-    const team = await fetchTeamForUi(entryId, { forceRefresh, userId });
+    const team = await fetchTeamForUi(entryId, forceRefresh);
     return new Response(JSON.stringify(teamPayloadForAssistant(team)), {
       headers: { "content-type": "application/json" },
     });
