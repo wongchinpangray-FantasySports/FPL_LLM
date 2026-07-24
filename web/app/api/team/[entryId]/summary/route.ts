@@ -1,3 +1,4 @@
+import { FplAccessError, requireFplEntryAccess } from "@/lib/auth/fpl-access";
 import { getServerSupabase } from "@/lib/supabase";
 import { fplGet, type FplEntry } from "@/lib/fpl";
 import type { CachedTeam } from "@/lib/tools/team";
@@ -14,6 +15,13 @@ export async function GET(
   const entryId = Number(params.entryId);
   if (!Number.isFinite(entryId) || entryId <= 0) {
     return Response.json({ error: "invalid entry id" }, { status: 400 });
+  }
+
+  try {
+    await requireFplEntryAccess(entryId);
+  } catch (err) {
+    const status = err instanceof FplAccessError ? err.status : 403;
+    return Response.json({ error: (err as Error).message }, { status });
   }
 
   try {

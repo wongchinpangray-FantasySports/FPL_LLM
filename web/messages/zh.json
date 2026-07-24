@@ -194,7 +194,10 @@
     "opening": "正在打开仪表盘…",
     "eyebrow": "仪表盘",
     "title": "你的 FPL 仪表盘",
-    "description": "输入 FPL Entry ID，查看阵容与数据概览。"
+    "description": "输入 FPL Entry ID，查看阵容与数据概览。",
+    "linkEntryDescription": "关联 FPL Entry ID 后，即可使用个人仪表盘、规划器与阵容同步。",
+    "linkEntryAccountHint": "也可在",
+    "linkEntryAccountLink": "账户设置"
   },
   "managerIndex": {
     "opening": "正在打开经理视图…",
@@ -328,7 +331,12 @@
     "legendInjury": "伤病概率",
     "playerFormLabel": "状态",
     "playerDgwLine": "双赛 · GW{gws}",
-    "playerCardOpenProfile": "打开球员资料：{name}"
+    "playerCardOpenProfile": "打开球员资料：{name}",
+    "emptySquadTitle": "尚未同步阵容",
+    "emptySquadBodyPreseason": "请在官方 FPL 网站保存 GW{picksGw} 阵容，然后在此点击刷新。公开阵容尚未发布前，可在账户设置中「连接 FPL 会话」以提前同步 Pick Team 页面。",
+    "emptySquadSaveOnFpl": "在 FPL 选阵",
+    "emptySquadOpenPlanner": "打开情景规划器",
+    "emptySquadSync": "从 FPL 同步"
   },
   "plannerApp": {
     "planWithRevert": "用还原阵容规划（Free Hit 之后）",
@@ -1013,7 +1021,35 @@
     "fplClub": "喜爱俱乐部",
     "players": "关注球员",
     "newsRegions": "新闻地区",
-    "notSet": "未设置"
+    "notSet": "未设置",
+    "fplTeamSection": "FPL 球队",
+    "fplTeamSectionHint": "关联 Entry ID 后，仪表盘、规划器与聊天将使用你的阵容。可选连接 FPL 浏览器会话，在截止前同步 Pick Team。",
+    "fplEntryHint": "在 fantasy.premierleague.com → Points → 选择 gameweek，URL 中的数字即为 Entry ID。每个 Entry ID 只能绑定一个 Faleague 账户。",
+    "fplEntryPlaceholder": "例如 56657",
+    "fplEntrySave": "保存 Entry ID",
+    "fplEntrySaving": "保存中…",
+    "fplEntryLinked": "已关联 · Entry #{id}",
+    "fplEntryInvalid": "请输入有效的数字 Entry ID。",
+    "fplEntrySaveFailed": "无法保存 Entry ID。",
+    "openDashboard": "打开仪表盘",
+    "fplSessionTitle": "连接 FPL 会话",
+    "fplSessionHint": "可选。在 FPL 公开 picks 之前，用于读取你的 Pick Team 页面。Cookie 加密存储在服务器，不会在浏览器中再次显示。",
+    "fplSessionConnected": "已连接",
+    "fplSessionNotConnected": "未连接",
+    "fplSessionShowSteps": "如何复制 Cookie",
+    "fplSessionHideSteps": "收起步骤",
+    "fplSessionStep1": "以拥有该 Entry ID 的经理身份登录 fantasy.premierleague.com。",
+    "fplSessionStep2": "打开开发者工具 → Network，刷新后点击任意 fantasy.premierleague.com/api/… 请求。",
+    "fplSessionStep3": "复制完整 Cookie 请求头并粘贴 below。过期后需重新连接。",
+    "fplSessionPlaceholder": "pl_profile=…; …",
+    "fplSessionConnect": "连接 FPL",
+    "fplSessionConnecting": "连接中…",
+    "fplSessionConnectFailed": "无法连接 FPL 会话。",
+    "fplSessionDisconnect": "断开连接",
+    "fplSessionDisconnectFailed": "无法断开连接。",
+    "fplSessionNeedEntry": "请先保存 Entry ID。",
+    "fplSessionEmpty": "请粘贴 Cookie 请求头。",
+    "fplSessionConnectedAt": "已连接 {date}"
   },
   "signupPrompt": {
     "eyebrow": "免费账户",

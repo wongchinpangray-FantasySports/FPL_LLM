@@ -7,6 +7,8 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TeamTheme } from "@/lib/team-themes";
+import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
+import { FplSessionConnectForm } from "@/components/account/fpl-session-connect-form";
 
 type AccountDetails = {
   email: string;
@@ -26,6 +28,10 @@ type AccountDetails = {
   } | null;
   theme: TeamTheme;
   theme_team_type: "club" | "national";
+  fpl_session: {
+    connected: boolean;
+    connected_at: string | null;
+  };
 };
 
 function leagueLabel(id: string, t: (k: string) => string): string {
@@ -201,6 +207,44 @@ export function AccountPanel() {
           </div>
         ) : null}
 
+        <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/[0.04] p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-foreground">{t("fplTeamSection")}</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {t("fplTeamSectionHint")}
+          </p>
+          <div className="mt-4 space-y-6">
+            <FplEntryLinkForm
+              initialEntryId={details.profile.fpl_entry_id}
+              onSaved={(id) => {
+                setDetails((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        profile: { ...prev.profile, fpl_entry_id: id },
+                      }
+                    : prev,
+                );
+              }}
+            />
+            <FplSessionConnectForm
+              entryLinked={details.profile.fpl_entry_id != null}
+              initialStatus={details.fpl_session}
+              onStatusChange={(fpl_session) =>
+                setDetails((prev) => (prev ? { ...prev, fpl_session } : prev))
+              }
+            />
+            {details.profile.fpl_entry_id ? (
+              <Link
+                href={`/dashboard/${details.profile.fpl_entry_id}`}
+                className="inline-flex text-sm font-medium hover:underline"
+                style={{ color: theme.primary }}
+              >
+                {t("openDashboard")} →
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
         <div>
           <h2 className="text-sm font-medium text-foreground/70">{t("yourPreferences")}</h2>
           {!prefs ? (
@@ -217,7 +261,6 @@ export function AccountPanel() {
                 }
               />
               <PrefBlock label={t("fplClub")} value={prefs.fpl_club?.name ?? t("notSet")} />
-              <PrefBlock label={t("fplEntry")} value={String(details.profile.fpl_entry_id ?? t("notSet"))} />
               <PrefBlock
                 label={t("players")}
                 value={

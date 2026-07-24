@@ -1,41 +1,49 @@
-"use client";
-
-import { useEffect } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { PageShell } from "@/components/page-shell";
-import { EntryIdForm } from "@/components/entry-id-form";
-import { useEntryId } from "@/components/entry-id-context";
+import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
+import { getUserProfile, requireAuthUser } from "@/lib/auth/session";
+import { Link } from "@/i18n/navigation";
 
-export default function DashboardIndexPage() {
-  const t = useTranslations("dashboardIndex");
-  const router = useRouter();
-  const { entryId } = useEntryId();
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    if (entryId) {
-      router.replace(`/dashboard/${entryId}`);
-    }
-  }, [entryId, router]);
+export default async function DashboardIndexPage({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  setRequestLocale(params.locale);
+  const t = await getTranslations({
+    locale: params.locale,
+    namespace: "dashboardIndex",
+  });
 
-  if (entryId) {
-    return (
-      <PageShell width="2xl">
-        <div className="flex flex-col items-center py-16 text-muted-foreground">
-          <p className="text-sm">{t("opening")}</p>
-        </div>
-      </PageShell>
-    );
+  const user = await requireAuthUser();
+  const profile = await getUserProfile(user.id);
+  if (profile?.fpl_entry_id) {
+    redirect({
+      href: `/dashboard/${profile.fpl_entry_id}`,
+      locale: params.locale,
+    });
   }
 
   return (
     <PageShell
       eyebrow={t("eyebrow")}
       title={t("title")}
-      description={t("description")}
+      description={t("linkEntryDescription")}
       width="2xl"
     >
-      <EntryIdForm redirectTo={(id) => `/dashboard/${id}`} />
+      <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+        <FplEntryLinkForm />
+        <p className="mt-4 text-xs text-muted-foreground">
+          {t("linkEntryAccountHint")}{" "}
+          <Link href="/account" className="text-brand-accent hover:underline">
+            {t("linkEntryAccountLink")}
+          </Link>
+        </p>
+      </div>
     </PageShell>
   );
 }

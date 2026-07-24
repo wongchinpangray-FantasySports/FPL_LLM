@@ -98,9 +98,9 @@ export interface FplMyTeamResponse {
  */
 export async function fplGetSession<T = unknown>(
   path: string,
-  opts?: { cacheBust?: boolean },
+  opts?: { cacheBust?: boolean; cookie?: string },
 ): Promise<T | null> {
-  const cookie = fplSessionCookie();
+  const cookie = opts?.cookie?.trim() || fplSessionCookie();
   if (!cookie) return null;
 
   let url = `${FPL_BASE}${path}`;

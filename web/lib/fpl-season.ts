@@ -1,3 +1,4 @@
+import { fplGet } from "@/lib/fpl";
 import { getServerSupabase } from "@/lib/supabase";
 
 let cache: { value: string; at: number } | null = null;
@@ -9,9 +10,11 @@ const TTL_MS = 60_000;
  *
  * Resolution order:
  * 1. `FPL_CURRENT_SEASON` env (e.g. on Workers before meta is synced)
- * 2. `fpl_meta.current_season`
- * 3. Latest `season` present on `fixtures`
- * 4. Fallback `2026`
+ * 2. Live `bootstrap-static` when newer than stale DB meta
+ * 3. `fpl_meta.current_season`
+ * 4. Off-season heuristic from finished gameweeks
+ * 5. Latest `season` present on `fixtures`
+ * 6. Fallback `2026`
  */
 export async function getCurrentFplSeason(): Promise<string> {
   const env = process.env.FPL_CURRENT_SEASON?.trim();
@@ -21,18 +24,29 @@ export async function getCurrentFplSeason(): Promise<string> {
   if (cache && now - cache.at < TTL_MS) return cache.value;
 
   const supa = getServerSupabase();
+  const liveSeason = await seasonStartYearFromBootstrap();
   const { data: metaRow, error: metaErr } = await supa
     .from("fpl_meta")
     .select("value")
     .eq("key", "current_season")
     .maybeSingle();
 
-  if (!metaErr && metaRow?.value) {
-    const v = String(metaRow.value).trim();
-    if (v) {
-      cache = { value: v, at: now };
-      return v;
-    }
+  const metaSeason =
+    !metaErr && metaRow?.value ? String(metaRow.value).trim() : "";
+
+  if (liveSeason && metaSeason && Number(liveSeason) > Number(metaSeason)) {
+    cache = { value: liveSeason, at: now };
+    return liveSeason;
+  }
+
+  if (metaSeason) {
+    cache = { value: metaSeason, at: now };
+    return metaSeason;
+  }
+
+  if (liveSeason) {
+    cache = { value: liveSeason, at: now };
+    return liveSeason;
   }
 
   const { data: fxRow } = await supa
@@ -65,6 +79,28 @@ export async function getCurrentFplSeason(): Promise<string> {
   const resolved = fromFx || "2026";
   cache = { value: resolved, at: now };
   return resolved;
+}
+
+/** Calendar start year from live FPL bootstrap (e.g. 2026 for GW1 in Aug 2026). */
+export async function seasonStartYearFromBootstrap(): Promise<string | null> {
+  try {
+    const raw = await fplGet<{
+      events?: Array<{ id: number; finished?: boolean; deadline_time?: string }>;
+    }>("/bootstrap-static/");
+    const events = raw.events ?? [];
+    if (!events.length) return null;
+    const allFinished = events.every((e) => e.finished);
+    const pick = allFinished
+      ? events.reduce((a, b) => (a.id > b.id ? a : b))
+      : events.reduce((a, b) => (a.id < b.id ? a : b));
+    const dt = pick?.deadline_time;
+    if (typeof dt === "string" && dt.length >= 4 && /^\d{4}/.test(dt)) {
+      return dt.slice(0, 4);
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 /** For tests or after a manual DB season change. */

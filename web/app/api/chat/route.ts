@@ -9,6 +9,9 @@ import {
 import { ALL_TOOLS, findTool } from "@/lib/tools";
 import type { ToolContext } from "@/lib/tools";
 import { getClientIp, getRateLimiter } from "@/lib/ratelimit";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserProfile } from "@/lib/auth/session";
+import { FplAccessError, requireFplEntryAccess } from "@/lib/auth/fpl-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +46,48 @@ export async function POST(req: Request) {
     return new Response("messages[] required", { status: 400 });
   }
 
+  const supa = createSupabaseServerClient();
+  const { data: authData, error: authError } = await supa.auth.getUser();
+  if (authError || !authData.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const profile = await getUserProfile(authData.user.id);
+  const linkedEntry = profile?.fpl_entry_id ?? null;
+  const requestedEntry = body.entryId?.trim() || null;
+  const entryIdStr =
+    requestedEntry ?? (linkedEntry != null ? String(linkedEntry) : null);
+
+  if (!entryIdStr) {
+    return new Response(
+      JSON.stringify({
+        error: "Link your FPL Entry ID in Account settings to use chat with your squad.",
+      }),
+      { status: 400, headers: { "content-type": "application/json" } },
+    );
+  }
+
+  const entryIdNum = Number(entryIdStr);
+  if (!Number.isFinite(entryIdNum) || entryIdNum <= 0) {
+    return new Response(JSON.stringify({ error: "Invalid Entry ID" }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  try {
+    await requireFplEntryAccess(entryIdNum);
+  } catch (err) {
+    const status = err instanceof FplAccessError ? err.status : 403;
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   try {
   const limiter = getRateLimiter();
   if (limiter) {
@@ -63,7 +108,10 @@ export async function POST(req: Request) {
     }
   }
 
-  const ctx: ToolContext = { entryId: body.entryId ?? null };
+  const ctx: ToolContext = {
+    entryId: entryIdStr,
+    userId: authData.user.id,
+  };
 
   let ai: GoogleGenAI;
   try {

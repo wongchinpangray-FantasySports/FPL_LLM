@@ -25,6 +25,7 @@ export interface JsonSchema {
  */
 export interface ToolContext {
   entryId: string | null;
+  userId?: string | null;
 }
 
 export type ToolInput = Record<string, unknown>;

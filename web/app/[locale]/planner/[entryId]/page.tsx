@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
+import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
 import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,8 @@ export default async function PlannerPage({
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
 
   setRequestLocale(resolvedParams.locale);
+
+  const { userId } = await ensureFplEntryPage(entryId, resolvedParams.locale);
 
   const sp = await Promise.resolve(searchParams ?? {});
   const refreshRaw = sp.refresh;
@@ -49,7 +52,7 @@ export default async function PlannerPage({
 
   let team;
   try {
-    team = await fetchTeamForUi(entryId, forceRefresh);
+    team = await fetchTeamForUi(entryId, { forceRefresh, userId });
   } catch (err) {
     const msg = (err as Error).message;
     const show403 = /\b403\b/.test(msg);

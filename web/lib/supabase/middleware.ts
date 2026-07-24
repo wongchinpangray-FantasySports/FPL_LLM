@@ -38,7 +38,6 @@ export function isFplFeaturePath(pathname: string): boolean {
 
 export function isFplProtectedApiPath(pathname: string): boolean {
   if (!pathname.startsWith("/api/")) return false;
-  if (/^\/api\/team\/\d+\/summary$/.test(pathname)) return false;
   if (pathname === "/api/chat" || pathname.startsWith("/api/chat/")) {
     return true;
   }

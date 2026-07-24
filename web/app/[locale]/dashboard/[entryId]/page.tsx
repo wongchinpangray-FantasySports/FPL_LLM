@@ -19,6 +19,7 @@ import {
 } from "@/lib/xp";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { formatFplInteger } from "@/lib/fpl";
+import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
 import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ export default async function DashboardPage({
 
   setRequestLocale(params.locale);
 
+  const { userId } = await ensureFplEntryPage(entryId, params.locale);
+
   const dt = await getTranslations({
     locale: params.locale,
     namespace: "dashboard",
@@ -54,7 +57,7 @@ export default async function DashboardPage({
 
   let team;
   try {
-    team = await fetchTeamForUi(entryId, forceRefresh);
+    team = await fetchTeamForUi(entryId, { forceRefresh, userId });
   } catch (err) {
     const msg = (err as Error).message;
     const show403 = /\b403\b/.test(msg);
@@ -146,6 +149,7 @@ export default async function DashboardPage({
 
   const startingXI = displayPicks.filter((p) => p.is_starter);
   const bench = displayPicks.filter((p) => !p.is_starter);
+  const squadEmpty = displayPicks.length === 0;
 
   // Rolling stats through GW `startGw - 1` so xP matches home Best XI / planner
   // (avoid mixing DB `is_current` with FPL entry `current_event` lag).
@@ -318,6 +322,42 @@ export default async function DashboardPage({
         </section>
       )}
 
+      {squadEmpty && (
+        <section
+          className="rounded-xl border border-brand-accent/25 bg-brand-accent/[0.06] px-4 py-4 sm:px-5 sm:py-5"
+          role="status"
+        >
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
+            {dt("emptySquadTitle")}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {dt("emptySquadBodyPreseason", { picksGw: picksGwStr })}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href={`/dashboard/${entryId}?refresh=1`}
+              className="inline-flex rounded-lg border border-brand-accent/40 bg-brand-accent/15 px-3 py-2 text-sm font-medium text-brand-accent hover:bg-brand-accent/25"
+            >
+              {dt("emptySquadSync")}
+            </Link>
+            <a
+              href="https://fantasy.premierleague.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {dt("emptySquadSaveOnFpl")}
+            </a>
+            <Link
+              href={`/planner/${entryId}`}
+              className="inline-flex rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {dt("emptySquadOpenPlanner")}
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="flex flex-col gap-3 md:gap-4">
         <XpHeatmap
           rows={heatmapRows}
@@ -359,6 +399,8 @@ export default async function DashboardPage({
             {dt("startingXI")}
           </h2>
         </div>
+        {!squadEmpty ? (
+        <>
         <div className="grid gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3">
           {startingXI.map((p) => {
             const dgwGws = upcomingDgwGwsForTeam(
@@ -413,6 +455,8 @@ export default async function DashboardPage({
             );
           })}
         </div>
+        </>
+        ) : null}
       </section>
 
       <section className="space-y-4">

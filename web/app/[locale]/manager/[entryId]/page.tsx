@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
 import { PageHeader } from "@/components/page-header";
 import { loadManagerPerformance } from "@/lib/manager-performance";
 import {
@@ -42,6 +43,8 @@ export default async function ManagerEntryPage({
 
   const entryId = Number(raw);
   if (!Number.isFinite(entryId) || entryId <= 0) notFound();
+
+  await ensureFplEntryPage(entryId, locale);
 
   const t = await getTranslations({ locale, namespace: "managerPage" });
 

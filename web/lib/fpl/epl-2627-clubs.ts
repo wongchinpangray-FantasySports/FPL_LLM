@@ -1,5 +1,7 @@
 import fixturesData from "@/data/epl-2627-fixtures.json";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fplGet } from "@/lib/fpl";
+import { getServerSupabase } from "@/lib/supabase";
 import { PROMOTED_STRENGTH } from "@/lib/fpl/strength";
 
 type Epl2627Season = {
@@ -25,6 +27,71 @@ const DISPLAY_NAMES: Record<string, string> = {
 };
 
 export type FplClubOption = { id: number; name: string; short_name: string };
+
+export type PlTeamRow = FplClubOption;
+
+/** Official 2026/27 PL clubs mapped to FPL `teams.id` rows (excludes relegated sides). */
+export async function listCurrentPlTeams(): Promise<PlTeamRow[]> {
+  const allowed = getEpl2627ClubCodes();
+  const relegated = new Set<string>(EPL_2627_RELEGATED);
+
+  try {
+    const raw = await fplGet<{
+      teams?: Array<{ id: number; name: string; short_name: string }>;
+    }>("/bootstrap-static/");
+    const fromBootstrap = (raw.teams ?? [])
+      .filter((t) => {
+        const code = String(t.short_name ?? "").toUpperCase();
+        return allowed.has(code) && !relegated.has(code);
+      })
+      .map((t) => {
+        const code = String(t.short_name).toUpperCase();
+        return {
+          id: t.id,
+          name: DISPLAY_NAMES[code] ?? t.name,
+          short_name: code,
+        };
+      });
+    if (fromBootstrap.length >= 20) {
+      return fromBootstrap.sort((a, b) =>
+        a.short_name.localeCompare(b.short_name),
+      );
+    }
+  } catch {
+    /* fall through to DB / placeholders */
+  }
+
+  const supa = getServerSupabase();
+  const { data } = await supa
+    .from("teams")
+    .select("id,name,short_name")
+    .order("short_name");
+
+  const rows: PlTeamRow[] = [];
+  const seen = new Set<string>();
+  for (const row of data ?? []) {
+    const code = String(row.short_name ?? "").toUpperCase();
+    if (!allowed.has(code) || relegated.has(code)) continue;
+    seen.add(code);
+    rows.push({
+      id: Number(row.id),
+      name: DISPLAY_NAMES[code] ?? String(row.name ?? ""),
+      short_name: code,
+    });
+  }
+
+  for (const placeholder of EPL_2627_PROMOTED_DB_ROWS) {
+    if (seen.has(placeholder.short_name)) continue;
+    rows.push({ ...placeholder });
+  }
+
+  return rows.sort((a, b) => a.short_name.localeCompare(b.short_name));
+}
+
+export async function listCurrentPlTeamIds(): Promise<number[]> {
+  const teams = await listCurrentPlTeams();
+  return teams.map((t) => t.id);
+}
 
 export function getEpl2627ClubCodes(): Set<string> {
   return new Set(season.teams.map((t) => t.code));
