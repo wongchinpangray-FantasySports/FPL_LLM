@@ -14,6 +14,10 @@ export default async function DashboardIndexPage({
   params: { locale: string };
 }) {
   setRequestLocale(params.locale);
+  const dt = await getTranslations({
+    locale: params.locale,
+    namespace: "dashboard",
+  });
   const t = await getTranslations({
     locale: params.locale,
     namespace: "dashboardIndex",
@@ -30,6 +34,8 @@ export default async function DashboardIndexPage({
 
   return (
     <PageShell
+      backHref="/"
+      backLabel={dt("backHome")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       description={t("linkEntryDescription")}

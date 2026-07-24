@@ -278,6 +278,7 @@
   "dashboard": {
     "eyebrow": "Dashboard",
     "backHome": "← Home",
+    "backFpl": "← FPL hub",
     "errorTitle": "Couldn’t load team",
     "errorFpl403Hint": "The official FPL API returned “forbidden” for this server. That often happens from cloud datacenters (e.g. Vercel). Try again later, deploy from another region, or set FPL_FETCH_USER_AGENT in the server env to a current desktop Chrome user-agent string.",
     "refresh": "Refresh",

@@ -211,6 +211,20 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
+      <nav className="flex flex-wrap gap-4 text-sm">
+        <Link
+          href="/"
+          className="text-muted-foreground transition-colors hover:text-brand-accent"
+        >
+          {dt("backHome")}
+        </Link>
+        <Link
+          href="/fpl"
+          className="text-muted-foreground transition-colors hover:text-brand-accent"
+        >
+          {dt("backFpl")}
+        </Link>
+      </nav>
       <section className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
         <div className="flex max-w-xl flex-col gap-1.5 sm:gap-2">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
