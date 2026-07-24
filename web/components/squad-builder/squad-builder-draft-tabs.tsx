@@ -2,31 +2,33 @@
 
 import { cn } from "@/lib/utils";
 
-export function SquadBuilderGwTabs({
-  gws,
-  activeGw,
-  xptByGw,
+export function SquadBuilderDraftTabs({
+  drafts,
+  activeDraft,
+  xptByDraft,
   onSelect,
   label,
+  draftLabel,
 }: {
-  gws: number[];
-  activeGw: number;
-  xptByGw: Record<number, number | null>;
-  onSelect: (gw: number) => void;
+  drafts: number[];
+  activeDraft: number;
+  xptByDraft: Record<number, number | null>;
+  onSelect: (draftIndex: number) => void;
   label: string;
+  draftLabel: (draftIndex: number) => string;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       <div className="flex flex-wrap gap-1.5">
-        {gws.map((gw) => {
-          const xpt = xptByGw[gw];
-          const active = gw === activeGw;
+        {drafts.map((draftIndex) => {
+          const xpt = xptByDraft[draftIndex];
+          const active = draftIndex === activeDraft;
           return (
             <button
-              key={gw}
+              key={draftIndex}
               type="button"
-              onClick={() => onSelect(gw)}
+              onClick={() => onSelect(draftIndex)}
               className={cn(
                 "flex min-w-[4.25rem] flex-col items-center rounded-lg border px-2.5 py-1.5 text-center transition-colors",
                 active
@@ -35,7 +37,7 @@ export function SquadBuilderGwTabs({
               )}
             >
               <span className="text-[10px] font-semibold uppercase tracking-wide">
-                GW{gw}
+                {draftLabel(draftIndex)}
               </span>
               <span
                 className={cn(

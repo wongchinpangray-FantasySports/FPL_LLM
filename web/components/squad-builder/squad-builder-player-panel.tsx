@@ -42,7 +42,7 @@ export function SquadBuilderPlayerPanel({
   selectedSlot,
   slotPosition,
   bank,
-  planningGw,
+  xptsGw,
   projById,
   squadFplIds,
   teams,
@@ -52,7 +52,7 @@ export function SquadBuilderPlayerPanel({
   selectedSlot: number | null;
   slotPosition: string | null;
   bank: number;
-  planningGw: number;
+  xptsGw: number;
   projById: Record<string, PanelProjRow>;
   squadFplIds: Set<number>;
   teams: TeamOption[];
@@ -145,7 +145,7 @@ export function SquadBuilderPlayerPanel({
         cache: "no-store",
         body: JSON.stringify({
           playerIds: ids,
-          fromGw: planningGw,
+          fromGw: xptsGw,
           horizon: 1,
         }),
       });
@@ -158,7 +158,7 @@ export function SquadBuilderPlayerPanel({
     } finally {
       setProjLoading(false);
     }
-  }, [planningGw]);
+  }, [xptsGw]);
 
   useEffect(() => {
     const ids = players.map((p) => p.fpl_id).filter((id) => id > 0);
@@ -174,8 +174,8 @@ export function SquadBuilderPlayerPanel({
   const sortedPlayers = useMemo(() => {
     if (sort !== "xpts") return players;
     return [...players].sort((a, b) => {
-      const ax = xpForGw(mergedProj[String(a.fpl_id)], planningGw) ?? -1;
-      const bx = xpForGw(mergedProj[String(b.fpl_id)], planningGw) ?? -1;
+      const ax = xpForGw(mergedProj[String(a.fpl_id)], xptsGw) ?? -1;
+      const bx = xpForGw(mergedProj[String(b.fpl_id)], xptsGw) ?? -1;
       if (bx !== ax) return bx - ax;
       return (a.web_name ?? a.name ?? "").localeCompare(
         b.web_name ?? b.name ?? "",
@@ -183,7 +183,7 @@ export function SquadBuilderPlayerPanel({
         { sensitivity: "base" },
       );
     });
-  }, [players, sort, mergedProj, planningGw]);
+  }, [players, sort, mergedProj, xptsGw]);
 
   const sortLabels: Record<SortKey, string> = {
     price: labels.sortPrice,
@@ -212,7 +212,7 @@ export function SquadBuilderPlayerPanel({
           })}
         </p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">
-          {t("panelGwHint", { gw: planningGw })}
+          {t("panelGwHint", { gw: xptsGw })}
         </p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">
           {t("panelSortHint", { sort: sortLabels[sort] })}
@@ -300,7 +300,7 @@ export function SquadBuilderPlayerPanel({
               sortedPlayers.map((p) => {
                 const inSquad = squadFplIds.has(p.fpl_id);
                 const pr = mergedProj[String(p.fpl_id)];
-                const xpt = xpForGw(pr, planningGw);
+                const xpt = xpForGw(pr, xptsGw);
                 return (
                   <tr
                     key={p.fpl_id}

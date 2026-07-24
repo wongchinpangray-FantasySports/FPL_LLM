@@ -14,7 +14,7 @@ export function SquadBuilderListView({
   captainId,
   viceId,
   projById,
-  planningGw,
+  xptsGw,
   selectedSlot,
   onSelectSlot,
   labels,
@@ -23,7 +23,7 @@ export function SquadBuilderListView({
   captainId: number | null;
   viceId: number | null;
   projById: Record<string, ProjRow>;
-  planningGw: number;
+  xptsGw: number;
   selectedSlot: number | null;
   onSelectSlot: (slot: number) => void;
   labels: {
@@ -56,7 +56,7 @@ export function SquadBuilderListView({
             {rows.map((p) => {
               const filled = isFilledPick(p);
               const pr = filled ? projById[String(p.fpl_id)] : undefined;
-              const gwXp = pr?.by_gw?.find((c) => c.gw === planningGw)?.xp;
+              const gwXp = pr?.by_gw?.find((c) => c.gw === xptsGw)?.xp;
               const isC = captainId === p.fpl_id;
               const isV = viceId === p.fpl_id;
               return (

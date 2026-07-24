@@ -16,7 +16,7 @@ import {
   type ValidationIssue,
 } from "@/lib/planner/validate";
 import { formatSquadBuilderIssue } from "@/lib/squad-builder/format-issue";
-import { SquadBuilderGwTabs } from "@/components/squad-builder/squad-builder-gw-tabs";
+import { SquadBuilderDraftTabs } from "@/components/squad-builder/squad-builder-draft-tabs";
 import { SquadBuilderListView } from "@/components/squad-builder/squad-builder-list-view";
 import {
   SquadBuilderPlayerPanel,
@@ -24,14 +24,14 @@ import {
 } from "@/components/squad-builder/squad-builder-player-panel";
 import { SquadBuilderStatsBar } from "@/components/squad-builder/squad-builder-stats-bar";
 import {
-  clampGw,
-  gwRange,
+  draftHorizonXpt,
+  draftSlotRange,
   loadOrCreateDraft,
-  resolveGwSquad,
+  resolveDraftSlot,
   saveDraftV2,
-  upsertGwSquad,
-  type GwSquadState,
-  type SquadBuilderDraftV2,
+  upsertDraftSlot,
+  type DraftSlotState,
+  type SquadBuilderDraftV3,
 } from "@/lib/squad-builder/draft";
 import { SQUAD_BUILDER_FROM_GW } from "@/lib/squad-builder/projection-window";
 import {
@@ -89,10 +89,11 @@ export function SquadBuilderApp({
   const fromGw = SQUAD_BUILDER_FROM_GW;
 
   const [horizon, setHorizon] = useState(5);
-  const [draft, setDraft] = useState<SquadBuilderDraftV2>(() =>
+  const [draft, setDraft] = useState<SquadBuilderDraftV3>(() =>
     loadOrCreateDraft(fromGw, 5),
   );
-  const [planningGw, setPlanningGw] = useState(() => draft.planningGw);
+  const activeDraft = draft.activeDraft;
+  const xptsGw = fromGw;
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("pitch");
   const [mode, setMode] = useState<Mode>(null);
@@ -108,26 +109,26 @@ export function SquadBuilderApp({
   const [projLoading, setProjLoading] = useState(false);
   const [projError, setProjError] = useState<string | null>(null);
 
-  const gwState = useMemo(
-    () => resolveGwSquad(draft, planningGw, fromGw),
-    [draft, planningGw, fromGw],
+  const slotState = useMemo(
+    () => resolveDraftSlot(draft, activeDraft),
+    [draft, activeDraft],
   );
-  const picks = gwState.picks;
-  const captainId = gwState.captainId;
-  const viceId = gwState.viceId;
+  const picks = slotState.picks;
+  const captainId = slotState.captainId;
+  const viceId = slotState.viceId;
 
   useEffect(() => {
     setSelectedSlot((cur) => cur ?? firstEmptySlot(picks));
-  }, [planningGw, picks]);
+  }, [activeDraft, picks]);
 
   useEffect(() => {
-    saveDraftV2({ ...draft, planningGw, horizon });
-  }, [draft, planningGw, horizon]);
+    saveDraftV2({ ...draft, horizon });
+  }, [draft, horizon]);
 
-  const patchGwState = useCallback(
-    (patch: Partial<GwSquadState>) => {
+  const patchDraftState = useCallback(
+    (patch: Partial<DraftSlotState>) => {
       setDraft((d) =>
-        upsertGwSquad(d, planningGw, {
+        upsertDraftSlot(d, d.activeDraft, {
           picks,
           captainId,
           viceId,
@@ -135,7 +136,7 @@ export function SquadBuilderApp({
         }),
       );
     },
-    [planningGw, picks, captainId, viceId],
+    [picks, captainId, viceId],
   );
 
   const filled = useMemo(() => filledPicks(picks), [picks]);
@@ -148,21 +149,21 @@ export function SquadBuilderApp({
   const squadValid =
     filled.length === 15 && validatePlannerSquad(filled).length === 0;
 
-  const gws = useMemo(() => gwRange(fromGw, horizon), [fromGw, horizon]);
+  const draftSlots = useMemo(() => draftSlotRange(), []);
 
   const projectionIds = useMemo(() => {
     const ids = new Set<number>();
     if (squadValid) {
       for (const p of filled) ids.add(p.fpl_id);
     }
-    for (const gw of gws) {
-      const sq = resolveGwSquad(draft, gw, fromGw);
+    for (const slot of draftSlots) {
+      const sq = resolveDraftSlot(draft, slot);
       const f = filledPicks(sq.picks);
       if (f.length !== 15 || validatePlannerSquad(f).length > 0) continue;
       for (const p of f) ids.add(p.fpl_id);
     }
     return [...ids];
-  }, [draft, gws, fromGw, squadValid, filled]);
+  }, [draft, draftSlots, squadValid, filled]);
 
   const canProject = squadValid && projectionIds.length >= 15;
 
@@ -196,32 +197,35 @@ export function SquadBuilderApp({
     );
   }, [picks, playerProjCache, captainId, projMeta]);
 
-  const planningGwXpt = useMemo(
+  const nextGwXpt = useMemo(
     () =>
       computeSingleGwSquadXpt(
         picks,
         playerProjCache,
         captainId,
-        planningGw,
+        xptsGw,
       ),
-    [picks, playerProjCache, captainId, planningGw],
+    [picks, playerProjCache, captainId, xptsGw],
   );
 
   const horizonXpt = gwTotals.length > 0 ? horizonTotalXpt(gwTotals) : null;
 
-  const xptByGw = useMemo(() => {
+  const xptByDraft = useMemo(() => {
     const out: Record<number, number | null> = {};
-    for (const gw of gws) {
-      const squad = resolveGwSquad(draft, gw, fromGw);
-      out[gw] = computeSingleGwSquadXpt(
-        squad.picks,
-        playerProjCache,
-        squad.captainId,
-        gw,
-      );
+    for (const slot of draftSlots) {
+      out[slot] =
+        projMeta != null
+          ? draftHorizonXpt(
+              draft,
+              slot,
+              playerProjCache,
+              projMeta.fromGw,
+              projMeta.toGw,
+            )
+          : null;
     }
     return out;
-  }, [draft, gws, fromGw, playerProjCache]);
+  }, [draft, draftSlots, playerProjCache, projMeta]);
 
   const gwForecastByFplId = useMemo(() => {
     const out: Record<number, PlannerGwStripCell[]> = {};
@@ -235,14 +239,14 @@ export function SquadBuilderApp({
     const out: Record<number, number> = {};
     for (const p of picks) {
       if (!isFilledPick(p)) continue;
-      const base = xpOnGw(playerProjCache[String(p.fpl_id)], planningGw);
+      const base = xpOnGw(playerProjCache[String(p.fpl_id)], xptsGw);
       if (base == null) continue;
       const mult =
         p.is_starter && captainId != null && p.fpl_id === captainId ? 2 : 1;
       out[p.fpl_id] = Math.round(base * mult * 10) / 10;
     }
     return Object.keys(out).length > 0 ? out : undefined;
-  }, [picks, playerProjCache, planningGw, captainId]);
+  }, [picks, playerProjCache, xptsGw, captainId]);
 
   const runProject = useCallback(async () => {
     if (!canProject) {
@@ -297,7 +301,7 @@ export function SquadBuilderApp({
     if (starters.length > 0 && nextCaptain == null) {
       nextCaptain = starters[0].fpl_id;
     }
-    patchGwState({ picks: next, captainId: nextCaptain, viceId: nextVice });
+    patchDraftState({ picks: next, captainId: nextCaptain, viceId: nextVice });
   }
 
   function applyPlayerToSlot(slot: number, p: BrowsePlayer) {
@@ -381,7 +385,7 @@ export function SquadBuilderApp({
     let nextVice = viceId;
     if (nextCaptain === row.fpl_id) nextCaptain = null;
     if (nextVice === row.fpl_id) nextVice = null;
-    patchGwState({ picks: next, captainId: nextCaptain, viceId: nextVice });
+    patchDraftState({ picks: next, captainId: nextCaptain, viceId: nextVice });
     setSelectedSlot(slot);
   }
 
@@ -393,9 +397,9 @@ export function SquadBuilderApp({
     if (mode === "captain") {
       if (!isFilledPick(row) || !row.is_starter) return;
       if (captainId === row.fpl_id) {
-        patchGwState({ captainId: null });
+        patchDraftState({ captainId: null });
       } else {
-        patchGwState({
+        patchDraftState({
           captainId: row.fpl_id,
           viceId: viceId === row.fpl_id ? null : viceId,
         });
@@ -442,7 +446,7 @@ export function SquadBuilderApp({
     }
     const xpMap: Record<string, number> = {};
     for (const p of filled) {
-      const xp = xpOnGw(playerProjCache[String(p.fpl_id)], planningGw);
+      const xp = xpOnGw(playerProjCache[String(p.fpl_id)], xptsGw);
       if (xp != null) xpMap[String(p.fpl_id)] = xp;
     }
     const best = findBestXiByXp(filled, xpMap);
@@ -461,16 +465,15 @@ export function SquadBuilderApp({
 
   function resetSquad() {
     const empty = createEmptySquad();
-    patchGwState({ picks: empty, captainId: null, viceId: null });
+    patchDraftState({ picks: empty, captainId: null, viceId: null });
     setMode(null);
     setSelectedSlot(firstEmptySlot(empty));
     setNotice(null);
     setProjError(null);
   }
 
-  function selectPlanningGw(gw: number) {
-    setPlanningGw(gw);
-    setDraft((d) => ({ ...d, planningGw: gw }));
+  function selectActiveDraft(draftIndex: number) {
+    setDraft((d) => ({ ...d, activeDraft: draftIndex }));
     setMode(null);
     setXiFirst(null);
     setNotice(null);
@@ -478,12 +481,7 @@ export function SquadBuilderApp({
 
   function onHorizonChange(nextHorizon: number) {
     setHorizon(nextHorizon);
-    setPlanningGw((gw) => clampGw(gw, fromGw, nextHorizon));
-    setDraft((d) => ({
-      ...d,
-      horizon: nextHorizon,
-      planningGw: clampGw(d.planningGw, fromGw, nextHorizon),
-    }));
+    setDraft((d) => ({ ...d, horizon: nextHorizon }));
   }
 
   const pitchPicks = picks.map((p) =>
@@ -534,7 +532,7 @@ export function SquadBuilderApp({
             {t("title")}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            {t("descriptionGw")}
+            {t("descriptionDrafts")}
           </p>
         </div>
 
@@ -542,9 +540,9 @@ export function SquadBuilderApp({
           bank={bank}
           spend={spend}
           budget={SQUAD_BUILDER_BUDGET_M}
-          xptsNextGw={planningGwXpt}
+          xptsNextGw={nextGwXpt}
           xptsHorizon={horizonXpt}
-          nextGwLabel={t("nextGwLabel", { gw: planningGw })}
+          nextGwLabel={t("nextGwLabel", { gw: xptsGw })}
           labels={{
             bank: t("budgetLabel"),
             cost: t("spentLabel"),
@@ -553,12 +551,13 @@ export function SquadBuilderApp({
           }}
         />
 
-        <SquadBuilderGwTabs
-          gws={gws}
-          activeGw={planningGw}
-          xptByGw={xptByGw}
-          onSelect={selectPlanningGw}
-          label={t("planningGwLabel")}
+        <SquadBuilderDraftTabs
+          drafts={draftSlots}
+          activeDraft={activeDraft}
+          xptByDraft={xptByDraft}
+          onSelect={selectActiveDraft}
+          label={t("draftTabsLabel")}
+          draftLabel={(n) => t("draftTab", { draft: n })}
         />
       </section>
 
@@ -572,7 +571,7 @@ export function SquadBuilderApp({
         </div>
       ) : squadValid ? (
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100/90">
-          {t("squadValidGw", { gw: planningGw })}
+          {t("squadValidDraft", { draft: activeDraft })}
         </div>
       ) : null}
 
@@ -657,7 +656,7 @@ export function SquadBuilderApp({
           size="sm"
           disabled={!squadValid}
           onClick={() => {
-            saveDraftV2({ ...draft, planningGw, horizon });
+            saveDraftV2({ ...draft, horizon });
             setNotice(t("draftSaved"));
           }}
         >
@@ -684,16 +683,9 @@ export function SquadBuilderApp({
           </h2>
           <div className="flex flex-wrap gap-2">
             {gwTotals.map((row) => (
-              <button
+              <div
                 key={row.gw}
-                type="button"
-                onClick={() => selectPlanningGw(row.gw)}
-                className={cn(
-                  "min-w-[4.5rem] rounded-lg border px-3 py-2 text-center transition-colors",
-                  row.gw === planningGw
-                    ? "border-brand-accent/50 bg-brand-accent/10"
-                    : "border-border bg-muted/30 hover:bg-muted/50",
-                )}
+                className="min-w-[4.5rem] rounded-lg border border-border bg-muted/30 px-3 py-2 text-center"
               >
                 <div className="text-[10px] uppercase text-muted-foreground">
                   GW{row.gw}
@@ -701,7 +693,7 @@ export function SquadBuilderApp({
                 <div className="text-lg font-semibold tabular-nums text-brand-accent">
                   {row.xpt.toFixed(1)}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </section>
@@ -712,7 +704,7 @@ export function SquadBuilderApp({
           {viewMode === "pitch" ? (
             <PitchView
               picks={pitchPicks}
-              title={t("pitchTitleGw", { filled: filled.length, gw: planningGw })}
+              title={t("pitchTitleDraft", { filled: filled.length, draft: activeDraft })}
               caption={
                 mode === "captain"
                   ? t("captainHint")
@@ -727,7 +719,7 @@ export function SquadBuilderApp({
               onPickSlot={onPickSlot}
               gwForecastByFplId={gwForecastByFplId}
               nextGwXpByFplId={nextGwXpByFplId}
-              nextGwXpTitle={t("nextGwXpTitle", { gw: planningGw })}
+              nextGwXpTitle={t("nextGwXpTitle", { gw: xptsGw })}
               benchLabel={t("benchLabel")}
               benchGkAbbrev={t("benchGk")}
             />
@@ -737,7 +729,7 @@ export function SquadBuilderApp({
               captainId={captainId}
               viceId={viceId}
               projById={playerProjCache}
-              planningGw={planningGw}
+              xptsGw={xptsGw}
               selectedSlot={selectedSlot}
               onSelectSlot={(slot) => {
                 setSelectedSlot(slot);
@@ -756,7 +748,7 @@ export function SquadBuilderApp({
                 size="sm"
                 onClick={() => {
                   const row = picks.find((p) => p.slot === selectedSlot);
-                  if (row?.is_starter) patchGwState({ captainId: row.fpl_id });
+                  if (row?.is_starter) patchDraftState({ captainId: row.fpl_id });
                 }}
               >
                 {t("makeCaptain")}
@@ -767,7 +759,7 @@ export function SquadBuilderApp({
                 size="sm"
                 onClick={() => {
                   const row = picks.find((p) => p.slot === selectedSlot);
-                  if (row?.is_starter) patchGwState({ viceId: row.fpl_id });
+                  if (row?.is_starter) patchDraftState({ viceId: row.fpl_id });
                 }}
               >
                 {t("makeVice")}
@@ -791,7 +783,7 @@ export function SquadBuilderApp({
             selectedSlot != null ? slotPosition(selectedSlot) : null
           }
           bank={bank}
-          planningGw={planningGw}
+          xptsGw={xptsGw}
           projById={playerProjCache}
           squadFplIds={squadFplIds}
           teams={teams}
