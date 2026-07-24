@@ -34,6 +34,13 @@ export default async function FplFixturesPage({ params }: Props) {
           title={t("fixturesTitle", { season: seasonLabel })}
           summary={t("fixturesEyebrow")}
           hint={t("fixturesHint")}
+          fdrLegend={{
+            1: t("fdrLegend1"),
+            2: t("fdrLegend2"),
+            3: t("fdrLegend3"),
+            4: t("fdrLegend4"),
+            5: t("fdrLegend5"),
+          }}
           labels={{
             team: t("fixtureTableTeam"),
             expandHint: t("fixturesExpandHint"),

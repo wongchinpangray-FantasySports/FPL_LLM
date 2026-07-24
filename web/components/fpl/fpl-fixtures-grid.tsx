@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fdrClass } from "@/lib/fpl/fdr";
+import { fdrClass, normalizeFplFdr } from "@/lib/fpl/fdr";
+import { FplFdrLegend } from "@/components/fpl/fpl-fdr-legend";
+import type { FplFdrLevel } from "@/lib/fpl/fdr";
 import { getFplTeamBadgeStyle } from "@/lib/team-themes";
 import type { H2HMatch } from "@/lib/fpl/h2h-history";
 import type { FplFixtureRow, FplGwBlock } from "@/lib/fpl/fixtures-grid";
@@ -36,7 +38,7 @@ function FixtureChip({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/50",
         fdrClass(fixture.fdr),
       )}
-      title={`FDR ${fixture.fdr} · ${labels.h2hTapHint}`}
+      title={`FDR ${normalizeFplFdr(fixture.fdr) ?? fixture.fdr} · ${labels.h2hTapHint}`}
     >
       <span
         className="absolute inset-y-0 left-0 w-1.5"
@@ -55,7 +57,7 @@ function FixtureChip({
             {fixture.opp}
           </span>
           <span className="text-[10px] font-semibold tabular-nums text-foreground/90">
-            FDR {fixture.fdr}
+            FDR {normalizeFplFdr(fixture.fdr) ?? fixture.fdr}
           </span>
         </span>
         <span className="flex items-center justify-between gap-1.5">
@@ -242,6 +244,7 @@ export function FplFixturesGrid({
   title,
   summary,
   hint,
+  fdrLegend,
   labels,
 }: {
   rows: FplFixtureRow[];
@@ -251,6 +254,7 @@ export function FplFixturesGrid({
   title: string;
   summary?: string;
   hint?: string;
+  fdrLegend?: Record<FplFdrLevel, string>;
   labels: {
     team: string;
     expandHint: string;
@@ -312,6 +316,8 @@ export function FplFixturesGrid({
             <span className="text-xs text-muted-foreground">{hint}</span>
           ) : null}
         </div>
+
+        {fdrLegend ? <FplFdrLegend labels={fdrLegend} /> : null}
 
         <div className="flex flex-wrap gap-2">
           {gwBlocks.map((block, idx) => (

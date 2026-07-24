@@ -20,6 +20,7 @@ import {
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { formatFplInteger } from "@/lib/fpl";
 import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
+import { normalizeFplFdr } from "@/lib/fpl/fdr";
 import { HomeBackLink } from "@/components/home-back-link";
 import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
 
@@ -515,8 +516,8 @@ export default async function DashboardPage({
                                   {f.opp}
                                   {!f.home ? " (A)" : ""}
                                 </div>
-                                <div className="text-[10px] text-foreground/90/70">
-                                  FDR {f.fdr ?? "–"}
+                                <div className="text-[10px] text-foreground/90">
+                                  FDR {normalizeFplFdr(f.fdr) ?? "–"}
                                 </div>
                               </div>
                             ))}

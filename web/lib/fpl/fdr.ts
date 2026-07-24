@@ -62,12 +62,42 @@ export function lookupFplFdr(
   return lookup.get(`${teamCode}:${fixtureId}`) ?? fallback;
 }
 
+export type FplFdrLevel = 1 | 2 | 3 | 4 | 5;
+
+export const FPL_FDR_LEVELS: FplFdrLevel[] = [1, 2, 3, 4, 5];
+
+/** Clamp and round to official FPL FDR 1 (easiest) – 5 (hardest). */
+export function normalizeFplFdr(
+  fdr: number | null | undefined,
+): FplFdrLevel | null {
+  if (fdr == null || !Number.isFinite(fdr)) return null;
+  return Math.min(5, Math.max(1, Math.round(fdr))) as FplFdrLevel;
+}
+
+/**
+ * Official-style FDR chip colours — one distinct band per level (1 = easiest).
+ * Tuned for dark UI; mirrors the FPL green → grey → red fixture ticker.
+ */
 export function fdrClass(fdr: number | null): string {
-  if (fdr === null) return "bg-muted";
-  if (fdr <= 2) return "bg-emerald-500/30 border-emerald-400/40";
-  if (fdr === 3) return "bg-amber-500/25 border-amber-400/40";
-  if (fdr === 4) return "bg-orange-500/30 border-orange-400/40";
-  return "bg-rose-600/40 border-rose-400/50";
+  const level = normalizeFplFdr(fdr);
+  if (level == null) {
+    return "border border-border bg-muted text-muted-foreground";
+  }
+
+  switch (level) {
+    case 1:
+      return "border border-emerald-700/55 bg-emerald-950/80 text-emerald-100";
+    case 2:
+      return "border border-emerald-500/50 bg-emerald-700/55 text-emerald-50";
+    case 3:
+      return "border border-slate-400/45 bg-slate-600/35 text-slate-100";
+    case 4:
+      return "border border-orange-500/55 bg-orange-700/50 text-orange-50";
+    case 5:
+      return "border border-red-700/60 bg-red-950/75 text-red-100";
+    default:
+      return "border border-border bg-muted text-muted-foreground";
+  }
 }
 
 export { buildH2HStore, loadTeamStrengthByCode };
