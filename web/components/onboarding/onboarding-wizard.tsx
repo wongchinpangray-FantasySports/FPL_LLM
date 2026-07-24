@@ -35,6 +35,7 @@ export function OnboardingWizard() {
   const [nationalTeam, setNationalTeam] = useState("");
   const [leagues, setLeagues] = useState<string[]>(["epl"]);
   const [fplTeamId, setFplTeamId] = useState<number | "">("");
+  const [fplTeamShort, setFplTeamShort] = useState("");
   const [regions, setRegions] = useState<string[]>(["GLOBAL"]);
   const [fplPlayers, setFplPlayers] = useState<FplHit[]>([]);
   const [wcPlayers, setWcPlayers] = useState<WcHit[]>([]);
@@ -87,6 +88,7 @@ export function OnboardingWizard() {
           national_team_code: nationalTeam || null,
           favorite_leagues: leagues,
           fpl_team_id: fplTeamId === "" ? null : fplTeamId,
+          fpl_team_short_name: fplTeamShort || null,
           followed_fpl_player_ids: followedFpl.map((p) => p.fpl_id),
           followed_wc_player_ids: followedWc.map((p) => p.id),
           news_regions: regions,
@@ -184,9 +186,18 @@ export function OnboardingWizard() {
             <h2 className="text-lg font-semibold text-foreground">{t("stepClub")}</h2>
             <select
               value={fplTeamId}
-              onChange={(e) =>
-                setFplTeamId(e.target.value ? Number(e.target.value) : "")
-              }
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (!raw) {
+                  setFplTeamId("");
+                  setFplTeamShort("");
+                  return;
+                }
+                const id = Number(raw);
+                setFplTeamId(id);
+                const hit = options.fpl_teams.find((t) => t.id === id);
+                setFplTeamShort(hit?.short_name ?? "");
+              }}
               className="mt-4 w-full rounded-lg border border-border bg-popover px-3 py-2 text-sm text-foreground"
             >
               <option value="">{t("skipOption")}</option>

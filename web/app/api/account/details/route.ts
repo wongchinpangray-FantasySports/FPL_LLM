@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { resolveAccountTheme } from "@/lib/team-themes";
 import { recordLoginDay } from "@/lib/auth/record-login-day";
+import { resolveFplClubFromPrefs } from "@/lib/auth/fpl-club-preference";
 import { getFplSessionStatus } from "@/lib/auth/fpl-access";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,6 @@ export async function GET() {
 
     let nationalTeam: { code: string; name: string; short_name: string } | null =
       null;
-    let fplClub: { id: number; name: string; short_name: string } | null = null;
 
     if (prefs?.national_team_code) {
       const { data } = await admin
@@ -55,20 +55,7 @@ export async function GET() {
       }
     }
 
-    if (prefs?.fpl_team_id) {
-      const { data } = await admin
-        .from("teams")
-        .select("id,name,short_name")
-        .eq("id", prefs.fpl_team_id)
-        .maybeSingle();
-      if (data) {
-        fplClub = {
-          id: data.id as number,
-          name: data.name as string,
-          short_name: data.short_name as string,
-        };
-      }
-    }
+    const fplClub = await resolveFplClubFromPrefs(admin, prefs);
 
     const fplIds = (prefs?.followed_fpl_player_ids as number[] | undefined) ?? [];
     const wcIds = (prefs?.followed_wc_player_ids as number[] | undefined) ?? [];

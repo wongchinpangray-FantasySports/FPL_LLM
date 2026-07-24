@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
+import { upsertFplClubPreference } from "@/lib/auth/fpl-club-preference";
 import { resolveAccountTheme } from "@/lib/team-themes";
-import { resolveFplClubShortName } from "@/lib/auth/fpl-club-preference";
 
 export const dynamic = "force-dynamic";
 
-type Body = { theme_team_type?: "club" | "national" };
+type Body = { fpl_team_short_name?: string };
 
 export async function PATCH(req: Request) {
   try {
@@ -22,36 +22,43 @@ export async function PATCH(req: Request) {
     }
 
     const body = (await req.json()) as Body;
-    if (body.theme_team_type !== "club" && body.theme_team_type !== "national") {
-      return NextResponse.json({ error: "Invalid theme" }, { status: 400 });
+    const short = body.fpl_team_short_name?.trim();
+    if (!short) {
+      return NextResponse.json({ error: "Club required" }, { status: 400 });
     }
 
-    const userId = authData.user.id;
     const admin = getServerSupabase();
+    const club = await upsertFplClubPreference(admin, authData.user.id, short);
 
-    const { error } = await admin
+    const { data: profile } = await admin
       .from("profiles")
-      .update({ theme_team_type: body.theme_team_type })
-      .eq("id", userId);
-    if (error) throw new Error(error.message);
+      .select("theme_team_type")
+      .eq("id", authData.user.id)
+      .maybeSingle();
 
     const { data: prefs } = await admin
       .from("user_preferences")
-      .select("national_team_code,fpl_team_id,fpl_team_short_name")
-      .eq("user_id", userId)
+      .select("national_team_code")
+      .eq("user_id", authData.user.id)
       .maybeSingle();
 
-    const fplShort = await resolveFplClubShortName(admin, prefs);
+    const themeTeamType =
+      (profile?.theme_team_type as "club" | "national" | undefined) ?? "club";
 
     const theme = resolveAccountTheme({
-      themeTeamType: body.theme_team_type,
-      fplShortName: fplShort,
+      themeTeamType,
+      fplShortName: club.short_name,
       nationalTeamCode: (prefs?.national_team_code as string | null) ?? null,
     });
 
-    return NextResponse.json({ ok: true, theme_team_type: body.theme_team_type, theme });
+    return NextResponse.json({
+      ok: true,
+      fpl_club: club,
+      theme,
+      theme_team_type: themeTeamType,
+    });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to update theme";
+    const message = e instanceof Error ? e.message : "Failed to update club";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { TeamTheme } from "@/lib/team-themes";
 import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
 import { FplSessionConnectForm } from "@/components/account/fpl-session-connect-form";
+import { FplClubSelectForm } from "@/components/account/fpl-club-select-form";
 
 type AccountDetails = {
   email: string;
@@ -213,6 +214,22 @@ export function AccountPanel() {
             {t("fplTeamSectionHint")}
           </p>
           <div className="mt-4 space-y-6">
+            <FplClubSelectForm
+              initialShort={details.preferences?.fpl_club?.short_name ?? null}
+              onSaved={(club) => {
+                setDetails((prev) =>
+                  prev && prev.preferences
+                    ? {
+                        ...prev,
+                        preferences: {
+                          ...prev.preferences,
+                          fpl_club: club,
+                        },
+                      }
+                    : prev,
+                );
+              }}
+            />
             <FplEntryLinkForm
               initialEntryId={details.profile.fpl_entry_id}
               onSaved={(id) => {

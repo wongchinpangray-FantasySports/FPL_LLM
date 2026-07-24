@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { upsertFplClubPreference } from "@/lib/auth/fpl-club-preference";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,7 @@ type OnboardingBody = {
   national_team_code?: string | null;
   favorite_leagues?: string[];
   fpl_team_id?: number | null;
+  fpl_team_short_name?: string | null;
   followed_fpl_player_ids?: number[];
   followed_wc_player_ids?: number[];
   news_regions?: string[];
@@ -45,11 +47,18 @@ export async function POST(req: Request) {
     if (profileErr) throw new Error(profileErr.message);
 
     if (!body.skip) {
-      const { error: prefErr } = await admin.from("user_preferences").upsert({
+      if (body.fpl_team_short_name?.trim()) {
+        await upsertFplClubPreference(
+          admin,
+          userId,
+          body.fpl_team_short_name.trim(),
+        );
+      }
+
+      const prefRow: Record<string, unknown> = {
         user_id: userId,
         national_team_code: body.national_team_code ?? null,
         favorite_leagues: body.favorite_leagues ?? [],
-        fpl_team_id: body.fpl_team_id ?? null,
         followed_fpl_player_ids: body.followed_fpl_player_ids ?? [],
         followed_wc_player_ids: body.followed_wc_player_ids ?? [],
         news_regions:
@@ -57,7 +66,14 @@ export async function POST(req: Request) {
             ? body.news_regions
             : ["GLOBAL"],
         updated_at: now,
-      });
+      };
+      if (!body.fpl_team_short_name?.trim()) {
+        prefRow.fpl_team_id = body.fpl_team_id ?? null;
+      }
+
+      const { error: prefErr } = await admin
+        .from("user_preferences")
+        .upsert(prefRow);
       if (prefErr) throw new Error(prefErr.message);
     } else {
       await admin.from("profiles").update({ onboarding_completed_at: now }).eq("id", userId);

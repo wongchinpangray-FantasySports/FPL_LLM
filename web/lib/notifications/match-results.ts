@@ -59,16 +59,28 @@ export function wcMatchMatchesUser(
   return false;
 }
 
+function effectiveFplTeamId(
+  pref: UserPrefRow,
+  ctx: MatchContext,
+): number | null {
+  const short = pref.fpl_team_short_name?.trim().toUpperCase();
+  if (short) {
+    for (const [id, team] of ctx.fplTeamsById) {
+      if (team.short_name.toUpperCase() === short) return id;
+    }
+  }
+  return pref.fpl_team_id;
+}
+
 export function fplMatchMatchesUser(
   match: FplMatchResultRow,
   pref: UserPrefRow,
+  ctx: MatchContext,
 ): boolean {
   if (!wantsLeague(pref, "epl")) return false;
-  if (!pref.fpl_team_id) return false;
-  return (
-    match.home_team_id === pref.fpl_team_id ||
-    match.away_team_id === pref.fpl_team_id
-  );
+  const teamId = effectiveFplTeamId(pref, ctx);
+  if (!teamId) return false;
+  return match.home_team_id === teamId || match.away_team_id === teamId;
 }
 
 export function buildWcMatchNotification(

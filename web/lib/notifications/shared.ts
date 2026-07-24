@@ -51,7 +51,7 @@ export async function loadUserPreferences(
   const { data, error } = await admin
     .from("user_preferences")
     .select(
-      "user_id,national_team_code,favorite_leagues,fpl_team_id,followed_fpl_player_ids,followed_wc_player_ids,news_regions",
+      "user_id,national_team_code,favorite_leagues,fpl_team_id,fpl_team_short_name,followed_fpl_player_ids,followed_wc_player_ids,news_regions",
     );
   if (error) throw new Error(error.message);
   return (data ?? []) as UserPrefRow[];

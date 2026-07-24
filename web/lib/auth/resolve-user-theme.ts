@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { resolveFplClubShortName } from "@/lib/auth/fpl-club-preference";
 import { resolveAccountTheme, type TeamTheme } from "@/lib/team-themes";
 
 export type UserThemePayload = {
@@ -17,20 +18,12 @@ export async function resolveUserTheme(userId: string): Promise<UserThemePayload
       .maybeSingle(),
     admin
       .from("user_preferences")
-      .select("national_team_code,fpl_team_id")
+      .select("national_team_code,fpl_team_id,fpl_team_short_name")
       .eq("user_id", userId)
       .maybeSingle(),
   ]);
 
-  let fplShort: string | null = null;
-  if (prefs?.fpl_team_id) {
-    const { data: team } = await admin
-      .from("teams")
-      .select("short_name")
-      .eq("id", prefs.fpl_team_id)
-      .maybeSingle();
-    fplShort = (team?.short_name as string | null) ?? null;
-  }
+  const fplShort = await resolveFplClubShortName(admin, prefs);
 
   const themeTeamType =
     (profile?.theme_team_type as "club" | "national" | undefined) ?? "club";

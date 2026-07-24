@@ -248,7 +248,7 @@ async function main() {
   const fplMatches = await loadRecentFplFixtures(since);
   for (const pref of prefs as UserPrefRow[]) {
     for (const match of fplMatches) {
-      if (!fplMatchMatchesUser(match, pref)) continue;
+      if (!fplMatchMatchesUser(match, pref, ctx)) continue;
       const row = buildFplMatchNotification(pref.user_id, match);
       if (!trackSeen(seen, pref.user_id, row.href)) continue;
       toInsert.push(row);

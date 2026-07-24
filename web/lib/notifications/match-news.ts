@@ -5,6 +5,7 @@ export type UserPrefRow = {
   national_team_code: string | null;
   favorite_leagues: string[];
   fpl_team_id: number | null;
+  fpl_team_short_name?: string | null;
   followed_fpl_player_ids: number[];
   followed_wc_player_ids: number[];
   news_regions: string[];
@@ -59,8 +60,20 @@ function leagueMatch(
     if (p && contains(hay, p.name)) wcHit = true;
   }
 
-  if (pref.fpl_team_id) {
-    const team = ctx.fplTeamsById.get(pref.fpl_team_id);
+  if (pref.fpl_team_id || pref.fpl_team_short_name) {
+    let team: { name: string; short_name: string } | undefined;
+    const short = pref.fpl_team_short_name?.trim().toUpperCase();
+    if (short) {
+      for (const t of ctx.fplTeamsById.values()) {
+        if (t.short_name.toUpperCase() === short) {
+          team = t;
+          break;
+        }
+      }
+    }
+    if (!team && pref.fpl_team_id) {
+      team = ctx.fplTeamsById.get(pref.fpl_team_id);
+    }
     if (team && (contains(hay, team.name) || contains(hay, team.short_name))) {
       eplHit = true;
     }
