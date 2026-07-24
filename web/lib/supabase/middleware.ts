@@ -43,6 +43,7 @@ export function isFplProtectedApiPath(pathname: string): boolean {
     return true;
   }
   if (pathname.startsWith("/api/planner/")) return true;
+  if (pathname.startsWith("/api/squad-builder/")) return true;
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;
   if (pathname.startsWith("/api/fpl/")) return true;

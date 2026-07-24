@@ -5,17 +5,22 @@ import { useTranslations } from "next-intl";
 import { PitchView, type PlannerGwStripCell } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
 import {
   canAfford,
-  roundMoney,
   swapBudget,
   validatePlannerSquad,
   validateXiFormation,
   type ValidationIssue,
 } from "@/lib/planner/validate";
 import { formatSquadBuilderIssue } from "@/lib/squad-builder/format-issue";
+import { SquadBuilderListView } from "@/components/squad-builder/squad-builder-list-view";
+import {
+  SquadBuilderPlayerPanel,
+  type BrowsePlayer,
+} from "@/components/squad-builder/squad-builder-player-panel";
+import { SquadBuilderStatsBar } from "@/components/squad-builder/squad-builder-stats-bar";
 import {
   createEmptySquad,
   filledPicks,
@@ -32,23 +37,16 @@ import {
 
 const STORAGE_KEY = "squad-builder-draft-v1";
 
-type SearchPlayer = {
-  fpl_id: number;
-  web_name: string | null;
-  name: string | null;
-  team: string | null;
-  team_id: number | null;
-  position: string | null;
-  base_price: number | null;
-};
-
 type ProjRow = {
   xp_total: number;
   xp_next_gw: number;
   by_gw: { gw: number; opp: string; xp: number }[];
 };
 
-type Mode = "add" | "captain" | "xi" | null;
+type TeamOption = { id: number; short_name: string; name: string };
+
+type ViewMode = "pitch" | "list";
+type Mode = "captain" | "xi" | null;
 
 function loadDraft(): PlannerPickPayload[] | null {
   if (typeof window === "undefined") return null;
@@ -67,11 +65,16 @@ function saveDraft(picks: PlannerPickPayload[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
   } catch {
-    /* ignore quota */
+    /* ignore */
   }
 }
 
-export function SquadBuilderApp() {
+function firstEmptySlot(picks: PlannerPickPayload[]): number | null {
+  const empty = picks.find((p) => !isFilledPick(p));
+  return empty?.slot ?? null;
+}
+
+export function SquadBuilderApp({ teams }: { teams: TeamOption[] }) {
   const t = useTranslations("squadBuilderApp");
 
   const [picks, setPicks] = useState<PlannerPickPayload[]>(() =>
@@ -79,12 +82,12 @@ export function SquadBuilderApp() {
   );
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(() =>
+    firstEmptySlot(loadDraft() ?? createEmptySquad()),
+  );
+  const [viewMode, setViewMode] = useState<ViewMode>("pitch");
   const [mode, setMode] = useState<Mode>(null);
-  const [addSlot, setAddSlot] = useState<number | null>(null);
   const [xiFirst, setXiFirst] = useState<number | null>(null);
-  const [searchQ, setSearchQ] = useState("");
-  const [searchHits, setSearchHits] = useState<SearchPlayer[]>([]);
-  const [searching, setSearching] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [horizon, setHorizon] = useState(5);
   const [projById, setProjById] = useState<Record<string, ProjRow>>({});
@@ -101,6 +104,10 @@ export function SquadBuilderApp() {
   const filled = useMemo(() => filledPicks(picks), [picks]);
   const spend = useMemo(() => squadSpendM(picks), [picks]);
   const bank = useMemo(() => squadBankM(picks), [picks]);
+  const squadFplIds = useMemo(
+    () => new Set(filled.map((p) => p.fpl_id)),
+    [filled],
+  );
   const squadValid =
     filled.length === 15 && validatePlannerSquad(filled).length === 0;
 
@@ -108,11 +115,7 @@ export function SquadBuilderApp() {
     if (filled.length === 0) return [];
     const issues: ValidationIssue[] = [];
     if (filled.length < 15) {
-      issues.push({
-        code: "size",
-        message: "",
-        values: { have: filled.length },
-      });
+      issues.push({ code: "size", message: "", values: { have: filled.length } });
     }
     if (filled.length === 15) {
       issues.push(...validatePlannerSquad(filled));
@@ -138,6 +141,9 @@ export function SquadBuilderApp() {
     );
   }, [picks, projById, captainId, projMeta]);
 
+  const nextGwXpt = gwTotals[0]?.xpt ?? null;
+  const horizonXpt = gwTotals.length > 0 ? horizonTotalXpt(gwTotals) : null;
+
   const gwForecastByFplId = useMemo(() => {
     const out: Record<number, PlannerGwStripCell[]> = {};
     for (const [id, pr] of Object.entries(projById)) {
@@ -161,35 +167,48 @@ export function SquadBuilderApp() {
     return Object.keys(out).length > 0 ? out : undefined;
   }, [picks, projById, projMeta, captainId]);
 
-  const searchPlayers = useCallback(async (q: string, slot: number | null) => {
-    const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      setSearchHits([]);
-      return;
-    }
-    setSearching(true);
+  const runProject = useCallback(async () => {
+    if (filled.length !== 15 || validatePlannerSquad(filled).length > 0) return;
+    setProjLoading(true);
+    setProjError(null);
     try {
-      const pos = slot != null ? slotPosition(slot) : null;
-      const params = new URLSearchParams({ q: trimmed });
-      if (pos) params.set("position", pos);
-      if (bank > 0) params.set("max_price", String(bank));
-      const res = await fetch(`/api/planner/players?${params}`);
-      const data = (await res.json()) as { players?: SearchPlayer[] };
-      setSearchHits(data.players ?? []);
+      const res = await fetch("/api/planner/project", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          playerIds: filled.map((p) => p.fpl_id),
+          horizon,
+          includeLeagueTops: false,
+        }),
+      });
+      const data = (await res.json()) as {
+        projections?: Record<string, ProjRow>;
+        fromGw?: number;
+        toGw?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        setProjError(data.error ?? t("errProjectionFailed"));
+        return;
+      }
+      setProjById(data.projections ?? {});
+      setProjMeta(
+        data.fromGw != null && data.toGw != null
+          ? { fromGw: data.fromGw, toGw: data.toGw }
+          : null,
+      );
     } catch {
-      setSearchHits([]);
+      setProjError(t("errProjectionFailed"));
     } finally {
-      setSearching(false);
+      setProjLoading(false);
     }
-  }, [bank]);
+  }, [filled, horizon, t]);
 
   useEffect(() => {
-    if (addSlot == null) return;
-    const timer = setTimeout(() => {
-      void searchPlayers(searchQ, addSlot);
-    }, 250);
+    if (!squadValid) return;
+    const timer = setTimeout(() => void runProject(), 600);
     return () => clearTimeout(timer);
-  }, [searchQ, addSlot, searchPlayers]);
+  }, [squadValid, filled, horizon, runProject]);
 
   function fixCaptainVice(next: PlannerPickPayload[]) {
     const ids = new Set(next.filter(isFilledPick).map((p) => p.fpl_id));
@@ -201,37 +220,18 @@ export function SquadBuilderApp() {
     }
   }
 
-  function openAddSlot(slot: number) {
-    setMode("add");
-    setAddSlot(slot);
-    setSearchQ("");
-    setSearchHits([]);
-    setNotice(null);
-  }
-
-  function closeAddModal() {
-    setMode(null);
-    setAddSlot(null);
-    setSearchQ("");
-    setSearchHits([]);
-  }
-
-  function applyPlayer(slot: number, p: SearchPlayer) {
+  function applyPlayerToSlot(slot: number, p: BrowsePlayer) {
     const needPos = slotPosition(slot);
     if (needPos && p.position !== needPos) {
       setNotice(t("valPosMismatch", { pos: p.position ?? "?", need: needPos }));
       return;
     }
-
     const row = picks.find((x) => x.slot === slot);
     if (!row) return;
-
-    const taken = new Set(filled.map((x) => x.fpl_id));
-    if (taken.has(p.fpl_id)) {
+    if (squadFplIds.has(p.fpl_id)) {
       setNotice(t("errAlreadyInSquad"));
       return;
     }
-
     const outPrice = isFilledPick(row) ? row.base_price : 0;
     const newBank = swapBudget(bank, outPrice, p.base_price);
     if (!canAfford(newBank)) {
@@ -243,7 +243,6 @@ export function SquadBuilderApp() {
       );
       return;
     }
-
     const nextRow: PlannerPickPayload = {
       ...row,
       fpl_id: p.fpl_id,
@@ -262,13 +261,10 @@ export function SquadBuilderApp() {
         return;
       }
     }
-
     setPicks(draft);
-    setProjById({});
-    setProjMeta(null);
     setNotice(null);
     fixCaptainVice(draft);
-    closeAddModal();
+    setSelectedSlot(firstEmptySlot(draft));
   }
 
   function removePlayer(slot: number) {
@@ -276,26 +272,23 @@ export function SquadBuilderApp() {
     if (!row || !isFilledPick(row)) return;
     const empty = createEmptySquad().find((p) => p.slot === slot)!;
     const next = picks.map((p) =>
-      p.slot === slot
-        ? { ...empty, is_starter: row.is_starter }
-        : p,
+      p.slot === slot ? { ...empty, is_starter: row.is_starter } : p,
     );
     if (captainId === row.fpl_id) setCaptainId(null);
     if (viceId === row.fpl_id) setViceId(null);
     setPicks(next);
-    setProjById({});
-    setProjMeta(null);
+    setSelectedSlot(slot);
   }
 
   function onPickSlot(slot: number) {
+    setSelectedSlot(slot);
     const row = picks.find((p) => p.slot === slot);
     if (!row) return;
 
     if (mode === "captain") {
       if (!isFilledPick(row) || !row.is_starter) return;
-      if (captainId === row.fpl_id) {
-        setCaptainId(null);
-      } else {
+      if (captainId === row.fpl_id) setCaptainId(null);
+      else {
         setCaptainId(row.fpl_id);
         if (viceId === row.fpl_id) setViceId(null);
       }
@@ -331,56 +324,8 @@ export function SquadBuilderApp() {
       }
       setPicks(next);
       setXiFirst(null);
-      setNotice(null);
       fixCaptainVice(next);
       return;
-    }
-
-    if (isFilledPick(row)) {
-      openAddSlot(slot);
-    } else {
-      openAddSlot(slot);
-    }
-  }
-
-  async function runProject() {
-    if (!squadValid) {
-      setProjError(t("errFixSquadXp"));
-      return;
-    }
-    setProjLoading(true);
-    setProjError(null);
-    try {
-      const ids = filled.map((p) => p.fpl_id);
-      const res = await fetch("/api/planner/project", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          playerIds: ids,
-          horizon,
-          includeLeagueTops: false,
-        }),
-      });
-      const data = (await res.json()) as {
-        projections?: Record<string, ProjRow>;
-        fromGw?: number;
-        toGw?: number;
-        error?: string;
-      };
-      if (!res.ok) {
-        setProjError(data.error ?? t("errProjectionFailed"));
-        return;
-      }
-      setProjById(data.projections ?? {});
-      setProjMeta(
-        data.fromGw != null && data.toGw != null
-          ? { fromGw: data.fromGw, toGw: data.toGw }
-          : null,
-      );
-    } catch {
-      setProjError(t("errProjectionFailed"));
-    } finally {
-      setProjLoading(false);
     }
   }
 
@@ -410,13 +355,14 @@ export function SquadBuilderApp() {
   }
 
   function resetSquad() {
-    setPicks(createEmptySquad());
+    const empty = createEmptySquad();
+    setPicks(empty);
     setCaptainId(null);
     setViceId(null);
     setProjById({});
     setProjMeta(null);
     setMode(null);
-    setAddSlot(null);
+    setSelectedSlot(firstEmptySlot(empty));
     setNotice(null);
     setProjError(null);
   }
@@ -424,82 +370,113 @@ export function SquadBuilderApp() {
   const pitchPicks = picks.map((p) =>
     isFilledPick(p)
       ? p
-      : {
-          ...p,
-          web_name: t("emptySlot"),
-          base_price: 0,
-        },
+      : { ...p, web_name: t("trialist"), base_price: 0 },
   );
 
-  const pitchTitle = t("pitchTitle", {
-    filled: filled.length,
-  });
+  const panelLabels = {
+    title: t("panelTitle"),
+    slotHint: t("panelSlotHint"),
+    search: t("searchPlaceholder"),
+    positionAll: t("filterPositionAll"),
+    clubAll: t("filterClubAll"),
+    sortPrice: t("sortPrice"),
+    sortPoints: t("sortPoints"),
+    sortOwnership: t("sortOwnership"),
+    sortForm: t("sortForm"),
+    colName: t("colName"),
+    colOwn: t("colOwn"),
+    colPrice: t("colPrice"),
+    colXpts: t("colXpts"),
+    inSquad: t("inSquad"),
+    loading: t("panelLoading"),
+    empty: t("panelEmpty"),
+  };
+
+  const listLabels = {
+    colName: t("colName"),
+    colOwn: t("colOwn"),
+    colPrice: t("colPrice"),
+    colPts: t("colPts"),
+    colXpts: t("colXpts"),
+    colXi: t("colXi"),
+    trialist: t("trialist"),
+  };
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
-      <section className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5 sm:pb-6">
-        <div className="max-w-2xl">
-          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent sm:text-xs">
+    <div className="flex flex-col gap-5 sm:gap-6">
+      <section className="flex flex-col gap-4 border-b border-border pb-5">
+        <div>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent sm:text-xs">
             {t("eyebrow")}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {t("title")}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             {t("description")}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <div className="rounded-lg border border-border bg-card px-3 py-2">
-            <div className="text-[10px] uppercase text-muted-foreground">
-              {t("budgetLabel")}
-            </div>
-            <div className="font-semibold tabular-nums">
-              £{roundMoney(bank).toFixed(1)}m
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-3 py-2">
-            <div className="text-[10px] uppercase text-muted-foreground">
-              {t("spentLabel")}
-            </div>
-            <div className="font-semibold tabular-nums">
-              £{spend.toFixed(1)}m / £{SQUAD_BUILDER_BUDGET_M.toFixed(1)}m
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-3 py-2">
-            <div className="text-[10px] uppercase text-muted-foreground">
-              {t("squadLabel")}
-            </div>
-            <div className="font-semibold tabular-nums">
-              {filled.length}/15
-            </div>
-          </div>
-        </div>
+
+        <SquadBuilderStatsBar
+          bank={bank}
+          spend={spend}
+          budget={SQUAD_BUILDER_BUDGET_M}
+          xptsNextGw={nextGwXpt}
+          xptsHorizon={horizonXpt}
+          nextGwLabel={
+            projMeta
+              ? t("nextGwLabel", { gw: projMeta.fromGw })
+              : t("nextGwPending")
+          }
+          labels={{
+            bank: t("budgetLabel"),
+            cost: t("spentLabel"),
+            xpts: t("xptsLabel"),
+            xptsHorizon: t("xptsHorizonLabel"),
+          }}
+        />
       </section>
 
       {squadIssues.length > 0 ? (
-        <div
-          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100/90"
-          role="status"
-        >
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100/90">
           {formatSquadBuilderIssue(squadIssues[0], t)}
         </div>
       ) : squadValid ? (
-        <div
-          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100/90"
-          role="status"
-        >
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100/90">
           {t("squadValid")}
         </div>
       ) : null}
 
-      {notice ? (
-        <p className="text-sm text-rose-300/90" role="alert">
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <p className="text-sm text-rose-300/90">{notice}</p> : null}
+      {projError ? <p className="text-sm text-rose-300/90">{projError}</p> : null}
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-border p-0.5">
+          <button
+            type="button"
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              viewMode === "pitch"
+                ? "bg-brand-accent/15 text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => setViewMode("pitch")}
+          >
+            {t("viewPitch")}
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              viewMode === "list"
+                ? "bg-brand-accent/15 text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => setViewMode("list")}
+          >
+            {t("viewList")}
+          </button>
+        </div>
         <Button
           type="button"
           variant={mode === "captain" ? "primary" : "secondary"}
@@ -551,30 +528,18 @@ export function SquadBuilderApp() {
           disabled={!squadValid}
           onClick={applyBestXi}
         >
-          {t("bestXi")}
+          {t("optimiseTeam")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={resetSquad}>
-          {t("resetSquad")}
+          {t("removeAll")}
         </Button>
       </div>
 
-      {projError ? (
-        <p className="text-sm text-rose-300/90">{projError}</p>
-      ) : null}
-
       {gwTotals.length > 0 && projMeta ? (
         <section className="rounded-xl border border-border bg-card/60 p-4">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">
-              {t("xptTitle", {
-                from: projMeta.fromGw,
-                to: projMeta.toGw,
-              })}
-            </h2>
-            <span className="text-sm font-semibold tabular-nums text-brand-accent">
-              {t("xptTotal", { total: horizonTotalXpt(gwTotals) })}
-            </span>
-          </div>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            {t("xptTitle", { from: projMeta.fromGw, to: projMeta.toGw })}
+          </h2>
           <div className="flex flex-wrap gap-2">
             {gwTotals.map((row) => (
               <div
@@ -587,124 +552,105 @@ export function SquadBuilderApp() {
                 <div className="text-lg font-semibold tabular-nums text-brand-accent">
                   {row.xpt.toFixed(1)}
                 </div>
-                <div className="text-[10px] text-muted-foreground">xPt</div>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">{t("xptHint")}</p>
         </section>
       ) : null}
 
-      <PitchView
-        picks={pitchPicks}
-        title={pitchTitle}
-        caption={
-          mode === "captain"
-            ? t("captainHint")
-            : mode === "xi"
-              ? t("xiHint")
-              : t("pitchHint")
-        }
-        captainId={captainId}
-        viceId={viceId}
-        interactive
-        reorderSelectedSlot={xiFirst}
-        onPickSlot={onPickSlot}
-        gwForecastByFplId={gwForecastByFplId}
-        nextGwXpByFplId={nextGwXpByFplId}
-        nextGwXpTitle={t("nextGwXpTitle", { gw: projMeta?.fromGw ?? "–" })}
-        benchLabel={t("benchLabel")}
-        benchGkAbbrev={t("benchGk")}
-      />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(18rem,22rem)]">
+        <div className="min-w-0">
+          {viewMode === "pitch" ? (
+            <PitchView
+              picks={pitchPicks}
+              title={t("pitchTitle", { filled: filled.length })}
+              caption={
+                mode === "captain"
+                  ? t("captainHint")
+                  : mode === "xi"
+                    ? t("xiHint")
+                    : t("pitchHint")
+              }
+              captainId={captainId}
+              viceId={viceId}
+              interactive
+              reorderSelectedSlot={xiFirst ?? selectedSlot}
+              onPickSlot={onPickSlot}
+              gwForecastByFplId={gwForecastByFplId}
+              nextGwXpByFplId={nextGwXpByFplId}
+              nextGwXpTitle={t("nextGwXpTitle", { gw: projMeta?.fromGw ?? "–" })}
+              benchLabel={t("benchLabel")}
+              benchGkAbbrev={t("benchGk")}
+            />
+          ) : (
+            <SquadBuilderListView
+              picks={picks}
+              captainId={captainId}
+              viceId={viceId}
+              projById={projById}
+              selectedSlot={selectedSlot}
+              onSelectSlot={(slot) => {
+                setSelectedSlot(slot);
+                onPickSlot(slot);
+              }}
+              labels={listLabels}
+            />
+          )}
 
-      {addSlot != null ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeAddModal}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-lg overflow-hidden rounded-xl border border-border bg-card shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <h2 className="font-semibold text-foreground">
-                {t("addPlayerTitle", {
-                  slot: addSlot,
-                  pos: slotPosition(addSlot) ?? "?",
-                })}
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("addPlayerHint", { bank: bank.toFixed(1) })}
-              </p>
-              <Input
-                className="mt-3"
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder={t("searchPlaceholder")}
-                autoFocus
-              />
-            </div>
-            <ul className="max-h-72 overflow-y-auto">
-              {searching ? (
-                <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  {t("searching")}
-                </li>
-              ) : searchHits.length === 0 ? (
-                <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  {searchQ.trim().length < 2
-                    ? t("searchMin")
-                    : t("searchEmpty")}
-                </li>
-              ) : (
-                searchHits.map((p) => (
-                  <li key={p.fpl_id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 border-b border-border/50 px-4 py-3 text-left hover:bg-muted/40"
-                      onClick={() => applyPlayer(addSlot, p)}
-                    >
-                      <span>
-                        <span className="font-medium text-foreground">
-                          {p.web_name ?? p.name}
-                        </span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {p.team} · {p.position}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-sm tabular-nums text-brand-accent">
-                        £{(p.base_price ?? 0).toFixed(1)}m
-                      </span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-            <div className="flex justify-between gap-2 border-t border-border px-4 py-3">
-              {isFilledPick(picks.find((x) => x.slot === addSlot)!) ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="text-rose-300 hover:text-rose-200"
-                  onClick={() => {
-                    removePlayer(addSlot);
-                    closeAddModal();
-                  }}
-                >
-                  {t("removePlayer")}
-                </Button>
-              ) : (
-                <span />
-              )}
-              <Button type="button" variant="secondary" size="sm" onClick={closeAddModal}>
-                {t("close")}
+          {selectedSlot != null && isFilledPick(picks.find((p) => p.slot === selectedSlot)!) ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const row = picks.find((p) => p.slot === selectedSlot);
+                  if (row?.is_starter) setCaptainId(row.fpl_id);
+                }}
+              >
+                {t("makeCaptain")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const row = picks.find((p) => p.slot === selectedSlot);
+                  if (row?.is_starter) setViceId(row.fpl_id);
+                }}
+              >
+                {t("makeVice")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="text-rose-300"
+                onClick={() => removePlayer(selectedSlot)}
+              >
+                {t("removePlayer")}
               </Button>
             </div>
-          </div>
+          ) : null}
         </div>
-      ) : null}
+
+        <SquadBuilderPlayerPanel
+          selectedSlot={selectedSlot}
+          slotPosition={
+            selectedSlot != null ? slotPosition(selectedSlot) : null
+          }
+          bank={bank}
+          projById={projById}
+          squadFplIds={squadFplIds}
+          teams={teams}
+          onPickPlayer={(p) => {
+            const slot =
+              selectedSlot ?? firstEmptySlot(picks) ?? picks[0]?.slot ?? 1;
+            applyPlayerToSlot(slot, p);
+          }}
+          labels={panelLabels}
+        />
+      </div>
     </div>
   );
 }
