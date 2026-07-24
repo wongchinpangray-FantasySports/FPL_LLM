@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-07-23",
+  "updated_at": "2026-07-24",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -477,9 +477,9 @@
       "pl_home": true,
       "venue": "Saalfelden",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 4,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": []
     },
