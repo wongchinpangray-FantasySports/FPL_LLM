@@ -34,13 +34,20 @@ export function createSupabaseRouteHandlerClient(request: NextRequest) {
     },
   });
 
-  function jsonResponse(body: unknown, init?: ResponseInit) {
-    const res = NextResponse.json(body, init);
+  function applySessionCookies<T extends NextResponse>(res: T): T {
     for (const cookie of cookieResponse.cookies.getAll()) {
       res.cookies.set(cookie);
     }
     return res;
   }
 
-  return { supabase, jsonResponse };
+  function jsonResponse(body: unknown, init?: ResponseInit) {
+    return applySessionCookies(NextResponse.json(body, init));
+  }
+
+  function redirectResponse(url: string | URL, init?: number | ResponseInit) {
+    return applySessionCookies(NextResponse.redirect(url, init));
+  }
+
+  return { supabase, jsonResponse, redirectResponse };
 }

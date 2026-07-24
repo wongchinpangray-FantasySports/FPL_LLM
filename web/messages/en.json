@@ -1062,7 +1062,20 @@
     "noAccount": "No account yet?",
     "signupLink": "Sign up",
     "hasAccount": "Already have an account?",
-    "loginLink": "Sign in"
+    "loginLink": "Sign in",
+    "forgotPasswordLink": "Forgot your password?",
+    "forgotPasswordTitle": "Reset your password",
+    "forgotPasswordSubtitle": "Enter your email and we will send you a link to choose a new password.",
+    "sendResetLink": "Send reset link",
+    "resetEmailSent": "If an account exists for that email, you will receive a reset link shortly. Check your inbox and spam folder.",
+    "resetPasswordTitle": "Choose a new password",
+    "resetPasswordSubtitle": "Enter a new password for your account.",
+    "newPassword": "New password",
+    "updatePasswordButton": "Update password",
+    "resetLinkExpired": "This reset link is invalid or has expired.",
+    "requestNewResetLink": "Request a new reset link",
+    "backToLogin": "Back to sign in",
+    "invalidEmail": "Enter a valid email address."
   },
   "onboarding": {
     "title": "Personalise your feed",

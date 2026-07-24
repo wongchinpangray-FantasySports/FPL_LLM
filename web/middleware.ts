@@ -39,6 +39,10 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiRoute = pathname.startsWith("/api/");
 
+  if (pathname === "/auth/callback") {
+    return NextResponse.next();
+  }
+
   if (isApiRoute) {
     if (!isFplProtectedApiPath(pathname)) {
       return NextResponse.next();
