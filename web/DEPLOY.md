@@ -57,6 +57,8 @@ Set these in the Vercel project (**Settings → Environment Variables**). Use **
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server only.** Never expose in client code. Lets API routes read `players_static`, fixtures, etc. |
 | `UPSTASH_REDIS_REST_URL` | No | If set with token, enables chat rate limiting (~20 req/min per IP). |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Pair with the URL above. |
+| `API_FOOTBALL_KEY` | No | **Recommended for pre-season + WC live scores.** Same [API-Sports](https://www.api-football.com/) key as repo secret `API_FOOTBALL_KEY` used by GitHub Actions sync. Set on **Cloudflare Workers** (or Vercel) so `/fpl/preseason` can fetch same-day friendly results at page load — the PL article often lags by a day. |
+| `NEXT_PUBLIC_SITE_URL` | No | Canonical public URL (e.g. `https://www.faleague-ai.com`) for Supabase password-reset emails. |
 
 Optional fallbacks (only if you don’t use service role — less capable):
 

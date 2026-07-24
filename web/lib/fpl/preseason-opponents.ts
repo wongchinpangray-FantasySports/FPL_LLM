@@ -16,6 +16,8 @@ export const OPPONENT_ALIASES: Record<string, string[]> = {
   porto: ["fc porto"],
   shrewsbury: ["shrewsbury town"],
   wealdstone: ["wealdstone fc"],
+  bolton: ["bolton wanderers"],
+  konyaspor: ["konyaspor sk"],
 };
 
 export function normOpponentName(name: string): string {

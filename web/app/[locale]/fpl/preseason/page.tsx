@@ -1,6 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplPreseasonPanel } from "@/components/fpl/fpl-preseason-panel";
+import { PreseasonAutoRefresh } from "@/components/fpl/preseason-auto-refresh";
 import { groupPreseasonByClub, loadPreseasonBundle } from "@/lib/fpl/preseason";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function FplPreseasonPage({ params }: Props) {
       description={t("preseasonPageDescription")}
       width="6xl"
     >
+      <PreseasonAutoRefresh />
       <FplPreseasonPanel
         clubs={clubs}
         locale={params.locale}

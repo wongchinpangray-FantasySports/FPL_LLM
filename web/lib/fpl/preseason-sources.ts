@@ -535,7 +535,7 @@ let externalCache: {
   results: PreseasonExternalResult[];
 } | null = null;
 
-const EXTERNAL_CACHE_MS = 15 * 60 * 1000;
+const EXTERNAL_CACHE_MS = 5 * 60 * 1000;
 
 export function clearPreseasonExternalCache(): void {
   externalCache = null;

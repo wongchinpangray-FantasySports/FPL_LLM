@@ -70,6 +70,12 @@ function londonTodayIso(): string {
   }).format(new Date());
 }
 
+function addLondonDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function matchNeedsRuntimeEnrichment(
   match: PreseasonMatch,
   today: string,
@@ -77,7 +83,13 @@ function matchNeedsRuntimeEnrichment(
   if (match.status === "finished") {
     return needsPreseasonGoalFetch(match);
   }
-  return match.date < today;
+  // Include today — same-day friendlies were previously skipped until tomorrow.
+  if (match.date <= today) return true;
+  // Fill kickoff times for near-term upcoming friendlies still marked TBD.
+  if (!match.kickoff_time && match.date <= addLondonDays(today, 14)) {
+    return true;
+  }
+  return false;
 }
 
 export async function loadPreseasonBundle(): Promise<PreseasonBundle> {
@@ -132,7 +144,8 @@ export function splitPreseasonMatches(matches: PreseasonMatch[]): {
   const upcoming: PreseasonMatch[] = [];
   const results: PreseasonMatch[] = [];
   for (const m of matches) {
-    if (m.status === "finished") results.push(m);
+    const hasScore = m.pl_goals != null && m.opp_goals != null;
+    if (m.status === "finished" || hasScore) results.push(m);
     else upcoming.push(m);
   }
   upcoming.sort((a, b) => {

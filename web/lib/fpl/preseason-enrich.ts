@@ -85,7 +85,7 @@ let fixtureCache: {
   byTeam: Map<number, ApiFixture[]>;
 } | null = null;
 
-const CACHE_MS = 15 * 60 * 1000;
+const CACHE_MS = 5 * 60 * 1000;
 
 function apiKey(): string | null {
   return process.env.API_FOOTBALL_KEY?.trim() || null;
