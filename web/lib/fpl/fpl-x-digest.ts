@@ -5,7 +5,13 @@ import { loadWcNewsFromDb } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 
 export const FPL_DIGEST_TZ = "Europe/London";
-export const FPL_DIGEST_WINDOW_HOURS = 24;
+export const FPL_DIGEST_WINDOW_HOURS = 48;
+/** Max length for AI-generated digest body (English word count). */
+export const FPL_DIGEST_SUMMARY_MAX_WORDS = 500;
+/** Comparable length for Chinese digest (~1.8 chars per English word). */
+export const FPL_DIGEST_SUMMARY_MAX_CHARS_ZH = Math.round(
+  FPL_DIGEST_SUMMARY_MAX_WORDS * 1.8,
+);
 
 export type FplXDigestSource = {
   outlet: string;
@@ -45,8 +51,8 @@ export function londonDigestDateIso(date = new Date()): string {
   }).format(date);
 }
 
-/** Rolling window: past 24 hours ending at `now`. */
-export function rolling24HourWindowBounds(now = new Date()): {
+/** Rolling window: past {@link FPL_DIGEST_WINDOW_HOURS} ending at `now`. */
+export function rollingDigestWindowBounds(now = new Date()): {
   window_start: string;
   window_end: string;
 } {
@@ -167,7 +173,7 @@ export async function collectFplXDigestSources(opts?: {
   window_end: string;
 }> {
   const asOf = opts?.asOf ?? new Date();
-  const { window_start, window_end } = rolling24HourWindowBounds(asOf);
+  const { window_start, window_end } = rollingDigestWindowBounds(asOf);
   const startMs = Date.parse(window_start);
   const endMs = Date.parse(window_end);
 
@@ -293,7 +299,7 @@ function templateDigest(
 
   if (official.length) {
     const bullets = official
-      .slice(0, 2)
+      .slice(0, 4)
       .map((s) => `- ${s.text.replace(/pic\.twitter\.com\/\S+/g, "").trim()} (${s.outlet})`);
     sections.push(`## Official FPL\n${bullets.join("\n")}`);
   }
@@ -305,8 +311,8 @@ function templateDigest(
   );
   if (injuryLineup.length) {
     const bullets = injuryLineup
-      .slice(0, 4)
-      .map((s) => `- ${s.text.slice(0, 140)} (${s.outlet})`);
+      .slice(0, 8)
+      .map((s) => `- ${s.text.slice(0, 200)} (${s.outlet})`);
     sections.push(`## Injuries & team news\n${bullets.join("\n")}`);
   }
 
@@ -317,20 +323,20 @@ function templateDigest(
   );
   if (transfers.length) {
     const bullets = transfers
-      .slice(0, 4)
-      .map((s) => `- ${s.text.slice(0, 140)} (${s.outlet})`);
+      .slice(0, 8)
+      .map((s) => `- ${s.text.slice(0, 200)} (${s.outlet})`);
     sections.push(`## Transfers\n${bullets.join("\n")}`);
   }
 
-  if (community.length && sections.length < 3) {
+  if (community.length) {
     const bullets = community
-      .slice(0, 2)
-      .map((s) => `- ${s.text.slice(0, 120)} (${s.outlet})`);
+      .slice(0, 5)
+      .map((s) => `- ${s.text.slice(0, 180)} (${s.outlet})`);
     sections.push(`## FPL community\n${bullets.join("\n")}`);
   }
 
   if (!sections.length) {
-    return `## Quiet day\n- No major FPL or Premier League updates in the past 24 hours (${digestDate}). Check back after the next sync.`;
+    return `## Quiet day\n- No major FPL or Premier League updates in the past ${FPL_DIGEST_WINDOW_HOURS} hours (${digestDate}). Check back after the next sync.`;
   }
 
   return sections.join("\n\n");
@@ -351,7 +357,7 @@ async function generateDigestWithGemini(
     const prompt =
       locale === "zh"
         ? `请根据以下素材撰写 FPL（Fantasy Premier League）每日简报。
-时间窗口：过去 24 小时（约 ${windowLabel}，以 ${digestDate} 为发布日）。
+时间窗口：过去 ${FPL_DIGEST_WINDOW_HOURS} 小时（约 ${windowLabel}，以 ${digestDate} 为发布日）。
 仅使用所给素材，不得编造转会、伤病或官方公告。
 
 素材：
@@ -359,24 +365,24 @@ ${facts}
 
 格式（Markdown，务必遵守）：
 ## 官方 FPL
-- 最多 2 条要点
+- 最多 4 条要点
 
 ## 伤病与阵容
-- 最多 4 条：球员 + 俱乐部 + 状态/预计出场（有则写）
+- 最多 8 条：球员 + 俱乐部 + 状态/预计出场（有则写）
 
 ## 转会
-- 最多 4 条：具体人名/俱乐部 + 来源
+- 最多 8 条：具体人名/俱乐部 + 来源
 
 ## FPL 社区
-- 最多 2 条（仅在有价值时写）
+- 最多 5 条（仅在有价值时写）
 
 规则：
-- 全文 ≤120 字，每条要点一行，信息密度高
+- 全文 ≤${FPL_DIGEST_SUMMARY_MAX_CHARS_ZH} 字，每条要点一行，信息密度高，可写得更完整
 - 每条末尾标注来源（@账号 或媒体名）
 - 无内容的板块整段省略
 - 不要开篇套话或结尾废话`
         : `Write an FPL (Fantasy Premier League) daily briefing for managers.
-Window: the past 24 hours (approx ${windowLabel}; digest date ${digestDate}).
+Window: the past ${FPL_DIGEST_WINDOW_HOURS} hours (approx ${windowLabel}; digest date ${digestDate}).
 Use ONLY the sources below — do not invent injuries, transfers, or official announcements.
 
 Sources:
@@ -384,19 +390,19 @@ ${facts}
 
 Format (Markdown — follow exactly):
 ## Official FPL
-- up to 2 bullets
+- up to 4 bullets
 
 ## Injuries & team news
-- up to 4 bullets: player + club + status/availability (when known)
+- up to 8 bullets: player + club + status/availability (when known)
 
 ## Transfers
-- up to 4 bullets: named players/clubs + source
+- up to 8 bullets: named players/clubs + source
 
 ## FPL community
-- up to 2 bullets (only if genuinely useful)
+- up to 5 bullets (only if genuinely useful)
 
 Rules:
-- ≤120 words total; one fact per bullet; high information density
+- ≤${FPL_DIGEST_SUMMARY_MAX_WORDS} words total; one fact per bullet; high information density; fuller detail is welcome
 - End each bullet with the source (@handle or outlet)
 - Omit entire sections with no supporting sources
 - No intro fluff or closing paragraph

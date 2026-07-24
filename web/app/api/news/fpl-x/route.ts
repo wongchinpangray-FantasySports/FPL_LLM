@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         total: days.length,
         today,
         disclaimer:
-          "Archived FPL daily briefings — AI summary and sources from each past 24-hour window.",
+          "Archived FPL daily briefings — AI summary and sources from each past 48-hour window.",
       },
       {
         headers: {

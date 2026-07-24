@@ -2,7 +2,7 @@ name: FPL daily digest
 
 on:
   schedule:
-    # Daily refresh — rolling 24h X digest (13:00 UTC)
+    # Daily refresh — rolling 48h X digest (13:00 UTC)
     - cron: "0 13 * * *"
   workflow_dispatch:
 
