@@ -178,6 +178,11 @@ export function SiteHeader() {
                   active={pathname === "/planner" || pathname.startsWith("/planner/")}
                 />
                 <MenuLink
+                  href="/squad-builder"
+                  label={t("squadBuilder")}
+                  active={pathname === "/squad-builder" || pathname.startsWith("/squad-builder/")}
+                />
+                <MenuLink
                   href={managerHref}
                   label={t("manager")}
                   active={pathname === "/manager" || pathname.startsWith("/manager/")}
