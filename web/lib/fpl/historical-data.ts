@@ -1,14 +1,18 @@
 import { getServerSupabase } from "@/lib/supabase";
 import {
   formatOpponents,
+  loadLiveElementCodeById,
   loadPlayerFixturesByGw,
   loadPlayerTeamIdForSeason,
   loadSeasonTeamIdMap,
   loadTeamFixturesByGw,
+  loadVaastavElementIdByCode,
+  loadVaastavElementMetaById,
   loadVaastavPlayerSummariesForTeamIds,
   mergeFixtureMaps,
   opponentLabel,
   type FixtureSide,
+  type VaastavElementMeta,
 } from "@/lib/fpl/historical-vaastav";
 import { FPL_TEAM_CODES } from "@/lib/fpl/fpl-team-codes";
 import {
@@ -586,17 +590,21 @@ function dedupeGwStatRows<T extends GwStatRow>(rows: T[]): T[] {
 }
 
 async function loadPlayerGwStatsDetail(
-  fplId: number,
+  player: PlayerStatic,
   season: string,
   gwFrom: number,
   gwTo: number,
 ): Promise<GwStatDetailRow[]> {
+  const ctx = await loadHistoricalGwIdContext(season);
+  const resolvedId = await resolveHistoricalGwPlayerId(season, player, ctx);
+  if (resolvedId == null) return [];
+
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("player_gw_stats")
     .select(`${GW_COLS},opponent_team_id,was_home`)
     .eq("season", season)
-    .eq("player_id", fplId)
+    .eq("player_id", resolvedId)
     .gte("gw", gwFrom)
     .lte("gw", gwTo)
     .order("gw", { ascending: true });
@@ -605,7 +613,7 @@ async function loadPlayerGwStatsDetail(
   const mapped = (data ?? []).map((raw) => {
     const r = raw as unknown as Record<string, unknown>;
     return {
-      player_id: Math.floor(num(r.player_id)),
+      player_id: player.fpl_id,
       gw: Math.floor(num(r.gw)),
       minutes: num(r.minutes),
       goals_scored: num(r.goals_scored),
@@ -699,6 +707,94 @@ function isDoubleGameweek(
 }
 
 type TeamRow = { id: number; name: string; short_name: string };
+
+function playerMatchesVaastavIdentity(
+  player: { web_name?: string; name?: string },
+  vaastav: Pick<VaastavElementMeta, "web_name" | "name">,
+): boolean {
+  const playerAliases = identityAliases(
+    player.web_name ?? "",
+    player.name ?? "",
+  );
+  const vaastavAliases = identityAliases(vaastav.web_name, vaastav.name);
+  return identitiesMatch(playerAliases, vaastavAliases);
+}
+
+async function seasonHasRemappedElementIds(season: string): Promise<boolean> {
+  const active = Number(await getCurrentFplSeason());
+  const y = Number(season);
+  if (!Number.isFinite(y) || !Number.isFinite(active)) return false;
+  return y >= active - 1;
+}
+
+type HistoricalGwIdContext = {
+  vaastavMeta: Map<number, VaastavElementMeta>;
+  vaastavIdByCode: Map<number, number>;
+  liveCodeById: Map<number, number>;
+};
+
+let gwIdContextCache: {
+  season: string;
+  at: number;
+  ctx: HistoricalGwIdContext;
+} | null = null;
+const GW_ID_CONTEXT_TTL_MS = 60_000;
+
+async function loadHistoricalGwIdContext(
+  season: string,
+): Promise<HistoricalGwIdContext | null> {
+  if (!(await seasonHasRemappedElementIds(season))) return null;
+
+  const now = Date.now();
+  if (
+    gwIdContextCache &&
+    gwIdContextCache.season === season &&
+    now - gwIdContextCache.at < GW_ID_CONTEXT_TTL_MS
+  ) {
+    return gwIdContextCache.ctx;
+  }
+
+  const [vaastavMeta, vaastavIdByCode, liveCodeById] = await Promise.all([
+    loadVaastavElementMetaById(season),
+    loadVaastavElementIdByCode(season),
+    loadLiveElementCodeById(),
+  ]);
+  const ctx = { vaastavMeta, vaastavIdByCode, liveCodeById };
+  gwIdContextCache = { season, at: now, ctx };
+  return ctx;
+}
+
+/** Map a roster id to the GW-stats player_id for that season (handles id remaps). */
+async function resolveHistoricalGwPlayerId(
+  season: string,
+  player: PlayerStatic,
+  ctx?: HistoricalGwIdContext | null,
+): Promise<number | null> {
+  const context = ctx ?? (await loadHistoricalGwIdContext(season));
+  if (!context) return player.fpl_id;
+
+  const code =
+    context.liveCodeById.get(player.fpl_id) ??
+    context.vaastavMeta.get(player.fpl_id)?.code ??
+    null;
+
+  if (code != null) {
+    const vaastavId = context.vaastavIdByCode.get(code);
+    if (vaastavId != null) {
+      const meta = context.vaastavMeta.get(vaastavId);
+      if (meta && playerMatchesVaastavIdentity(player, meta)) {
+        return vaastavId;
+      }
+    }
+  }
+
+  const occupant = context.vaastavMeta.get(player.fpl_id);
+  if (occupant && !playerMatchesVaastavIdentity(player, occupant)) {
+    return null;
+  }
+
+  return player.fpl_id;
+}
 
 async function seasonUsesProfiles(season: string): Promise<boolean> {
   const supa = getServerSupabase();
@@ -1073,18 +1169,32 @@ async function loadProfileSearchRows(
 }
 
 async function loadGwStatsForPlayers(
-  playerIds: number[],
+  players: PlayerStatic[],
   season: string,
   gwFrom: number,
   gwTo: number,
 ): Promise<GwStatRow[]> {
-  if (!playerIds.length) return [];
+  if (!players.length) return [];
+
+  const ctx = await loadHistoricalGwIdContext(season);
+  const resolvedToCandidate = new Map<number, number>();
+  const idsToFetch: number[] = [];
+
+  for (const player of players) {
+    const resolved = await resolveHistoricalGwPlayerId(season, player, ctx);
+    if (resolved == null) continue;
+    resolvedToCandidate.set(resolved, player.fpl_id);
+    idsToFetch.push(resolved);
+  }
+
+  const uniqueIds = [...new Set(idsToFetch)];
+  if (!uniqueIds.length) return [];
 
   const supa = getServerSupabase();
   const rows: GwStatRow[] = [];
 
-  for (let i = 0; i < playerIds.length; i += PLAYER_CHUNK) {
-    const chunk = playerIds.slice(i, i + PLAYER_CHUNK);
+  for (let i = 0; i < uniqueIds.length; i += PLAYER_CHUNK) {
+    const chunk = uniqueIds.slice(i, i + PLAYER_CHUNK);
     const { data, error } = await supa
       .from("player_gw_stats")
       .select(GW_COLS)
@@ -1096,8 +1206,9 @@ async function loadGwStatsForPlayers(
     if (error) throw new Error(error.message);
     for (const raw of data ?? []) {
       const r = raw as unknown as Record<string, unknown>;
+      const resolvedId = Math.floor(num(r.player_id));
       rows.push({
-        player_id: Math.floor(num(r.player_id)),
+        player_id: resolvedToCandidate.get(resolvedId) ?? resolvedId,
         gw: Math.floor(num(r.gw)),
         minutes: num(r.minutes),
         goals_scored: num(r.goals_scored),
@@ -1281,9 +1392,8 @@ async function queryHistoricalStatsForSeason(
   const players =
     options?.players ??
     (await loadPlayerCandidates(params, season, teams));
-  const playerIds = players.map((p) => p.fpl_id);
   const gwRows = await loadGwStatsForPlayers(
-    playerIds,
+    players,
     season,
     Math.min(gwFrom, gwTo),
     Math.max(gwFrom, gwTo),
@@ -1311,8 +1421,10 @@ async function resolvePlayerDetailSeason(
   const lo = gwFromInput != null && gwFromInput > 0 ? gwFromInput : 1;
   const hi = gwToInput != null && gwToInput > 0 ? gwToInput : 38;
   for (const season of seasons) {
+    const player = await loadPlayerStaticForSeason(fplId, season);
+    if (!player) continue;
     const rows = await loadPlayerGwStatsDetail(
-      fplId,
+      player,
       season,
       Math.min(lo, hi),
       Math.max(lo, hi),
@@ -1549,18 +1661,8 @@ export async function loadHistoricalPlayerDetail(
 
   const supa = getServerSupabase();
   let player = await loadPlayerStaticForSeason(fplId, season);
-  const gwRows = await loadPlayerGwStatsDetail(fplId, season, lo, hi);
-  if (!player && gwRows.length) {
-    player = {
-      fpl_id: fplId,
-      name: `#${fplId}`,
-      web_name: `#${fplId}`,
-      team: "",
-      team_id: null,
-      position: "",
-    };
-  }
   if (!player) return null;
+  const gwRows = await loadPlayerGwStatsDetail(player, season, lo, hi);
 
   const aggregated = aggregateRows([player], gwRows);
   const stats = aggregated[0];

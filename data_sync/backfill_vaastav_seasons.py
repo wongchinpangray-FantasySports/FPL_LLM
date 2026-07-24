@@ -61,6 +61,10 @@ def _load_canonical_team_code_names() -> Dict[str, str]:
 
 CANONICAL_TEAM_CODE_NAMES = _load_canonical_team_code_names()
 
+# Vaastav GW rows for 2025/26+ reuse stale element ids (predates promoted clubs).
+# Live FPL API sync is authoritative for those campaigns.
+VAASTAV_GW_CUTOFF_START_YEAR = 2025
+
 
 def _num(val: Any) -> float | None:
     if val in (None, "", "null"):
@@ -446,6 +450,7 @@ def backfill_season(
 ) -> None:
     season = season_folder_to_start_year(folder)
     has_data = _season_has_data(supabase, season)
+    skip_vaastav_gw = int(season) >= VAASTAV_GW_CUTOFF_START_YEAR and not refresh_gw
     if skip_existing and has_data and not refresh_profiles and not refresh_gw:
         print(f"Skipping {folder} ({season}) — rows already in player_gw_stats")
         return
@@ -480,7 +485,12 @@ def backfill_season(
     ]
 
     final_gw = _dedupe_gw_rows(gw_rows)
-    profiles_only = skip_existing and has_data and not refresh_gw
+    profiles_only = (skip_existing and has_data and not refresh_gw) or skip_vaastav_gw
+    if skip_vaastav_gw:
+        print(
+            f"  Skipping vaastav GW upsert for {season}/26 "
+            "(live FPL sync is authoritative; vaastav ids are stale)",
+        )
     print(
         f"  {len(final_gw)} GW rows, {len(profile_rows)} player profiles "
         f"(from {len(gw_rows)} raw CSV rows)"

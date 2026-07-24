@@ -1,3 +1,4 @@
+import { fplGet } from "@/lib/fpl";
 import { fplTeamShortByCode, fplTeamShortLabel, fplTeamFullName } from "./fpl-team-codes";
 
 const VAASTAV_BASE =
@@ -28,6 +29,102 @@ export function seasonToVaastavFolder(season: string): string {
   const y = Number(season);
   if (!Number.isFinite(y)) return season;
   return `${season}-${String(y + 1).slice(-2)}`;
+}
+
+export type VaastavElementMeta = {
+  web_name: string;
+  name: string;
+  code: number;
+};
+
+const vaastavElementMetaCache = new Map<string, Map<number, VaastavElementMeta>>();
+const vaastavElementIdByCodeCache = new Map<string, Map<number, number>>();
+let liveElementCodeCache: { at: number; map: Map<number, number> } | null = null;
+const LIVE_CODE_CACHE_MS = 60_000;
+
+function parseVaastavElementMetaRows(
+  rows: Record<string, string>[],
+): {
+  byId: Map<number, VaastavElementMeta>;
+  idByCode: Map<number, number>;
+} {
+  const byId = new Map<number, VaastavElementMeta>();
+  const idByCode = new Map<number, number>();
+  for (const row of rows) {
+    const id = Number(row.id);
+    const code = Number(row.code);
+    if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(code) || code <= 0) {
+      continue;
+    }
+    const first = String(row.first_name ?? "").trim();
+    const second = String(row.second_name ?? "").trim();
+    const fullName = `${first} ${second}`.trim();
+    const webName = String(row.web_name ?? "").trim() || fullName;
+    byId.set(id, { web_name: webName, name: fullName || webName, code });
+    idByCode.set(code, id);
+  }
+  return { byId, idByCode };
+}
+
+/** Vaastav archive element id → name + stable FPL `code`. */
+export async function loadVaastavElementMetaById(
+  season: string,
+): Promise<Map<number, VaastavElementMeta>> {
+  const folder = seasonToVaastavFolder(season);
+  const cached = vaastavElementMetaCache.get(folder);
+  if (cached) return cached;
+
+  if (
+    !VAASTAV_SEASON_FOLDERS.includes(
+      folder as (typeof VAASTAV_SEASON_FOLDERS)[number],
+    )
+  ) {
+    return new Map();
+  }
+
+  const rows = await loadCsv(`${folder}/players_raw.csv`);
+  const { byId, idByCode } = parseVaastavElementMetaRows(rows);
+  vaastavElementMetaCache.set(folder, byId);
+  vaastavElementIdByCodeCache.set(folder, idByCode);
+  return byId;
+}
+
+/** Stable FPL element `code` → vaastav element id for a campaign. */
+export async function loadVaastavElementIdByCode(
+  season: string,
+): Promise<Map<number, number>> {
+  const folder = seasonToVaastavFolder(season);
+  const cached = vaastavElementIdByCodeCache.get(folder);
+  if (cached) return cached;
+  await loadVaastavElementMetaById(season);
+  return vaastavElementIdByCodeCache.get(folder) ?? new Map();
+}
+
+/** Live bootstrap element id → stable FPL `code` (handles id remaps each season). */
+export async function loadLiveElementCodeById(): Promise<Map<number, number>> {
+  const now = Date.now();
+  if (liveElementCodeCache && now - liveElementCodeCache.at < LIVE_CODE_CACHE_MS) {
+    return liveElementCodeCache.map;
+  }
+
+  const map = new Map<number, number>();
+  try {
+    const raw = await fplGet<{ elements?: Array<{ id?: number; code?: number }> }>(
+      "/bootstrap-static/",
+    );
+    for (const el of raw.elements ?? []) {
+      const id = Number(el.id);
+      const code = Number(el.code);
+      if (Number.isFinite(id) && id > 0 && Number.isFinite(code) && code > 0) {
+        map.set(id, code);
+      }
+    }
+  } catch {
+    return map;
+  }
+
+  liveElementCodeCache = { at: now, map };
+  return map;
 }
 
 /** End-of-season FPL totals keyed by stable element `code` (vaastav players_raw). */
