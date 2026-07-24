@@ -10,8 +10,7 @@ import {
   ManagerPointsCompareChart,
 } from "@/components/manager/manager-charts";
 import { ManagerGameweekHistory } from "@/components/manager/manager-gameweek-history";
-import { fplGet } from "@/lib/fpl";
-import type { FplEntry } from "@/lib/fpl";
+import { fplGet, formatFplInteger, type FplEntry } from "@/lib/fpl";
 
 export const dynamic = "force-dynamic";
 
@@ -114,13 +113,13 @@ export default async function ManagerEntryPage({
           <div className="rounded-lg border border-border bg-input px-3 py-2">
             <dt className="text-[10px] uppercase text-muted-foreground">{t("snapshotOr")}</dt>
             <dd className="mt-1 font-semibold tabular-nums text-foreground">
-              {data.entry.summary_overall_rank.toLocaleString()}
+              {formatFplInteger(data.entry.summary_overall_rank, locale)}
             </dd>
           </div>
           <div className="rounded-lg border border-border bg-input px-3 py-2">
             <dt className="text-[10px] uppercase text-muted-foreground">{t("snapshotPts")}</dt>
             <dd className="mt-1 font-semibold tabular-nums text-foreground">
-              {data.entry.summary_overall_points.toLocaleString()}
+              {formatFplInteger(data.entry.summary_overall_points, locale, "0")}
             </dd>
           </div>
           <div className="rounded-lg border border-border bg-input px-3 py-2">

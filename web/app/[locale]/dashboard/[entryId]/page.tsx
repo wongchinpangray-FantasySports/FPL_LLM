@@ -18,6 +18,7 @@ import {
   projectPlayers,
 } from "@/lib/xp";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { formatFplInteger } from "@/lib/fpl";
 import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
 
 export const dynamic = "force-dynamic";
@@ -216,11 +217,12 @@ export default async function DashboardPage({
           <p className="text-sm leading-relaxed text-muted-foreground">
             {team.entry.player_first_name} {team.entry.player_last_name} ·{" "}
             <span className="text-foreground/70">
-              {team.entry.summary_overall_points.toLocaleString()} {dt("pts")}
+              {formatFplInteger(team.entry.summary_overall_points, params.locale, "0")}{" "}
+              {dt("pts")}
             </span>{" "}
             · {dt("overallRank")}{" "}
             <span className="text-foreground/70">
-              {team.entry.summary_overall_rank.toLocaleString()}
+              {formatFplInteger(team.entry.summary_overall_rank, params.locale)}
             </span>
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">

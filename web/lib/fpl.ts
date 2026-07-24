@@ -125,12 +125,23 @@ export interface FplEntry {
   name: string;
   player_first_name: string;
   player_last_name: string;
-  summary_overall_points: number;
-  summary_overall_rank: number;
+  /** Null before the first gameweek of a new season. */
+  summary_overall_points: number | null;
+  summary_overall_rank: number | null;
   current_event: number | null;
   last_deadline_bank: number | null;
   last_deadline_value: number | null;
   last_deadline_total_transfers: number | null;
+}
+
+/** Safe display for FPL integer stats that may be null pre-season. */
+export function formatFplInteger(
+  value: number | null | undefined,
+  locale?: string,
+  fallback = "—",
+): string {
+  if (value == null || !Number.isFinite(value)) return fallback;
+  return value.toLocaleString(locale);
 }
 
 export interface FplPick {
