@@ -10,7 +10,7 @@ const FETCH_HEADERS: Record<string, string> = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 };
 
-/** Curated X accounts — official + FPL team news, injuries, transfers. */
+/** Curated X accounts — official + FPL community + PL beat journalists. */
 const FPL_X_ACCOUNTS = [
   { handle: "FantasyPremierLeague", outlet: "FPL Official", alwaysInclude: true },
   { handle: "OfficialFPL", outlet: "FPL Official", alwaysInclude: true },
@@ -32,21 +32,48 @@ const FPL_X_ACCOUNTS = [
   { handle: "SkySportsPL", outlet: "Sky Sports PL", alwaysInclude: false },
   { handle: "FabrizioRomano", outlet: "Fabrizio Romano", alwaysInclude: false },
   { handle: "David_Ornstein", outlet: "David Ornstein", alwaysInclude: false },
-  { handle: "_pauljoyce", outlet: "Paul Joyce", alwaysInclude: false },
+  { handle: "PaulJoyce", outlet: "Paul Joyce", alwaysInclude: false, plBeat: true },
+  { handle: "_pauljoyce", outlet: "Paul Joyce", alwaysInclude: false, plBeat: true },
+  { handle: "SimonStone", outlet: "Simon Stone (BBC)", alwaysInclude: false, plBeat: true },
+  { handle: "JamesPearceLFC", outlet: "James Pearce (Liverpool)", alwaysInclude: false, plBeat: true },
+  { handle: "SamLee", outlet: "Sam Lee (Man City)", alwaysInclude: false, plBeat: true },
+  { handle: "CharlesWatts", outlet: "Charles Watts (Arsenal)", alwaysInclude: false, plBeat: true },
+  { handle: "Dan_KP", outlet: "Dan Kilpatrick (Spurs)", alwaysInclude: false, plBeat: true },
+  { handle: "LaurieWhitwell", outlet: "Laurie Whitwell (Man Utd)", alwaysInclude: false, plBeat: true },
+  { handle: "MattSlater", outlet: "Matt Slater (The Athletic)", alwaysInclude: false, plBeat: true },
+  { handle: "DominicKing", outlet: "Dominic King (Liverpool)", alwaysInclude: false, plBeat: true },
+  { handle: "ChrisBascombe", outlet: "Chris Bascombe (Liverpool)", alwaysInclude: false, plBeat: true },
+  { handle: "LyallThomas", outlet: "Lyall Thomas (Sky)", alwaysInclude: false, plBeat: true },
+  { handle: "MarkOgden", outlet: "Mark Ogden (ESPN)", alwaysInclude: false, plBeat: true },
+  { handle: "JasonBurt", outlet: "Jason Burt (Telegraph)", alwaysInclude: false, plBeat: true },
+  { handle: "MikeMcGrath", outlet: "Mike McGrath (Telegraph)", alwaysInclude: false, plBeat: true },
+  { handle: "SamiMokbel", outlet: "Sami Mokbel (Mail)", alwaysInclude: false, plBeat: true },
+  { handle: "AdamCrafton", outlet: "Adam Crafton (Chelsea)", alwaysInclude: false, plBeat: true },
+  { handle: "NeilAshton", outlet: "Neil Ashton", alwaysInclude: false, plBeat: true },
+  { handle: "JohnCrossMirror", outlet: "John Cross (Mirror)", alwaysInclude: false, plBeat: true },
+  { handle: "Simon_Hughes", outlet: "Simon Hughes", alwaysInclude: false, plBeat: true },
+  { handle: "RobDorsett", outlet: "Rob Dorsett (Sky)", alwaysInclude: false, plBeat: true },
+  { handle: "MattLawton", outlet: "Matt Lawton (Sun)", alwaysInclude: false, plBeat: true },
+  { handle: "JacobSteinberg", outlet: "Jacob Steinberg (Chelsea)", alwaysInclude: false, plBeat: true },
+  { handle: "NickAmes", outlet: "Nick Ames (Guardian)", alwaysInclude: false, plBeat: true },
 ] as const;
 
 export type FplXAccount = (typeof FPL_X_ACCOUNTS)[number];
 
 export function resolveFplXAccount(
   handle: string,
-): { outlet: string; alwaysInclude: boolean } | null {
+): { outlet: string; alwaysInclude: boolean; plBeat?: boolean } | null {
   const normalized = handle.replace(/^@/, "").trim().toLowerCase();
   if (!normalized) return null;
   const account = FPL_X_ACCOUNTS.find(
     (row) => row.handle.toLowerCase() === normalized,
   );
   return account
-    ? { outlet: account.outlet, alwaysInclude: account.alwaysInclude }
+    ? {
+        outlet: account.outlet,
+        alwaysInclude: account.alwaysInclude,
+        plBeat: "plBeat" in account ? account.plBeat : undefined,
+      }
     : null;
 }
 
@@ -183,7 +210,11 @@ function extractHandleFromUrl(url: string): string | null {
   return m?.[1] ?? null;
 }
 
-export function isFplRelevantTweet(text: string, alwaysInclude = false): boolean {
+export function isFplRelevantTweet(
+  text: string,
+  alwaysInclude = false,
+  plBeat = false,
+): boolean {
   if (alwaysInclude) return true;
   const hay = text.trim();
   if (!hay) return false;
@@ -191,6 +222,7 @@ export function isFplRelevantTweet(text: string, alwaysInclude = false): boolean
   const hasTopic =
     INJURY_RE.test(hay) || LINEUP_RE.test(hay) || TRANSFER_RE.test(hay);
   if (!hasTopic) return false;
+  if (plBeat) return true;
   return PL_CONTEXT_RE.test(hay) || TRANSFER_RE.test(hay);
 }
 
@@ -255,14 +287,19 @@ export function sortFplXItems(items: WcNewsItem[]): WcNewsItem[] {
 
 function mapSyndicationTweet(
   tweet: SyndicationTweet,
-  source: { outlet: string; alwaysInclude: boolean },
+  source: { outlet: string; alwaysInclude: boolean; plBeat?: boolean },
 ): WcNewsItem | null {
   if (tweet.__typename === "TweetTombstone" || !tweet.id_str?.trim()) {
     return null;
   }
 
   const text = (tweet.full_text ?? tweet.text ?? "").trim();
-  if (!text || !isFplRelevantTweet(text, source.alwaysInclude)) return null;
+  if (
+    !text ||
+    !isFplRelevantTweet(text, source.alwaysInclude, source.plBeat ?? false)
+  ) {
+    return null;
+  }
 
   const handle = tweet.user?.screen_name?.trim() || "i";
   const mediaUrl = tweet.entities?.media?.[0]?.media_url_https ?? null;
@@ -523,7 +560,15 @@ async function fetchRssTweets(rssUrl: string, limit: number): Promise<WcNewsItem
       const account = FPL_X_ACCOUNTS.find(
         (a) => a.handle.toLowerCase() === handle.toLowerCase(),
       );
-      if (!isFplRelevantTweet(text, account?.alwaysInclude ?? false)) continue;
+      if (
+        !isFplRelevantTweet(
+          text,
+          account?.alwaysInclude ?? false,
+          account && "plBeat" in account ? account.plBeat : false,
+        )
+      ) {
+        continue;
+      }
 
       out.push({
         id: `${FEED_ID}:${tweetId}`,
@@ -613,6 +658,32 @@ export async function fetchFplXTweets(opts?: {
     [...plEmbeds, ...syndication, ...rssBatches.flat(), ...cachedRefresh],
     limit,
   );
+}
+
+/** PL beat journalists — fetched in full each digest run (transfers, injuries, line-ups). */
+export async function fetchFplJournalistTweetsForDigest(opts?: {
+  limit?: number;
+}): Promise<WcNewsItem[]> {
+  const limit = Math.min(40, Math.max(8, opts?.limit ?? 28));
+  const journalists = FPL_X_ACCOUNTS.filter(
+    (account) => "plBeat" in account && account.plBeat,
+  );
+  const perAccount = Math.max(2, Math.ceil(limit / journalists.length));
+  const out: WcNewsItem[] = [];
+
+  for (const account of journalists) {
+    const { tweets } = await fetchSyndicationProfile(
+      account.handle,
+      perAccount,
+    );
+    for (const tweet of tweets) {
+      const item = mapSyndicationTweet(tweet, account);
+      if (item) out.push(item);
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  return dedupeFplTweets(out).slice(0, limit);
 }
 
 /** @deprecated Use fetchFplXTweets */

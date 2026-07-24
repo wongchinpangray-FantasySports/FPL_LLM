@@ -19,6 +19,51 @@ export function fmtLondonDigestWindow(
   }
 }
 
+function DigestSummaryBody({ summary }: { summary: string }) {
+  const blocks = summary.split(/\n\n+/).filter(Boolean);
+
+  return (
+    <div className="space-y-4 text-sm leading-relaxed text-foreground/90">
+      {blocks.map((block) => {
+        const lines = block.split("\n").filter(Boolean);
+        const heading = lines[0]?.startsWith("## ")
+          ? lines[0].replace(/^##\s+/, "").trim()
+          : null;
+        const bodyLines = heading ? lines.slice(1) : lines;
+        const bullets = bodyLines.filter((line) => line.trim().startsWith("- "));
+        const prose = bodyLines.filter((line) => !line.trim().startsWith("- "));
+
+        return (
+          <section key={block.slice(0, 48)}>
+            {heading ? (
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-accent">
+                {heading}
+              </h3>
+            ) : null}
+            {bullets.length > 0 ? (
+              <ul className="space-y-1.5 pl-1">
+                {bullets.map((line) => (
+                  <li
+                    key={line.slice(0, 60)}
+                    className="relative pl-3 before:absolute before:left-0 before:top-[0.55em] before:h-1 before:w-1 before:rounded-full before:bg-brand-accent/70"
+                  >
+                    {line.replace(/^\-\s+/, "")}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {prose.map((line) => (
+              <p key={line.slice(0, 40)} className="text-foreground/85">
+                {line}
+              </p>
+            ))}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function SourceRow({ source }: { source: FplXDigestSource }) {
   return (
     <li className="text-xs leading-relaxed text-muted-foreground">
@@ -75,13 +120,7 @@ export function FplDigestDayBlock({
         </span>
       </header>
 
-      <div className="prose prose-invert max-w-none text-sm leading-relaxed text-foreground/90">
-        {digest.summary.split(/\n\n+/).map((para) => (
-          <p key={para.slice(0, 40)} className="mb-3 last:mb-0">
-            {para}
-          </p>
-        ))}
-      </div>
+      <DigestSummaryBody summary={digest.summary} />
 
       <p className="mt-4 text-[11px] text-muted-foreground">
         {labels.generatedAt}{" "}

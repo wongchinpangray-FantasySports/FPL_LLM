@@ -29,8 +29,12 @@ export type FplXDigestRecord = {
 };
 
 const FFSCOUT_RSS = "https://www.fantasyfootballscout.co.uk/feed/";
+const BBC_PL_RSS = "https://feeds.bbci.co.uk/sport/football/premier-league/rss.xml";
+const GUARDIAN_FOOTBALL_RSS = "https://www.theguardian.com/football/rss";
 const FPL_HEADLINE_RE =
   /\bFPL\b|fantasy premier league|gameweek|\bGW\s?\d|price change|wildcard|deadline|mini-league|expected points|\bxP\b/i;
+const PL_NEWS_RE =
+  /injur|doubtful|ruled out|line-?up|starting XI|team news|transfer|sign(?:ing|ed|s)?|loan|premier league|\bEPL\b|press conference|matchday squad|fitness|sidelined|here we go|agreed deal/i;
 
 export function londonDigestDateIso(date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -95,8 +99,17 @@ function dedupeSources(items: FplXDigestSource[]): FplXDigestSource[] {
 }
 
 async function fetchFfscoutHeadlines(limit: number): Promise<FplXDigestSource[]> {
+  return fetchRssHeadlines(FFSCOUT_RSS, "FFScout", limit, FPL_HEADLINE_RE);
+}
+
+async function fetchRssHeadlines(
+  feedUrl: string,
+  outlet: string,
+  limit: number,
+  titleFilter: RegExp,
+): Promise<FplXDigestSource[]> {
   try {
-    const res = await fetch(FFSCOUT_RSS, {
+    const res = await fetch(feedUrl, {
       headers: {
         Accept: "application/rss+xml, application/xml, text/xml, */*",
         "User-Agent":
@@ -122,7 +135,7 @@ async function fetchFfscoutHeadlines(limit: number): Promise<FplXDigestSource[]>
         .replace(/&#8217;/g, "'")
         .trim();
       const url = (linkMatch?.[1] ?? "").trim();
-      if (!title || !url || !FPL_HEADLINE_RE.test(title)) continue;
+      if (!title || !url || !titleFilter.test(title)) continue;
 
       let published_at: string | null = null;
       if (pubMatch?.[1]) {
@@ -131,7 +144,7 @@ async function fetchFfscoutHeadlines(limit: number): Promise<FplXDigestSource[]>
       }
 
       out.push({
-        outlet: "FFScout",
+        outlet,
         text: title,
         url,
         published_at,
@@ -161,14 +174,19 @@ export async function collectFplXDigestSources(opts?: {
   const sources: FplXDigestSource[] = [];
 
   const { fetchFplXFromPlEmbeds } = await import("@/lib/fpl/fpl-x-pl-embeds");
-  const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
+  const { fetchFplXTweets, fetchFplJournalistTweetsForDigest } = await import(
+    "@/lib/fpl/fpl-x-feed"
+  );
 
-  const [embeds, liveTweets] = await Promise.all([
+  const [embeds, liveTweets, journalistTweets] = await Promise.all([
     fetchFplXFromPlEmbeds({ limit: 25, weekOnly: false }),
     fetchFplXTweets({ limit: 45 }).catch(() => [] as WcNewsItem[]),
+    fetchFplJournalistTweetsForDigest({ limit: 28 }).catch(
+      () => [] as WcNewsItem[],
+    ),
   ]);
 
-  for (const item of [...embeds, ...liveTweets]) {
+  for (const item of [...embeds, ...liveTweets, ...journalistTweets]) {
     if (item.feed_id !== "fpl-x") continue;
     if (inWindow(item.published_at, startMs, endMs)) {
       sources.push(mapNewsItemToSource(item, "tweet"));
@@ -202,6 +220,15 @@ export async function collectFplXDigestSources(opts?: {
 
   const ffscout = await fetchFfscoutHeadlines(12);
   for (const item of ffscout) {
+    if (!inWindow(item.published_at, startMs, endMs)) continue;
+    sources.push(item);
+  }
+
+  const [bbcPl, guardian] = await Promise.all([
+    fetchRssHeadlines(BBC_PL_RSS, "BBC Sport", 10, PL_NEWS_RE),
+    fetchRssHeadlines(GUARDIAN_FOOTBALL_RSS, "The Guardian", 10, PL_NEWS_RE),
+  ]);
+  for (const item of [...bbcPl, ...guardian]) {
     if (!inWindow(item.published_at, startMs, endMs)) continue;
     sources.push(item);
   }
@@ -247,55 +274,66 @@ function templateDigest(
   sources: FplXDigestSource[],
 ): string {
   const official = sources.filter((s) => /fpl official|officialfpl/i.test(s.outlet));
+  const journalists = sources.filter(
+    (s) =>
+      s.kind === "tweet" &&
+      /bbc|ornstein|romano|joyce|pearce|stone|slater|bascombe|king|mokbel|burt|mcgrath|whitwell|kilpatrick|watts|lee|crafton|dorsett|ashton|cross|hughes|ogden|thomas|ames|lawton|steinberg/i.test(
+        s.outlet,
+      ),
+  );
   const headlines = sources.filter((s) => s.kind === "headline");
   const community = sources.filter(
     (s) =>
       s.kind === "tweet" &&
-      !/fpl official|officialfpl/i.test(s.outlet),
+      !/fpl official|officialfpl/i.test(s.outlet) &&
+      !journalists.includes(s),
   );
 
-  const paras: string[] = [];
+  const sections: string[] = [];
 
   if (official.length) {
-    const bits = official
-      .slice(0, 3)
-      .map((s) => s.text.replace(/pic\.twitter\.com\/\S+/g, "").trim())
-      .filter(Boolean);
-    paras.push(
-      `Official FPL (@OfficialFPL) posted ${bits.length > 1 ? "several updates" : "an update"} in the past 24 hours: ${bits.join(" ")}`,
-    );
+    const bullets = official
+      .slice(0, 2)
+      .map((s) => `- ${s.text.replace(/pic\.twitter\.com\/\S+/g, "").trim()} (${s.outlet})`);
+    sections.push(`## Official FPL\n${bullets.join("\n")}`);
   }
 
-  if (headlines.length) {
-    const ff = headlines.filter((s) => /ffscout/i.test(s.outlet));
-    if (ff.length) {
-      paras.push(
-        `FFScout flagged ${ff[0]!.text}${ff.length > 1 ? `, plus ${ff.length - 1} more FPL headline${ff.length > 2 ? "s" : ""} in the same period` : ""}.`,
-      );
-    } else {
-      paras.push(
-        `Headlines: ${headlines
-          .slice(0, 2)
-          .map((s) => `${s.outlet} — ${s.text}`)
-          .join("; ")}.`,
-      );
-    }
+  const injuryLineup = [...journalists, ...headlines].filter((s) =>
+    /injur|doubtful|ruled out|line-?up|team news|fitness|scan|sidelined|starting|bench|press conference/i.test(
+      s.text,
+    ),
+  );
+  if (injuryLineup.length) {
+    const bullets = injuryLineup
+      .slice(0, 4)
+      .map((s) => `- ${s.text.slice(0, 140)} (${s.outlet})`);
+    sections.push(`## Injuries & team news\n${bullets.join("\n")}`);
   }
 
-  if (community.length) {
-    paras.push(
-      `Community accounts also posted: ${community
-        .slice(0, 2)
-        .map((s) => `@${s.outlet} — ${s.text.slice(0, 100)}`)
-        .join(" ")}`,
-    );
+  const transfers = [...journalists, ...headlines, ...community].filter((s) =>
+    /transfer|sign(?:ing|ed|s)?|loan|bid|deal|here we go|agreed|medical|target/i.test(
+      s.text,
+    ),
+  );
+  if (transfers.length) {
+    const bullets = transfers
+      .slice(0, 4)
+      .map((s) => `- ${s.text.slice(0, 140)} (${s.outlet})`);
+    sections.push(`## Transfers\n${bullets.join("\n")}`);
   }
 
-  if (!paras.length) {
-    return `FPL daily briefing — ${digestDate}. Quiet 24 hours on X and FPL news; check back after the next sync.`;
+  if (community.length && sections.length < 3) {
+    const bullets = community
+      .slice(0, 2)
+      .map((s) => `- ${s.text.slice(0, 120)} (${s.outlet})`);
+    sections.push(`## FPL community\n${bullets.join("\n")}`);
   }
 
-  return paras.join("\n\n");
+  if (!sections.length) {
+    return `## Quiet day\n- No major FPL or Premier League updates in the past 24 hours (${digestDate}). Check back after the next sync.`;
+  }
+
+  return sections.join("\n\n");
 }
 
 async function generateDigestWithGemini(
@@ -319,13 +357,24 @@ async function generateDigestWithGemini(
 素材：
 ${facts}
 
-写作要求：
-- 150–220 字，简体中文
-- 分 2–3 个短段：官方 FPL 动态、伤病/阵容、转会/社区热点（有则写，无则略）
-- 语气专业、简洁，面向 FPL 经理
-- 提及来源时使用 @账号 或媒体名
-- 不要使用项目符号，用连贯段落
-- 若素材很少，如实说明“过去 24 小时消息较少”并概括已有内容`
+格式（Markdown，务必遵守）：
+## 官方 FPL
+- 最多 2 条要点
+
+## 伤病与阵容
+- 最多 4 条：球员 + 俱乐部 + 状态/预计出场（有则写）
+
+## 转会
+- 最多 4 条：具体人名/俱乐部 + 来源
+
+## FPL 社区
+- 最多 2 条（仅在有价值时写）
+
+规则：
+- 全文 ≤120 字，每条要点一行，信息密度高
+- 每条末尾标注来源（@账号 或媒体名）
+- 无内容的板块整段省略
+- 不要开篇套话或结尾废话`
         : `Write an FPL (Fantasy Premier League) daily briefing for managers.
 Window: the past 24 hours (approx ${windowLabel}; digest date ${digestDate}).
 Use ONLY the sources below — do not invent injuries, transfers, or official announcements.
@@ -333,13 +382,25 @@ Use ONLY the sources below — do not invent injuries, transfers, or official an
 Sources:
 ${facts}
 
-Requirements:
-- 150–220 words, English
-- 2–3 short paragraphs covering: official FPL news, injuries/line-ups, transfers/community buzz (skip sections with no sources)
-- Professional, concise tone for FPL managers
-- Attribute claims (@handles or outlet names)
-- No bullet points — prose only
-- If sources are thin, say so briefly and summarize what exists`;
+Format (Markdown — follow exactly):
+## Official FPL
+- up to 2 bullets
+
+## Injuries & team news
+- up to 4 bullets: player + club + status/availability (when known)
+
+## Transfers
+- up to 4 bullets: named players/clubs + source
+
+## FPL community
+- up to 2 bullets (only if genuinely useful)
+
+Rules:
+- ≤120 words total; one fact per bullet; high information density
+- End each bullet with the source (@handle or outlet)
+- Omit entire sections with no supporting sources
+- No intro fluff or closing paragraph
+- Prefer PL beat journalists (Ornstein, Romano, Stone, Pearce, etc.) for injury/transfer facts when present`;
 
     const resp = await ai.models.generateContent({
       model: DEFAULT_MODEL,
