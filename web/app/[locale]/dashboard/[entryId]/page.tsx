@@ -77,6 +77,7 @@ export default async function DashboardPage({
     );
   }
 
+  try {
   const hasRevert = Boolean(team.long_team_picks?.length);
   const freeHitContext = isFreeHitOnPicksGw(
     team.active_chip,
@@ -515,6 +516,21 @@ export default async function DashboardPage({
       </section>
     </div>
   );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to load dashboard";
+    return (
+      <div className="mx-auto max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
+        <h1 className="text-xl font-semibold text-foreground">{dt("errorTitle")}</h1>
+        <p className="mt-2 text-sm text-rose-100/90">{msg}</p>
+        <Link
+          href="/"
+          className="mt-6 inline-flex rounded-lg border border-border bg-muted px-4 py-2 text-sm text-brand-accent hover:bg-muted"
+        >
+          {dt("backHome")}
+        </Link>
+      </div>
+    );
+  }
 }
 
 function upcomingDgwGwsForTeam(

@@ -1033,9 +1033,9 @@ type SquadSnapshot = {
     name?: string;
     player_first_name?: string;
     player_last_name?: string;
-    summary_overall_rank?: number;
-    summary_overall_points?: number;
-    current_event?: number;
+    summary_overall_rank?: number | null;
+    summary_overall_points?: number | null;
+    current_event?: number | null;
   };
   picks_gw?: number | null;
   current_gw?: number | null;
@@ -1050,12 +1050,15 @@ function squadDisplayName(s: SquadSnapshot): string | null {
   return parts.length ? parts.join(" ") : null;
 }
 
-function formatSnapshotRank(rank: number | undefined, locale: string): string | null {
+function formatSnapshotRank(
+  rank: number | null | undefined,
+  locale: string,
+): string | null {
   if (rank == null || rank <= 0) return null;
   return rank.toLocaleString(locale);
 }
 
-function formatSnapshotPoints(points: number | undefined): string | null {
+function formatSnapshotPoints(points: number | null | undefined): string | null {
   if (points == null || points < 0) return null;
   return String(points);
 }

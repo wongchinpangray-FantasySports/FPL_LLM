@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
 } from "react";
 
@@ -83,5 +85,10 @@ export function useEntryId() {
   if (!ctx) {
     throw new Error("useEntryId must be used within EntryIdProvider");
   }
-  return ctx;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return {
+    entryId: mounted ? ctx.entryId : null,
+    setEntryId: ctx.setEntryId,
+  };
 }
