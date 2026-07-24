@@ -11,6 +11,7 @@ const POSITION_BY_TYPE: Record<number, string> = {
 type BootstrapPayload = {
   elements?: Array<{
     id: number;
+    code?: number;
     first_name?: string;
     second_name?: string;
     web_name?: string;
@@ -33,6 +34,7 @@ type BootstrapPayload = {
 
 export type FplLiveBrowsePlayer = {
   fpl_id: number;
+  code: number | null;
   web_name: string | null;
   name: string | null;
   team: string | null;
@@ -69,6 +71,7 @@ async function fetchOfficialFplPlayers(): Promise<FplLiveBrowsePlayer[]> {
     const price = num(el.now_cost);
     return {
       fpl_id: el.id,
+      code: num(el.code),
       web_name: el.web_name ?? null,
       name: `${el.first_name ?? ""} ${el.second_name ?? ""}`.trim() || null,
       team: teamsById.get(el.team) ?? null,

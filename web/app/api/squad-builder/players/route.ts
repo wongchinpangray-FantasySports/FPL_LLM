@@ -49,8 +49,12 @@ export async function GET(req: Request) {
     });
 
     const fplIds = filtered.map((p) => p.fpl_id);
+    const codeByFplId = new Map<number, number>();
+    for (const p of filtered) {
+      if (p.code != null && p.code > 0) codeByFplId.set(p.fpl_id, p.code);
+    }
     const { season: lastSeasonKey, points: lastSeasonMap } =
-      await loadLastSeasonPointsForPlayers(fplIds);
+      await loadLastSeasonPointsForPlayers(fplIds, codeByFplId);
 
     const players = filtered.map((p) => ({
       ...p,

@@ -30,6 +30,30 @@ export function seasonToVaastavFolder(season: string): string {
   return `${season}-${String(y + 1).slice(-2)}`;
 }
 
+/** End-of-season FPL totals keyed by stable element `code` (vaastav players_raw). */
+export async function loadVaastavSeasonTotalsByCode(
+  seasonKey: string,
+): Promise<Map<number, number>> {
+  const folder = seasonToVaastavFolder(seasonKey);
+  if (
+    !VAASTAV_SEASON_FOLDERS.includes(
+      folder as (typeof VAASTAV_SEASON_FOLDERS)[number],
+    )
+  ) {
+    return new Map();
+  }
+
+  const rows = await loadCsv(`${folder}/players_raw.csv`);
+  const out = new Map<number, number>();
+  for (const row of rows) {
+    const code = Number(row.code);
+    const pts = Number(row.total_points);
+    if (!Number.isFinite(code) || code <= 0 || !Number.isFinite(pts)) continue;
+    out.set(code, Math.round(pts));
+  }
+  return out;
+}
+
 function parseCsvLine(line: string): string[] {
   const out: string[] = [];
   let cur = "";

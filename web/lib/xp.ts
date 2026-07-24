@@ -5,8 +5,9 @@
  * using:
  *
  *  1. Rolling per-90 rates over the last N GWs (xG, xA, bonus, BPS, saves,
- *     starts, minutes) from `player_gw_stats`, smoothed with season totals
- *     from `players_static`.
+ *     starts, minutes) from `player_gw_stats`, blended with season totals
+ *     from `players_static`. When the current campaign has no GW sample yet,
+ *     season rates are used in full (preseason / GW1 planning).
  *  2. Team-level expected goals for/against for the specific fixture, using
  *     FPL's attack/defence strength ratings (baseline ~1100) blended with
  *     home/away scoring baselines (1.45 home / 1.15 away).
@@ -91,6 +92,7 @@ export interface PlayerCoreRow {
   saves_per_90?: number | null;
   starts?: number | null;
   starts_per_90?: number | null;
+  ict_index?: number | null;
 }
 
 export interface SetPieceFlags {
@@ -307,6 +309,22 @@ function num(v: unknown): number {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Blend rolling per-90 with season profile. When the current campaign has no
+ * (or very little) GW data, use the full season rate — the old 70/30 split
+ * against zero recent minutes crushed preseason projections for every player.
+ */
+function blendPer90Rate(
+  recentPer90: number,
+  seasonPer90: number,
+  rollMinutes: number,
+): number {
+  if (rollMinutes <= 0) return seasonPer90;
+  if (rollMinutes >= 360) return 0.7 * recentPer90 + 0.3 * seasonPer90;
+  const recentWeight = clamp(rollMinutes / 360, 0.35, 0.7);
+  return recentWeight * recentPer90 + (1 - recentWeight) * seasonPer90;
 }
 
 function poissonP0(lambda: number): number {
@@ -562,7 +580,7 @@ export async function loadDoubleGameweekKeys(
 }
 
 const PLAYER_CORE_COLS =
-  "fpl_id,web_name,name,team,team_id,position,base_price,status,chance_of_playing,form,points_per_game,total_points,minutes,goals_scored,assists,clean_sheets,bonus,bps,expected_goals,expected_assists,expected_goal_involve,selected_by_percent,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order,goals_conceded,expected_goals_conceded,saves,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,defensive_contribution_per_90,expected_goals_conceded_per_90,saves_per_90,starts,starts_per_90";
+  "fpl_id,web_name,name,team,team_id,position,base_price,status,chance_of_playing,form,points_per_game,total_points,minutes,goals_scored,assists,clean_sheets,bonus,bps,expected_goals,expected_assists,expected_goal_involve,selected_by_percent,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order,goals_conceded,expected_goals_conceded,saves,clearances_blocks_interceptions,recoveries,tackles,defensive_contribution,defensive_contribution_per_90,expected_goals_conceded_per_90,saves_per_90,starts,starts_per_90,ict_index";
 
 export async function loadPlayers(
   ids: number[],
@@ -792,6 +810,24 @@ function availabilityMultiplier(p: PlayerCoreRow): {
 
 // --- expected minutes ------------------------------------------------------
 
+/** When the current campaign has no GW rows yet, anchor on prior-season profile. */
+function seasonMinutesAnchor(
+  seasonMins: number,
+  seasonPpg: number | null,
+): { expMins: number; pAppear: number; p60: number } | null {
+  if (seasonMins < 180 || seasonPpg == null || seasonPpg <= 0) return null;
+  const estApps = clamp(seasonMins / 70, 10, 38);
+  const minsPerApp = seasonMins / estApps;
+  const pFeature = clamp(seasonPpg / 5.0, 0.55, 1.0);
+  const expMins = Math.min(90, minsPerApp * pFeature);
+  const pAppear = pFeature;
+  const p60 =
+    seasonPpg >= 3.2
+      ? pFeature * clamp(seasonPpg / 4.8, 0.78, 0.98)
+      : pFeature * 0.65;
+  return { expMins, pAppear, p60 };
+}
+
 function expectedMinutes(roll: PlayerRolling, avail: number): number {
   if (roll.window_gws === 0) return 0;
   const apps = Math.max(roll.apps, 0);
@@ -872,9 +908,14 @@ export function projectPlayerForFixture(args: {
   } = args;
   const isHome = fixture.home_team_id === myTeam.id;
   const position = player.position ?? "MID";
+  const seasonMins = num(player.minutes);
+  const anchor =
+    roll.apps === 0 ? seasonMinutesAnchor(seasonMins, seasonPpg ?? null) : null;
 
   // expected playing time (+ modest MID/FWD lift when involvement rate is credible)
-  let expMins = expectedMinutes(roll, availability);
+  let expMins = anchor
+    ? Math.min(90, anchor.expMins * availability)
+    : expectedMinutes(roll, availability);
   if (
     (position === "FWD" || position === "MID") &&
     roll.window_gws > 0 &&
@@ -885,9 +926,20 @@ export function projectPlayerForFixture(args: {
       const lift = position === "FWD" ? 1.032 : 1.018;
       expMins = Math.min(90, expMins * lift);
     }
+  } else if (anchor && (position === "FWD" || position === "MID") && seasonPpg != null && seasonPpg >= 4.5) {
+    const lift = position === "FWD" ? 1.032 : 1.018;
+    expMins = Math.min(90, expMins * lift);
   }
-  const pAppear = expMins > 0 ? clamp(roll.apps / roll.window_gws, 0, 1) * availability : 0;
-  const p60 = expMins >= 60 ? clamp(roll.starts / Math.max(roll.window_gws, 1), 0, 1) * availability : 0;
+  const pAppear = anchor
+    ? anchor.pAppear * availability
+    : expMins > 0
+      ? clamp(roll.apps / roll.window_gws, 0, 1) * availability
+      : 0;
+  const p60 = anchor
+    ? anchor.p60 * availability
+    : expMins >= 60
+      ? clamp(roll.starts / Math.max(roll.window_gws, 1), 0, 1) * availability
+      : 0;
   const minutesFactor = expMins / 90;
 
   // team xG for/against this fixture
@@ -903,7 +955,6 @@ export function projectPlayerForFixture(args: {
 
   // per-90 rates, with smoothing from season totals when the recent window
   // is too thin.
-  const seasonMins = num(player.minutes);
   const xgPer90Recent =
     roll.minutes > 0 ? (roll.xg / roll.minutes) * 90 : 0;
   const xaPer90Recent =
@@ -913,10 +964,8 @@ export function projectPlayerForFixture(args: {
   const xaPer90Season =
     seasonMins > 0 ? (num(player.expected_assists) / seasonMins) * 90 : 0;
 
-  // weight: give recent form 70%, season 30% (season anchors low-sample
-  // players, recent captures form shifts).
-  let xgPer90 = 0.7 * xgPer90Recent + 0.3 * xgPer90Season;
-  let xaPer90 = 0.7 * xaPer90Recent + 0.3 * xaPer90Season;
+  let xgPer90 = blendPer90Rate(xgPer90Recent, xgPer90Season, roll.minutes);
+  let xaPer90 = blendPer90Rate(xaPer90Recent, xaPer90Season, roll.minutes);
 
   if (
     understat &&
@@ -977,8 +1026,15 @@ export function projectPlayerForFixture(args: {
   // saves: only GKP, 1 per 3 saves
   let xp_saves = 0;
   if (position === "GKP") {
-    const savesPer90 =
+    const savesPer90Recent =
       roll.minutes > 0 ? (roll.saves / roll.minutes) * 90 : 0;
+    const savesPer90Season =
+      seasonMins > 0 ? (num(player.saves) / seasonMins) * 90 : 0;
+    const savesPer90 = blendPer90Rate(
+      savesPer90Recent,
+      savesPer90Season,
+      roll.minutes,
+    );
     xp_saves = (savesPer90 * minutesFactor) / 3;
   }
 
@@ -1005,10 +1061,11 @@ export function projectPlayerForFixture(args: {
       num(player.recoveries);
   const actionsPer90Season =
     seasonMins > 0 ? (seasonActions / seasonMins) * 90 : 0;
-  const actionsPer90Blend =
-    roll.minutes >= 270
-      ? 0.7 * actionsPer90 + 0.3 * actionsPer90Season
-      : 0.4 * actionsPer90 + 0.6 * actionsPer90Season;
+  const actionsPer90Blend = blendPer90Rate(
+    actionsPer90,
+    actionsPer90Season,
+    roll.minutes,
+  );
 
   // Fixture context: more defensive work expected when facing higher xGA.
   const defCtx = clamp(teamGA / 1.3, 0.55, 1.8);
@@ -1035,10 +1092,24 @@ export function projectPlayerForFixture(args: {
     -1 * yellowPer90 * minutesFactor - 3 * redPer90 * minutesFactor;
 
   // Bonus: role-aware — DEF/GKP use CS / concession profile; ICT per 90 scales appetite for BPS.
-  const bonusPer90 =
+  const bonusPer90Recent =
     roll.minutes > 0 ? (roll.bonus / roll.minutes) * 90 : 0;
-  const ictPer90 =
+  const bonusPer90Season =
+    seasonMins > 0 ? (num(player.bonus) / seasonMins) * 90 : 0;
+  const bonusPer90 = blendPer90Rate(
+    bonusPer90Recent,
+    bonusPer90Season,
+    roll.minutes,
+  );
+  const ictPer90Recent =
     roll.minutes > 0 ? (roll.ict / roll.minutes) * 90 : 0;
+  const ictPer90Season =
+    seasonMins > 0 ? (num(player.ict_index) / seasonMins) * 90 : 0;
+  const ictPer90 = blendPer90Rate(
+    ictPer90Recent,
+    ictPer90Season,
+    roll.minutes,
+  );
   const ictMult = bonusIctMultiplier(ictPer90);
   const bonusMult = bonusContextMultiplier(position, atkContext, pCS, teamGA);
   const xp_bonus = bonusPer90 * minutesFactor * bonusMult * ictMult;
