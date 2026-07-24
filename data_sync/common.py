@@ -25,7 +25,8 @@ def fpl_season_start_year_from_bootstrap(data: dict) -> str:
     ``bootstrap-static`` events. When every GW is finished (off-season), use the
     calendar year of the **last** gameweek deadline — that is the start year of
     the next campaign once FPL rolls fixtures forward (e.g. GW38 in May 2026 →
-    ``2026`` for 2026/27).
+    ``2026`` for 2026/27). During the active campaign, the first event's deadline
+    year is used (FPL typically publishes the new game in July ahead of an August kickoff).
     """
     env = os.environ.get("FPL_CURRENT_SEASON", "").strip()
     if env:

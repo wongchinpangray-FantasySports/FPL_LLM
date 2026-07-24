@@ -13,6 +13,7 @@ const VAASTAV_SEASON_FOLDERS = [
   "2022-23",
   "2023-24",
   "2024-25",
+  "2025-26",
 ] as const;
 
 type FixtureSide = { opponentId: number; wasHome: boolean };

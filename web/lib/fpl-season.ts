@@ -11,7 +11,7 @@ const TTL_MS = 60_000;
  * 1. `FPL_CURRENT_SEASON` env (e.g. on Workers before meta is synced)
  * 2. `fpl_meta.current_season`
  * 3. Latest `season` present on `fixtures`
- * 4. Fallback `2024`
+ * 4. Fallback `2026`
  */
 export async function getCurrentFplSeason(): Promise<string> {
   const env = process.env.FPL_CURRENT_SEASON?.trim();

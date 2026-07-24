@@ -64,7 +64,7 @@ export function buildEpl2627ClubOptions(
 }
 
 /** Insert promoted clubs when FPL bootstrap still lists relegated sides. */
-export async function ensureEpl2627PromotedTeams(
+async function ensureEpl2627PromotedTeams(
   admin: SupabaseClient,
 ): Promise<void> {
   for (const row of EPL_2627_PROMOTED_DB_ROWS) {
@@ -88,6 +88,31 @@ export async function ensureEpl2627PromotedTeams(
       },
       { onConflict: "id" },
     );
+  }
+}
+
+/**
+ * Keep onboarding club list aligned with 2026/27 PL.
+ * Before FPL launches the new game, insert placeholder promoted rows; once
+ * bootstrap-static lists COV/HUL/IPS, rely on synced official team ids.
+ */
+export async function syncEpl2627ClubTeams(
+  admin: SupabaseClient,
+  dbTeams: FplClubOption[],
+): Promise<void> {
+  const apiShortNames = dbTeams.map((t) => t.short_name.toUpperCase());
+  if (fplApiHasStale2627Teams(apiShortNames)) {
+    await ensureEpl2627PromotedTeams(admin);
+    return;
+  }
+
+  for (const placeholder of EPL_2627_PROMOTED_DB_ROWS) {
+    const official = dbTeams.find(
+      (t) => t.short_name.toUpperCase() === placeholder.short_name,
+    );
+    if (official && official.id !== placeholder.id) {
+      await admin.from("teams").delete().eq("id", placeholder.id);
+    }
   }
 }
 

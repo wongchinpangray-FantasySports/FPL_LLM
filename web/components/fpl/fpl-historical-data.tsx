@@ -241,10 +241,10 @@ const inputClass =
 
 function emptyMeta(): HistoricalMeta {
   return {
-    seasons: ["2025"],
-    activeSeason: "2025",
+    seasons: ["2026"],
+    activeSeason: "2026",
     teams: [],
-    gwBounds: { "2025": { min: 1, max: 38 } },
+    gwBounds: { "2026": { min: 1, max: 38 } },
   };
 }
 

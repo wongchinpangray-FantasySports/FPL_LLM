@@ -44,6 +44,7 @@ DEFAULT_SEASON_FOLDERS: Tuple[str, ...] = (
     "2022-23",
     "2023-24",
     "2024-25",
+    "2025-26",
 )
 
 POSITIONS = {"GKP", "DEF", "MID", "FWD"}

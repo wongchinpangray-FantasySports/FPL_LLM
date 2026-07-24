@@ -447,7 +447,7 @@ async function resolveUnderstatSeasonFallback(): Promise<string> {
   const seasons = [
     ...new Set((data ?? []).map((r) => String(r.season))),
   ].sort((a, b) => Number(b) - Number(a));
-  return seasons[0] ?? "2025";
+  return seasons[0] ?? "2026";
 }
 
 /** Earliest unfinished fixture per player (via club), for pitch card labels. */

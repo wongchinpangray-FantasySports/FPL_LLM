@@ -12,8 +12,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Tuple
 
-# Vaastav archive is authoritative for completed seasons through 2023/24.
-# 2024/25 may also be synced live from the FPL API (season keys 2024/2025).
+# Vaastav archive is authoritative for completed seasons through 2024/25.
+# 2025/26 may also be synced live from the FPL API (season key 2025).
 ARCHIVED_SEASON_FOLDERS: Tuple[str, ...] = (
     "2016-17",
     "2017-18",
@@ -24,6 +24,7 @@ ARCHIVED_SEASON_FOLDERS: Tuple[str, ...] = (
     "2022-23",
     "2023-24",
     "2024-25",
+    "2025-26",
 )
 from .backfill_vaastav_seasons import (
     _dedupe_gw_rows,

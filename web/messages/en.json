@@ -1158,7 +1158,7 @@
     "eyebrow": "Historical Data",
     "title": "FPL player historical stats",
     "description": "Aggregate per-gameweek performance from synced FPL data. Filter by season, GW range, position, team, and minutes.",
-    "note": "Stats are summed across the selected gameweek range. Seasons 2016/17–2024/25 come from archived vaastav data; the current campaign is synced live from FPL. Run the historical backfill job after migration 0022 to populate older seasons.",
+    "note": "Stats are summed across the selected gameweek range. Seasons 2016/17–2025/26 come from archived vaastav data; the current campaign is synced live from FPL. Run the historical backfill job after migration 0022 to populate older seasons.",
     "season": "Season",
     "seasonAll": "All seasons",
     "gwFrom": "From GW",

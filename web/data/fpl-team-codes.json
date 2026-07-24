@@ -1,5 +1,5 @@
 {
-  "source": "FPL bootstrap-static + vaastav archive (2016/17–2024/25)",
+  "source": "FPL bootstrap-static + vaastav archive (2016/17–2025/26)",
   "teams": [
     { "code": "1", "short_name": "MUN", "name": "Man Utd" },
     { "code": "2", "short_name": "LEE", "name": "Leeds" },
@@ -8,6 +8,7 @@
     { "code": "6", "short_name": "TOT", "name": "Spurs" },
     { "code": "7", "short_name": "AVL", "name": "Aston Villa" },
     { "code": "8", "short_name": "CHE", "name": "Chelsea" },
+    { "code": "9", "short_name": "COV", "name": "Coventry City" },
     { "code": "11", "short_name": "EVE", "name": "Everton" },
     { "code": "13", "short_name": "LEI", "name": "Leicester" },
     { "code": "14", "short_name": "LIV", "name": "Liverpool" },
