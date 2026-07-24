@@ -32,6 +32,23 @@ export function countByTeam(picks: PickLike[]): Map<number, number> {
   return m;
 }
 
+/** True if placing a player into `slot` would exceed FPL's max 3 per club. */
+export function wouldExceedClubCap(
+  picks: Array<PickLike & { slot?: number }>,
+  slot: number,
+  incomingTeamId: number | null,
+  isFilled: (p: PickLike) => boolean,
+): boolean {
+  if (incomingTeamId == null) return false;
+  let n = 0;
+  for (const p of picks) {
+    if (!isFilled(p)) continue;
+    if (p.slot === slot) continue;
+    if (p.team_id === incomingTeamId) n++;
+  }
+  return n + 1 > 3;
+}
+
 export function validatePlannerSquad(picks: PickLike[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   if (picks.length !== 15) {

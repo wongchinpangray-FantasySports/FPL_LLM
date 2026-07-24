@@ -12,6 +12,7 @@ import {
   swapBudget,
   validatePlannerSquad,
   validateXiFormation,
+  wouldExceedClubCap,
   type ValidationIssue,
 } from "@/lib/planner/validate";
 import { formatSquadBuilderIssue } from "@/lib/squad-builder/format-issue";
@@ -97,6 +98,7 @@ export function SquadBuilderApp({
   const [mode, setMode] = useState<Mode>(null);
   const [xiFirst, setXiFirst] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [clubCapAlert, setClubCapAlert] = useState<string | null>(null);
   const [playerProjCache, setPlayerProjCache] = useState<
     Record<string, ProjRow>
   >({});
@@ -318,6 +320,16 @@ export function SquadBuilderApp({
           need: ((p.base_price ?? 0) - bank).toFixed(1),
           bank: bank.toFixed(1),
         }),
+      );
+      return;
+    }
+    if (
+      wouldExceedClubCap(picks, slot, p.team_id, (pick) =>
+        isFilledPick(pick as PlannerPickPayload),
+      )
+    ) {
+      setClubCapAlert(
+        t("swapClubCap", { club: p.team ?? t("swapClubCapUnknownClub") }),
       );
       return;
     }
@@ -787,6 +799,41 @@ export function SquadBuilderApp({
           labels={panelLabels}
         />
       </div>
+
+      {clubCapAlert ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          onClick={() => setClubCapAlert(null)}
+        >
+          <div
+            role="alertdialog"
+            aria-labelledby="squad-club-cap-title"
+            aria-describedby="squad-club-cap-body"
+            className="w-full max-w-sm rounded-xl border border-rose-500/40 bg-card p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="squad-club-cap-title"
+              className="text-sm font-semibold text-foreground"
+            >
+              {t("swapClubCapTitle")}
+            </h3>
+            <p
+              id="squad-club-cap-body"
+              className="mt-2 text-sm leading-relaxed text-muted-foreground"
+            >
+              {clubCapAlert}
+            </p>
+            <Button
+              type="button"
+              className="mt-4 w-full"
+              onClick={() => setClubCapAlert(null)}
+            >
+              {t("close")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
