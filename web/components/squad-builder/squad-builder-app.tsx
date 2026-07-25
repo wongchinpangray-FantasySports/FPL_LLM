@@ -309,7 +309,7 @@ export function SquadBuilderApp({
     setProjLoading(true);
     setProjError(null);
     try {
-      const res = await fetch("/api/planner/project", {
+      const res = await fetch("/api/squad-builder/projections", {
         method: "POST",
         headers: { "content-type": "application/json" },
         cache: "no-store",
@@ -317,7 +317,6 @@ export function SquadBuilderApp({
           playerIds: projectionIds,
           fromGw,
           horizon,
-          includeLeagueTops: false,
         }),
       });
       const data = (await res.json()) as {
