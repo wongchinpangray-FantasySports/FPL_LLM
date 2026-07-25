@@ -15,6 +15,7 @@ import {
 import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
+  mergePreseasonGoalLists,
   needsPreseasonGoalFetch,
   preseasonGoalsChanged,
   preseasonGoalsComplete,
@@ -56,15 +57,41 @@ async function resolveMatchUpdates(
 
   if (process.env.API_FOOTBALL_KEY?.trim()) {
     const api = await resolvePreseasonMatchFromApi(next);
-    if (api && preseasonMatchChanged(next, api)) {
-      next = { ...next, ...api };
+    if (api) {
+      const mergedGoals =
+        api.goals.length > 0
+          ? mergePreseasonGoalLists(
+              {
+                ...next,
+                pl_goals: api.pl_goals ?? next.pl_goals,
+                opp_goals: api.opp_goals ?? next.opp_goals,
+                status: api.status ?? next.status,
+              },
+              next.goals ?? [],
+              api.goals,
+            )
+          : (next.goals ?? []);
+      const apiMerged = {
+        kickoff_time: api.kickoff_time ?? next.kickoff_time,
+        status: api.status ?? next.status,
+        pl_goals: api.pl_goals ?? next.pl_goals,
+        opp_goals: api.opp_goals ?? next.opp_goals,
+        goals: mergedGoals,
+      };
+      if (preseasonMatchChanged(next, apiMerged)) {
+        next = { ...next, ...apiMerged };
+      }
     }
   }
 
   let goals_updated = false;
   if (needsPreseasonGoalFetch(next) || preseasonGoalsHaveInvalidRows(next)) {
     const reportUrls = findReportUrlsForMatch(next, externalResults);
-    const goals = await fetchGoalsForFinishedMatch(next, reportUrls);
+    const fetched = await fetchGoalsForFinishedMatch(next, reportUrls);
+    const goals =
+      fetched.length > 0
+        ? mergePreseasonGoalLists(next, next.goals ?? [], fetched)
+        : (next.goals ?? []);
     if (
       goals.length === 0 &&
       (next.goals ?? []).length > 0 &&

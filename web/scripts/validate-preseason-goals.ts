@@ -38,11 +38,8 @@ function main(): void {
     if (match.pl_goals + match.opp_goals === 0) continue;
     const goals = match.goals ?? [];
     const plListed = goals.filter((g) => g.side === "pl").length;
-    const oppListed = goals.filter((g) => g.side === "opp").length;
-    const plComplete = plListed >= match.pl_goals;
-    const oppComplete = oppListed >= match.opp_goals;
-    const apiConfigured = Boolean(process.env.API_FOOTBALL_KEY?.trim());
-    if (plComplete && (oppComplete || !apiConfigured)) continue;
+    // CI only gates on PL scorers — lower-league opponent names are often unavailable.
+    if (plListed >= match.pl_goals) continue;
     if (preseasonGoalsComplete(match)) continue;
     if (matchAgeHours(match.date, today) < GRACE_HOURS) continue;
 

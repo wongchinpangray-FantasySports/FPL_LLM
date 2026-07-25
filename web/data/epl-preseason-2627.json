@@ -71,14 +71,14 @@
         },
         {
           "minute": "",
-          "scorer": "Jaidon Anthony",
-          "assist": null,
+          "scorer": "Mikkel Damsgaard",
+          "assist": "Dango Ouattara",
           "side": "pl"
         },
         {
           "minute": "",
-          "scorer": "Mikkel Damsgaard",
-          "assist": "Dango Ouattara",
+          "scorer": "Jaidon Anthony",
+          "assist": null,
           "side": "pl"
         }
       ]
@@ -171,12 +171,6 @@
           "side": "pl"
         },
         {
-          "minute": "33'",
-          "scorer": "Fletcher Holman",
-          "assist": null,
-          "side": "opp"
-        },
-        {
           "minute": "56'",
           "scorer": "Matheus França",
           "assist": null,
@@ -193,6 +187,12 @@
           "scorer": "Matheus França",
           "assist": null,
           "side": "pl"
+        },
+        {
+          "minute": "33'",
+          "scorer": "Fletcher Holman",
+          "assist": null,
+          "side": "opp"
         }
       ]
     },
@@ -335,6 +335,18 @@
       "kickoff_time": null,
       "goals": [
         {
+          "minute": "44'",
+          "scorer": "Enzo Le Fée",
+          "assist": "Timur Tuterov",
+          "side": "pl"
+        },
+        {
+          "minute": "56'",
+          "scorer": "Tom Proctor",
+          "assist": "Charlie Dinsdale",
+          "side": "pl"
+        },
+        {
           "minute": "7'",
           "scorer": "Enzo Le Fée",
           "assist": null,
@@ -353,22 +365,10 @@
           "side": "pl"
         },
         {
-          "minute": "44'",
-          "scorer": "Enzo Le Fée",
-          "assist": "Timur Tuterov",
-          "side": "pl"
-        },
-        {
           "minute": "55'",
           "scorer": "Greg Olley",
           "assist": null,
           "side": "opp"
-        },
-        {
-          "minute": "56'",
-          "scorer": "Tom Proctor",
-          "assist": "Charlie Dinsdale",
-          "side": "pl"
         }
       ]
     },
