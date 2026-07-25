@@ -47,6 +47,8 @@ export function SquadBuilderPlayerPanel({
   squadFplIds,
   teams,
   onPickPlayer,
+  onInspectPlayer,
+  inspectNameTitle,
   labels,
 }: {
   selectedSlot: number | null;
@@ -57,6 +59,8 @@ export function SquadBuilderPlayerPanel({
   squadFplIds: Set<number>;
   teams: TeamOption[];
   onPickPlayer: (player: BrowsePlayer) => void;
+  onInspectPlayer?: (fplId: number) => void;
+  inspectNameTitle?: string;
   labels: {
     title: string;
     search: string;
@@ -316,12 +320,22 @@ export function SquadBuilderPlayerPanel({
                     title={inSquad ? labels.inSquad : undefined}
                   >
                     <td className="px-2 py-2">
-                      <div className="font-medium text-foreground">
-                        {p.web_name ?? p.name}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {p.team} · {p.position}
-                      </div>
+                      <button
+                        type="button"
+                        title={inspectNameTitle}
+                        className="text-left"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onInspectPlayer?.(p.fpl_id);
+                        }}
+                      >
+                        <div className="font-medium text-foreground underline decoration-brand-accent/35 underline-offset-2 hover:text-brand-accent">
+                          {p.web_name ?? p.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground no-underline">
+                          {p.team} · {p.position}
+                        </div>
+                      </button>
                     </td>
                     <td className="px-1 py-2 text-right tabular-nums text-muted-foreground">
                       {p.selected_by_percent != null

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PitchView, type PlannerGwStripCell } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
+import {
+  PlannerPlayerInspectSheet,
+  type PlannerPlayerInspectDetail,
+} from "@/components/planner/planner-player-inspect";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
@@ -108,6 +112,11 @@ export function SquadBuilderApp({
   );
   const [projLoading, setProjLoading] = useState(false);
   const [projError, setProjError] = useState<string | null>(null);
+  const [inspectFplId, setInspectFplId] = useState<number | null>(null);
+  const [inspectDetail, setInspectDetail] =
+    useState<PlannerPlayerInspectDetail | null>(null);
+  const [inspectLoading, setInspectLoading] = useState(false);
+  const [inspectErr, setInspectErr] = useState<string | null>(null);
 
   const slotState = useMemo(
     () => resolveDraftSlot(draft, activeDraft),
@@ -124,6 +133,50 @@ export function SquadBuilderApp({
   useEffect(() => {
     saveDraftV2({ ...draft, horizon });
   }, [draft, horizon]);
+
+  useEffect(() => {
+    if (inspectFplId == null) {
+      setInspectDetail(null);
+      setInspectErr(null);
+      setInspectLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setInspectLoading(true);
+    setInspectErr(null);
+    setInspectDetail(null);
+    void fetch(
+      `/api/planner/player-detail?fplId=${inspectFplId}&horizon=${horizon}`,
+    )
+      .then(async (res) => {
+        const data = (await res.json()) as PlannerPlayerInspectDetail & {
+          error?: string;
+        };
+        if (!res.ok) {
+          throw new Error(data.error ?? `Request failed (${res.status})`);
+        }
+        if (!cancelled) setInspectDetail(data);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) {
+          setInspectErr(e instanceof Error ? e.message : "Request failed");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setInspectLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inspectFplId, horizon]);
+
+  const openPlayerInspect = useCallback((fplId: number) => {
+    if (fplId > 0) setInspectFplId(fplId);
+  }, []);
+
+  const closePlayerInspect = useCallback(() => {
+    setInspectFplId(null);
+  }, []);
 
   const patchDraftState = useCallback(
     (patch: Partial<DraftSlotState>) => {
@@ -722,6 +775,8 @@ export function SquadBuilderApp({
               nextGwXpTitle={t("nextGwXpTitle", { gw: xptsGw })}
               benchLabel={t("benchLabel")}
               benchGkAbbrev={t("benchGk")}
+              onInspectPlayer={openPlayerInspect}
+              inspectNameTitle={t("inspectNameHint")}
             />
           ) : (
             <SquadBuilderListView
@@ -735,6 +790,8 @@ export function SquadBuilderApp({
                 setSelectedSlot(slot);
                 onPickSlot(slot);
               }}
+              onInspectPlayer={openPlayerInspect}
+              inspectNameTitle={t("inspectNameHint")}
               labels={listLabels}
             />
           )}
@@ -788,9 +845,21 @@ export function SquadBuilderApp({
           squadFplIds={squadFplIds}
           teams={teams}
           onPickPlayer={addPlayerFromPanel}
+          onInspectPlayer={openPlayerInspect}
+          inspectNameTitle={t("inspectNameHint")}
           labels={panelLabels}
         />
       </div>
+
+      <PlannerPlayerInspectSheet
+        open={inspectFplId != null}
+        loading={inspectLoading}
+        error={inspectErr}
+        detail={inspectDetail}
+        showTransfer={false}
+        onClose={closePlayerInspect}
+        onTransfer={closePlayerInspect}
+      />
 
       {clubCapAlert ? (
         <div

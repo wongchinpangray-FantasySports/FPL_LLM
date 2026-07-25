@@ -69,6 +69,8 @@ function PlayerChip({
   nextGwXpByFplId,
   nextGwXpTitle,
   onClick,
+  onInspectPlayer,
+  inspectNameTitle,
 }: {
   p: PlannerPickPayload;
   captainId: number | null;
@@ -85,6 +87,8 @@ function PlayerChip({
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
   onClick?: () => void;
+  onInspectPlayer?: (fplId: number) => void;
+  inspectNameTitle?: string;
 }) {
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
@@ -114,9 +118,23 @@ function PlayerChip({
 
   const inner = (
     <>
-      <div className="truncate text-[8px] font-semibold leading-tight text-foreground sm:text-[10px]">
-        {p.web_name ?? `#${p.fpl_id}`}
-      </div>
+      {!isEmpty && onInspectPlayer ? (
+        <button
+          type="button"
+          title={inspectNameTitle}
+          className="w-full truncate text-left text-[8px] font-semibold leading-tight text-foreground underline decoration-brand-accent/35 underline-offset-2 hover:text-brand-accent sm:text-[10px]"
+          onClick={(e) => {
+            e.stopPropagation();
+            onInspectPlayer(p.fpl_id);
+          }}
+        >
+          {p.web_name ?? `#${p.fpl_id}`}
+        </button>
+      ) : (
+        <div className="truncate text-[8px] font-semibold leading-tight text-foreground sm:text-[10px]">
+          {p.web_name ?? `#${p.fpl_id}`}
+        </div>
+      )}
       {hasStrip && gwStripForDisplay ? (
         <GwStripRow cells={gwStripForDisplay} />
       ) : (
@@ -169,6 +187,25 @@ function PlayerChip({
     interactive && "hover:border-brand-accent/50 hover:bg-black/55 cursor-pointer",
   );
 
+  if (interactive && onClick && onInspectPlayer) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        className={cls}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+      >
+        {inner}
+      </div>
+    );
+  }
+
   if (interactive && onClick) {
     return (
       <button type="button" className={cls} onClick={onClick}>
@@ -192,6 +229,8 @@ function Line({
   nextGwXpByFplId,
   nextGwXpTitle,
   onPickSlot,
+  onInspectPlayer,
+  inspectNameTitle,
 }: {
   players: PlannerPickPayload[];
   captainId: number | null;
@@ -204,6 +243,8 @@ function Line({
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
   onPickSlot?: (slot: number) => void;
+  onInspectPlayer?: (fplId: number) => void;
+  inspectNameTitle?: string;
 }) {
   if (players.length === 0) return null;
   const sorted = sortBySlot(players);
@@ -223,6 +264,8 @@ function Line({
           nextGwXpByFplId={nextGwXpByFplId}
           nextGwXpTitle={nextGwXpTitle}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
+          onInspectPlayer={onInspectPlayer}
+          inspectNameTitle={inspectNameTitle}
         />
       ))}
     </div>
@@ -293,6 +336,9 @@ export type PitchViewProps = {
   gkAtTop?: boolean;
   /** Optional actions (e.g. export) aligned with title row */
   titleAction?: ReactNode;
+  /** Click player name to open FPL performance detail */
+  onInspectPlayer?: (fplId: number) => void;
+  inspectNameTitle?: string;
 };
 
 export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
@@ -315,6 +361,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       nextGwXpTitle,
       gkAtTop = true,
       titleAction,
+      onInspectPlayer,
+      inspectNameTitle,
     },
     ref,
   ) {
@@ -383,6 +431,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                 nextGwXpByFplId={nextGwXpByFplId}
                 nextGwXpTitle={nextGwXpTitle}
                 onPickSlot={onPickSlot}
+                onInspectPlayer={onInspectPlayer}
+                inspectNameTitle={inspectNameTitle}
               />
             ))}
           </div>
@@ -421,6 +471,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                         ? () => onPickSlot(benchGk[0].slot)
                         : undefined
                     }
+                    onInspectPlayer={onInspectPlayer}
+                    inspectNameTitle={inspectNameTitle}
                   />
                 </div>
               ) : null}
@@ -441,6 +493,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     nextGwXpByFplId={nextGwXpByFplId}
                     nextGwXpTitle={nextGwXpTitle}
                     onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
+                    onInspectPlayer={onInspectPlayer}
+                    inspectNameTitle={inspectNameTitle}
                   />
                 </div>
               ))}

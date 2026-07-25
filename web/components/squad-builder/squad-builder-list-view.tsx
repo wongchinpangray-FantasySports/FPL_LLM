@@ -17,6 +17,8 @@ export function SquadBuilderListView({
   xptsGw,
   selectedSlot,
   onSelectSlot,
+  onInspectPlayer,
+  inspectNameTitle,
   labels,
 }: {
   picks: PlannerPickPayload[];
@@ -26,6 +28,8 @@ export function SquadBuilderListView({
   xptsGw: number;
   selectedSlot: number | null;
   onSelectSlot: (slot: number) => void;
+  onInspectPlayer?: (fplId: number) => void;
+  inspectNameTitle?: string;
   labels: {
     colName: string;
     colOwn: string;
@@ -74,7 +78,25 @@ export function SquadBuilderListView({
                         {p.slot}
                       </span>
                       <span className="font-medium text-foreground">
-                        {filled ? p.web_name : labels.emptyPlayer}
+                        {filled ? (
+                          onInspectPlayer ? (
+                            <button
+                              type="button"
+                              title={inspectNameTitle}
+                              className="text-left underline decoration-brand-accent/35 underline-offset-2 hover:text-brand-accent"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onInspectPlayer(p.fpl_id);
+                              }}
+                            >
+                              {p.web_name}
+                            </button>
+                          ) : (
+                            p.web_name
+                          )
+                        ) : (
+                          labels.emptyPlayer
+                        )}
                       </span>
                       {filled ? (
                         <span className="text-xs text-muted-foreground">
