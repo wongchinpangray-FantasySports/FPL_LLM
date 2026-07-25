@@ -32,9 +32,17 @@ jobs:
         working-directory: web
         run: npm ci
 
+      - name: Self-test pre-season scorer logic
+        working-directory: web
+        run: npx tsx scripts/preseason-scorers-self-test.ts
+
       - name: Sync pre-season scores and scorers
         working-directory: web
         run: npx tsx scripts/sync-preseason-results.ts
+
+      - name: Validate pre-season scorer completeness
+        working-directory: web
+        run: npx tsx scripts/validate-preseason-goals.ts
 
       - name: Commit updated pre-season JSON
         run: |

@@ -1,6 +1,8 @@
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
+import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import type { PreseasonMatchRef, PreseasonExternalResult } from "@/lib/fpl/preseason-sources";
 import { externalResultMatchesMatch } from "@/lib/fpl/preseason-sources";
+import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
 
 const ESPN_SEARCH = "https://site.web.api.espn.com/apis/search/v2";
 const HTML_FETCH_HEADERS = {
@@ -54,6 +56,9 @@ function extractAssist(text: string): string | null {
 
 function inferSide(scorer: string, match: PreseasonMatchRef): "pl" | "opp" {
   const s = scorer.toLowerCase();
+  const plFirst = match.pl_name.split(" ")[0]?.toLowerCase() ?? "";
+  if (plFirst && s.includes(plFirst)) return "pl";
+  if (opponentNamesMatch(scorer, match.opponent)) return "opp";
   const opp = match.opponent.toLowerCase();
   if (opp && s.includes(opp.split(" ")[0] ?? "")) return "opp";
   if (/walsall|saddlers|hosts|home side/i.test(scorer)) return "opp";
@@ -64,7 +69,59 @@ function goalKey(goal: PreseasonGoal): string {
   return `${goal.side}:${goal.scorer.toLowerCase()}:${goal.minute}:${goal.assist ?? ""}`;
 }
 
-function fitGoalsToScore(
+export function countPreseasonGoalsBySide(
+  goals: PreseasonGoal[],
+): { pl: number; opp: number } {
+  let pl = 0;
+  let opp = 0;
+  for (const goal of goals) {
+    if (goal.side === "pl") pl += 1;
+    else opp += 1;
+  }
+  return { pl, opp };
+}
+
+/** True when listed scorers match the final score on both sides (0–0 needs no rows). */
+export function preseasonGoalsComplete(
+  match: PreseasonMatchRef & { goals?: PreseasonGoal[] },
+): boolean {
+  if (match.status !== "finished") return true;
+  if (match.pl_goals == null || match.opp_goals == null) return true;
+  const total = match.pl_goals + match.opp_goals;
+  if (total === 0) return true;
+  if (preseasonGoalsHaveInvalidRows(match)) return false;
+
+  const { pl, opp } = countPreseasonGoalsBySide(match.goals ?? []);
+  return pl >= match.pl_goals && opp >= match.opp_goals;
+}
+
+function goalQualityScore(goal: PreseasonGoal): number {
+  return (goal.minute.trim() ? 2 : 0) + (goal.assist ? 1 : 0);
+}
+
+/** Merge goal lists; prefer entries with minutes/assists; cap to the match score. */
+export function mergePreseasonGoalLists(
+  match: PreseasonMatchRef,
+  ...lists: PreseasonGoal[][]
+): PreseasonGoal[] {
+  const ranked = lists
+    .flat()
+    .sort((a, b) => goalQualityScore(b) - goalQualityScore(a));
+
+  const deduped: PreseasonGoal[] = [];
+  const exactCounts = new Map<string, number>();
+  for (const goal of ranked) {
+    const key = goalKey(goal);
+    const count = exactCounts.get(key) ?? 0;
+    if (count >= 2) continue;
+    exactCounts.set(key, count + 1);
+    deduped.push(goal);
+  }
+
+  return fitGoalsToScore(deduped, match);
+}
+
+export function fitGoalsToScore(
   goals: PreseasonGoal[],
   match: PreseasonMatchRef,
 ): PreseasonGoal[] {
@@ -326,9 +383,7 @@ export function needsPreseasonGoalFetch(match: PreseasonMatchRef & {
 }): boolean {
   if (match.status !== "finished") return false;
   if (match.pl_goals == null || match.opp_goals == null) return false;
-  const expected = match.pl_goals + match.opp_goals;
-  const listed = (match.goals ?? []).length;
-  return listed < expected;
+  return !preseasonGoalsComplete(match);
 }
 
 export async function fetchGoalsForFinishedMatch(
@@ -339,18 +394,34 @@ export async function fetchGoalsForFinishedMatch(
     return match.goals ?? [];
   }
 
+  const { preseasonGoalsHaveInvalidRows, isPlausiblePreseasonScorerName } =
+    await import("@/lib/fpl/preseason-report-goals");
+  let best = preseasonGoalsHaveInvalidRows(match)
+    ? (match.goals ?? []).filter((g) =>
+        isPlausiblePreseasonScorerName(g.scorer, match),
+      )
+    : (match.goals ?? []);
+
   if (process.env.API_FOOTBALL_KEY?.trim()) {
     const { resolvePreseasonMatchFromApi } = await import(
       "@/lib/fpl/preseason-enrich"
     );
     const api = await resolvePreseasonMatchFromApi(match);
     if (api?.goals?.length) {
-      return api.goals;
+      best = mergePreseasonGoalLists(match, best, api.goals);
+      if (preseasonGoalsComplete({ ...match, goals: best })) {
+        return best;
+      }
     }
   }
 
+  const { discoverWebMatchReportUrls } = await import(
+    "@/lib/fpl/preseason-report-goals"
+  );
+
   const candidates = [
     ...reportUrls,
+    ...(await discoverWebMatchReportUrls(match)),
     await discoverEspnReportUrl(match),
   ].filter(Boolean) as string[];
 
@@ -360,15 +431,44 @@ export async function fetchGoalsForFinishedMatch(
     seenUrls.add(url);
 
     const html = await fetchHtml(url);
-    if (!html) continue;
+    if (!html) {
+      const { fetchGoalsFromReportUrl } = await import(
+        "@/lib/fpl/preseason-report-goals"
+      );
+      const goals = await fetchGoalsFromReportUrl(url, match);
+      if (goals.length > 0) {
+        best = mergePreseasonGoalLists(match, best, goals);
+        if (preseasonGoalsComplete({ ...match, goals: best })) {
+          return best;
+        }
+      }
+      continue;
+    }
 
-    if (url.includes("espn.com")) {
+    if (url.includes("espn.com/soccer/story")) {
       const goals = parseEspnStoryGoals(html, match);
-      if (goals.length > 0) return goals;
+      if (goals.length > 0) {
+        best = mergePreseasonGoalLists(match, best, goals);
+        if (preseasonGoalsComplete({ ...match, goals: best })) {
+          return best;
+        }
+      }
+      continue;
+    }
+
+    const { parseGenericMatchReportGoals } = await import(
+      "@/lib/fpl/preseason-report-goals"
+    );
+    const goals = parseGenericMatchReportGoals(html, match);
+    if (goals.length > 0) {
+      best = mergePreseasonGoalLists(match, best, goals);
+      if (preseasonGoalsComplete({ ...match, goals: best })) {
+        return best;
+      }
     }
   }
 
-  return match.goals ?? [];
+  return best;
 }
 
 export function findReportUrlsForMatch(

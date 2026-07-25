@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "eval:chat": "node scripts/eval-chat.mjs",
     "backtest:xp": "tsx scripts/backtest-xp-gw.ts",
-    "sync:preseason": "tsx scripts/sync-preseason-results.ts"
+    "sync:preseason": "tsx scripts/sync-preseason-results.ts",
+    "test:preseason-scorers": "tsx scripts/preseason-scorers-self-test.ts",
+    "validate:preseason-goals": "tsx scripts/validate-preseason-goals.ts"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

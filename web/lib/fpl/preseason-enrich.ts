@@ -7,6 +7,7 @@ import {
 import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
+  mergePreseasonGoalLists,
   needsPreseasonGoalFetch,
 } from "@/lib/fpl/preseason-scorers";
 
@@ -195,22 +196,24 @@ function scoresFromFixture(
     : { pl_goals: away, opp_goals: home };
 }
 
-function goalsWithMinutes(goals: PreseasonGoal[]): number {
-  return goals.filter((g) => g.minute.trim().length > 0).length;
-}
-
 function pickGoals(
+  match: PreseasonMatchInput,
   existing: PreseasonGoal[],
   fetched: PreseasonGoal[],
+  plGoals: number,
+  oppGoals: number,
 ): PreseasonGoal[] {
   if (fetched.length === 0) return existing;
-  const existingMinutes = goalsWithMinutes(existing);
-  const fetchedMinutes = goalsWithMinutes(fetched);
-  if (fetchedMinutes > existingMinutes) return fetched;
-  if (fetched.length > existing.length && fetchedMinutes >= existingMinutes) {
-    return fetched;
-  }
-  return existing.length > 0 ? existing : fetched;
+  return mergePreseasonGoalLists(
+    {
+      ...match,
+      pl_goals: plGoals,
+      opp_goals: oppGoals,
+      status: "finished",
+    },
+    existing,
+    fetched,
+  );
 }
 
 async function loadGoalEvents(
@@ -288,11 +291,13 @@ export async function resolvePreseasonMatchFromApi(
         pl_goals = scores.pl_goals;
         opp_goals = scores.opp_goals;
         const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
-        goals = pickGoals(base.goals, fetched);
+        goals = pickGoals(match, base.goals, fetched, scores.pl_goals, scores.opp_goals);
       }
     } else if (status === "finished") {
       const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
-      goals = pickGoals(base.goals, fetched);
+      const plG = pl_goals ?? match.pl_goals ?? 0;
+      const oppG = opp_goals ?? match.opp_goals ?? 0;
+      goals = pickGoals(match, base.goals, fetched, plG, oppG);
     }
 
     return { kickoff_time, goals, status, pl_goals, opp_goals };
@@ -347,13 +352,29 @@ export async function enrichPreseasonMatchesFromSources<
 
     if (api) {
       kickoff_time = api.kickoff_time ?? kickoff_time;
-      if (api.goals.length >= goals.length) {
-        goals = api.goals.length > 0 ? api.goals : goals;
+      if (api.goals.length > 0 && pl_goals != null && opp_goals != null) {
+        goals = mergePreseasonGoalLists(
+          { ...merged, pl_goals, opp_goals, status },
+          goals,
+          api.goals,
+        );
       }
       if (status !== "finished" && api.status === "finished") {
         status = api.status;
         pl_goals = api.pl_goals;
         opp_goals = api.opp_goals;
+        if (api.goals.length > 0) {
+          goals = mergePreseasonGoalLists(
+            {
+              ...merged,
+              pl_goals: api.pl_goals,
+              opp_goals: api.opp_goals,
+              status: api.status,
+            },
+            goals,
+            api.goals,
+          );
+        }
       }
     }
 
@@ -368,13 +389,7 @@ export async function enrichPreseasonMatchesFromSources<
 
     if (needsPreseasonGoalFetch(enriched)) {
       const reportUrls = findReportUrlsForMatch(enriched, external);
-      const fetchedGoals = await fetchGoalsForFinishedMatch(
-        enriched,
-        reportUrls,
-      );
-      if (fetchedGoals.length > goals.length) {
-        goals = fetchedGoals;
-      }
+      goals = await fetchGoalsForFinishedMatch(enriched, reportUrls);
     }
 
     out.push({

@@ -17,7 +17,9 @@ import {
   findReportUrlsForMatch,
   needsPreseasonGoalFetch,
   preseasonGoalsChanged,
+  preseasonGoalsComplete,
 } from "@/lib/fpl/preseason-scorers";
+import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
 
 export type PreseasonSyncResult = {
   path: string;
@@ -60,16 +62,68 @@ async function resolveMatchUpdates(
   }
 
   let goals_updated = false;
-  if (needsPreseasonGoalFetch(next)) {
+  if (needsPreseasonGoalFetch(next) || preseasonGoalsHaveInvalidRows(next)) {
     const reportUrls = findReportUrlsForMatch(next, externalResults);
     const goals = await fetchGoalsForFinishedMatch(next, reportUrls);
-    if (preseasonGoalsChanged(next.goals, goals)) {
+    if (
+      goals.length === 0 &&
+      (next.goals ?? []).length > 0 &&
+      !preseasonGoalsHaveInvalidRows(next)
+    ) {
+      // Keep existing scorers when enrichment finds nothing new.
+    } else if (
+      preseasonGoalsChanged(next.goals, goals) ||
+      (!preseasonGoalsComplete(next) && preseasonGoalsComplete({ ...next, goals })) ||
+      (preseasonGoalsHaveInvalidRows(next) && !preseasonGoalsHaveInvalidRows({ ...next, goals }))
+    ) {
       next = { ...next, goals };
       goals_updated = true;
     }
   }
 
   return { match: next, goals_updated };
+}
+
+function addLondonDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function retryIncompleteGoalDetails(
+  matches: PreseasonMatch[],
+  externalResults: Awaited<ReturnType<typeof fetchAllPreseasonExternalResults>>,
+  today: string,
+): Promise<{ matches: PreseasonMatch[]; goals_updated: number; updated: number }> {
+  const cutoff = addLondonDays(today, -14);
+  let goals_updated = 0;
+  let updated = 0;
+  const nextMatches = [...matches];
+
+  clearPreseasonFixtureCache();
+
+  for (let i = 0; i < nextMatches.length; i += 1) {
+    const current = nextMatches[i];
+    if (current.status !== "finished") continue;
+    if (current.date < cutoff) continue;
+    if (
+      !needsPreseasonGoalFetch(current) &&
+      !preseasonGoalsHaveInvalidRows(current)
+    ) {
+      continue;
+    }
+
+    const before = current;
+    const resolved = await resolveMatchUpdates(before, externalResults);
+    nextMatches[i] = resolved.match;
+
+    if (matchSyncChanged(before, resolved.match)) {
+      updated += 1;
+      if (resolved.goals_updated) goals_updated += 1;
+    }
+  }
+
+  return { matches: nextMatches, goals_updated, updated };
 }
 
 export async function syncPreseasonResultsJson(
@@ -85,7 +139,7 @@ export async function syncPreseasonResultsJson(
   let updated = 0;
   let newly_finished = 0;
   let goals_updated = 0;
-  const matches: PreseasonMatch[] = [];
+  let matches: PreseasonMatch[] = [];
 
   for (const raw of bundle.matches) {
     const before = normalizeMatch(raw);
@@ -103,6 +157,20 @@ export async function syncPreseasonResultsJson(
     }
 
     matches.push(next);
+  }
+
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  const retry = await retryIncompleteGoalDetails(matches, externalResults, today);
+  if (retry.updated > 0) {
+    matches = retry.matches;
+    updated += retry.updated;
+    goals_updated += retry.goals_updated;
   }
 
   const wrote_file = updated > 0;

@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-07-24",
+  "updated_at": "2026-07-25",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -98,7 +98,7 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "",
+          "minute": "15'",
           "scorer": "Babis Kostoulas",
           "assist": null,
           "side": "pl"
@@ -120,6 +120,12 @@
           "scorer": "Georginio Rutter",
           "assist": "Olivier Boscagli",
           "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Dan Harvie",
+          "assist": null,
+          "side": "opp"
         }
       ]
     },
@@ -481,7 +487,32 @@
       "pl_goals": 4,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Ben Gannon-Doak",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Harold William",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Daniel Jebbison",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Bafode Diakite",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "mun-2026-07-24-42",
