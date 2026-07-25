@@ -310,11 +310,19 @@ async function fetchHtml(url: string): Promise<string | null> {
     const res = await fetch(url, {
       headers: HTML_FETCH_HEADERS,
       cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
     });
     if (res.status !== 200) return null;
     const html = await res.text();
-    if (html.length < 10_000 || !html.includes("article-body")) return null;
-    return html;
+    if (html.length < 1500) return null;
+    const lower = url.toLowerCase();
+    if (
+      html.includes("article-body") ||
+      /manutd\.com|skysports\.com|sportsmole\.co\.uk|bbc\.co/.test(lower)
+    ) {
+      return html;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -456,10 +464,10 @@ export async function fetchGoalsForFinishedMatch(
       continue;
     }
 
-    const { parseGenericMatchReportGoals } = await import(
+    const { parseMatchReportGoalsFromUrl } = await import(
       "@/lib/fpl/preseason-report-goals"
     );
-    const goals = parseGenericMatchReportGoals(html, match);
+    const goals = parseMatchReportGoalsFromUrl(html, url, match);
     if (goals.length > 0) {
       best = mergePreseasonGoalLists(match, best, goals);
       if (preseasonGoalsComplete({ ...match, goals: best })) {

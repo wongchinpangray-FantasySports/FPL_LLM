@@ -1,6 +1,10 @@
 /**
  * Lightweight regression checks for pre-season goal completeness helpers.
  */
+import {
+  parseGenericMatchReportGoals,
+  parseManUtdEmbeddedGoals,
+} from "../lib/fpl/preseason-report-goals";
 import type { PreseasonGoal } from "../lib/fpl/preseason-enrich";
 import {
   mergePreseasonGoalLists,
@@ -78,6 +82,36 @@ assert(
   merged.length === 4 &&
     merged.some((g) => g.side === "opp" && g.scorer === "Opp Scorer") &&
     merged.filter((g) => g.side === "pl").every((g) => g.minute.endsWith("'")),
+);
+
+const manUtdHtml =
+  String.raw`{\"event\":\"Goal\",\"clubId\":\"x\",\"minute\":\"31'\",\"playerId\":\"a\",\"sortOrder\":1,\"playerName\":\"Shea Lacey\"}` +
+  String.raw`{\"event\":\"Goal\",\"clubId\":\"x\",\"minute\":\"56'\",\"playerId\":\"b\",\"sortOrder\":2,\"playerName\":\"Joshua Zirkzee\"}`;
+
+const munMatch = {
+  date: "2026-07-24",
+  pl_code: "MUN",
+  pl_name: "Man Utd",
+  opponent: "Rosenborg",
+  pl_home: false,
+  status: "finished" as const,
+  pl_goals: 5,
+  opp_goals: 0,
+};
+
+assert(
+  "man utd embedded goals parse with minutes",
+  parseManUtdEmbeddedGoals(manUtdHtml, munMatch).some(
+    (g) => g.scorer === "Shea Lacey" && g.minute === "31'",
+  ),
+);
+
+assert(
+  "sky timeline extracts minute and scorer",
+  parseGenericMatchReportGoals(
+    "31: GOAL! Lacey gives United the lead. 56: GOAL! Zirkzee produces moment of magic.",
+    munMatch,
+  ).length >= 2,
 );
 
 console.log("Pre-season scorers self-test passed.");

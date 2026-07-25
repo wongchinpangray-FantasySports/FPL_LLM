@@ -527,7 +527,38 @@
       "pl_goals": 5,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "31'",
+          "scorer": "Shea Lacey",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "56'",
+          "scorer": "Joshua Zirkzee",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "63'",
+          "scorer": "Jacob Devaney",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "72'",
+          "scorer": "Harry Amass",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "84'",
+          "scorer": "Ethan Williams",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "avl-2026-07-25-52",
