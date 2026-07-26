@@ -689,9 +689,9 @@
       "pl_home": true,
       "venue": null,
       "note": "Behind closed doors",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": []
     },
