@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-07-25",
+  "updated_at": "2026-07-26",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -614,9 +614,9 @@
       "pl_home": true,
       "venue": "Slovenia",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": []
     },
@@ -629,9 +629,9 @@
       "pl_home": true,
       "venue": "Tampa",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 3,
       "kickoff_time": null,
       "goals": []
     },
@@ -644,9 +644,9 @@
       "pl_home": true,
       "venue": "Nashville",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 4,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": []
     },
@@ -674,9 +674,9 @@
       "pl_home": true,
       "venue": "Nashville",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 4,
       "kickoff_time": null,
       "goals": []
     },
@@ -704,9 +704,9 @@
       "pl_home": false,
       "venue": "Auckland",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": []
     },
