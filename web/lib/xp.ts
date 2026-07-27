@@ -1300,7 +1300,11 @@ export async function projectPlayers(
  * Resolve the current and next relevant gameweeks from the DB.
  * Returns: { current, next, finishedCount }
  */
-export async function resolveCurrentGw(): Promise<{
+let gwCache: { at: number; value: { current: number; next: number } } | null =
+  null;
+const GW_CACHE_MS = 60_000;
+
+async function resolveCurrentGwFromDb(): Promise<{
   current: number;
   next: number;
 }> {
@@ -1318,6 +1322,19 @@ export async function resolveCurrentGw(): Promise<{
   const lastFinished = [...rows].reverse().find((g) => g.finished);
   const c = ((lastFinished?.id as number | undefined) ?? 0) + 1;
   return { current: c, next: c + 1 };
+}
+
+export async function resolveCurrentGw(): Promise<{
+  current: number;
+  next: number;
+}> {
+  const now = Date.now();
+  if (gwCache && now - gwCache.at < GW_CACHE_MS) {
+    return gwCache.value;
+  }
+  const value = await resolveCurrentGwFromDb();
+  gwCache = { at: now, value };
+  return value;
 }
 
 export const XP_SCORING_NOTE =

@@ -2,9 +2,10 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplPreseasonPanel } from "@/components/fpl/fpl-preseason-panel";
 import { PreseasonAutoRefresh } from "@/components/fpl/preseason-auto-refresh";
-import { groupPreseasonByClub, loadPreseasonBundle } from "@/lib/fpl/preseason";
+import { getPreseasonBundle, groupPreseasonByClub } from "@/lib/fpl/preseason";
 
-export const dynamic = "force-dynamic";
+/** Bundled JSON — enriched by CI sync, not at request time. */
+export const revalidate = 300;
 
 type Props = { params: { locale: string } };
 
@@ -14,7 +15,7 @@ export default async function FplPreseasonPage({ params }: Props) {
     locale: params.locale,
     namespace: "fplHub",
   });
-  const bundle = await loadPreseasonBundle();
+  const bundle = getPreseasonBundle();
   const clubs = groupPreseasonByClub(bundle.matches);
 
   return (

@@ -407,6 +407,9 @@ export const NEWS_FEEDS: WcNewsFeedSource[] = [
   ...EXTRA_NEWS_FEEDS,
 ];
 
+/** Live RSS sources — World Cup feeds excluded (EPL/FPL/transfer/leagues only). */
+export const ACTIVE_NEWS_FEEDS: WcNewsFeedSource[] = EXTRA_NEWS_FEEDS;
+
 const FETCH_HEADERS = {
   Accept:
     "application/rss+xml, application/xml, text/xml, application/atom+xml, */*;q=0.8",
@@ -642,7 +645,7 @@ export async function fetchWcNewsItems(opts?: {
   const fplTweetBudget = Math.min(fplTweetItems.length, 45);
   const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget);
 
-  const batches = await mapWithConcurrency(NEWS_FEEDS, async (feed) => {
+  const batches = await mapWithConcurrency(ACTIVE_NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
       if (!xml) return [] as WcNewsItem[];
 

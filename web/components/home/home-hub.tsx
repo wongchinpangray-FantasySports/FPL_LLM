@@ -1279,8 +1279,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const [hubError, setHubError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-
     let cancelled = false;
 
     async function fetchHub(attempt = 0): Promise<void> {
@@ -1311,8 +1309,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when locale or auth settles
-  }, [locale, authLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when locale changes
+  }, [locale]);
 
   const hub = data ?? {
     today: { ticker: [], fpl: { gw: null, deadline: null, open: false } },

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 
 export const H2H_HISTORY_LIMIT = 5;
@@ -219,7 +220,7 @@ function pushVenueMatch(
  * Last {H2H_HISTORY_LIMIT} PL meetings per team+opponent+venue.
  * Key: `{team}:{opp}:H` or `{team}:{opp}:A` (from the selected team's perspective).
  */
-export async function buildH2HHistoryLookup(): Promise<
+async function buildH2HHistoryLookupInner(): Promise<
   Record<string, H2HMatch[]>
 > {
   const teamCodeById = await loadTeamCodeMap();
@@ -254,6 +255,17 @@ export async function buildH2HHistoryLookup(): Promise<
   }
 
   return Object.fromEntries(grouped);
+}
+
+/** Cached — paginates full `player_gw_stats`; avoid recomputing every request. */
+export function buildH2HHistoryLookup(): Promise<
+  Record<string, H2HMatch[]>
+> {
+  return unstable_cache(
+    buildH2HHistoryLookupInner,
+    ["fpl-h2h-history-v1"],
+    { revalidate: 3600 },
+  )();
 }
 
 export function getH2HHistory(

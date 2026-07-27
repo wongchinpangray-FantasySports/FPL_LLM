@@ -1,7 +1,8 @@
-name: World Cup news sync
+name: EPL & FPL news sync
 
 on:
   schedule:
+    # Every 10 minutes — EPL/transfer/FPL X only (World Cup RSS disabled).
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
@@ -62,6 +63,6 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Sync WC news RSS
+      - name: Sync EPL/FPL news RSS
         working-directory: web
         run: npx tsx scripts/sync-wc-news.ts

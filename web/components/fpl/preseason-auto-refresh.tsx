@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 /** Re-fetch server data so same-day friendly results can appear without a manual reload. */
 export function PreseasonAutoRefresh({
-  intervalMs = 3 * 60 * 1000,
+  intervalMs = 10 * 60 * 1000,
 }: {
   intervalMs?: number;
 }) {

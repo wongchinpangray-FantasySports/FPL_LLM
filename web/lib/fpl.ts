@@ -43,6 +43,8 @@ function fplHeaders(): Record<string, string> {
   return base;
 }
 
+const FPL_FETCH_TIMEOUT_MS = 10_000;
+
 export async function fplGet<T = unknown>(
   path: string,
   opts?: { cacheBust?: boolean },
@@ -55,6 +57,7 @@ export async function fplGet<T = unknown>(
   const res = await fetch(url, {
     headers: fplHeaders(),
     cache: "no-store",
+    signal: AbortSignal.timeout(FPL_FETCH_TIMEOUT_MS),
   });
   if (!res.ok) {
     throw new Error(`FPL ${path} -> ${res.status}`);
@@ -112,6 +115,7 @@ export async function fplGetSession<T = unknown>(
     const res = await fetch(url, {
       headers: { ...fplHeaders(), Cookie: cookie },
       cache: "no-store",
+      signal: AbortSignal.timeout(FPL_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;

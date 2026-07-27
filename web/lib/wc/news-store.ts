@@ -25,6 +25,10 @@ function normalizeItem(raw: WcNewsItem): WcNewsItem {
   };
 }
 
+function withoutWorldCupNews(items: WcNewsItem[]): WcNewsItem[] {
+  return items.filter((i) => i.category !== "worldcup");
+}
+
 function filterItems(
   items: WcNewsItem[],
   opts: {
@@ -33,7 +37,9 @@ function filterItems(
     category?: NewsCategory | "ALL";
   },
 ): WcNewsItem[] {
-  let out = items.map(normalizeItem);
+  if (opts.category === "worldcup") return [];
+
+  let out = withoutWorldCupNews(items.map(normalizeItem));
   if (opts.category && opts.category !== "ALL") {
     if (opts.category === "trending") {
       out = [...out].sort((a, b) => {
@@ -91,11 +97,13 @@ export async function syncWcNews(): Promise<{
 }> {
   const existing = await loadWcNewsFromDb();
   const cachedFplX = existing.items.filter((item) => item.feed_id === "fpl-x");
-  const items = await fetchWcNewsItems({
-    limit: 150,
-    editorialOnly: false,
-    cachedFplXItems: cachedFplX,
-  });
+  const items = withoutWorldCupNews(
+    await fetchWcNewsItems({
+      limit: 150,
+      editorialOnly: false,
+      cachedFplXItems: cachedFplX,
+    }),
+  );
   const fetched_at = await saveWcNewsToDb(items);
   memCache = { at: Date.now(), items, fetched_at };
   const fplItems = items.filter((i) => i.feed_id === "fpl-x");
@@ -172,7 +180,9 @@ export async function getWcNewsForApi(opts?: {
   let source: "live" | "database" = "live";
 
   try {
-    items = await fetchWcNewsItems({ limit: 150, editorialOnly: false });
+    items = withoutWorldCupNews(
+      await fetchWcNewsItems({ limit: 150, editorialOnly: false }),
+    );
     if (items.length > 0) {
       fetched_at = await saveWcNewsToDb(items);
     }
