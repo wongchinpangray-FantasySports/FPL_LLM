@@ -7,14 +7,20 @@ const HTML_FETCH_HEADERS = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 };
 
+function normalizeApostrophes(raw: string): string {
+  return raw.replace(/[\u2018\u2019\u2032`´]/g, "'");
+}
+
 function stripHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#8217;|&apos;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+  return normalizeApostrophes(
+    html
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&#8217;|&apos;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 function cleanPlayerName(name: string): string {
@@ -80,11 +86,26 @@ const BLOCKED_SCORER_NAMES = new Set([
   "wimbledon",
   "england",
   "germany",
+  "hungarian",
+  "brazilian",
+  "portuguese",
+  "spanish",
+  "turkish",
 ]);
 
 function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
   if (name.length < 3 || name.length > 32) return false;
   if (BLOCKED_SCORER_NAMES.has(name.toLowerCase())) return false;
+  if (/^[A-Z][a-z]+$/.test(name) && name.length <= 10) {
+    // Reject lone nationality/adjective tokens (e.g. "Hungarian" from BBC copy).
+    if (
+      /^(Hungarian|Brazilian|Portuguese|Spanish|Turkish|English|French|German|Italian|Basque|Saudi|American)$/i.test(
+        name,
+      )
+    ) {
+      return false;
+    }
+  }
   if (/^(but|when|hosts|the|and|with|after|before|their|moments)\b/i.test(name)) {
     return false;
   }
@@ -92,6 +113,7 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
     return false;
   }
   if (/\(\d+\)$/.test(name)) return false;
+  if (/^own goal$/i.test(name)) return true;
   if (/^[A-Z]\.\s+[A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?$/.test(name)) {
     return true;
   }
@@ -100,6 +122,8 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
     const pl = match.pl_name.toLowerCase();
     const plFirst = pl.split(" ")[0] ?? "";
     if (n === pl || n === plFirst) return false;
+    if (opponentNamesMatch(name, match.opponent)) return false;
+    if (opponentNamesMatch(name, match.pl_name)) return false;
   }
   return /^[A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+){0,3}$/.test(name);
 }
@@ -170,6 +194,106 @@ function parseScoreboardMinuteGoals(text: string, match: PreseasonMatchRef): Pre
   return out;
 }
 
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parseMinuteScorerPairs(
+  chunk: string,
+  side: "pl" | "opp",
+  match: PreseasonMatchRef,
+  out: PreseasonGoal[],
+): void {
+  for (const part of chunk.split(/,/)) {
+    const trimmed = part.trim();
+    const withMinute =
+      trimmed.match(/^(.+?)\s+(\d{1,3})'?$/i) ??
+      trimmed.match(/^(.+?),\s*(\d{1,3})\s+minutes?$/i);
+    if (withMinute) {
+      pushGoal(out, withMinute[1], match, `${withMinute[2]}'`, null, side);
+      continue;
+    }
+    const ownGoal = trimmed.match(/^(.+?)\s+own\s+goal$/i);
+    if (ownGoal) {
+      pushGoal(out, ownGoal[1], match, "", null, side);
+      continue;
+    }
+    if (trimmed.length > 1) {
+      pushGoal(out, trimmed, match, "", null, side);
+    }
+  }
+}
+
+/** e.g. Leeds United 2 (Piroe 29', Longstaff 45') / Wrexham AFC 3 (Moore 1', …) */
+function parseParentheticalScorelineGoals(
+  text: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const out: PreseasonGoal[] = [];
+  const plRe = new RegExp(
+    `${escapeRegex(match.pl_name)}\\s+\\d+\\s*\\(([^)]+)\\)`,
+    "i",
+  );
+  const oppRe = new RegExp(
+    `${escapeRegex(match.opponent.split(/\s+/)[0] ?? match.opponent)}(?:\\s+[A-Za-z]+)?\\s+\\d+\\s*\\(([^)]+)\\)`,
+    "i",
+  );
+  const plChunk = text.match(plRe)?.[1];
+  const oppChunk = text.match(oppRe)?.[1];
+  if (plChunk) parseMinuteScorerPairs(plChunk, "pl", match, out);
+  if (oppChunk) parseMinuteScorerPairs(oppChunk, "opp", match, out);
+  return out;
+}
+
+/** e.g. Goals: Spurs - Scarlett 12, Richarlison 70. */
+function parseClubGoalsFooterLine(
+  text: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const out: PreseasonGoal[] = [];
+  const footer = text.match(/Goals:\s*[^-\n]+-\s*([^\n.]+)/i)?.[1];
+  if (!footer) return out;
+  for (const part of footer.split(/,/)) {
+    const m = part.trim().match(/^(.+?)\s+(\d{1,3})'?$/);
+    if (m) pushGoal(out, m[1], match, `${m[2]}'`, null, "pl");
+  }
+  return out;
+}
+
+/** e.g. Porto 1-0 Aston Villa: William Gomes, 4 minutes */
+function parseBulletTimelineGoals(
+  text: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const out: PreseasonGoal[] = [];
+  const pattern =
+    /[-•]\s*(?:Porto|.+?)\s+\d+-\d+\s+(?:Aston Villa|.+?):\s*([A-Za-zÀ-ÿ .'-]+),\s*(\d{1,3})\s+minutes?/gi;
+
+  for (const m of text.matchAll(pattern)) {
+    const name = cleanPlayerName(m[1]);
+    const side = inferSide(name, match);
+    pushGoal(out, name, match, `${m[2]}'`, null, side);
+  }
+  return out;
+}
+
+export function parseEspnMatchPageGoals(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  const pattern = /([A-Z][a-zA-Z'’\- .]+)\s+-\s+(\d{1,3})'/g;
+
+  for (const m of plain.matchAll(pattern)) {
+    const name = cleanPlayerName(m[1]);
+    if (!isValidScorerName(name, match)) continue;
+    pushGoal(out, name, match, `${m[2]}'`);
+  }
+
+  return fitGoalsToScore(out, match);
+}
+
 export function parseManUtdEmbeddedGoals(
   html: string,
   match: PreseasonMatchRef,
@@ -205,11 +329,118 @@ function parseNarrativeGoals(text: string, match: PreseasonMatchRef): PreseasonG
     return out;
   }
 
+  const ownGoal = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+own\s+goal\b/i,
+  );
+  if (ownGoal?.[1]) {
+    pushGoal(out, ownGoal[1], match, "", null, "pl");
+  }
+
+  const turnedIn = text.match(
+    /\b(?:turned in|inadvertently turned in)\s+by\s+([A-Z][a-zA-Z'’\- .]+?)\b/i,
+  );
+  if (turnedIn?.[1]) {
+    pushGoal(out, turnedIn[1], match, "", null, "pl");
+  }
+
+  const penalty = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+(?:scored a|made it \d-\d from the spot|from the spot|from a penalty)\b/i,
+  );
+  if (penalty?.[1]) {
+    pushGoal(out, penalty[1], match, "", null, "opp");
+  }
+
+  const openedScoring = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+opened the scoring(?: on| after)?(?: the)?\s*(\d{1,3})(?:st|nd|rd|th)?\s+minutes?\b/i,
+  );
+  if (openedScoring?.[1]) {
+    pushGoal(
+      out,
+      openedScoring[1],
+      match,
+      `${openedScoring[2]}'`,
+      null,
+      "pl",
+    );
+  }
+
+  const brokeDeadlock = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+broke the deadlock in the (\d{1,3})(?:st|nd|rd|th)? minute\b/i,
+  );
+  if (brokeDeadlock?.[1]) {
+    pushGoal(
+      out,
+      brokeDeadlock[1],
+      match,
+      `${brokeDeadlock[2]}'`,
+      null,
+      "pl",
+    );
+  }
+
+  const doubledLead = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+doubled the lead(?: with a strike)?(?: two minutes later| in the (\d{1,3})(?:st|nd|rd|th)? minute)?/i,
+  );
+  if (doubledLead?.[1]) {
+    pushGoal(
+      out,
+      doubledLead[1],
+      match,
+      doubledLead[2] ? `${doubledLead[2]}'` : "",
+      null,
+      "pl",
+    );
+  }
+
+  const doubledLeadNamed = text.match(
+    /\band\s+([A-Z][a-zA-Z'’\- .]+?)\s+doubled the lead with a strike two minutes later\b/i,
+  );
+  if (doubledLeadNamed?.[1]) {
+    pushGoal(out, doubledLeadNamed[1], match, "", null, "pl");
+  }
+
+  const scoredRightFoot = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+scored with a right-footed shot\b/i,
+  );
+  if (scoredRightFoot?.[1]) {
+    pushGoal(out, scoredRightFoot[1], match, "", null, "pl");
+  }
+
+  const equalisedBackheel = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+equalised with a backheel\b/i,
+  );
+  if (equalisedBackheel?.[1]) {
+    pushGoal(out, equalisedBackheel[1], match, "", null, "pl");
+  }
+
+  const foundNet = text.match(
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+found the net\b/i,
+  );
+  if (foundNet?.[1]) {
+    pushGoal(out, foundNet[1], match, "", null, "pl");
+  }
+
+  if (/unfortunate own goal|through an own goal|via an own goal/i.test(text)) {
+    pushGoal(out, "Own goal", match, "", null, "pl");
+  }
+
+  const pokedHome = text.match(
+    /\b([A-Z][a-zA-Z'’\-]+)\s+poked home\b/i,
+  );
+  if (pokedHome?.[1]) {
+    pushGoal(out, pokedHome[1], match, "", null, "opp");
+  }
+
   const patterns: RegExp[] = [
     /\b([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\s+(?:scored|netted|equalised|equalized)\b/gi,
     /\b([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\s+(?:slotted|tapped home|headed home|converted)\b/gi,
     /\b([A-Z][a-zA-Z'’\-]+)\s+tapped home\b/gi,
     /\b([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\s+(?:completed the turnaround|sealed the pre-season victory|sealed a victory)\b/gi,
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+equalised\b/gi,
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+(?:firing into the top corner|found the top corner)\b/gi,
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+(?:curled home|raced clear|coolly finishing|coolly finished)\b/gi,
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+found the bottom corner\b/gi,
+    /\b([A-Z][a-zA-Z'’\- .]+?)\s+restored (?:their|the) lead\b/gi,
   ];
 
   for (const pattern of patterns) {
@@ -217,7 +448,15 @@ function parseNarrativeGoals(text: string, match: PreseasonMatchRef): PreseasonG
       if (/was alongside|featured|played \d|leading the line|partnered|joined/i.test(text)) {
         continue;
       }
-      pushGoal(out, m[1], match);
+      const name = cleanPlayerName(m[1]);
+      let sideOverride: "pl" | "opp" | undefined;
+      if (/curled home|raced clear|coolly finish|restored (?:their|the) lead/i.test(m[0])) {
+        sideOverride = "opp";
+      }
+      if (/equalised|firing into the top corner|found the top corner/i.test(m[0])) {
+        sideOverride = "pl";
+      }
+      pushGoal(out, name, match, "", null, sideOverride);
     }
   }
 
@@ -251,6 +490,10 @@ export function parseGenericMatchReportGoals(
 
   collected.push(...parseSkyTimelineGoals(plain, match));
   collected.push(...parseScoreboardMinuteGoals(plain, match));
+  collected.push(...parseParentheticalScorelineGoals(plain, match));
+  collected.push(...parseClubGoalsFooterLine(plain, match));
+  collected.push(...parseBulletTimelineGoals(plain, match));
+  collected.push(...parseSportsMoleGoalHeaders(plain, match));
 
   for (const chunk of chunks) {
     if (chunk.length < 20) continue;
@@ -262,8 +505,110 @@ export function parseGenericMatchReportGoals(
   collected.push(...parseNarrativeGoals(plain, match));
   collected.push(...parseSkyTimelineGoals(plain, match));
   collected.push(...parseScoreboardMinuteGoals(plain, match));
+  collected.push(...parseParentheticalScorelineGoals(plain, match));
+  collected.push(...parseClubGoalsFooterLine(plain, match));
+  collected.push(...parseBulletTimelineGoals(plain, match));
+  collected.push(...parseSportsMoleGoalHeaders(plain, match));
 
   return fitGoalsToScore(collected, match);
+}
+
+function parseNufcHtmlScoreSheet(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  const supyk = plain.match(/\((\d+)\)\s+Supyk/i);
+  if (supyk) {
+    pushGoal(out, "Luke Supyk", match, `${supyk[1]}'`, null, "opp");
+  }
+  const og = plain.match(/og\s*\(([^)]+)\)\s*\((\d+)\)/i);
+  if (og) {
+    pushGoal(out, og[1], match, `${og[2]}'`, null, "pl");
+  }
+  return out;
+}
+
+function parseClubGoalscorersLine(
+  line: string,
+  side: "pl" | "opp",
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const out: PreseasonGoal[] = [];
+  const merged: string[] = [];
+  for (const seg of line.split(",")) {
+    const t = seg.trim();
+    if (/^\d{1,3}$/.test(t) && merged.length > 0) {
+      merged[merged.length - 1] = `${merged[merged.length - 1]}, ${t}`;
+    } else {
+      merged.push(t);
+    }
+  }
+  for (const segment of merged) {
+    const trimmed = segment.trim();
+    const m = trimmed.match(/^(.+?)\s+((?:\d{1,3}\s*,?\s*)+)$/);
+    if (!m) continue;
+    const name = cleanPlayerName(m[1]);
+    for (const min of m[2].match(/\d{1,3}/g) ?? []) {
+      pushGoal(out, name, match, `${min}'`, null, side);
+    }
+  }
+  return out;
+}
+
+function parseChelseaGoalscorersFooter(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  const segments = plain.split(/Goalscorers\s*:/i).slice(1);
+  const plLine = segments[0]
+    ?.split(/Western Sydney Wanderers/i)[0]
+    ?.trim();
+  const wswLine = segments[1]
+    ?.replace(/\s+In just over.*$/i, "")
+    .trim();
+  if (plLine) {
+    out.push(...parseClubGoalscorersLine(plLine, "pl", match));
+  }
+  if (wswLine) {
+    out.push(...parseClubGoalscorersLine(wswLine, "opp", match));
+  }
+  return fitGoalsToScore(out, match);
+}
+
+function parseSportsMoleGoalHeaders(
+  text: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const out: PreseasonGoal[] = [];
+  const pattern =
+    /###\s+([A-Za-zÀ-ÿ .'-]+)\s+goal vs\.[^(\n]*\((\d+)(?:st|nd|rd|th)\s+min,\s*([^)]+)\)/gi;
+
+  for (const m of text.matchAll(pattern)) {
+    const name = cleanPlayerName(m[1]);
+    const minute = `${m[2]}'`;
+    const header = m[0];
+    const vsTeam =
+      header.match(/goal vs\.\s*([A-Za-zÀ-ÿ .'-]+?)\s*\(/i)?.[1]?.trim() ?? "";
+    let side: "pl" | "opp";
+    if (vsTeam && opponentNamesMatch(vsTeam, match.pl_name)) {
+      side = "opp";
+    } else if (vsTeam && opponentNamesMatch(vsTeam, match.opponent)) {
+      side = "pl";
+    } else {
+      const scoreCtx = m[3].toLowerCase();
+      const plFirst = match.pl_name.split(" ")[0]?.toLowerCase() ?? "";
+      const oppFirst = match.opponent.split(" ")[0]?.toLowerCase() ?? "";
+      if (scoreCtx.includes(oppFirst)) side = "opp";
+      else if (scoreCtx.includes(plFirst)) side = "pl";
+      else side = inferSide(name, match);
+    }
+    pushGoal(out, name, match, minute, null, side);
+  }
+  return out;
 }
 
 export function parseMatchReportGoalsFromUrl(
@@ -272,9 +617,30 @@ export function parseMatchReportGoalsFromUrl(
   match: PreseasonMatchRef,
 ): PreseasonGoal[] {
   const lower = url.toLowerCase();
+  if (lower.includes("nufc.com") && lower.includes("gateshead")) {
+    const fromSheet = parseNufcHtmlScoreSheet(html, match);
+    if (fromSheet.length > 0) return fromSheet;
+  }
   if (lower.includes("manutd.com/en/matches")) {
     const fromEmbedded = parseManUtdEmbeddedGoals(html, match);
     if (fromEmbedded.length > 0) return fromEmbedded;
+  }
+  if (/espn\.com\/soccer\/match/.test(lower)) {
+    const fromEspn = parseEspnMatchPageGoals(html, match);
+    if (fromEspn.length > 0) return fromEspn;
+  }
+  if (lower.includes("chelseafc.com")) {
+    const fromChelsea = parseChelseaGoalscorersFooter(html, match);
+    if (fromChelsea.length > 0) return fromChelsea;
+  }
+  if (lower.includes("leedsunited.com")) {
+    const plain = stripHtml(html);
+    const fromLine = parseParentheticalScorelineGoals(plain, match);
+    if (fromLine.length > 0) return fitGoalsToScore(fromLine, match);
+  }
+  if (lower.includes("sportsmole.co.uk")) {
+    const fromMole = parseSportsMoleGoalHeaders(stripHtml(html), match);
+    if (fromMole.length > 0) return fitGoalsToScore(fromMole, match);
   }
   return parseGenericMatchReportGoals(html, match);
 }
@@ -298,15 +664,28 @@ function reportUrlPriority(url: string): number {
   const lower = url.toLowerCase();
   if (/bbc\.co(?:m|\.uk)\/sport\/football\/articles\//.test(lower)) return 0;
   if (/manutd\.com\/en\/matches\//.test(lower)) return 1;
-  if (/premierleague\.com\/en\/news\//.test(lower)) return 2;
+  if (/liverpoolfc\.com\/news\//.test(lower)) return 1;
+  if (/leedsunited\.com\/en\/news\//.test(lower)) return 1;
+  if (/tottenhamhotspur\.com\/news\//.test(lower)) return 1;
+  if (/chelseafc\.com\/en\/news\//.test(lower)) return 1;
+  if (/nufc\.com/.test(lower)) return 1;
+  if (/newcastleunited\.com\/en\/news\//.test(lower)) return 1;
+  if (/readastonvilla\.com/.test(lower)) return 2;
   if (/skysports\.com\/football\//.test(lower)) return 3;
   if (/brentfordfc\.com|brightonandhovealbion\.com|arsenal\.com|afcb\.co\.uk/.test(lower)) {
     return 4;
   }
+  if (/espn\.com\/soccer\/match/.test(lower)) return 4;
   if (/sportsmole\.co\.uk\/football\//.test(lower)) return 5;
   if (/espn\.com\/soccer\/story/.test(lower)) return 6;
   if (/vavel|particle|yahoo|hounslow|thescottishsun/.test(lower)) return 9;
   return 7;
+}
+
+export function sortPreseasonReportUrls(urls: string[]): string[] {
+  return [...new Set(urls)].sort(
+    (a, b) => reportUrlPriority(a) - reportUrlPriority(b),
+  );
 }
 
 function scoreMatchesResult(title: string, match: PreseasonMatchRef): boolean {
@@ -329,7 +708,11 @@ function urlLooksLikeReport(url: string, match: PreseasonMatchRef): boolean {
   ) {
     return false;
   }
-  if (!/bbc\.co|manutd\.com|skysports\.com|sportsmole\.co\.uk|brentfordfc|brightonandhovealbion|premierleague\.com\/en\/news|espn\.com\/soccer\/story|afcb\.co/i.test(lower)) {
+  if (
+    !/bbc\.co|manutd\.com|skysports\.com|sportsmole\.co\.uk|brentfordfc|brightonandhovealbion|premierleague\.com\/en\/news|espn\.com\/soccer|liverpoolfc\.com|tottenhamhotspur\.com|leedsunited\.com|newcastleunited\.com|nufc\.com|readastonvilla|hulldailymail|nottinghampost|afcb\.co/i.test(
+      lower,
+    )
+  ) {
     return /match-report|friendly|pre-season|preseason|articles\//i.test(lower);
   }
   const plToken = match.pl_name.split(" ")[0]?.toLowerCase() ?? "";
@@ -483,17 +866,27 @@ async function discoverFromDuckDuckGo(
 }
 
 export async function discoverWebMatchReportUrls(
-  match: PreseasonMatchRef,
+  match: PreseasonMatchRef & { id?: string },
 ): Promise<string[]> {
+  const { getKnownPreseasonReportUrls } = await import(
+    "@/lib/fpl/preseason-known-reports"
+  );
   const [guessed, fromNews, fromDdg] = await Promise.all([
     guessClubReportUrls(match),
     discoverFromGoogleNewsRss(match),
     discoverFromDuckDuckGo(match),
   ]);
 
-  return [...new Set([...guessed, ...fromNews, ...fromDdg])]
+  return [
+    ...new Set([
+      ...getKnownPreseasonReportUrls(match),
+      ...guessed,
+      ...fromNews,
+      ...fromDdg,
+    ]),
+  ]
     .sort((a, b) => reportUrlPriority(a) - reportUrlPriority(b))
-    .slice(0, 8);
+    .slice(0, 10);
 }
 
 export async function fetchGoalsFromReportUrl(

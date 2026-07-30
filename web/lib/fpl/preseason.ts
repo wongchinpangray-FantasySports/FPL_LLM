@@ -1,7 +1,7 @@
 import preseasonData from "@/data/epl-preseason-2627.json";
 import { getEpl2627Season } from "@/lib/fpl/epl-2627";
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
-import { loadPreseasonBundleWithSources } from "@/lib/fpl/preseason-enrich";
+import { enrichPreseasonMatchesFromSources } from "@/lib/fpl/preseason-enrich";
 import { needsPreseasonGoalFetch } from "@/lib/fpl/preseason-scorers";
 
 export type { PreseasonGoal };
@@ -76,33 +76,16 @@ function addLondonDays(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function matchNeedsRuntimeEnrichment(
-  match: PreseasonMatch,
-  today: string,
-): boolean {
-  if (match.status === "finished") {
-    return needsPreseasonGoalFetch(match);
-  }
-  // Include today — same-day friendlies were previously skipped until tomorrow.
-  if (match.date <= today) return true;
-  // Fill kickoff times for near-term upcoming friendlies still marked TBD.
-  if (!match.kickoff_time && match.date <= addLondonDays(today, 14)) {
-    return true;
-  }
-  return false;
-}
-
+/** Enrich only finished matches still missing scorer rows (not kickoff/score sync). */
 export async function loadPreseasonBundle(): Promise<PreseasonBundle> {
   const base = getPreseasonBundle();
-  const today = londonTodayIso();
-  const stale = base.matches.filter((m) => matchNeedsRuntimeEnrichment(m, today));
+  const stale = base.matches.filter(
+    (m) => m.status === "finished" && needsPreseasonGoalFetch(m),
+  );
   if (stale.length === 0) return base;
 
-  const enriched = await loadPreseasonBundleWithSources({
-    ...base,
-    matches: stale,
-  });
-  const byId = new Map(enriched.matches.map((m) => [m.id, m]));
+  const enriched = await enrichPreseasonMatchesFromSources(stale);
+  const byId = new Map(enriched.map((m) => [m.id, m as PreseasonMatch]));
   return {
     ...base,
     matches: base.matches.map((m) => byId.get(m.id) ?? m),

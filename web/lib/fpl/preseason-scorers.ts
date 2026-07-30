@@ -3,6 +3,7 @@ import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import type { PreseasonMatchRef, PreseasonExternalResult } from "@/lib/fpl/preseason-sources";
 import { externalResultMatchesMatch } from "@/lib/fpl/preseason-sources";
 import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
+import { getKnownPreseasonReportUrls } from "@/lib/fpl/preseason-known-reports";
 
 const ESPN_SEARCH = "https://site.web.api.espn.com/apis/search/v2";
 const HTML_FETCH_HEADERS = {
@@ -314,15 +315,7 @@ async function fetchHtml(url: string): Promise<string | null> {
     });
     if (res.status !== 200) return null;
     const html = await res.text();
-    if (html.length < 1500) return null;
-    const lower = url.toLowerCase();
-    if (
-      html.includes("article-body") ||
-      /manutd\.com|skysports\.com|sportsmole\.co\.uk|bbc\.co/.test(lower)
-    ) {
-      return html;
-    }
-    return null;
+    return html.length >= 1500 ? html : null;
   } catch {
     return null;
   }
@@ -395,8 +388,9 @@ export function needsPreseasonGoalFetch(match: PreseasonMatchRef & {
 }
 
 export async function fetchGoalsForFinishedMatch(
-  match: PreseasonMatchRef & { goals?: PreseasonGoal[] },
+  match: PreseasonMatchRef & { id?: string; goals?: PreseasonGoal[] },
   reportUrls: string[] = [],
+  opts?: { skipDiscovery?: boolean },
 ): Promise<PreseasonGoal[]> {
   if (!needsPreseasonGoalFetch(match)) {
     return match.goals ?? [];
@@ -423,15 +417,19 @@ export async function fetchGoalsForFinishedMatch(
     }
   }
 
-  const { discoverWebMatchReportUrls } = await import(
+  const { discoverWebMatchReportUrls, sortPreseasonReportUrls } = await import(
     "@/lib/fpl/preseason-report-goals"
   );
 
-  const candidates = [
+  const espnStory = opts?.skipDiscovery ? null : await discoverEspnReportUrl(match);
+  const discovered = opts?.skipDiscovery
+    ? []
+    : await discoverWebMatchReportUrls(match);
+  const candidates = sortPreseasonReportUrls([
     ...reportUrls,
-    ...(await discoverWebMatchReportUrls(match)),
-    await discoverEspnReportUrl(match),
-  ].filter(Boolean) as string[];
+    ...discovered,
+    ...(espnStory ? [espnStory] : []),
+  ]).slice(0, 6);
 
   const seenUrls = new Set<string>();
   for (const url of candidates) {
@@ -453,7 +451,7 @@ export async function fetchGoalsForFinishedMatch(
       continue;
     }
 
-    if (url.includes("espn.com/soccer/story")) {
+    if (/espn\.(com|co\.uk)\/(soccer|football)\/story/.test(url)) {
       const goals = parseEspnStoryGoals(html, match);
       if (goals.length > 0) {
         best = mergePreseasonGoalLists(match, best, goals);
@@ -480,10 +478,10 @@ export async function fetchGoalsForFinishedMatch(
 }
 
 export function findReportUrlsForMatch(
-  match: PreseasonMatchRef,
+  match: PreseasonMatchRef & { id?: string },
   externalResults: PreseasonExternalResult[],
 ): string[] {
-  const urls: string[] = [];
+  const urls: string[] = [...getKnownPreseasonReportUrls(match)];
   for (const result of externalResults) {
     if (!result.reportUrl) continue;
     if (externalResultMatchesMatch(result, match)) {
