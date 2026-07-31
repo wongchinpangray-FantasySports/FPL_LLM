@@ -73,6 +73,15 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://www.tottenhamhotspur.com/news/1080569/sydney-fc-1-1-spurs-spurs-win-4-2-on-penalties-roberto-de-zerbis-verdict",
     "https://sydneyfc.com/news/sydney-fc-hold-spurs-1-1-but-lose-shootout/",
   ],
+  "bou-2026-07-24-58": [
+    "https://www.bbc.com/sport/football/articles/crrvd719xkwo",
+    "https://www.bbc.co.uk/sport/football/articles/crrvd719xkwo",
+  ],
+  "bou-2026-07-30-59": [
+    "https://www.bbc.com/sport/football/articles/ce85z509qpno",
+    "https://www.bbc.co.uk/sport/football/articles/ce85z509qpno",
+    "https://www.fcaugsburg.de/en/article/fca-beaten-5-2-by-bournemouth-in-eventful-friendly-23298",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

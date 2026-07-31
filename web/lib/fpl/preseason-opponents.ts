@@ -12,6 +12,7 @@ export const OPPONENT_ALIASES: Record<string, string[]> = {
   darlington: ["darlington fc"],
   rosenborg: ["rosenborg bk"],
   "st pauli": ["fc st pauli", "st. pauli"],
+  augsburg: ["fc augsburg"],
   annecy: ["fc annecy"],
   porto: ["fc porto"],
   shrewsbury: ["shrewsbury town"],

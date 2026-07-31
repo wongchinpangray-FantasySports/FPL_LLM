@@ -1,6 +1,6 @@
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
 import { guessClubReportUrls, slugifyTeam } from "@/lib/fpl/preseason-club-report-urls";
-import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
+import { opponentNameVariants, opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import type { PreseasonMatchRef } from "@/lib/fpl/preseason-sources";
 
 const HTML_FETCH_HEADERS = {
@@ -144,6 +144,70 @@ function pushGoal(
     scorer: name,
     assist,
     side: sideOverride ?? inferSide(name, match),
+  });
+}
+
+/** Reject match reports that describe a different fixture (e.g. shared club URL). */
+export function reportHtmlMatchesFixture(
+  html: string,
+  match: PreseasonMatchRef,
+): boolean {
+  const paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((m) => stripHtml(m[1]))
+    .filter((p) => p.length > 40);
+  const narrative =
+    paragraphs.slice(0, 10).join(" ") || stripHtml(html).slice(0, 12_000);
+  const plain = narrative.length > 200 ? narrative : stripHtml(html).slice(0, 12_000);
+
+  const victoryOver = plain.match(
+    /(\d+)\s*[-–]\s*(\d+)\s+victory over (?:the )?(?:(?:German side|Bundesliga opponents?) )?(.+?)\s+in\s+/i,
+  );
+  if (victoryOver) {
+    const a = Number(victoryOver[1]);
+    const b = Number(victoryOver[2]);
+    const oppPhrase = victoryOver[3].trim();
+    if (match.pl_goals != null && match.opp_goals != null) {
+      const scoreOk =
+        (a === match.pl_goals && b === match.opp_goals) ||
+        (a === match.opp_goals && b === match.pl_goals);
+      if (!scoreOk) return false;
+    }
+    return opponentNamesMatch(oppPhrase, match.opponent);
+  }
+
+  const emphatic = plain.match(
+    /(\d+)\s*[-–]\s*(\d+)\s+(?:victory|win|defeat|friendly)(?:\s+over|\s+against)?\s+([A-Za-z0-9 .'-]+?)(?:\s+in|\s+on|\.|,)/i,
+  );
+  if (emphatic) {
+    const a = Number(emphatic[1]);
+    const b = Number(emphatic[2]);
+    const oppPhrase = emphatic[3].trim();
+    if (match.pl_goals != null && match.opp_goals != null) {
+      const scoreOk =
+        (a === match.pl_goals && b === match.opp_goals) ||
+        (a === match.opp_goals && b === match.pl_goals);
+      if (!scoreOk) return false;
+    }
+    if (opponentNamesMatch(oppPhrase, match.opponent)) return true;
+  }
+
+  const lower = plain.toLowerCase();
+  const oppMentioned = opponentNameVariants(match.opponent).some(
+    (v) => v.length >= 4 && lower.includes(v),
+  );
+  if (!oppMentioned) return false;
+
+  if (match.pl_goals == null || match.opp_goals == null) return true;
+
+  const scores = [...plain.matchAll(/(\d+)\s*[-–]\s*(\d+)/g)];
+  if (scores.length === 0) return true;
+  return scores.some((m) => {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    return (
+      (a === match.pl_goals && b === match.opp_goals) ||
+      (a === match.opp_goals && b === match.pl_goals)
+    );
   });
 }
 
@@ -683,6 +747,8 @@ export function parseMatchReportGoalsFromUrl(
   url: string,
   match: PreseasonMatchRef,
 ): PreseasonGoal[] {
+  if (!reportHtmlMatchesFixture(html, match)) return [];
+
   const lower = url.toLowerCase();
   if (lower.includes("nufc.com") && lower.includes("gateshead")) {
     const fromSheet = parseNufcHtmlScoreSheet(html, match);
@@ -910,7 +976,7 @@ export async function fetchGoalsFromReportUrl(
   match: PreseasonMatchRef,
 ): Promise<PreseasonGoal[]> {
   const html = await fetchReportHtml(url);
-  if (!html) return [];
+  if (!html || !reportHtmlMatchesFixture(html, match)) return [];
 
   if (url.includes("espn.com/soccer/story")) {
     const { parseEspnStoryGoals } = await import("@/lib/fpl/preseason-scorers");

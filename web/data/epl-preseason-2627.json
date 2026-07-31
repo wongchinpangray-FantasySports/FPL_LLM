@@ -1386,25 +1386,31 @@
       "goals": [
         {
           "minute": "",
+          "scorer": "Evanilson",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Alex Toth",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
           "scorer": "Ben Gannon-Doak",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "",
-          "scorer": "Harold William",
+          "scorer": "Marcus Tavernier",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "",
-          "scorer": "Daniel Jebbison",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "",
-          "scorer": "Bafode Diakite",
+          "scorer": "Enes Unal",
           "assist": null,
           "side": "pl"
         }

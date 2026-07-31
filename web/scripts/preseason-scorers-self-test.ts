@@ -4,6 +4,7 @@
 import {
   parseGenericMatchReportGoals,
   parseManUtdEmbeddedGoals,
+  reportHtmlMatchesFixture,
 } from "../lib/fpl/preseason-report-goals";
 import type { PreseasonGoal } from "../lib/fpl/preseason-enrich";
 import {
@@ -112,6 +113,56 @@ assert(
     "31: GOAL! Lacey gives United the lead. 56: GOAL! Zirkzee produces moment of magic.",
     munMatch,
   ).length >= 2,
+);
+
+const stPauliBbc =
+  "<p>Marco Rose kicked off his Bournemouth reign with a 4-1 victory over German side St. Pauli in the Cherries opening pre-season fixture.</p>" +
+  "<p>goals from Ben Gannon-Doak, Harold William, Daniel Jebbison and Bafode Diakite helped Bournemouth seal a victory.</p>";
+
+const stPauliMatch = {
+  ...base,
+  opponent: "St. Pauli",
+  pl_goals: 4,
+  opp_goals: 1,
+};
+
+const augsburgMatch = {
+  ...base,
+  opponent: "Augsburg",
+  pl_goals: 5,
+  opp_goals: 2,
+  date: "2026-07-30",
+};
+
+assert(
+  "st pauli bbc html matches st pauli fixture",
+  reportHtmlMatchesFixture(stPauliBbc, stPauliMatch),
+);
+
+assert(
+  "st pauli bbc html rejected for augsburg fixture",
+  !reportHtmlMatchesFixture(stPauliBbc, augsburgMatch),
+);
+
+assert(
+  "st pauli bbc parses four scorers",
+  parseGenericMatchReportGoals(stPauliBbc, stPauliMatch).filter((g) => g.side === "pl")
+    .length === 4,
+);
+
+const augsburgBbc =
+  "<p>Bournemouth concluded their pre-season tour in Austria with an emphatic 5-2 victory over Augsburg in Saalfelden.</p>" +
+  "<p>Tavernier, Evanilson, Alex Toth, Ben Gannon-Doak and Enes Unal were all on the scoresheet.</p>";
+
+assert(
+  "augsburg bbc html matches augsburg fixture",
+  reportHtmlMatchesFixture(augsburgBbc, augsburgMatch),
+);
+
+assert(
+  "augsburg bbc parses five scorers",
+  parseGenericMatchReportGoals(augsburgBbc, augsburgMatch).filter((g) => g.side === "pl")
+    .length === 5,
 );
 
 console.log("Pre-season scorers self-test passed.");

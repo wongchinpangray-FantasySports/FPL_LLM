@@ -149,10 +149,6 @@ export function buildClubReportUrlCandidates(match: PreseasonMatchRef): string[]
       `https://www.brightonandhovealbion.com/media-article/mft-match-report-pre-season-friendly-brighton-${opp}-july-2026`,
       "https://www.brightonandhovealbion.com/media-article/mft-match-report-pre-season-friendly-brighton-wycombe-wanderers-july-2026",
     ],
-    BOU: [
-      "https://www.bbc.com/sport/football/articles/crrvd719xkwo",
-      "https://www.bbc.co.uk/sport/football/articles/crrvd719xkwo",
-    ],
     AVL: genericNewsUrls("www.avfc.co.uk", "/news", "aston-villa", match),
     NEW: [
       "https://www.newcastleunited.com/en/news/confirmed-line-up-steur-starts-at-gateshead",
