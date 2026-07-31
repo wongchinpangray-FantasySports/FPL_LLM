@@ -387,6 +387,17 @@ export function needsPreseasonGoalFetch(match: PreseasonMatchRef & {
   return !preseasonGoalsComplete(match);
 }
 
+/** CI gate: only PL-side scorers required (opponent names often unavailable). */
+export function needsPlScorerBackfill(
+  match: PreseasonMatchRef & { goals?: PreseasonGoal[]; status?: string },
+): boolean {
+  if (match.status !== "finished") return false;
+  if (match.pl_goals == null || match.opp_goals == null) return false;
+  if (match.pl_goals + match.opp_goals === 0) return false;
+  const plListed = (match.goals ?? []).filter((g) => g.side === "pl").length;
+  return plListed < match.pl_goals;
+}
+
 export async function fetchGoalsForFinishedMatch(
   match: PreseasonMatchRef & { id?: string; goals?: PreseasonGoal[] },
   reportUrls: string[] = [],

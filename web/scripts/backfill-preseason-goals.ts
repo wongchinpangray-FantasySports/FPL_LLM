@@ -8,17 +8,9 @@ import type { PreseasonBundle, PreseasonMatch } from "../lib/fpl/preseason";
 import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
+  needsPlScorerBackfill,
   preseasonGoalsChanged,
 } from "../lib/fpl/preseason-scorers";
-
-function needsPlScorerBackfill(m: PreseasonMatch): boolean {
-  if (m.status !== "finished" || m.pl_goals == null || m.opp_goals == null) {
-    return false;
-  }
-  if (m.pl_goals + m.opp_goals === 0) return false;
-  const plListed = (m.goals ?? []).filter((g) => g.side === "pl").length;
-  return plListed < m.pl_goals;
-}
 
 async function main(): Promise<void> {
   const path = join(process.cwd(), "data/epl-preseason-2627.json");

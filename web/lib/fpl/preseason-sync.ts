@@ -16,12 +16,11 @@ import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
   mergePreseasonGoalLists,
-  needsPreseasonGoalFetch,
+  needsPlScorerBackfill,
   preseasonGoalsChanged,
   preseasonGoalsComplete,
 } from "@/lib/fpl/preseason-scorers";
 import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
-import { getKnownPreseasonReportUrls } from "@/lib/fpl/preseason-known-reports";
 
 export type PreseasonSyncResult = {
   path: string;
@@ -56,7 +55,13 @@ async function resolveMatchUpdates(
 ): Promise<{ match: PreseasonMatch; goals_updated: boolean }> {
   let next = mergeExternalResultsOntoMatch(before, externalResults);
 
-  if (process.env.API_FOOTBALL_KEY?.trim()) {
+  if (
+    process.env.API_FOOTBALL_KEY?.trim() &&
+    (next.status !== "finished" ||
+      next.pl_goals == null ||
+      next.opp_goals == null ||
+      needsPlScorerBackfill(next))
+  ) {
     const api = await resolvePreseasonMatchFromApi(next);
     if (api) {
       const mergedGoals =
@@ -86,13 +91,14 @@ async function resolveMatchUpdates(
   }
 
   let goals_updated = false;
-  if (needsPreseasonGoalFetch(next) || preseasonGoalsHaveInvalidRows(next)) {
+  const needsGoals =
+    needsPlScorerBackfill(next) || preseasonGoalsHaveInvalidRows(next);
+  if (needsGoals) {
     const reportUrls = findReportUrlsForMatch(next, externalResults);
-    const skipDiscovery =
-      getKnownPreseasonReportUrls(next).length > 0 || reportUrls.length > 0;
-    const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
-      skipDiscovery,
-    });
+    if (reportUrls.length > 0) {
+      const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
+        skipDiscovery: true,
+      });
     const goals =
       fetched.length > 0
         ? mergePreseasonGoalLists(next, next.goals ?? [], fetched)
@@ -111,51 +117,10 @@ async function resolveMatchUpdates(
       next = { ...next, goals };
       goals_updated = true;
     }
+    }
   }
 
   return { match: next, goals_updated };
-}
-
-function addLondonDays(iso: string, days: number): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-async function retryIncompleteGoalDetails(
-  matches: PreseasonMatch[],
-  externalResults: Awaited<ReturnType<typeof fetchAllPreseasonExternalResults>>,
-  today: string,
-): Promise<{ matches: PreseasonMatch[]; goals_updated: number; updated: number }> {
-  const cutoff = addLondonDays(today, -14);
-  let goals_updated = 0;
-  let updated = 0;
-  const nextMatches = [...matches];
-
-  clearPreseasonFixtureCache();
-
-  for (let i = 0; i < nextMatches.length; i += 1) {
-    const current = nextMatches[i];
-    if (current.status !== "finished") continue;
-    if (current.date < cutoff) continue;
-    if (
-      !needsPreseasonGoalFetch(current) &&
-      !preseasonGoalsHaveInvalidRows(current)
-    ) {
-      continue;
-    }
-
-    const before = current;
-    const resolved = await resolveMatchUpdates(before, externalResults);
-    nextMatches[i] = resolved.match;
-
-    if (matchSyncChanged(before, resolved.match)) {
-      updated += 1;
-      if (resolved.goals_updated) goals_updated += 1;
-    }
-  }
-
-  return { matches: nextMatches, goals_updated, updated };
 }
 
 export async function syncPreseasonResultsJson(
@@ -189,20 +154,6 @@ export async function syncPreseasonResultsJson(
     }
 
     matches.push(next);
-  }
-
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/London",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-  const retry = await retryIncompleteGoalDetails(matches, externalResults, today);
-  if (retry.updated > 0) {
-    matches = retry.matches;
-    updated += retry.updated;
-    goals_updated += retry.goals_updated;
   }
 
   const wrote_file = updated > 0;
