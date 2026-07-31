@@ -9,3 +9,5 @@ node_modules
 next-env.d.ts
 .vercel
 *.tsbuildinfo
+web/scripts/commercial/.auth-state.json
+web/public/commercial/captures/

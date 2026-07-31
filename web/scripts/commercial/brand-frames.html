@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FALEAGUE brand frame</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Inter, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .frame {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #f4f4f5;
+        background-color: #0b0a0f;
+        background-image:
+          radial-gradient(
+            ellipse 80% 50% at 15% -20%,
+            rgba(0, 255, 135, 0.14),
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 40% at 100% 0%,
+            rgba(55, 0, 60, 0.5),
+            transparent 55%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(15, 12, 22, 1),
+            rgba(11, 10, 15, 1)
+          );
+      }
+
+      .frame.active {
+        display: flex;
+      }
+
+      .frame.cover {
+        justify-content: flex-start;
+        padding: 72px 56px 56px;
+        text-align: left;
+        align-items: flex-start;
+      }
+
+      .eyebrow {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #00ff87;
+        margin-bottom: 28px;
+      }
+
+      .logo {
+        font-size: clamp(56px, 8vw, 96px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin-bottom: 20px;
+      }
+
+      .logo .accent {
+        color: #00ff87;
+      }
+
+      .tagline {
+        max-width: 780px;
+        font-size: clamp(24px, 3.2vw, 40px);
+        font-weight: 500;
+        line-height: 1.25;
+        color: rgba(244, 244, 245, 0.92);
+        margin-bottom: 36px;
+      }
+
+      .cover .tagline {
+        font-size: clamp(34px, 5vw, 58px);
+        font-weight: 700;
+        line-height: 1.12;
+        max-width: 900px;
+        margin-top: auto;
+        margin-bottom: 0;
+      }
+
+      .cover .eyebrow {
+        margin-bottom: 0;
+      }
+
+      .url {
+        font-size: clamp(22px, 2.6vw, 34px);
+        font-weight: 600;
+        color: #00ff87;
+        letter-spacing: -0.02em;
+      }
+
+      .cta {
+        margin-top: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 32px;
+        border-radius: 999px;
+        background: #00ff87;
+        color: #0b0a0f;
+        font-size: clamp(16px, 1.8vw, 22px);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 48px;
+      }
+
+      .chip {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 255, 135, 0.35);
+        background: rgba(0, 255, 135, 0.1);
+        color: #00ff87;
+        font-size: clamp(14px, 1.4vw, 18px);
+        font-weight: 600;
+      }
+
+      .glow {
+        position: absolute;
+        inset: auto;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 255, 135, 0.18), transparent 70%);
+        filter: blur(8px);
+        pointer-events: none;
+      }
+
+      .glow-a {
+        top: -120px;
+        left: -80px;
+      }
+
+      .glow-b {
+        bottom: -160px;
+        right: -100px;
+        background: radial-gradient(circle, rgba(55, 0, 60, 0.35), transparent 70%);
+      }
+
+      .cover .glow-hook {
+        top: 18%;
+        right: -8%;
+        width: 520px;
+        height: 520px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="frame end-card" data-id="end-card-en-16x9">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <p class="eyebrow">FALEAGUE · Football Hub</p>
+      <h1 class="logo">FALE<span class="accent">AGUE</span></h1>
+      <p class="tagline">All your football. FPL included.</p>
+      <div class="chips">
+        <span class="chip">World Cup</span>
+        <span class="chip">FPL</span>
+        <span class="chip">News</span>
+        <span class="chip">AI</span>
+      </div>
+      <p class="url">faleague-ai.com</p>
+      <span class="cta">Create free account</span>
+    </section>
+
+    <section class="frame end-card" data-id="end-card-zh-16x9">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <p class="eyebrow">FALEAGUE · Football Hub</p>
+      <h1 class="logo">FALE<span class="accent">AGUE</span></h1>
+      <p class="tagline">足球，尽在这里。FPL 同样精彩。</p>
+      <div class="chips">
+        <span class="chip">世界杯</span>
+        <span class="chip">FPL</span>
+        <span class="chip">新闻</span>
+        <span class="chip">AI</span>
+      </div>
+      <p class="url">faleague-ai.com</p>
+      <span class="cta">免费注册</span>
+    </section>
+
+    <section class="frame cover" data-id="xhs-cover-en-3x4">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-hook"></div>
+      <p class="eyebrow">FALEAGUE · Football Hub</p>
+      <h1 class="tagline">All your football.<br />FPL included.</h1>
+      <p class="url" style="margin-top: 28px">faleague-ai.com</p>
+    </section>
+
+    <section class="frame cover" data-id="xhs-cover-zh-3x4">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-hook"></div>
+      <p class="eyebrow">FALEAGUE · Football Hub</p>
+      <h1 class="tagline">足球，尽在这里。<br />FPL 同样精彩。</h1>
+      <p class="url" style="margin-top: 28px">faleague-ai.com</p>
+    </section>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const frameId = params.get("frame") || "end-card-en-16x9";
+      for (const el of document.querySelectorAll(".frame")) {
+        el.classList.toggle("active", el.dataset.id === frameId);
+      }
+    </script>
+  </body>
+</html>
