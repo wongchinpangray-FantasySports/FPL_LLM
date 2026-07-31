@@ -94,6 +94,8 @@ export default async function FplPreseasonPage({ params }: Props) {
           filterResults: t("preseasonFilterResults"),
           filterUpcoming: t("preseasonFilterUpcoming"),
           filterClub: t("preseasonFilterClub"),
+          clubStatsTitle: t("preseasonClubStatsTitle"),
+          clubStatsEmpty: t("preseasonClubStatsEmpty"),
         }}
       />
     </PageShell>

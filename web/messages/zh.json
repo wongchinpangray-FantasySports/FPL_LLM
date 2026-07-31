@@ -1303,6 +1303,8 @@
     "preseasonFilterResults": "赛果",
     "preseasonFilterUpcoming": "赛程",
     "preseasonFilterClub": "俱乐部",
+    "preseasonClubStatsTitle": "进球与助攻",
+    "preseasonClubStatsEmpty": "该俱乐部暂无季前赛进球或助攻记录。",
     "historicalTitle": "历史数据",
     "historicalBody": "按赛季与轮次范围筛选、对比球员逐轮 FPL 表现。",
     "fixturesBackFpl": "← FPL",

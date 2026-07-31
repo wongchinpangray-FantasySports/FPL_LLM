@@ -48,6 +48,8 @@ type Labels = {
   filterResults: string;
   filterUpcoming: string;
   filterClub: string;
+  clubStatsTitle: string;
+  clubStatsEmpty: string;
 };
 
 function playerLinkKey(plCode: string, name: string): string {
@@ -592,6 +594,106 @@ function PreseasonLeaderboards({
   );
 }
 
+function ClubScorerAssistSummary({
+  club,
+  labels,
+  playerLinks,
+}: {
+  club: PreseasonClubGroup;
+  labels: Pick<
+    Labels,
+    | "scorersTitle"
+    | "assistsTitle"
+    | "clubStatsTitle"
+    | "clubStatsEmpty"
+    | "leaderboardEmpty"
+  >;
+  playerLinks: Record<string, number>;
+}) {
+  const { scorers, assists } = useMemo(
+    () => buildPreseasonLeaderboards(club.matches),
+    [club.matches],
+  );
+  const badge = getFplTeamBadgeStyle(club.code);
+
+  const StatList = ({
+    title,
+    rows,
+    stat,
+  }: {
+    title: string;
+    rows: PreseasonLeaderboardRow[];
+    stat: string;
+  }) => (
+    <div className="min-w-0 flex-1">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{labels.leaderboardEmpty}</p>
+      ) : (
+        <ol className="space-y-1.5">
+          {rows.map((row, i) => (
+            <li
+              key={row.key}
+              className="flex items-baseline justify-between gap-2 text-sm"
+            >
+              <span className="min-w-0 truncate text-foreground">
+                <span className="mr-2 tabular-nums text-muted-foreground">{i + 1}</span>
+                <ScorerName
+                  name={row.name}
+                  plCode={club.code}
+                  playerLinks={playerLinks}
+                />
+              </span>
+              <span className="shrink-0 tabular-nums font-semibold text-brand-accent">
+                {row.count}
+                {stat}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+
+  if (scorers.length === 0 && assists.length === 0) {
+    return (
+      <section
+        className="overflow-hidden rounded-xl border border-border bg-card/60 p-4"
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${badge.rowTint} 0%, transparent 55%)`,
+        }}
+      >
+        <div className="mb-2 flex items-center gap-2">
+          <ClubTag code={club.code} />
+          <h2 className="text-sm font-semibold text-foreground">{club.name}</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">{labels.clubStatsEmpty}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className="overflow-hidden rounded-xl border border-border bg-card/60 p-4"
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${badge.rowTint} 0%, transparent 55%)`,
+      }}
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <ClubTag code={club.code} />
+        <h2 className="text-sm font-semibold text-foreground">{club.name}</h2>
+        <span className="text-xs text-muted-foreground">· {labels.clubStatsTitle}</span>
+      </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-8">
+        <StatList title={labels.scorersTitle} rows={scorers} stat="G" />
+        <StatList title={labels.assistsTitle} rows={assists} stat="A" />
+      </div>
+    </section>
+  );
+}
+
 function formatClubRecord(
   s: PreseasonClubSummary,
   locale: string,
@@ -796,6 +898,11 @@ export function FplPreseasonPanel({
     return clubs.filter((c) => c.code === clubFilter);
   }, [clubs, clubFilter]);
 
+  const selectedClubGroup = useMemo(
+    () => (clubFilter === "all" ? null : clubs.find((c) => c.code === clubFilter) ?? null),
+    [clubs, clubFilter],
+  );
+
   const filterMatches = (list: PreseasonMatch[]) => {
     if (clubFilter === "all") return list;
     return list.filter((m) => m.pl_code === clubFilter);
@@ -850,7 +957,19 @@ export function FplPreseasonPanel({
         onSelectClub={setClubFilter}
       />
 
-      <PreseasonLeaderboards matches={allMatches} labels={labels} playerLinks={playerLinks} />
+      {selectedClubGroup ? (
+        <ClubScorerAssistSummary
+          club={selectedClubGroup}
+          labels={labels}
+          playerLinks={playerLinks}
+        />
+      ) : (
+        <PreseasonLeaderboards
+          matches={allMatches}
+          labels={labels}
+          playerLinks={playerLinks}
+        />
+      )}
 
       <PreseasonToolbar
         labels={labels}
