@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-07-30",
+  "updated_at": "2026-07-31",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -171,6 +171,24 @@
           "side": "pl"
         },
         {
+          "minute": "56'",
+          "scorer": "Matheus França",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "59'",
+          "scorer": "Matheus França",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "82'",
+          "scorer": "Matheus França",
+          "assist": null,
+          "side": "pl"
+        },
+        {
           "minute": "33'",
           "scorer": "Fletcher Holman",
           "assist": null,
@@ -317,9 +335,21 @@
       "kickoff_time": null,
       "goals": [
         {
+          "minute": "44'",
+          "scorer": "Enzo Le Fée",
+          "assist": "Timur Tuterov",
+          "side": "pl"
+        },
+        {
           "minute": "56'",
           "scorer": "Tom Proctor",
           "assist": "Charlie Dinsdale",
+          "side": "pl"
+        },
+        {
+          "minute": "7'",
+          "scorer": "Enzo Le Fée",
+          "assist": null,
           "side": "pl"
         },
         {
@@ -629,7 +659,38 @@
       "pl_goals": 2,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "29'",
+          "scorer": "Piroe",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "45'",
+          "scorer": "Longstaff",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "1'",
+          "scorer": "Moore",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "41'",
+          "scorer": "Cadamarteri",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "85'",
+          "scorer": "Smith",
+          "assist": null,
+          "side": "opp"
+        }
+      ]
     },
     {
       "id": "liv-2026-07-25-87",
@@ -838,8 +899,20 @@
           "side": "pl"
         },
         {
-          "minute": "",
-          "scorer": "Joao Pedro",
+          "minute": "6'",
+          "scorer": "Satpayev",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "38'",
+          "scorer": "Essugo",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "66'",
+          "scorer": "Gittens",
           "assist": null,
           "side": "pl"
         },
@@ -858,6 +931,12 @@
         {
           "minute": "62'",
           "scorer": "Scicluna",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "78'",
+          "scorer": "Lual",
           "assist": null,
           "side": "opp"
         }
@@ -943,7 +1022,20 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "55'",
+          "scorer": "Oli McBurnie",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Kieran Dowell",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "ips-2026-07-29-76",
@@ -958,7 +1050,14 @@
       "pl_goals": 1,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "54'",
+          "scorer": "Chuba Akpom",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "liv-2026-07-29-88",
@@ -973,7 +1072,14 @@
       "pl_goals": 1,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "75'",
+          "scorer": "Rio Ngumoha",
+          "assist": "Dominik Szoboszlai",
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "new-2026-07-29-29",
@@ -988,7 +1094,14 @@
       "pl_goals": 1,
       "opp_goals": 4,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Harvey Barnes",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "tot-2026-07-29-98",
@@ -1003,7 +1116,14 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": []
+      "goals": [
+        {
+          "minute": "29'",
+          "scorer": "Mathys Tel",
+          "assist": null,
+          "side": "pl"
+        }
+      ]
     },
     {
       "id": "bou-2026-07-30-59",

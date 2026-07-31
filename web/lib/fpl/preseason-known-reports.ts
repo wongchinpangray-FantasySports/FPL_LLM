@@ -55,6 +55,23 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://www.bbc.co.uk/sport/football/articles/cr49z5g4xq0o",
     "https://www.hulldailymail.co.uk/sport/football/match-reports/oli-mcburnie-mark-hull-city-11080592",
   ],
+  "ips-2026-07-29-76": [
+    "https://www.bbc.co.uk/sport/football/articles/cvg89kl1w7go",
+    "https://www.osasuna.es/en/osasuna-ipswich-town-preseason-29-07-2026",
+  ],
+  "liv-2026-07-29-88": [
+    "https://www.liverpoolfc.com/news/rio-ngumoha-goal-settles-liverpool-v-wrexham-clash-new-york",
+    "https://www.skysports.com/football/liverpool-vs-wrexham/report/554986",
+    "https://www.espn.com/soccer/report/_/gameId/401863532",
+  ],
+  "new-2026-07-29-29": [
+    "https://www.newcastleunited.com/en/news/bristol-city-4-newcastle-united-1",
+    "https://www.bcfc.co.uk/match-reports/report-bristol-city-4-1-newcastle-united-pre-season/",
+  ],
+  "tot-2026-07-29-98": [
+    "https://www.tottenhamhotspur.com/news/1080569/sydney-fc-1-1-spurs-spurs-win-4-2-on-penalties-roberto-de-zerbis-verdict",
+    "https://sydneyfc.com/news/sydney-fc-hold-spurs-1-1-but-lose-shootout/",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

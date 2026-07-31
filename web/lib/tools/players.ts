@@ -1,6 +1,11 @@
 import { getServerSupabase } from "@/lib/supabase";
 import type { ToolHandler } from "./types";
 import {
+  minPlayerQueryLength,
+  rankPlayerSearchResults,
+  sanitizePlayerQuery,
+} from "@/lib/fpl/player-search";
+import {
   loadRollingStats,
   projectPlayers,
   resolveCurrentGw,
@@ -40,6 +45,30 @@ const PLAYER_COLS = [
 
 const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
 type Position = (typeof POSITIONS)[number];
+
+const PLAYER_SEARCH_COLS = PLAYER_COLS;
+
+async function loadPlayerSearchPool(): Promise<Array<Record<string, unknown>>> {
+  const { data, error } = await getServerSupabase()
+    .from("players_static")
+    .select(PLAYER_SEARCH_COLS);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as Array<Record<string, unknown>>;
+}
+
+async function searchPlayersByName(
+  q: string,
+  limit = 5,
+): Promise<Array<Record<string, unknown>>> {
+  const query = sanitizePlayerQuery(q);
+  if (query.length < minPlayerQueryLength(query)) return [];
+  const pool = await loadPlayerSearchPool();
+  return rankPlayerSearchResults(
+    pool as Parameters<typeof rankPlayerSearchResults>[0],
+    query,
+    { limit },
+  ) as Array<Record<string, unknown>>;
+}
 
 const SORTS = [
   "form",
@@ -159,25 +188,12 @@ const getPlayer: ToolHandler = {
       return { match: data ?? null };
     }
 
-    const pattern = `%${q}%`;
-    const { data, error } = await supa
-      .from("players_static")
-      .select(PLAYER_COLS)
-      .or(
-        [
-          `web_name.ilike.${pattern}`,
-          `name.ilike.${pattern}`,
-          `second_name.ilike.${pattern}`,
-        ].join(","),
-      )
-      .order("total_points", { ascending: false, nullsFirst: false })
-      .limit(5);
-    if (error) throw new Error(error.message);
+    const matches = await searchPlayersByName(q, 5);
 
     return {
       query: q,
-      match: data?.[0] ?? null,
-      other_candidates: data?.slice(1) ?? [],
+      match: matches[0] ?? null,
+      other_candidates: matches.slice(1),
     };
   },
 };
@@ -185,27 +201,14 @@ const getPlayer: ToolHandler = {
 async function resolvePlayerIds(queries: string[]): Promise<
   Array<{ query: string; fpl_id: number | null }>
 > {
-  const supa = getServerSupabase();
   const out: Array<{ query: string; fpl_id: number | null }> = [];
   for (const q of queries) {
     if (/^\d+$/.test(q)) {
       out.push({ query: q, fpl_id: Number(q) });
       continue;
     }
-    const pattern = `%${q}%`;
-    const { data } = await supa
-      .from("players_static")
-      .select("fpl_id")
-      .or(
-        [
-          `web_name.ilike.${pattern}`,
-          `name.ilike.${pattern}`,
-          `second_name.ilike.${pattern}`,
-        ].join(","),
-      )
-      .order("total_points", { ascending: false, nullsFirst: false })
-      .limit(1);
-    out.push({ query: q, fpl_id: (data?.[0]?.fpl_id as number) ?? null });
+    const matches = await searchPlayersByName(q, 1);
+    out.push({ query: q, fpl_id: (matches[0]?.fpl_id as number) ?? null });
   }
   return out;
 }

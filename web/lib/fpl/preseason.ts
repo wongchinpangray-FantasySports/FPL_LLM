@@ -35,6 +35,66 @@ export type PreseasonClubGroup = {
   matches: PreseasonMatch[];
 };
 
+export type PreseasonClubSummary = {
+  code: string;
+  name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  gf: number;
+  ga: number;
+  lastMatch: PreseasonMatch | null;
+};
+
+export function buildPreseasonClubSummaries(
+  clubs: PreseasonClubGroup[],
+): PreseasonClubSummary[] {
+  return clubs
+    .map((group) => {
+      let played = 0;
+      let won = 0;
+      let drawn = 0;
+      let lost = 0;
+      let gf = 0;
+      let ga = 0;
+      let lastMatch: PreseasonMatch | null = null;
+
+      for (const m of group.matches) {
+        if (m.status !== "finished") continue;
+        if (m.pl_goals == null || m.opp_goals == null) continue;
+        played += 1;
+        gf += m.pl_goals;
+        ga += m.opp_goals;
+        if (m.pl_goals > m.opp_goals) won += 1;
+        else if (m.pl_goals < m.opp_goals) lost += 1;
+        else drawn += 1;
+        if (!lastMatch || m.date.localeCompare(lastMatch.date) > 0) {
+          lastMatch = m;
+        }
+      }
+
+      return {
+        code: group.code,
+        name: group.name,
+        played,
+        won,
+        drawn,
+        lost,
+        gf,
+        ga,
+        lastMatch,
+      };
+    })
+    .filter((s) => s.played > 0)
+    .sort((a, b) => {
+      const pts = (s: PreseasonClubSummary) => s.won * 3 + s.drawn;
+      const d = pts(b) - pts(a);
+      if (d !== 0) return d;
+      return b.gf - b.ga - (a.gf - a.ga);
+    });
+}
+
 const rawBundle = preseasonData as Omit<PreseasonBundle, "matches"> & {
   matches: Array<
     Omit<PreseasonMatch, "kickoff_time" | "goals"> & {

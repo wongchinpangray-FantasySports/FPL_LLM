@@ -40,6 +40,10 @@ jobs:
         working-directory: web
         run: npx tsx scripts/sync-preseason-results.ts
 
+      - name: Backfill missing PL scorers
+        working-directory: web
+        run: npx tsx scripts/backfill-preseason-goals.ts
+
       - name: Validate pre-season scorer completeness
         working-directory: web
         run: npx tsx scripts/validate-preseason-goals.ts
@@ -55,3 +59,17 @@ jobs:
             git commit -m "Sync pre-season friendly results and scorers."
             git push
           fi
+
+      - name: Revalidate pre-season page cache
+        if: success()
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          if [ -z "$REVALIDATE_SECRET" ] || [ -z "$SITE_URL" ]; then
+            echo "Skip revalidate (REVALIDATE_SECRET or SITE_URL not set)."
+            exit 0
+          fi
+          curl -sf -X POST "${SITE_URL%/}/api/revalidate/preseason" \
+            -H "Authorization: Bearer ${REVALIDATE_SECRET}" \
+            || echo "Revalidate request failed (non-fatal)."

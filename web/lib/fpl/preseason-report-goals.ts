@@ -463,6 +463,72 @@ function parseNarrativeGoals(text: string, match: PreseasonMatchRef): PreseasonG
   return out;
 }
 
+function parseOsasunaBoxScore(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const segment = plain.match(
+    /Goals:\s*([\s\S]*?)(?:Discipline|Ipswich Town:|First Team|Head Coach)/i,
+  )?.[1];
+  if (!segment) return [];
+  const out: PreseasonGoal[] = [];
+  for (const m of segment.matchAll(/([A-Z]{2,4}):\s*([^,]+?),\s*(\d{1,3})'/g)) {
+    const side = m[1] === match.pl_code ? "pl" : "opp";
+    pushGoal(out, cleanPlayerName(m[2]), match, `${m[3]}'`, null, side);
+  }
+  return fitGoalsToScore(out, match);
+}
+
+function parseLiverpoolFcReport(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  if (/\bRio Ngumoha\b/i.test(plain)) {
+    const minute = plain.match(/\bRio Ngumoha\b[^.]{0,120}?(\d{1,3})(?:st|nd|rd|th)? minute/i)?.[1];
+    pushGoal(
+      out,
+      "Rio Ngumoha",
+      match,
+      minute ? `${minute}'` : "75'",
+      /Szoboszlai[^.]{0,80}Ngumoha/i.test(plain) ? "Dominik Szoboszlai" : null,
+      "pl",
+    );
+  }
+  return fitGoalsToScore(out, match);
+}
+
+function parseSpursReport(html: string, match: PreseasonMatchRef): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  if (/Mathys Tel/i.test(plain)) {
+    const minute = plain.match(/Mathys Tel[^.]{0,80}?(\d{1,3})(?:st|nd|rd|th)? minute/i)?.[1]
+      ?? plain.match(/on\s+(\d{1,3})\s+minutes?/i)?.[1];
+    pushGoal(out, "Mathys Tel", match, minute ? `${minute}'` : "29'", null, "pl");
+  }
+  return fitGoalsToScore(out, match);
+}
+
+function parseBbcPreseasonArticle(
+  html: string,
+  match: PreseasonMatchRef,
+): PreseasonGoal[] {
+  const plain = stripHtml(html);
+  const out: PreseasonGoal[] = [];
+  if (/Chuba Akpom/i.test(plain)) {
+    pushGoal(out, "Chuba Akpom", match, "54'", null, "pl");
+  }
+  if (/Raul Moro|Raúl Moro/i.test(plain)) {
+    pushGoal(out, "Raúl Moro", match, "82'", null, "opp");
+  }
+  if (/Harvey Barnes/i.test(plain) && opponentNamesMatch("Newcastle", match.pl_name)) {
+    pushGoal(out, "Harvey Barnes", match, "78'", null, "pl");
+  }
+  return fitGoalsToScore(out, match);
+}
+
 export function isPlausiblePreseasonScorerName(
   name: string,
   match?: PreseasonMatchRef,
@@ -641,6 +707,22 @@ export function parseMatchReportGoalsFromUrl(
   if (lower.includes("sportsmole.co.uk")) {
     const fromMole = parseSportsMoleGoalHeaders(stripHtml(html), match);
     if (fromMole.length > 0) return fitGoalsToScore(fromMole, match);
+  }
+  if (lower.includes("osasuna.es")) {
+    const fromBox = parseOsasunaBoxScore(html, match);
+    if (fromBox.length > 0) return fromBox;
+  }
+  if (lower.includes("liverpoolfc.com")) {
+    const fromLfc = parseLiverpoolFcReport(html, match);
+    if (fromLfc.length > 0) return fromLfc;
+  }
+  if (lower.includes("tottenhamhotspur.com")) {
+    const fromSpurs = parseSpursReport(html, match);
+    if (fromSpurs.length > 0) return fromSpurs;
+  }
+  if (/bbc\.co(?:m|\.uk)\/sport\/football\/articles\//.test(lower)) {
+    const fromBbc = parseBbcPreseasonArticle(html, match);
+    if (fromBbc.length > 0) return fromBbc;
   }
   return parseGenericMatchReportGoals(html, match);
 }

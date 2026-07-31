@@ -103,6 +103,11 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
 
   const features = [
     {
+      title: t("guestPreseasonTitle"),
+      body: t("guestPreseasonBody"),
+      href: "/fpl/preseason",
+    },
+    {
       title: t("guestFeature1Title"),
       body: t("guestFeature1Body"),
       href: "/fpl",
@@ -153,6 +158,12 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
             {t("guestLogin")}
           </Link>
           <Link
+            href="/fpl/preseason"
+            className="text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
+          >
+            {t("guestBrowsePreseason")} →
+          </Link>
+          <Link
             href="/fpl"
             className="text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
           >
@@ -162,7 +173,7 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
         </div>
       </section>
 
-      <section className="grid gap-2 md:grid-cols-3 md:gap-3">
+      <section className="grid gap-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 md:gap-3">
         {features.map((feature, index) => (
           <FeatureRow
             key={feature.href}

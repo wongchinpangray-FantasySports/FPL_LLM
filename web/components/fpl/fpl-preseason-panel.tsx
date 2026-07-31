@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { getFplTeamBadgeStyle } from "@/lib/team-themes";
-import type { PreseasonClubGroup, PreseasonGoal, PreseasonMatch } from "@/lib/fpl/preseason";
+import type {
+  PreseasonClubGroup,
+  PreseasonClubSummary,
+  PreseasonGoal,
+  PreseasonMatch,
+} from "@/lib/fpl/preseason";
 import {
   formatPreseasonDate,
   formatPreseasonKickoffBeijing,
@@ -34,7 +40,42 @@ type Labels = {
   leaderboardPlayer: string;
   leaderboardClub: string;
   leaderboardEmpty: string;
+  clubSummaryTitle: string;
+  lastResult: string;
+  expandAll: string;
+  collapseAll: string;
+  filterAll: string;
+  filterResults: string;
+  filterUpcoming: string;
+  filterClub: string;
 };
+
+function playerLinkKey(plCode: string, name: string): string {
+  return `${plCode}:${name.trim()}`;
+}
+
+function ScorerName({
+  name,
+  plCode,
+  playerLinks,
+}: {
+  name: string;
+  plCode: string;
+  playerLinks: Record<string, number>;
+}) {
+  const fplId = playerLinks[playerLinkKey(plCode, name)];
+  if (!fplId) {
+    return <span className="font-medium text-foreground">{name}</span>;
+  }
+  return (
+    <Link
+      href={`/player/${fplId}`}
+      className="font-medium text-foreground hover:text-brand-accent hover:underline"
+    >
+      {name}
+    </Link>
+  );
+}
 
 function ClubStripe({ code, className }: { code: string; className?: string }) {
   const badge = getFplTeamBadgeStyle(code);
@@ -74,9 +115,11 @@ function HaLabel({ plHome }: { plHome: boolean }) {
 function GoalLines({
   match,
   labels,
+  playerLinks,
 }: {
   match: PreseasonMatch;
   labels: Pick<Labels, "assist" | "noGoalDetails">;
+  playerLinks: Record<string, number>;
 }) {
   const { goals } = match;
   if (!goals.length) {
@@ -90,7 +133,13 @@ function GoalLines({
 
   return (
     <div className="mt-2.5 space-y-2 border-t border-border/50 pt-2.5">
-      <GoalGroup title={match.pl_name} goals={plGoals} labels={labels} />
+      <GoalGroup
+        title={match.pl_name}
+        goals={plGoals}
+        labels={labels}
+        plCode={match.pl_code}
+        playerLinks={playerLinks}
+      />
       <GoalGroup title={preseasonOpponentLabel(match)} goals={oppGoals} labels={labels} />
     </div>
   );
@@ -100,10 +149,14 @@ function GoalGroup({
   title,
   goals,
   labels,
+  plCode,
+  playerLinks,
 }: {
   title: string;
   goals: PreseasonGoal[];
   labels: Pick<Labels, "assist">;
+  plCode?: string;
+  playerLinks?: Record<string, number>;
 }) {
   if (goals.length === 0) return null;
 
@@ -118,10 +171,20 @@ function GoalGroup({
             {g.minute ? (
               <span className="w-8 shrink-0 tabular-nums text-muted-foreground">{g.minute}</span>
             ) : null}
-            <span className="font-medium text-foreground">{g.scorer}</span>
+            {plCode && playerLinks ? (
+              <ScorerName name={g.scorer} plCode={plCode} playerLinks={playerLinks} />
+            ) : (
+              <span className="font-medium text-foreground">{g.scorer}</span>
+            )}
             {g.assist ? (
               <span className="text-muted-foreground">
-                ({labels.assist}: {g.assist})
+                ({labels.assist}:{" "}
+                {plCode && playerLinks ? (
+                  <ScorerName name={g.assist} plCode={plCode} playerLinks={playerLinks} />
+                ) : (
+                  g.assist
+                )}
+                )
               </span>
             ) : null}
           </li>
@@ -182,10 +245,12 @@ function ResultCard({
   match,
   locale,
   labels,
+  playerLinks,
 }: {
   match: PreseasonMatch;
   locale: string;
   labels: Pick<Labels, "vs" | "assist" | "noGoalDetails">;
+  playerLinks: Record<string, number>;
 }) {
   const score = formatPreseasonScore(match);
   const venue = preseasonVenueLabel(match);
@@ -221,7 +286,7 @@ function ResultCard({
               ) : null}
             </div>
           </div>
-          <GoalLines match={match} labels={labels} />
+          <GoalLines match={match} labels={labels} playerLinks={playerLinks} />
         </div>
       </div>
     </article>
@@ -320,10 +385,12 @@ function ClubMatchRow({
   match,
   locale,
   labels,
+  playerLinks,
 }: {
   match: PreseasonMatch;
   locale: string;
   labels: Pick<Labels, "vs" | "assist" | "noGoalDetails" | "kickoffBeijing" | "kickoffTbd">;
+  playerLinks: Record<string, number>;
 }) {
   const score = formatPreseasonScore(match);
   const finished = match.status === "finished";
@@ -356,7 +423,9 @@ function ClubMatchRow({
           )}
         </div>
       </div>
-      {finished ? <GoalLines match={match} labels={labels} /> : null}
+      {finished ? (
+        <GoalLines match={match} labels={labels} playerLinks={playerLinks} />
+      ) : null}
     </div>
   );
 }
@@ -365,14 +434,17 @@ function ClubSection({
   group,
   locale,
   labels,
-  defaultOpen,
+  open,
+  onToggle,
+  playerLinks,
 }: {
   group: PreseasonClubGroup;
   locale: string;
   labels: Labels;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
+  playerLinks: Record<string, number>;
 }) {
-  const [open, setOpen] = useState(defaultOpen ?? false);
   const badge = getFplTeamBadgeStyle(group.code);
   const finished = group.matches.filter((m) => m.status === "finished").length;
 
@@ -380,7 +452,7 @@ function ClubSection({
     <section className="overflow-hidden rounded-xl border border-border bg-card/50">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
       >
         <span className="flex min-w-0 items-center gap-2">
@@ -399,7 +471,13 @@ function ClubSection({
       {open ? (
         <div className="border-t border-border/60 bg-background/30">
           {group.matches.map((match) => (
-            <ClubMatchRow key={match.id} match={match} locale={locale} labels={labels} />
+            <ClubMatchRow
+              key={match.id}
+              match={match}
+              locale={locale}
+              labels={labels}
+              playerLinks={playerLinks}
+            />
           ))}
         </div>
       ) : null}
@@ -412,11 +490,13 @@ function LeaderboardTable({
   rows,
   statLabel,
   labels,
+  playerLinks,
 }: {
   title: string;
   rows: PreseasonLeaderboardRow[];
   statLabel: string;
   labels: Pick<Labels, "leaderboardPlayer" | "leaderboardClub" | "leaderboardEmpty">;
+  playerLinks: Record<string, number>;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card/60">
@@ -443,7 +523,13 @@ function LeaderboardTable({
                   className="border-b border-border/40 last:border-b-0 hover:bg-muted/20"
                 >
                   <td className="px-3 py-2 tabular-nums text-muted-foreground">{i + 1}</td>
-                  <td className="px-3 py-2 font-medium text-foreground">{row.name}</td>
+                  <td className="px-3 py-2 font-medium text-foreground">
+                    <ScorerName
+                      name={row.name}
+                      plCode={row.pl_code}
+                      playerLinks={playerLinks}
+                    />
+                  </td>
                   <td className="px-3 py-2">
                     <span className="inline-flex items-center gap-2">
                       <ClubTag code={row.pl_code} />
@@ -466,6 +552,7 @@ function LeaderboardTable({
 function PreseasonLeaderboards({
   matches,
   labels,
+  playerLinks,
 }: {
   matches: PreseasonMatch[];
   labels: Pick<
@@ -476,6 +563,7 @@ function PreseasonLeaderboards({
     | "leaderboardClub"
     | "leaderboardEmpty"
   >;
+  playerLinks: Record<string, number>;
 }) {
   const { scorers, assists } = useMemo(
     () => buildPreseasonLeaderboards(matches),
@@ -491,35 +579,251 @@ function PreseasonLeaderboards({
         rows={scorers}
         statLabel="G"
         labels={labels}
+        playerLinks={playerLinks}
       />
       <LeaderboardTable
         title={labels.assistsTitle}
         rows={assists}
         statLabel="A"
         labels={labels}
+        playerLinks={playerLinks}
       />
     </section>
   );
 }
 
+function formatClubRecord(
+  s: PreseasonClubSummary,
+  locale: string,
+): string {
+  if (locale.startsWith("zh")) {
+    return `${s.won}胜-${s.drawn}平-${s.lost}负`;
+  }
+  return `${s.won}W-${s.drawn}D-${s.lost}L`;
+}
+
+function formatClubGoals(s: PreseasonClubSummary, locale: string): string {
+  if (locale.startsWith("zh")) {
+    return `进${s.gf} 失${s.ga}`;
+  }
+  return `${s.gf}–${s.ga} GF/GA`;
+}
+
+function ClubSummaryStrip({
+  summaries,
+  locale,
+  labels,
+  selectedClub,
+  onSelectClub,
+}: {
+  summaries: PreseasonClubSummary[];
+  locale: string;
+  labels: Pick<Labels, "clubSummaryTitle" | "lastResult">;
+  selectedClub: string;
+  onSelectClub: (code: string) => void;
+}) {
+  if (summaries.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-semibold text-foreground">
+        {labels.clubSummaryTitle}
+      </h2>
+      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          onClick={() => onSelectClub("all")}
+          className={cn(
+            "shrink-0 rounded-lg border px-3 py-2 text-left text-xs transition-colors",
+            selectedClub === "all"
+              ? "border-brand-accent/40 bg-brand-accent/10"
+              : "border-border bg-card/60 hover:bg-muted/40",
+          )}
+        >
+          <span className="font-semibold text-foreground">ALL</span>
+        </button>
+        {summaries.map((s) => {
+          const badge = getFplTeamBadgeStyle(s.code);
+          const lastScore = s.lastMatch ? formatPreseasonScore(s.lastMatch) : null;
+          return (
+            <button
+              key={s.code}
+              type="button"
+              onClick={() => onSelectClub(s.code)}
+              className={cn(
+                "min-w-[9.5rem] shrink-0 rounded-lg border px-3 py-2 text-left text-xs transition-colors",
+                selectedClub === s.code
+                  ? "border-brand-accent/40 bg-brand-accent/10"
+                  : "border-border bg-card/60 hover:bg-muted/40",
+              )}
+              style={{
+                backgroundImage: `linear-gradient(135deg, ${badge.rowTint} 0%, transparent 70%)`,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <ClubTag code={s.code} />
+                <span className="font-semibold text-foreground">{s.code}</span>
+              </div>
+              <p className="mt-1 tabular-nums text-muted-foreground">
+                {s.played}P · {formatClubRecord(s, locale)}
+              </p>
+              <p className="tabular-nums text-brand-accent">
+                {formatClubGoals(s, locale)}
+              </p>
+              {s.lastMatch && lastScore ? (
+                <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                  {labels.lastResult}: {formatPreseasonDate(s.lastMatch.date, locale)} {lastScore}
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PreseasonToolbar({
+  labels,
+  view,
+  onViewChange,
+  clubFilter,
+  onClubFilterChange,
+  clubs,
+  allExpanded,
+  onToggleExpandAll,
+}: {
+  labels: Pick<
+    Labels,
+    | "filterAll"
+    | "filterResults"
+    | "filterUpcoming"
+    | "filterClub"
+    | "expandAll"
+    | "collapseAll"
+  >;
+  view: "all" | "results" | "upcoming";
+  onViewChange: (view: "all" | "results" | "upcoming") => void;
+  clubFilter: string;
+  onClubFilterChange: (code: string) => void;
+  clubs: PreseasonClubGroup[];
+  allExpanded: boolean;
+  onToggleExpandAll: () => void;
+}) {
+  const viewBtn = (id: "all" | "results" | "upcoming", label: string) => (
+    <button
+      type="button"
+      onClick={() => onViewChange(id)}
+      className={cn(
+        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+        view === id
+          ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
+          : "border-border bg-card text-muted-foreground hover:bg-muted/40",
+      )}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {viewBtn("all", labels.filterAll)}
+      {viewBtn("results", labels.filterResults)}
+      {viewBtn("upcoming", labels.filterUpcoming)}
+      <select
+        value={clubFilter}
+        onChange={(e) => onClubFilterChange(e.target.value)}
+        className="rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground"
+        aria-label={labels.filterClub}
+      >
+        <option value="all">{labels.filterClub}: ALL</option>
+        {clubs.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onToggleExpandAll}
+        className="ml-auto rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/40"
+      >
+        {allExpanded ? labels.collapseAll : labels.expandAll}
+      </button>
+    </div>
+  );
+}
+
 export function FplPreseasonPanel({
   clubs,
+  summaries,
   locale,
   source,
   updatedAt,
   labels,
+  playerLinks,
 }: {
   clubs: PreseasonClubGroup[];
+  summaries: PreseasonClubSummary[];
   locale: string;
   source: string;
   updatedAt: string;
   labels: Labels;
+  playerLinks: Record<string, number>;
 }) {
   const allMatches = useMemo(() => clubs.flatMap((c) => c.matches), [clubs]);
   const { upcoming, results } = useMemo(
     () => splitPreseasonMatches(allMatches),
     [allMatches],
   );
+
+  const [view, setView] = useState<"all" | "results" | "upcoming">("all");
+  const [clubFilter, setClubFilter] = useState("all");
+  const [allExpanded, setAllExpanded] = useState(false);
+  const [expandedClubs, setExpandedClubs] = useState<Set<string>>(
+    () => new Set(clubs.slice(0, 4).map((c) => c.code)),
+  );
+
+  useEffect(() => {
+    if (clubFilter !== "all") {
+      setExpandedClubs(new Set([clubFilter]));
+      setAllExpanded(false);
+    }
+  }, [clubFilter]);
+
+  const filteredClubs = useMemo(() => {
+    if (clubFilter === "all") return clubs;
+    return clubs.filter((c) => c.code === clubFilter);
+  }, [clubs, clubFilter]);
+
+  const filterMatches = (list: PreseasonMatch[]) => {
+    if (clubFilter === "all") return list;
+    return list.filter((m) => m.pl_code === clubFilter);
+  };
+
+  const visibleUpcoming = filterMatches(upcoming);
+  const visibleResults = filterMatches(results);
+  const showUpcoming = view === "all" || view === "upcoming";
+  const showResults = view === "all" || view === "results";
+
+  const toggleClub = (code: string) => {
+    setExpandedClubs((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
+
+  const toggleExpandAll = () => {
+    if (allExpanded) {
+      setExpandedClubs(new Set());
+      setAllExpanded(false);
+    } else {
+      setExpandedClubs(new Set(filteredClubs.map((c) => c.code)));
+      setAllExpanded(true);
+    }
+  };
 
   if (clubs.length === 0) {
     return (
@@ -538,41 +842,68 @@ export function FplPreseasonPanel({
         labels={labels}
       />
 
-      {upcoming.length > 0 ? (
+      <ClubSummaryStrip
+        summaries={summaries}
+        locale={locale}
+        labels={labels}
+        selectedClub={clubFilter}
+        onSelectClub={setClubFilter}
+      />
+
+      <PreseasonLeaderboards matches={allMatches} labels={labels} playerLinks={playerLinks} />
+
+      <PreseasonToolbar
+        labels={labels}
+        view={view}
+        onViewChange={setView}
+        clubFilter={clubFilter}
+        onClubFilterChange={setClubFilter}
+        clubs={clubs}
+        allExpanded={allExpanded}
+        onToggleExpandAll={toggleExpandAll}
+      />
+
+      {showUpcoming && visibleUpcoming.length > 0 ? (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-foreground">{labels.upcoming}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {upcoming.slice(0, 12).map((match) => (
+            {visibleUpcoming.slice(0, 12).map((match) => (
               <UpcomingCard key={match.id} match={match} locale={locale} labels={labels} />
             ))}
           </div>
         </section>
       ) : null}
 
-      {results.length > 0 ? (
+      {showResults && visibleResults.length > 0 ? (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-foreground">{labels.results}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {results.slice(0, 12).map((match) => (
-              <ResultCard key={match.id} match={match} locale={locale} labels={labels} />
+            {visibleResults.slice(0, 12).map((match) => (
+              <ResultCard
+                key={match.id}
+                match={match}
+                locale={locale}
+                labels={labels}
+                playerLinks={playerLinks}
+              />
             ))}
           </div>
         </section>
       ) : null}
 
-      <PreseasonLeaderboards matches={allMatches} labels={labels} />
-
       <section>
         <h2 className="mb-3 text-sm font-semibold text-foreground">{labels.allClubs}</h2>
         <p className="mb-3 text-xs text-muted-foreground">{labels.expandClub}</p>
         <div className="grid gap-3 md:grid-cols-2">
-          {clubs.map((group, i) => (
+          {filteredClubs.map((group) => (
             <ClubSection
               key={group.code}
               group={group}
               locale={locale}
               labels={labels}
-              defaultOpen={i < 2}
+              open={expandedClubs.has(group.code)}
+              onToggle={() => toggleClub(group.code)}
+              playerLinks={playerLinks}
             />
           ))}
         </div>

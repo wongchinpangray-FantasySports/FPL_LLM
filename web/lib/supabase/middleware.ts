@@ -12,6 +12,13 @@ const ACCOUNT_PROTECTED_PREFIXES = [
 /** FPL hub landing page — public; features under these paths require sign-in. */
 export const FPL_HUB_PATH = "/fpl";
 
+/** Reference pages linked from the public hub — no sign-in required. */
+export const FPL_PUBLIC_PREFIXES = [
+  "/fpl/preseason",
+  "/fpl/fixtures",
+  "/fpl/historical",
+];
+
 /** FPL tools linked from the hub (excluding the hub page itself). */
 export const FPL_FEATURE_PREFIXES = [
   "/dashboard",
@@ -28,9 +35,17 @@ export function isAdminPath(pathname: string): boolean {
   return path === "/admin" || path.startsWith("/admin/");
 }
 
+export function isFplPublicPath(pathname: string): boolean {
+  const path = stripLocalePrefix(pathname);
+  return FPL_PUBLIC_PREFIXES.some(
+    (p) => path === p || path.startsWith(`${p}/`),
+  );
+}
+
 export function isFplFeaturePath(pathname: string): boolean {
   const path = stripLocalePrefix(pathname);
   if (path === FPL_HUB_PATH) return false;
+  if (isFplPublicPath(pathname)) return false;
   if (path.startsWith(`${FPL_HUB_PATH}/`)) return true;
   return FPL_FEATURE_PREFIXES.some(
     (p) => path === p || path.startsWith(`${p}/`),

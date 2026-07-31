@@ -1,13 +1,41 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplPreseasonPanel } from "@/components/fpl/fpl-preseason-panel";
-import { PreseasonAutoRefresh } from "@/components/fpl/preseason-auto-refresh";
-import { getPreseasonBundle, groupPreseasonByClub } from "@/lib/fpl/preseason";
+import {
+  buildPreseasonClubSummaries,
+  getPreseasonBundle,
+  groupPreseasonByClub,
+  type PreseasonMatch,
+} from "@/lib/fpl/preseason";
+import { loadPreseasonFplPlayerIndex } from "@/lib/fpl/preseason-fpl-players";
 
 /** Bundled JSON — enriched by CI sync / backfill scripts, not at request time. */
 export const revalidate = 300;
 
 type Props = { params: { locale: string } };
+
+function playerLinkKey(plCode: string, name: string): string {
+  return `${plCode}:${name.trim()}`;
+}
+
+function buildPlayerLinks(
+  matches: PreseasonMatch[],
+  resolveFplId: (name: string, plCode: string) => number | null,
+): Record<string, number> {
+  const links: Record<string, number> = {};
+  for (const m of matches) {
+    for (const g of m.goals) {
+      if (g.side !== "pl") continue;
+      for (const name of [g.scorer, g.assist].filter(Boolean) as string[]) {
+        const key = playerLinkKey(m.pl_code, name);
+        if (links[key]) continue;
+        const fplId = resolveFplId(name, m.pl_code);
+        if (fplId) links[key] = fplId;
+      }
+    }
+  }
+  return links;
+}
 
 export default async function FplPreseasonPage({ params }: Props) {
   setRequestLocale(params.locale);
@@ -17,6 +45,12 @@ export default async function FplPreseasonPage({ params }: Props) {
   });
   const bundle = getPreseasonBundle();
   const clubs = groupPreseasonByClub(bundle.matches);
+  const summaries = buildPreseasonClubSummaries(clubs);
+  const playerIndex = await loadPreseasonFplPlayerIndex();
+  const playerLinks = buildPlayerLinks(
+    bundle.matches,
+    playerIndex.resolveFplId,
+  );
 
   return (
     <PageShell
@@ -26,12 +60,13 @@ export default async function FplPreseasonPage({ params }: Props) {
       description={t("preseasonPageDescription")}
       width="6xl"
     >
-      <PreseasonAutoRefresh />
       <FplPreseasonPanel
         clubs={clubs}
+        summaries={summaries}
         locale={params.locale}
         source={bundle.source}
         updatedAt={bundle.updated_at}
+        playerLinks={playerLinks}
         labels={{
           upcoming: t("preseasonUpcoming"),
           results: t("preseasonResults"),
@@ -51,6 +86,14 @@ export default async function FplPreseasonPage({ params }: Props) {
           leaderboardPlayer: t("preseasonLeaderboardPlayer"),
           leaderboardClub: t("preseasonLeaderboardClub"),
           leaderboardEmpty: t("preseasonLeaderboardEmpty"),
+          clubSummaryTitle: t("preseasonClubSummaryTitle"),
+          lastResult: t("preseasonLastResult"),
+          expandAll: t("preseasonExpandAll"),
+          collapseAll: t("preseasonCollapseAll"),
+          filterAll: t("preseasonFilterAll"),
+          filterResults: t("preseasonFilterResults"),
+          filterUpcoming: t("preseasonFilterUpcoming"),
+          filterClub: t("preseasonFilterClub"),
         }}
       />
     </PageShell>

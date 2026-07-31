@@ -1374,6 +1374,13 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
             }}
           />
 
+          <div className="flex flex-wrap gap-2">
+            <HubChip href="/fpl/preseason" variant="accent">
+              {t("explorePreseasonTitle")}
+            </HubChip>
+            <HubChip href="/fpl/fixtures">{t("exploreFixturesTitle")}</HubChip>
+          </div>
+
           <HomeFeatureGroups
             labels={{
               manage: t("homeGroupManage"),

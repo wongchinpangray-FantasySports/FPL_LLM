@@ -113,7 +113,7 @@ function toTitleCaseWords(name: string): string {
   });
 }
 
-function lookupPlayerZh(
+export function lookupPlayerZh(
   map: Map<string, string>,
   englishName: string,
 ): string | undefined {

@@ -21,6 +21,7 @@ import {
   preseasonGoalsComplete,
 } from "@/lib/fpl/preseason-scorers";
 import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
+import { getKnownPreseasonReportUrls } from "@/lib/fpl/preseason-known-reports";
 
 export type PreseasonSyncResult = {
   path: string;
@@ -87,7 +88,11 @@ async function resolveMatchUpdates(
   let goals_updated = false;
   if (needsPreseasonGoalFetch(next) || preseasonGoalsHaveInvalidRows(next)) {
     const reportUrls = findReportUrlsForMatch(next, externalResults);
-    const fetched = await fetchGoalsForFinishedMatch(next, reportUrls);
+    const skipDiscovery =
+      getKnownPreseasonReportUrls(next).length > 0 || reportUrls.length > 0;
+    const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
+      skipDiscovery,
+    });
     const goals =
       fetched.length > 0
         ? mergePreseasonGoalLists(next, next.goals ?? [], fetched)
