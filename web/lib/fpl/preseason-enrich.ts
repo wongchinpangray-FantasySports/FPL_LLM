@@ -36,6 +36,10 @@ const PL_API_TEAM_IDS: Record<string, number> = {
   TOT: 47,
 };
 
+export function getPlApiTeamId(plCode: string): number | null {
+  return PL_API_TEAM_IDS[plCode] ?? null;
+}
+
 const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
 
 type ApiFixture = {
@@ -252,6 +256,50 @@ async function loadGoalEvents(
   return goals;
 }
 
+export type PreseasonFixtureEvent = {
+  type: string;
+  minute: number;
+  side: "pl" | "opp";
+  playerIn: string | null;
+  playerOut: string | null;
+};
+
+export async function getPreseasonFixtureContext(
+  match: PreseasonMatchInput,
+): Promise<{ fixtureId: number; plHome: boolean; fx: ApiFixture } | null> {
+  const teamId = PL_API_TEAM_IDS[match.pl_code];
+  if (!teamId || !apiKey()) return null;
+
+  const fixtures = await loadTeamFixtures(teamId);
+  const fx = findFixture(fixtures, match.opponent, match.date);
+  if (!fx) return null;
+
+  return { fixtureId: fx.fixture.id, plHome: match.pl_home, fx };
+}
+
+export async function loadPreseasonFixtureEvents(
+  fixtureId: number,
+  plHome: boolean,
+  fx: ApiFixture,
+): Promise<PreseasonFixtureEvent[]> {
+  const events = await apiFetch<ApiEvent[]>(
+    `/fixtures/events?fixture=${fixtureId}`,
+  );
+  const out: PreseasonFixtureEvent[] = [];
+  for (const ev of events ?? []) {
+    const isHomeTeam = norm(ev.team.name) === norm(fx.teams.home.name);
+    const isPlTeam = plHome ? isHomeTeam : !isHomeTeam;
+    out.push({
+      type: ev.type,
+      minute: ev.time.elapsed,
+      side: isPlTeam ? "pl" : "opp",
+      playerIn: ev.assist?.name?.trim() ?? null,
+      playerOut: ev.player?.name?.trim() ?? null,
+    });
+  }
+  return out;
+}
+
 function baseEnrichment(match: PreseasonMatchInput): PreseasonMatchEnriched {
   return {
     kickoff_time: match.kickoff_time ?? null,
@@ -272,29 +320,26 @@ export async function resolvePreseasonMatchFromApi(
 ): Promise<PreseasonMatchEnriched | null> {
   if (!apiKey()) return null;
 
-  const teamId = PL_API_TEAM_IDS[match.pl_code];
-  if (!teamId) return null;
-
   try {
-    const fixtures = await loadTeamFixtures(teamId);
-    const fx = findFixture(fixtures, match.opponent, match.date);
-    if (!fx) return null;
+    const ctx = await getPreseasonFixtureContext(match);
+    if (!ctx) return null;
 
+    const { fixtureId, plHome, fx } = ctx;
     const base = baseEnrichment(match);
     const kickoff_time = fx.fixture.date;
     let { status, pl_goals, opp_goals, goals } = base;
 
     if (isFixtureFinished(fx.fixture.status.short)) {
-      const scores = scoresFromFixture(fx, match.pl_home);
+      const scores = scoresFromFixture(fx, plHome);
       if (scores) {
         status = "finished";
         pl_goals = scores.pl_goals;
         opp_goals = scores.opp_goals;
-        const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
+        const fetched = await loadGoalEvents(fixtureId, plHome, fx);
         goals = pickGoals(match, base.goals, fetched, scores.pl_goals, scores.opp_goals);
       }
     } else if (status === "finished") {
-      const fetched = await loadGoalEvents(fx.fixture.id, match.pl_home, fx);
+      const fetched = await loadGoalEvents(fixtureId, plHome, fx);
       const plG = pl_goals ?? match.pl_goals ?? 0;
       const oppG = opp_goals ?? match.opp_goals ?? 0;
       goals = pickGoals(match, base.goals, fetched, plG, oppG);

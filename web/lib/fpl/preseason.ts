@@ -6,6 +6,18 @@ import { needsPreseasonGoalFetch } from "@/lib/fpl/preseason-scorers";
 
 export type { PreseasonGoal };
 
+export type PreseasonLineupPlayer = {
+  name: string;
+  number?: number | null;
+  minute_on?: number | null;
+};
+
+export type PreseasonLineup = {
+  formation: string | null;
+  starters: PreseasonLineupPlayer[];
+  subs: PreseasonLineupPlayer[];
+};
+
 export type PreseasonMatch = {
   id: string;
   date: string;
@@ -20,6 +32,7 @@ export type PreseasonMatch = {
   opp_goals: number | null;
   kickoff_time: string | null;
   goals: PreseasonGoal[];
+  lineup?: PreseasonLineup | null;
 };
 
 export type PreseasonBundle = {
@@ -97,9 +110,10 @@ export function buildPreseasonClubSummaries(
 
 const rawBundle = preseasonData as Omit<PreseasonBundle, "matches"> & {
   matches: Array<
-    Omit<PreseasonMatch, "kickoff_time" | "goals"> & {
+    Omit<PreseasonMatch, "kickoff_time" | "goals" | "lineup"> & {
       kickoff_time?: string | null;
       goals?: PreseasonGoal[];
+      lineup?: PreseasonLineup | null;
     }
   >;
 };
@@ -111,6 +125,7 @@ function normalizeMatch(
     ...m,
     kickoff_time: m.kickoff_time ?? null,
     goals: m.goals ?? [],
+    lineup: m.lineup ?? null,
   };
 }
 

@@ -9,9 +9,14 @@ import {
 } from "@/lib/fpl/preseason-sources";
 import {
   clearPreseasonFixtureCache,
+  getPlApiTeamId,
   preseasonMatchChanged,
   resolvePreseasonMatchFromApi,
 } from "@/lib/fpl/preseason-enrich";
+import {
+  preseasonLineupChanged,
+  resolvePreseasonLineupFromApi,
+} from "@/lib/fpl/preseason-lineups";
 import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
@@ -28,6 +33,7 @@ export type PreseasonSyncResult = {
   updated: number;
   newly_finished: number;
   goals_updated: number;
+  lineups_updated: number;
   external_results: number;
   wrote_file: boolean;
 };
@@ -39,21 +45,28 @@ function normalizeMatch(
     ...m,
     kickoff_time: m.kickoff_time ?? null,
     goals: m.goals ?? [],
+    lineup: m.lineup ?? null,
   };
+}
+
+function needsLineupFetch(match: PreseasonMatch): boolean {
+  return match.status === "finished" && !(match.lineup?.starters?.length);
 }
 
 function matchSyncChanged(before: PreseasonMatch, after: PreseasonMatch): boolean {
   return (
     preseasonAppliedChanged(before, after) ||
-    preseasonGoalsChanged(before.goals, after.goals)
+    preseasonGoalsChanged(before.goals, after.goals) ||
+    preseasonLineupChanged(before.lineup, after.lineup)
   );
 }
 
 async function resolveMatchUpdates(
   before: PreseasonMatch,
   externalResults: Awaited<ReturnType<typeof fetchAllPreseasonExternalResults>>,
-): Promise<{ match: PreseasonMatch; goals_updated: boolean }> {
+): Promise<{ match: PreseasonMatch; goals_updated: boolean; lineups_updated: boolean }> {
   let next = mergeExternalResultsOntoMatch(before, externalResults);
+  let lineups_updated = false;
 
   if (
     process.env.API_FOOTBALL_KEY?.trim() &&
@@ -120,7 +133,18 @@ async function resolveMatchUpdates(
     }
   }
 
-  return { match: next, goals_updated };
+  if (process.env.API_FOOTBALL_KEY?.trim() && needsLineupFetch(next)) {
+    const teamId = getPlApiTeamId(next.pl_code);
+    if (teamId) {
+      const lineup = await resolvePreseasonLineupFromApi(next, teamId);
+      if (lineup && preseasonLineupChanged(next.lineup, lineup)) {
+        next = { ...next, lineup };
+        lineups_updated = true;
+      }
+    }
+  }
+
+  return { match: next, goals_updated, lineups_updated };
 }
 
 export async function syncPreseasonResultsJson(
@@ -136,6 +160,7 @@ export async function syncPreseasonResultsJson(
   let updated = 0;
   let newly_finished = 0;
   let goals_updated = 0;
+  let lineups_updated = 0;
   let matches: PreseasonMatch[] = [];
 
   for (const raw of bundle.matches) {
@@ -150,6 +175,9 @@ export async function syncPreseasonResultsJson(
       }
       if (resolved.goals_updated) {
         goals_updated += 1;
+      }
+      if (resolved.lineups_updated) {
+        lineups_updated += 1;
       }
     }
 
@@ -172,6 +200,7 @@ export async function syncPreseasonResultsJson(
     updated,
     newly_finished,
     goals_updated,
+    lineups_updated,
     external_results: externalResults.length,
     wrote_file,
   };

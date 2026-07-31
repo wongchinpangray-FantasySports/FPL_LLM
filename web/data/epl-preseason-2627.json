@@ -47,7 +47,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "bre-2026-07-15-0",
@@ -81,7 +82,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "bha-2026-07-18-8",
@@ -127,7 +129,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "cov-2026-07-18-2",
@@ -142,7 +145,8 @@
       "pl_goals": 0,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "cry-2026-07-18-5",
@@ -194,7 +198,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "eve-2026-07-18-13",
@@ -234,7 +239,8 @@
           "assist": "Carlos Alcaraz",
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "mun-2026-07-18-41",
@@ -256,7 +262,8 @@
           "assist": "Lewis O'Brien",
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "new-2026-07-18-27",
@@ -290,7 +297,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "nfo-2026-07-18-19",
@@ -318,7 +326,8 @@
           "assist": "Eric da Silva Moreira",
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "sun-2026-07-18-34",
@@ -370,7 +379,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "avl-2026-07-21-51",
@@ -416,7 +426,8 @@
           "assist": "Luka Lynch",
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "nfo-2026-07-22-20",
@@ -450,7 +461,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "tot-2026-07-22-96",
@@ -472,7 +484,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "bou-2026-07-24-58",
@@ -512,7 +525,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "mun-2026-07-24-42",
@@ -558,7 +572,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "avl-2026-07-25-52",
@@ -580,7 +595,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "bha-2026-07-25-9",
@@ -595,7 +611,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "eve-2026-07-25-14",
@@ -610,7 +627,8 @@
       "pl_goals": 0,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "hul-2026-07-25-71",
@@ -644,7 +662,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "lee-2026-07-25-82",
@@ -690,7 +709,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "liv-2026-07-25-87",
@@ -730,7 +750,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "new-2026-07-25-28",
@@ -758,7 +779,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "sun-2026-07-25-35",
@@ -786,7 +808,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "nfo-2026-07-26-21",
@@ -808,7 +831,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "tot-2026-07-26-97",
@@ -836,7 +860,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "avl-2026-07-28-53",
@@ -864,7 +889,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "che-2026-07-28-64",
@@ -940,7 +966,8 @@
           "assist": null,
           "side": "opp"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "cry-2026-07-28-6",
@@ -955,7 +982,8 @@
       "pl_goals": 0,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "cry-2026-07-28-7",
@@ -970,7 +998,8 @@
       "pl_goals": 0,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "eve-2026-07-28-15",
@@ -985,7 +1014,8 @@
       "pl_goals": 0,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ful-2026-07-28-69",
@@ -1007,7 +1037,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "hul-2026-07-28-72",
@@ -1035,7 +1066,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "ips-2026-07-29-76",
@@ -1057,7 +1089,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "liv-2026-07-29-88",
@@ -1079,7 +1112,8 @@
           "assist": "Dominik Szoboszlai",
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "new-2026-07-29-29",
@@ -1101,7 +1135,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "tot-2026-07-29-98",
@@ -1123,7 +1158,8 @@
           "assist": null,
           "side": "pl"
         }
-      ]
+      ],
+      "lineup": null
     },
     {
       "id": "bou-2026-07-30-59",
@@ -1134,11 +1170,12 @@
       "pl_home": true,
       "venue": "Saalfelden",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 5,
+      "opp_goals": 2,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "lee-2026-07-30-83",
@@ -1153,7 +1190,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "sun-2026-07-30-36",
@@ -1168,7 +1206,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "nfo-2026-07-31-22",
@@ -1183,7 +1222,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ars-2026-08-01-47",
@@ -1198,7 +1238,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "avl-2026-08-01-54",
@@ -1213,7 +1254,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bha-2026-08-01-10",
@@ -1228,7 +1270,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "che-2026-08-01-65",
@@ -1243,7 +1286,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "eve-2026-08-01-16",
@@ -1258,7 +1302,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "hul-2026-08-01-73",
@@ -1273,7 +1318,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ips-2026-08-01-77",
@@ -1288,7 +1334,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ips-2026-08-01-78",
@@ -1303,7 +1350,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mci-2026-08-01-92",
@@ -1318,7 +1366,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mun-2026-08-01-43",
@@ -1333,7 +1382,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "tot-2026-08-01-99",
@@ -1348,7 +1398,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "lee-2026-08-02-84",
@@ -1363,7 +1414,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "liv-2026-08-02-89",
@@ -1378,7 +1430,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "sun-2026-08-02-37",
@@ -1393,7 +1446,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "avl-2026-08-04-55",
@@ -1408,7 +1462,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bou-2026-08-04-60",
@@ -1423,7 +1478,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ips-2026-08-04-79",
@@ -1438,7 +1494,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ars-2026-08-05-48",
@@ -1453,7 +1510,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "che-2026-08-05-66",
@@ -1468,7 +1526,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mci-2026-08-05-93",
@@ -1483,7 +1542,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "avl-2026-08-07-56",
@@ -1498,7 +1558,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bha-2026-08-08-11",
@@ -1513,7 +1574,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bou-2026-08-08-61",
@@ -1528,7 +1590,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bre-2026-08-08-62",
@@ -1543,7 +1606,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "che-2026-08-08-67",
@@ -1558,7 +1622,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "cov-2026-08-08-3",
@@ -1573,7 +1638,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "eve-2026-08-08-17",
@@ -1588,7 +1654,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "hul-2026-08-08-74",
@@ -1603,7 +1670,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ips-2026-08-08-80",
@@ -1618,7 +1686,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "lee-2026-08-08-85",
@@ -1633,7 +1702,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mun-2026-08-08-44",
@@ -1648,7 +1718,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "new-2026-08-08-30",
@@ -1663,7 +1734,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "nfo-2026-08-08-23",
@@ -1678,7 +1750,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "nfo-2026-08-08-24",
@@ -1693,7 +1766,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "sun-2026-08-08-38",
@@ -1708,7 +1782,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "sun-2026-08-08-39",
@@ -1723,7 +1798,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "tot-2026-08-08-100",
@@ -1738,7 +1814,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ars-2026-08-09-49",
@@ -1753,7 +1830,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "che-2026-08-09-68",
@@ -1768,7 +1846,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "liv-2026-08-09-90",
@@ -1783,7 +1862,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mci-2026-08-09-94",
@@ -1798,7 +1878,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "eve-2026-08-12-18",
@@ -1813,7 +1894,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "lee-2026-08-12-86",
@@ -1828,7 +1910,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mun-2026-08-12-45",
@@ -1843,7 +1926,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "new-2026-08-12-31",
@@ -1858,7 +1942,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "nfo-2026-08-12-25",
@@ -1873,7 +1958,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "cov-2026-08-14-4",
@@ -1888,7 +1974,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "avl-2026-08-15-57",
@@ -1903,7 +1990,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bha-2026-08-15-12",
@@ -1918,7 +2006,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "bre-2026-08-15-63",
@@ -1933,7 +2022,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ful-2026-08-15-70",
@@ -1948,7 +2038,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "hul-2026-08-15-75",
@@ -1963,7 +2054,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ips-2026-08-15-81",
@@ -1978,7 +2070,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mun-2026-08-15-46",
@@ -1993,7 +2086,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "new-2026-08-15-32",
@@ -2008,7 +2102,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "sun-2026-08-15-40",
@@ -2023,7 +2118,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "tot-2026-08-15-101",
@@ -2038,7 +2134,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "ars-2026-08-16-50",
@@ -2053,7 +2150,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "liv-2026-08-16-91",
@@ -2068,7 +2166,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "mci-2026-08-16-95",
@@ -2083,7 +2182,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "new-2026-08-16-33",
@@ -2098,7 +2198,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "nfo-2026-08-16-26",
@@ -2113,7 +2214,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     },
     {
       "id": "tot-2026-08-16-102",
@@ -2128,7 +2230,8 @@
       "pl_goals": null,
       "opp_goals": null,
       "kickoff_time": null,
-      "goals": []
+      "goals": [],
+      "lineup": null
     }
   ]
 }

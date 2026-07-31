@@ -8,6 +8,7 @@ import type {
   PreseasonClubGroup,
   PreseasonClubSummary,
   PreseasonGoal,
+  PreseasonLineup,
   PreseasonMatch,
 } from "@/lib/fpl/preseason";
 import {
@@ -50,6 +51,9 @@ type Labels = {
   filterClub: string;
   clubStatsTitle: string;
   clubStatsEmpty: string;
+  lineupTitle: string;
+  lineupStarters: string;
+  lineupSubs: string;
 };
 
 function playerLinkKey(plCode: string, name: string): string {
@@ -143,6 +147,89 @@ function GoalLines({
         playerLinks={playerLinks}
       />
       <GoalGroup title={preseasonOpponentLabel(match)} goals={oppGoals} labels={labels} />
+    </div>
+  );
+}
+
+function LineupPlayer({
+  player,
+  plCode,
+  playerLinks,
+  subdued,
+}: {
+  player: PreseasonLineup["starters"][number];
+  plCode: string;
+  playerLinks: Record<string, number>;
+  subdued?: boolean;
+}) {
+  return (
+    <span className={cn("inline-flex items-baseline gap-0.5", subdued && "text-muted-foreground")}>
+      {player.number != null ? (
+        <span className="tabular-nums text-muted-foreground">{player.number}</span>
+      ) : null}
+      <ScorerName name={player.name} plCode={plCode} playerLinks={playerLinks} />
+      {player.minute_on != null ? (
+        <span className="text-[10px] tabular-nums text-muted-foreground/80">
+          ({player.minute_on}&apos;)
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function MatchLineup({
+  match,
+  labels,
+  playerLinks,
+}: {
+  match: PreseasonMatch;
+  labels: Pick<Labels, "lineupTitle" | "lineupStarters" | "lineupSubs">;
+  playerLinks: Record<string, number>;
+}) {
+  const lineup = match.lineup;
+  if (!lineup?.starters?.length) return null;
+
+  return (
+    <div className="mt-2.5 space-y-2 border-t border-border/50 pt-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {labels.lineupTitle}
+        </p>
+        {lineup.formation ? (
+          <span className="rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+            {lineup.formation}
+          </span>
+        ) : null}
+      </div>
+      <div>
+        <p className="mb-1 text-[10px] text-muted-foreground">{labels.lineupStarters}</p>
+        <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-xs">
+          {lineup.starters.map((p, i) => (
+            <LineupPlayer
+              key={`${p.name}-${i}`}
+              player={p}
+              plCode={match.pl_code}
+              playerLinks={playerLinks}
+            />
+          ))}
+        </div>
+      </div>
+      {lineup.subs.length > 0 ? (
+        <div>
+          <p className="mb-1 text-[10px] text-muted-foreground">{labels.lineupSubs}</p>
+          <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-xs">
+            {lineup.subs.map((p, i) => (
+              <LineupPlayer
+                key={`${p.name}-${i}`}
+                player={p}
+                plCode={match.pl_code}
+                playerLinks={playerLinks}
+                subdued
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -251,7 +338,7 @@ function ResultCard({
 }: {
   match: PreseasonMatch;
   locale: string;
-  labels: Pick<Labels, "vs" | "assist" | "noGoalDetails">;
+  labels: Pick<Labels, "vs" | "assist" | "noGoalDetails" | "lineupTitle" | "lineupStarters" | "lineupSubs">;
   playerLinks: Record<string, number>;
 }) {
   const score = formatPreseasonScore(match);
@@ -289,6 +376,7 @@ function ResultCard({
             </div>
           </div>
           <GoalLines match={match} labels={labels} playerLinks={playerLinks} />
+          <MatchLineup match={match} labels={labels} playerLinks={playerLinks} />
         </div>
       </div>
     </article>
@@ -391,7 +479,10 @@ function ClubMatchRow({
 }: {
   match: PreseasonMatch;
   locale: string;
-  labels: Pick<Labels, "vs" | "assist" | "noGoalDetails" | "kickoffBeijing" | "kickoffTbd">;
+  labels: Pick<
+    Labels,
+    "vs" | "assist" | "noGoalDetails" | "kickoffBeijing" | "kickoffTbd" | "lineupTitle" | "lineupStarters" | "lineupSubs"
+  >;
   playerLinks: Record<string, number>;
 }) {
   const score = formatPreseasonScore(match);
@@ -426,7 +517,10 @@ function ClubMatchRow({
         </div>
       </div>
       {finished ? (
-        <GoalLines match={match} labels={labels} playerLinks={playerLinks} />
+        <>
+          <GoalLines match={match} labels={labels} playerLinks={playerLinks} />
+          <MatchLineup match={match} labels={labels} playerLinks={playerLinks} />
+        </>
       ) : null}
     </div>
   );

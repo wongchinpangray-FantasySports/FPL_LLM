@@ -33,6 +33,16 @@ function buildPlayerLinks(
         if (fplId) links[key] = fplId;
       }
     }
+    const lineupPlayers = [
+      ...(m.lineup?.starters ?? []),
+      ...(m.lineup?.subs ?? []),
+    ];
+    for (const p of lineupPlayers) {
+      const key = playerLinkKey(m.pl_code, p.name);
+      if (links[key]) continue;
+      const fplId = resolveFplId(p.name, m.pl_code);
+      if (fplId) links[key] = fplId;
+    }
   }
   return links;
 }
@@ -96,6 +106,9 @@ export default async function FplPreseasonPage({ params }: Props) {
           filterClub: t("preseasonFilterClub"),
           clubStatsTitle: t("preseasonClubStatsTitle"),
           clubStatsEmpty: t("preseasonClubStatsEmpty"),
+          lineupTitle: t("preseasonLineupTitle"),
+          lineupStarters: t("preseasonLineupStarters"),
+          lineupSubs: t("preseasonLineupSubs"),
         }}
       />
     </PageShell>

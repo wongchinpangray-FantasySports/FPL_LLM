@@ -40,6 +40,7 @@ async function main() {
       `updated=${result.updated}`,
       `newly_finished=${result.newly_finished}`,
       `goals_updated=${result.goals_updated}`,
+      `lineups_updated=${result.lineups_updated}`,
       `wrote_file=${result.wrote_file}`,
     ].join(" "),
   );
