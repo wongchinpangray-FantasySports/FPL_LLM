@@ -21,12 +21,12 @@ import {
   resolveFplSeasonForTool,
 } from "@/lib/fpl-season";
 import {
-  isChineseLocale,
-  loadFplPlayerZhSearchMap,
   nameQueryTokens,
   normalizeSearchText,
   playerMatchesQuery,
+  resolveSearchZhMap,
   sanitizePlayerQuery,
+  scorePlayerSearchMatch,
 } from "@/lib/fpl/player-search";
 
 const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
@@ -922,7 +922,9 @@ async function loadPlayerCandidates(
   teams: TeamRow[],
 ): Promise<PlayerStatic[]> {
   const supa = getServerSupabase();
-  const useProfiles = await seasonUsesProfiles(season);
+  const activeSeason = await getCurrentFplSeason();
+  const useProfiles =
+    season !== activeSeason && (await seasonUsesProfiles(season));
   const tokens = nameQueryTokens(params.name);
   const hasNameFilter = Boolean(params.playerKey?.trim()) || tokens.length > 0;
   const team =
@@ -1176,6 +1178,10 @@ async function loadProfileSearchRows(
   const activeSeason = await getCurrentFplSeason();
 
   if (seasonFilter) {
+    // Current-season search must use the live FPL pool; profile rows can be partial.
+    if (seasonFilter === activeSeason) {
+      return loadStaticProfileSearchRows(seasonFilter);
+    }
     if (await seasonUsesProfiles(seasonFilter)) {
       const supa = getServerSupabase();
       const rows = await fetchAllRows<Record<string, unknown>>(async (from, to) => {
@@ -1506,9 +1512,7 @@ export async function searchHistoricalPlayerSuggestions(params: {
   const query = sanitizeName(params.q);
   if (!nameQueryTokens(query).length && query.length < 1) return [];
 
-  const zhMap = isChineseLocale(params.locale ?? "")
-    ? await loadFplPlayerZhSearchMap()
-    : undefined;
+  const zhMap = await resolveSearchZhMap(params.locale, query);
 
   const teams = await loadHistoricalTeams();
   const team =
@@ -1530,6 +1534,7 @@ export async function searchHistoricalPlayerSuggestions(params: {
     position: string;
     teams: Set<string>;
     seasons: Set<string>;
+    score: number;
   };
   const groups: Group[] = [];
 
@@ -1543,15 +1548,12 @@ export async function searchHistoricalPlayerSuggestions(params: {
 
     const webName = row.web_name;
     const name = row.name;
-    if (
-      !matchesNameTokens(
-        { name, web_name: webName, team: row.team },
-        query,
-        { locale: params.locale, zhMap },
-      )
-    ) {
-      continue;
-    }
+    const matchScore = scorePlayerSearchMatch(
+      { name, web_name: webName, team: row.team },
+      query,
+      { locale: params.locale, zhMap },
+    );
+    if (!matchScore) continue;
 
     const rowAliases = identityAliases(webName, name);
     let group = groups.find((g) => identitiesMatch([...g.aliases], rowAliases));
@@ -1567,9 +1569,11 @@ export async function searchHistoricalPlayerSuggestions(params: {
         position: String(row.position ?? ""),
         teams: new Set<string>(),
         seasons: new Set<string>(),
+        score: matchScore,
       };
       groups.push(group);
     } else {
+      group.score = Math.max(group.score, matchScore);
       for (const alias of rowAliases) group.aliases.add(alias);
       const nextFull = canonicalFullName(webName, name);
       if (nextFull.length > group.fullName.length) group.fullName = nextFull;
@@ -1586,7 +1590,10 @@ export async function searchHistoricalPlayerSuggestions(params: {
 
   const limit = Math.min(Math.max(params.limit ?? 12, 1), 24);
   return groups
-    .sort((a, b) => a.label.localeCompare(b.label))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.label.localeCompare(b.label);
+    })
     .slice(0, limit)
     .map((group) => ({
       key: group.key,
@@ -1601,12 +1608,12 @@ export async function searchHistoricalPlayerSuggestions(params: {
 async function enrichHistoricalSearchParams(
   params: HistoricalQueryParams,
 ): Promise<HistoricalQueryParams> {
-  if (!isChineseLocale(params.locale ?? "")) return params;
   if (params.zhMap) return params;
-  return {
-    ...params,
-    zhMap: await loadFplPlayerZhSearchMap(),
-  };
+  const nameQuery = params.name ?? params.playerKey ?? "";
+  if (!nameQuery.trim()) return params;
+  const zhMap = await resolveSearchZhMap(params.locale, nameQuery);
+  if (!zhMap) return params;
+  return { ...params, zhMap };
 }
 
 export async function queryHistoricalStats(

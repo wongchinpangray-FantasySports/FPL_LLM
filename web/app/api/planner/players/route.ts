@@ -2,10 +2,9 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import {
-  isChineseLocale,
-  loadFplPlayerZhSearchMap,
   minPlayerQueryLength,
   rankPlayerSearchResults,
+  resolveSearchZhMap,
   sanitizePlayerQuery,
 } from "@/lib/fpl/player-search";
 
@@ -50,9 +49,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const zhMap = isChineseLocale(locale)
-      ? await loadFplPlayerZhSearchMap()
-      : undefined;
+    const zhMap = await resolveSearchZhMap(locale, q);
     const players = rankPlayerSearchResults(pool, q, {
       locale,
       zhMap,

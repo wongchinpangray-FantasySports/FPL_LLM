@@ -239,6 +239,15 @@ export async function loadWcPlayerZhSearchMap(): Promise<Map<string, string>> {
   return resolveChinesePlayerNameMap();
 }
 
+/** Load Chinese labels only when locale is zh and the query contains CJK. */
+export async function resolveSearchZhMap(
+  locale: string | undefined,
+  query: string,
+): Promise<Map<string, string> | undefined> {
+  if (!isChineseLocale(locale ?? "") || !containsCjk(query)) return undefined;
+  return loadFplPlayerZhSearchMap();
+}
+
 export function wcPlayerSearchFields(row: {
   name?: string | null;
 }): PlayerSearchFields {
