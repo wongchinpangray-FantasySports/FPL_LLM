@@ -21,6 +21,7 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
   ],
   "new-2026-07-25-28": [
     "https://www.newcastleunited.com/en/news/gateshead-1-newcastle-united-1",
+    "https://www.newcastleunited.com/en/news/confirmed-line-up-steur-starts-at-gateshead",
     "https://www.nufc.com/2026-27html/2026-07-25gateshead-a.html",
   ],
   "sun-2026-07-25-35": [

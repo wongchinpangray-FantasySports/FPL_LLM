@@ -36,6 +36,10 @@ jobs:
         working-directory: web
         run: npx tsx scripts/preseason-scorers-self-test.ts
 
+      - name: Self-test pre-season lineup parsers
+        working-directory: web
+        run: npx tsx scripts/preseason-lineups-self-test.ts
+
       - name: Sync pre-season scores and scorers
         working-directory: web
         run: npx tsx scripts/sync-preseason-results.ts
@@ -43,6 +47,10 @@ jobs:
       - name: Backfill missing PL scorers
         working-directory: web
         run: npx tsx scripts/backfill-preseason-goals.ts
+
+      - name: Backfill missing PL lineups from reports
+        working-directory: web
+        run: npx tsx scripts/backfill-preseason-lineups.ts
 
       - name: Validate pre-season scorer completeness
         working-directory: web

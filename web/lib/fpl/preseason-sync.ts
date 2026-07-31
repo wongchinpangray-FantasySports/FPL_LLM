@@ -17,6 +17,7 @@ import {
   preseasonLineupChanged,
   resolvePreseasonLineupFromApi,
 } from "@/lib/fpl/preseason-lineups";
+import { fetchLineupForFinishedMatch } from "@/lib/fpl/preseason-report-lineups";
 import {
   fetchGoalsForFinishedMatch,
   findReportUrlsForMatch,
@@ -50,7 +51,9 @@ function normalizeMatch(
 }
 
 function needsLineupFetch(match: PreseasonMatch): boolean {
-  return match.status === "finished" && !(match.lineup?.starters?.length);
+  if (match.status !== "finished") return false;
+  const starters = match.lineup?.starters?.length ?? 0;
+  return starters === 0 || starters < 11;
 }
 
 function matchSyncChanged(before: PreseasonMatch, after: PreseasonMatch): boolean {
@@ -133,13 +136,35 @@ async function resolveMatchUpdates(
     }
   }
 
-  if (process.env.API_FOOTBALL_KEY?.trim() && needsLineupFetch(next)) {
+  if (needsLineupFetch(next)) {
     const teamId = getPlApiTeamId(next.pl_code);
-    if (teamId) {
+    if (process.env.API_FOOTBALL_KEY?.trim() && teamId) {
       const lineup = await resolvePreseasonLineupFromApi(next, teamId);
       if (lineup && preseasonLineupChanged(next.lineup, lineup)) {
         next = { ...next, lineup };
         lineups_updated = true;
+      }
+    }
+
+    if (needsLineupFetch(next)) {
+      const reportUrls = findReportUrlsForMatch(next, externalResults);
+      const reportLineup = await fetchLineupForFinishedMatch(next, reportUrls, {
+        skipDiscovery: true,
+      });
+      if (reportLineup && preseasonLineupChanged(next.lineup, reportLineup)) {
+        next = { ...next, lineup: reportLineup };
+        lineups_updated = true;
+      } else if (needsLineupFetch(next)) {
+        const discoveredLineup = await fetchLineupForFinishedMatch(next, reportUrls, {
+          skipDiscovery: false,
+        });
+        if (
+          discoveredLineup &&
+          preseasonLineupChanged(next.lineup, discoveredLineup)
+        ) {
+          next = { ...next, lineup: discoveredLineup };
+          lineups_updated = true;
+        }
       }
     }
   }

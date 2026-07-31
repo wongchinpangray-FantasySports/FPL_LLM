@@ -596,7 +596,56 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": null,
+        "starters": [
+          {
+            "name": "Bizot",
+            "number": null
+          },
+          {
+            "name": "Cash",
+            "number": null
+          },
+          {
+            "name": "Mings",
+            "number": null
+          },
+          {
+            "name": "Maatsen",
+            "number": null
+          },
+          {
+            "name": "Bogarde",
+            "number": null
+          },
+          {
+            "name": "Barkley",
+            "number": null
+          },
+          {
+            "name": "Bailey",
+            "number": null
+          },
+          {
+            "name": "Cissé",
+            "number": null
+          },
+          {
+            "name": "Burrowes",
+            "number": null
+          },
+          {
+            "name": "Hemmings",
+            "number": null
+          },
+          {
+            "name": "Lynch",
+            "number": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "bha-2026-07-25-9",
@@ -861,7 +910,107 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": null,
+        "starters": [
+          {
+            "name": "Austin",
+            "number": null
+          },
+          {
+            "name": "Tye Hall",
+            "number": null
+          },
+          {
+            "name": "Hardy",
+            "number": null
+          },
+          {
+            "name": "Takai",
+            "number": null
+          },
+          {
+            "name": "Kyerematen",
+            "number": null
+          },
+          {
+            "name": "Donley",
+            "number": null
+          },
+          {
+            "name": "Gray",
+            "number": null
+          },
+          {
+            "name": "Williams-Barnett",
+            "number": null
+          },
+          {
+            "name": "Moore",
+            "number": null
+          },
+          {
+            "name": "Solomon",
+            "number": null
+          },
+          {
+            "name": "Scarlett",
+            "number": null
+          }
+        ],
+        "subs": [
+          {
+            "name": "Russell-Denny",
+            "number": null,
+            "minute_on": 87
+          },
+          {
+            "name": "Byrne",
+            "number": null,
+            "minute_on": 79
+          },
+          {
+            "name": "Tingey",
+            "number": null,
+            "minute_on": 87
+          },
+          {
+            "name": "Davies",
+            "number": null,
+            "minute_on": 62
+          },
+          {
+            "name": "Fernandes",
+            "number": null,
+            "minute_on": 62
+          },
+          {
+            "name": "Gallagher",
+            "number": null,
+            "minute_on": 62
+          },
+          {
+            "name": "Tel",
+            "number": null,
+            "minute_on": 62
+          },
+          {
+            "name": "Yang",
+            "number": null,
+            "minute_on": 62
+          },
+          {
+            "name": "Tyrese Hall",
+            "number": null,
+            "minute_on": 79
+          },
+          {
+            "name": "Richarlison",
+            "number": null,
+            "minute_on": 62
+          }
+        ]
+      }
     },
     {
       "id": "avl-2026-07-28-53",

@@ -727,6 +727,10 @@ export function parseMatchReportGoalsFromUrl(
   return parseGenericMatchReportGoals(html, match);
 }
 
+export async function fetchPreseasonReportHtml(url: string): Promise<string | null> {
+  return fetchReportHtml(url);
+}
+
 async function fetchReportHtml(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
