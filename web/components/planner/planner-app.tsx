@@ -1,8 +1,9 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 import type { NextFixtureOpponent } from "@/lib/xp";
 import { findBestXiByXp } from "@/lib/planner/optimize-xi";
 import type { ValidationIssue } from "@/lib/planner/validate";
@@ -132,6 +133,7 @@ export function PlannerApp({
   } | null;
 }) {
   const t = useTranslations("plannerApp");
+  const locale = useLocale();
 
   const sortedInitial = useMemo(
     () => [...initialPicks].sort((a, b) => a.slot - b.slot),
@@ -474,15 +476,14 @@ export function PlannerApp({
 
   const searchPlayers = useCallback(async (q: string) => {
     const t = q.trim();
-    if (t.length < 2) {
+    if (t.length < minPlayerQueryLength(t)) {
       setSearchHits([]);
       return;
     }
     setSearching(true);
     try {
-      const res = await fetch(
-        `/api/planner/players?q=${encodeURIComponent(t)}`,
-      );
+      const params = new URLSearchParams({ q: t, locale });
+      const res = await fetch(`/api/planner/players?${params.toString()}`);
       const data = (await res.json()) as { players?: SearchPlayer[] };
       setSearchHits(data.players ?? []);
     } catch {
@@ -490,7 +491,7 @@ export function PlannerApp({
     } finally {
       setSearching(false);
     }
-  }, []);
+  }, [locale]);
 
   function applySwap(slot: number, p: SearchPlayer) {
     if (p.fpl_id === picks.find((x) => x.slot === slot)?.fpl_id) {

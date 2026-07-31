@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { MiniModal } from "./mini-modal";
 import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 type PlayerHit = MiniPlayerDisplay;
 
@@ -33,6 +35,7 @@ export function MiniPlayerPicker({
   onClearSlot?: () => void;
   showClear?: boolean;
 }) {
+  const locale = useLocale();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PlayerHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +47,7 @@ export function MiniPlayerPicker({
       return;
     }
     const trimmed = q.trim();
-    if (trimmed.length < 2) {
+    if (trimmed.length < minPlayerQueryLength(trimmed)) {
       setHits([]);
       return;
     }
@@ -52,7 +55,7 @@ export function MiniPlayerPicker({
       void (async () => {
         setLoading(true);
         try {
-          const params = new URLSearchParams({ q: trimmed });
+          const params = new URLSearchParams({ q: trimmed, locale });
           if (positionFilter) params.set("position", positionFilter);
           const res = await fetch(`${playersApi}?${params}`);
           const data = (await res.json()) as { players?: PlayerHit[] };
@@ -65,7 +68,7 @@ export function MiniPlayerPicker({
       })();
     }, 220);
     return () => window.clearTimeout(id);
-  }, [q, open, positionFilter, playersApi]);
+  }, [q, open, positionFilter, playersApi, locale]);
 
   return (
     <MiniModal
@@ -97,7 +100,7 @@ export function MiniPlayerPicker({
       />
       {loading ? (
         <p className="text-xs text-muted-foreground">{searchingLabel}</p>
-      ) : q.trim().length >= 2 && hits.length === 0 ? (
+      ) : q.trim().length >= minPlayerQueryLength(q.trim()) && hits.length === 0 ? (
         <p className="text-xs text-muted-foreground">{noResultsLabel}</p>
       ) : (
         <ul className="max-h-[min(50vh,320px)] divide-y divide-white/10 overflow-y-auto rounded-lg border border-border">

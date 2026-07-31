@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useEntryId } from "@/components/entry-id-context";
 import { cn } from "@/lib/utils";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 type Options = {
   fpl_teams: { id: number; name: string; short_name: string }[];
@@ -23,6 +24,7 @@ const STEPS = 5;
 
 export function OnboardingWizard() {
   const t = useTranslations("onboarding");
+  const locale = useLocale();
   const router = useRouter();
   const { refresh } = useAuth();
   const { setEntryId } = useEntryId();
@@ -52,20 +54,22 @@ export function OnboardingWizard() {
   }, [t]);
 
   const searchPlayers = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    const trimmed = q.trim();
+    if (trimmed.length < minPlayerQueryLength(trimmed)) {
       setFplPlayers([]);
       setWcPlayers([]);
       return;
     }
+    const params = new URLSearchParams({ q: trimmed, locale });
     const [fplRes, wcRes] = await Promise.all([
-      fetch(`/api/planner/players?q=${encodeURIComponent(q)}`),
-      fetch(`/api/account/wc-players?q=${encodeURIComponent(q)}`),
+      fetch(`/api/planner/players?${params.toString()}`),
+      fetch(`/api/account/wc-players?${params.toString()}`),
     ]);
     const fplData = (await fplRes.json()) as { players?: FplHit[] };
     const wcData = (await wcRes.json()) as { players?: WcHit[] };
     setFplPlayers(fplData.players ?? []);
     setWcPlayers(wcData.players ?? []);
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     const id = window.setTimeout(() => void searchPlayers(playerQ), 220);

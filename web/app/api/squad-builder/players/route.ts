@@ -5,20 +5,16 @@ import {
   getOfficialFplBrowsePlayers,
   type SquadBuilderPlayerSort,
 } from "@/lib/squad-builder/fpl-live-players";
-
-function sanitizeQuery(q: string): string {
-  return q
-    .replace(/%/g, "")
-    .replace(/[,*'"`;()]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 48);
-}
+import {
+  minPlayerQueryLength,
+  sanitizePlayerQuery,
+} from "@/lib/fpl/player-search";
 
 /** Browse players from official FPL bootstrap-static (prices, ownership, form, season pts). */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("q") ?? "";
+  const locale = searchParams.get("locale") ?? "";
   const position = searchParams.get("position");
   const teamIdRaw = searchParams.get("team_id");
   const sort = (searchParams.get("sort") ?? "price") as SquadBuilderPlayerSort;
@@ -27,7 +23,7 @@ export async function GET(req: Request) {
     100,
   );
 
-  const q = sanitizeQuery(raw);
+  const q = sanitizePlayerQuery(raw);
   const teamId =
     teamIdRaw != null && teamIdRaw !== "" && Number.isFinite(Number(teamIdRaw))
       ? Number(teamIdRaw)
@@ -36,7 +32,8 @@ export async function GET(req: Request) {
   try {
     const pool = await getOfficialFplBrowsePlayers();
     const filtered = filterOfficialFplPlayers(pool, {
-      q,
+      q: q.length >= minPlayerQueryLength(q) ? q : "",
+      locale,
       position:
         position && ["GKP", "DEF", "MID", "FWD"].includes(position)
           ? position
@@ -73,6 +70,6 @@ export async function GET(req: Request) {
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Failed to load official FPL players";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

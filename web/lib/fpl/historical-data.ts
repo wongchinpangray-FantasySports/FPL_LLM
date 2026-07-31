@@ -20,6 +20,14 @@ import {
   isFplSeasonKey,
   resolveFplSeasonForTool,
 } from "@/lib/fpl-season";
+import {
+  isChineseLocale,
+  loadFplPlayerZhSearchMap,
+  nameQueryTokens,
+  normalizeSearchText,
+  playerMatchesQuery,
+  sanitizePlayerQuery,
+} from "@/lib/fpl/player-search";
 
 const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
 export type HistoricalPosition = (typeof POSITIONS)[number];
@@ -84,6 +92,8 @@ export type HistoricalQueryParams = {
   teamId?: number;
   name?: string;
   playerKey?: string;
+  locale?: string;
+  zhMap?: Map<string, string>;
   minMinutes?: number;
   minAppearances?: number;
   sortBy?: HistoricalSortField;
@@ -155,39 +165,7 @@ function seasonLabel(season: string): string {
 }
 
 function sanitizeName(q: string): string {
-  return q
-    .replace(/%/g, "")
-    .replace(/[,*'"`;()]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 48);
-}
-
-function normalizeSearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function nameQueryTokens(raw: string | undefined): string[] {
-  const normalized = normalizeSearchText(sanitizeName(raw ?? ""));
-  if (!normalized) return [];
-  return normalized.split(" ").filter((token) => token.length >= 2);
-}
-
-function matchesNameTokens(
-  row: { name?: string; web_name?: string; team?: string },
-  tokens: string[],
-): boolean {
-  if (!tokens.length) return true;
-  const haystack = normalizeSearchText(
-    `${row.web_name ?? ""} ${row.name ?? ""} ${row.team ?? ""}`,
-  );
-  return tokens.every((token) => haystack.includes(token));
+  return sanitizePlayerQuery(q);
 }
 
 function identityAliases(webName: string, name: string): string[] {
@@ -218,6 +196,18 @@ function identitiesMatch(a: string[], b: string[]): boolean {
   return false;
 }
 
+function matchesNameTokens(
+  row: { name?: string; web_name?: string; team?: string },
+  rawQuery: string,
+  opts?: { locale?: string; zhMap?: Map<string, string> },
+): boolean {
+  if (!rawQuery.trim()) return true;
+  return playerMatchesQuery(
+    { web_name: row.web_name, name: row.name, team: row.team },
+    rawQuery,
+    opts,
+  );
+}
 function matchesPlayerIdentity(
   row: { name?: string; web_name?: string },
   playerKey: string | undefined,
@@ -246,12 +236,18 @@ function canonicalFullName(webName: string, name: string): string {
 
 function matchesNameFilter(
   row: { name?: string; web_name?: string; team?: string },
-  params: Pick<HistoricalQueryParams, "name" | "playerKey">,
+  params: Pick<
+    HistoricalQueryParams,
+    "name" | "playerKey" | "locale" | "zhMap"
+  >,
 ): boolean {
   if (params.playerKey?.trim()) {
     return matchesPlayerIdentity(row, params.playerKey);
   }
-  return matchesNameTokens(row, nameQueryTokens(params.name));
+  return matchesNameTokens(row, sanitizeName(params.name ?? ""), {
+    locale: params.locale,
+    zhMap: params.zhMap,
+  });
 }
 
 function profileMatchesTeam(
@@ -379,6 +375,7 @@ export function parseHistoricalQueryParams(
         : undefined,
     name: sanitizeName(searchParams.get("name") ?? ""),
     playerKey: sanitizeName(searchParams.get("playerKey") ?? "") || undefined,
+    locale: searchParams.get("locale")?.trim() || undefined,
     minMinutes:
       minMinRaw != null && Number.isFinite(Number(minMinRaw))
         ? Math.max(0, Math.floor(Number(minMinRaw)))
@@ -1500,13 +1497,18 @@ async function resolvePlayerDetailSeason(
 
 export async function searchHistoricalPlayerSuggestions(params: {
   q: string;
+  locale?: string;
   season?: string;
   position?: HistoricalPosition;
   teamId?: number;
   limit?: number;
 }): Promise<HistoricalPlayerSuggestion[]> {
-  const tokens = nameQueryTokens(params.q);
-  if (!tokens.length) return [];
+  const query = sanitizeName(params.q);
+  if (!nameQueryTokens(query).length && query.length < 1) return [];
+
+  const zhMap = isChineseLocale(params.locale ?? "")
+    ? await loadFplPlayerZhSearchMap()
+    : undefined;
 
   const teams = await loadHistoricalTeams();
   const team =
@@ -1544,7 +1546,8 @@ export async function searchHistoricalPlayerSuggestions(params: {
     if (
       !matchesNameTokens(
         { name, web_name: webName, team: row.team },
-        tokens,
+        query,
+        { locale: params.locale, zhMap },
       )
     ) {
       continue;
@@ -1595,9 +1598,21 @@ export async function searchHistoricalPlayerSuggestions(params: {
     }));
 }
 
+async function enrichHistoricalSearchParams(
+  params: HistoricalQueryParams,
+): Promise<HistoricalQueryParams> {
+  if (!isChineseLocale(params.locale ?? "")) return params;
+  if (params.zhMap) return params;
+  return {
+    ...params,
+    zhMap: await loadFplPlayerZhSearchMap(),
+  };
+}
+
 export async function queryHistoricalStats(
   params: HistoricalQueryParams,
 ): Promise<HistoricalQueryResult> {
+  params = await enrichHistoricalSearchParams(params);
   const sortBy = params.sortBy ?? "total_points";
   const sortDir = params.sortDir ?? "desc";
   const offset = params.offset ?? 0;

@@ -1,5 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { fplGet } from "@/lib/fpl";
+import {
+  playerMatchesQuery,
+  sanitizePlayerQuery,
+  type PlayerSearchFields,
+} from "@/lib/fpl/player-search";
 
 const POSITION_BY_TYPE: Record<number, string> = {
   1: "GKP",
@@ -93,18 +98,18 @@ export const getOfficialFplBrowsePlayers = unstable_cache(
   { revalidate: 120 },
 );
 
-function tokenizeQuery(q: string): string[] {
-  return q
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function matchesSearch(p: FplLiveBrowsePlayer, tokens: string[]): boolean {
-  if (tokens.length === 0) return true;
-  const hay = `${p.web_name ?? ""} ${p.name ?? ""} ${p.team ?? ""}`.toLowerCase();
-  return tokens.every((t) => hay.includes(t));
+function matchesSearch(
+  p: FplLiveBrowsePlayer,
+  query: string,
+  locale?: string,
+): boolean {
+  const row: PlayerSearchFields = {
+    web_name: p.web_name,
+    name: p.name,
+    team: p.team,
+    total_points: p.total_points,
+  };
+  return playerMatchesQuery(row, query, { locale });
 }
 
 export function filterOfficialFplPlayers(
@@ -115,11 +120,12 @@ export function filterOfficialFplPlayers(
     teamId?: number;
     sort?: SquadBuilderPlayerSort;
     limit?: number;
+    locale?: string;
   },
 ): FplLiveBrowsePlayer[] {
-  const tokens = tokenizeQuery(opts.q ?? "");
+  const query = sanitizePlayerQuery(opts.q ?? "");
   let rows = players.filter((p) => {
-    if (tokens.length > 0 && !matchesSearch(p, tokens)) return false;
+    if (query && !matchesSearch(p, query, opts.locale)) return false;
     if (opts.position && p.position !== opts.position) return false;
     if (opts.teamId != null && p.team_id !== opts.teamId) return false;
     return true;

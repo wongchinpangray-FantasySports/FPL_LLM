@@ -6,12 +6,14 @@ import {
   searchHistoricalPlayerSuggestions,
   type HistoricalPosition,
 } from "@/lib/fpl/historical-data";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 export async function GET(req: Request) {
   const access = await requireAuthForApi();
   if (access instanceof NextResponse) return access;
 
   const { searchParams } = new URL(req.url);
+  const locale = searchParams.get("locale") ?? "";
   const q = searchParams.get("q")?.trim() ?? "";
   const seasonRaw = searchParams.get("season")?.trim();
   const season =
@@ -33,13 +35,14 @@ export async function GET(req: Request) {
       : undefined;
   const limitRaw = searchParams.get("limit");
 
-  if (q.length < 2) {
+  if (q.length < minPlayerQueryLength(q)) {
     return NextResponse.json({ suggestions: [] });
   }
 
   try {
     const suggestions = await searchHistoricalPlayerSuggestions({
       q,
+      locale,
       season: isHistoricalAllSeasons(season) ? undefined : season,
       position,
       teamId,

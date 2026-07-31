@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PlayerRadarChart } from "@/components/player/player-radar-chart";
 import type { PlayerRadarAxes } from "@/lib/player-hub";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 type SearchHit = {
   fpl_id: number;
@@ -36,6 +37,7 @@ export function PlayerRadarCompareSection({
   baseRadar: PlayerRadarAxes;
 }) {
   const t = useTranslations("playerPage");
+  const locale = useLocale();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
@@ -51,15 +53,14 @@ export function PlayerRadarCompareSection({
 
   const runSearch = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
-    if (trimmed.length < 2) {
+    if (trimmed.length < minPlayerQueryLength(trimmed)) {
       setHits([]);
       return;
     }
     setLoadingSearch(true);
     try {
-      const res = await fetch(
-        `/api/planner/players?q=${encodeURIComponent(trimmed)}`,
-      );
+      const params = new URLSearchParams({ q: trimmed, locale });
+      const res = await fetch(`/api/planner/players?${params.toString()}`);
       const data = (await res.json()) as { players?: SearchHit[] };
       const list = (data.players ?? []).filter((p) => p.fpl_id !== baseFplId);
       setHits(list);
@@ -68,7 +69,7 @@ export function PlayerRadarCompareSection({
     } finally {
       setLoadingSearch(false);
     }
-  }, [baseFplId]);
+  }, [baseFplId, locale]);
 
   useEffect(() => {
     const id = window.setTimeout(() => {

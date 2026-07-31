@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 export type BrowsePlayer = {
   fpl_id: number;
@@ -83,6 +84,7 @@ export function SquadBuilderPlayerPanel({
   };
 }) {
   const t = useTranslations("squadBuilderApp");
+  const locale = useLocale();
   const [position, setPosition] = useState<string>("");
   const [teamId, setTeamId] = useState<string>("");
   const [sort, setSort] = useState<SortKey>("price");
@@ -104,8 +106,12 @@ export function SquadBuilderPlayerPanel({
       const params = new URLSearchParams({
         sort: sort === "xpts" ? "price" : sort,
         limit: "80",
+        locale,
       });
-      if (q.trim()) params.set("q", q.trim());
+      const trimmedQ = q.trim();
+      if (trimmedQ.length >= minPlayerQueryLength(trimmedQ)) {
+        params.set("q", trimmedQ);
+      }
       if (position) params.set("position", position);
       if (teamId) params.set("team_id", teamId);
       const res = await fetch(`/api/squad-builder/players?${params}`, {
@@ -129,7 +135,7 @@ export function SquadBuilderPlayerPanel({
     } finally {
       setLoading(false);
     }
-  }, [q, position, teamId, sort]);
+  }, [q, position, teamId, sort, locale]);
 
   useEffect(() => {
     const timer = setTimeout(() => void loadPlayers(), 200);

@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
+import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 import { FplHistoricalPlayerModal } from "@/components/fpl/fpl-historical-player-modal";
 import {
   HISTORICAL_SEASON_ALL,
@@ -181,7 +183,12 @@ function seasonSummaryLabel(season: string, labels: Labels): string {
   return `${season}/${String(y + 1).slice(-2)}`;
 }
 
-function buildQuery(filters: Filters, offset: number, limit: number): string {
+function buildQuery(
+  filters: Filters,
+  offset: number,
+  limit: number,
+  locale: string,
+): string {
   const p = new URLSearchParams();
   p.set("season", filters.season);
   p.set("gwFrom", String(filters.gwFrom));
@@ -189,7 +196,11 @@ function buildQuery(filters: Filters, offset: number, limit: number): string {
   if (filters.position !== "ALL") p.set("position", filters.position);
   if (filters.teamId !== "ALL") p.set("teamId", String(filters.teamId));
   if (filters.playerKey.trim()) p.set("playerKey", filters.playerKey.trim());
-  else if (filters.name.trim().length >= 2) p.set("name", filters.name.trim());
+  else {
+    const name = filters.name.trim();
+    if (name.length >= minPlayerQueryLength(name)) p.set("name", name);
+  }
+  if (locale) p.set("locale", locale);
   if (filters.minMinutes.trim()) p.set("minMinutes", filters.minMinutes.trim());
   if (filters.minAppearances.trim()) {
     p.set("minAppearances", filters.minAppearances.trim());
@@ -255,6 +266,7 @@ export function FplHistoricalData({
   meta: HistoricalMeta | null;
   labels: Labels;
 }) {
+  const locale = useLocale();
   const [meta, setMeta] = useState<HistoricalMeta>(initialMeta ?? emptyMeta());
   const [metaReady, setMetaReady] = useState(Boolean(initialMeta));
   const [filters, setFilters] = useState<Filters>(() =>
@@ -317,7 +329,7 @@ export function FplHistoricalData({
   const fetchNameSuggestions = useCallback(
     async (query: string, active: Filters) => {
       const trimmed = query.trim();
-      if (trimmed.length < 2) {
+      if (trimmed.length < minPlayerQueryLength(trimmed)) {
         setNameSuggestions([]);
         return;
       }
@@ -325,6 +337,7 @@ export function FplHistoricalData({
       try {
         const p = new URLSearchParams();
         p.set("q", trimmed);
+        p.set("locale", locale);
         p.set("season", active.season);
         if (active.position !== "ALL") p.set("position", active.position);
         if (active.teamId !== "ALL") p.set("teamId", String(active.teamId));
@@ -340,7 +353,7 @@ export function FplHistoricalData({
         setNameSuggestionsLoading(false);
       }
     },
-    [],
+    [locale],
   );
 
   useEffect(() => {
@@ -359,7 +372,7 @@ export function FplHistoricalData({
     async (active: Filters, pageOffset: number) => {
       setLoading(true);
       try {
-        const qs = buildQuery(active, pageOffset, limit);
+        const qs = buildQuery(active, pageOffset, limit, locale);
         const res = await fetch(`/api/fpl/historical?${qs}`);
         const data = (await res.json()) as HistoricalQueryResult & {
           error?: string;
@@ -372,7 +385,7 @@ export function FplHistoricalData({
         setLoading(false);
       }
     },
-    [limit],
+    [limit, locale],
   );
 
   if (!metaReady) {
@@ -619,7 +632,11 @@ export function FplHistoricalData({
               autoComplete="off"
               onChange={(e) => onNameInputChange(e.target.value)}
               onFocus={() => {
-                if (!filters.playerKey.trim() && filters.name.trim().length >= 2) {
+                const nameLen = filters.name.trim();
+                if (
+                  !filters.playerKey.trim() &&
+                  nameLen.length >= minPlayerQueryLength(nameLen)
+                ) {
                   setNameSuggestionsOpen(true);
                 }
               }}
@@ -632,7 +649,8 @@ export function FplHistoricalData({
             <p className="mt-1 text-xs text-muted-foreground">{labels.nameHint}</p>
             {nameSuggestionsOpen &&
             !filters.playerKey.trim() &&
-            filters.name.trim().length >= 2 ? (
+            filters.name.trim().length >=
+              minPlayerQueryLength(filters.name.trim()) ? (
               <div className="absolute left-0 right-0 top-[calc(100%-0.25rem)] z-20 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
                 {nameSuggestionsLoading ? (
                   <p className="px-3 py-2 text-sm text-muted-foreground">
