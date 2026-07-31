@@ -1,4 +1,5 @@
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
+import { guessClubReportUrls, slugifyTeam } from "@/lib/fpl/preseason-club-report-urls";
 import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import type { PreseasonMatchRef } from "@/lib/fpl/preseason-sources";
 
@@ -808,77 +809,6 @@ function urlLooksLikeReport(url: string, match: PreseasonMatchRef): boolean {
     lower.includes(oppToken) ||
     scoreMatchesResult(url, match)
   );
-}
-
-function slugifyTeam(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-async function probeReportUrl(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, {
-      method: "HEAD",
-      headers: HTML_FETCH_HEADERS,
-      redirect: "follow",
-      signal: AbortSignal.timeout(8_000),
-    });
-    return res.status >= 200 && res.status < 400;
-  } catch {
-    return false;
-  }
-}
-
-function opponentMatchSlug(opponent: string): string {
-  const slug = slugifyTeam(opponent);
-  if (slug === "rosenborg") return "rosenborg-bk";
-  if (slug === "st-pauli") return "st-pauli";
-  return slug;
-}
-
-function manUtdReportUrls(match: PreseasonMatchRef): string[] {
-  const date = match.date.replace(/-/g, "");
-  const opp = opponentMatchSlug(match.opponent);
-  if (match.pl_home) {
-    return [
-      `https://www.manutd.com/en/matches/mens-team/manchester-united-v-${opp}-friendly-${date}?tab=live`,
-    ];
-  }
-  return [
-    `https://www.manutd.com/en/matches/mens-team/${opp}-v-manchester-united-friendly-${date}?tab=live`,
-  ];
-}
-
-async function guessClubReportUrls(match: PreseasonMatchRef): Promise<string[]> {
-  const plGoals = match.pl_goals ?? 0;
-  const oppGoals = match.opp_goals ?? 0;
-  const oppSlug = slugifyTeam(match.opponent);
-
-  const templates: Partial<Record<string, string[]>> = {
-    BRE: [
-      `https://www.brentfordfc.com/en/news/article/match-reports-brentford-${plGoals}-${oppSlug}-${oppGoals}-behind-closed-doors-friendly-jaidon-anthony`,
-      `https://www.brentfordfc.com/en/news/article/match-reports-brentford-${plGoals}-${oppSlug}-${oppGoals}`,
-    ],
-    BHA: [
-      "https://www.brightonandhovealbion.com/media-article/mft-match-report-pre-season-friendly-brighton-wycombe-wanderers-july-2026",
-      `https://www.brightonandhovealbion.com/media-article/mft-match-report-pre-season-friendly-brighton-${oppSlug}-july-2026`,
-    ],
-    BOU: [
-      "https://www.bbc.com/sport/football/articles/crrvd719xkwo",
-      "https://www.bbc.co.uk/sport/football/articles/crrvd719xkwo",
-    ],
-    MUN: manUtdReportUrls(match),
-  };
-
-  const candidates = templates[match.pl_code] ?? [];
-  const out: string[] = [];
-  for (const url of candidates) {
-    if (await probeReportUrl(url)) out.push(url);
-  }
-  return out;
 }
 
 async function discoverFromGoogleNewsRss(

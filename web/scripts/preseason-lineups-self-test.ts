@@ -53,4 +53,47 @@ assert.ok(avlLineup);
 assert.equal(avlLineup!.starters.length, 11);
 assert.ok(avlLineup!.starters.some((p) => p.name === "Lynch"));
 
+const munMatch = {
+  pl_code: "MUN",
+  pl_name: "Man Utd",
+  opponent: "Rosenborg",
+  pl_goals: 5,
+  opp_goals: 0,
+  date: "2026-07-24",
+  pl_home: false,
+  status: "finished" as const,
+};
+
+const munHtml = `
+<script>
+{"teamName":"Rosenborg BK","formation":"4-3-3","starting":[{"firstName":"A","lastName":"Away","shirtNumber":1}]}
+{"teamName":"Manchester United","formation":"4-2-3-1","starting":[
+{"firstName":"Shea","lastName":"Lacey","shirtNumber":47},
+{"firstName":"Tyrell","lastName":"Malacia","shirtNumber":12},
+{"firstName":"Harry","lastName":"Maguire","shirtNumber":5},
+{"firstName":"Jonny","lastName":"Evans","shirtNumber":35},
+{"firstName":"Noussair","lastName":"Mazraoui","shirtNumber":3},
+{"firstName":"Casemiro","lastName":"","shirtNumber":18},
+{"firstName":"Kobbie","lastName":"Mainoo","shirtNumber":37},
+{"firstName":"Amad","lastName":"Diallo","shirtNumber":16},
+{"firstName":"Bruno","lastName":"Fernandes","shirtNumber":8},
+{"firstName":"Alejandro","lastName":"Garnacho","shirtNumber":17},
+{"firstName":"Joshua","lastName":"Zirkzee","shirtNumber":11}
+],"substitutes":[
+{"firstName":"Altay","lastName":"Bayindir","shirtNumber":1},
+{"firstName":"Jacob","lastName":"Devaney","shirtNumber":52,"event":"SubOn","minute":"63'"}
+]}
+</script>`;
+
+const munLineup = parseMatchReportLineupFromUrl(
+  munHtml,
+  "https://www.manutd.com/en/matches/mens-team/rosenborg-bk-v-manchester-united-friendly-20260724?tab=live",
+  munMatch,
+);
+assert.ok(munLineup);
+assert.equal(munLineup!.formation, "4-2-3-1");
+assert.equal(munLineup!.starters.length, 11);
+assert.ok(munLineup!.starters.some((p) => p.name === "Bruno Fernandes"));
+assert.ok(munLineup!.subs.some((p) => p.name === "Jacob Devaney" && p.minute_on === 63));
+
 console.log("preseason-lineups-self-test: ok");

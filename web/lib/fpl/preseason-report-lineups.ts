@@ -2,6 +2,8 @@ import type { PreseasonLineup, PreseasonLineupPlayer } from "@/lib/fpl/preseason
 import type { PreseasonMatchRef } from "@/lib/fpl/preseason-sources";
 import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import { fetchPreseasonReportHtml } from "@/lib/fpl/preseason-report-goals";
+import { buildClubReportUrlCandidates } from "@/lib/fpl/preseason-club-report-urls";
+import { parseMatchCentreLineupFromHtml } from "@/lib/fpl/preseason-match-centre-lineups";
 
 const BLOCKED_NAMES = new Set([
   "goals",
@@ -287,6 +289,9 @@ export function parseMatchReportLineupFromUrl(
   url: string,
   match: PreseasonMatchRef & { pl_code?: string },
 ): PreseasonLineup | null {
+  const fromCentre = parseMatchCentreLineupFromHtml(html, match);
+  if (fromCentre) return fromCentre;
+
   const plain = stripHtml(html);
   const candidates: PreseasonLineup[] = [];
 
@@ -331,10 +336,12 @@ export async function fetchLineupForFinishedMatch(
   const discovered = opts?.skipDiscovery
     ? []
     : await discoverWebMatchReportUrls(match);
+  const clubUrls = buildClubReportUrlCandidates(match);
   const candidates = sortPreseasonReportUrls([
+    ...clubUrls,
     ...reportUrls,
     ...discovered,
-  ]).slice(0, 8);
+  ]).slice(0, 10);
 
   let best: PreseasonLineup | null = null;
   let bestScore = 0;

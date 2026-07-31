@@ -573,7 +573,67 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-2-3-1",
+        "starters": [
+          {
+            "name": "Radek Vítek",
+            "number": 40,
+            "minute_on": null
+          },
+          {
+            "name": "Leny Yoro",
+            "number": 15,
+            "minute_on": null
+          },
+          {
+            "name": "Luke Shaw",
+            "number": 23,
+            "minute_on": null
+          },
+          {
+            "name": "Andrey Santos",
+            "number": 17,
+            "minute_on": null
+          },
+          {
+            "name": "Harry Maguire",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "Ayden Heaven",
+            "number": 26,
+            "minute_on": null
+          },
+          {
+            "name": "Bryan Mbeumo",
+            "number": 19,
+            "minute_on": null
+          },
+          {
+            "name": "Mason Mount",
+            "number": 7,
+            "minute_on": null
+          },
+          {
+            "name": "Joshua Zirkzee",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Shea Lacey",
+            "number": 46,
+            "minute_on": null
+          },
+          {
+            "name": "Patrick Chinazaekpere Dorgu",
+            "number": 13,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "avl-2026-07-25-52",
