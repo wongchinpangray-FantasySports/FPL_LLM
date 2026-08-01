@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import {
   DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP,
   getInsightById,
@@ -9,8 +11,31 @@ import {
   isInsightsPremiumEnforced,
 } from "../lib/fpl/insights/access";
 import { loadPreseasonSignalsRaw } from "../lib/fpl/insights/preseason-signals";
+import { loadSetPiecesRaw } from "../lib/fpl/insights/set-pieces";
+import { loadDefconLeadersRaw } from "../lib/fpl/insights/defcon";
+
+function loadEnvLocal(): void {
+  const envPath = join(process.cwd(), ".env.local");
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const eq = t.indexOf("=");
+    if (eq <= 0) continue;
+    const k = t.slice(0, eq).trim();
+    let v = t.slice(eq + 1).trim();
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
+      v = v.slice(1, -1);
+    }
+    if (!process.env[k]) process.env[k] = v;
+  }
+}
 
 async function main(): Promise<void> {
+  loadEnvLocal();
   assert.equal(DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP, 5);
   assert.ok(getInsightById("preseason-signals")?.status === "live");
   assert.ok(listPremiumInsightIds().includes("transfers"));
@@ -22,12 +47,21 @@ async function main(): Promise<void> {
     assert.equal(await canAccessInsight("transfers", null), true);
   }
 
+  assert.ok(getInsightById("set-pieces")?.status === "live");
+  assert.ok(getInsightById("defcon")?.status === "live");
+
   const preseason = await loadPreseasonSignalsRaw();
   assert.ok(preseason.rows.length > 0, "expected preseason signal rows");
   assert.ok(preseason.match_count > 0);
 
+  const setPieces = await loadSetPiecesRaw();
+  assert.ok(setPieces.teams.length > 0, "expected set-piece teams");
+
+  const defcon = await loadDefconLeadersRaw();
+  assert.ok(defcon.rows.length > 0, "expected defcon rows");
+
   console.log(
-    `insights-access-self-test: ok (${preseason.rows.length} preseason rows, premium enforce=${isInsightsPremiumEnforced()})`,
+    `insights-access-self-test: ok (${preseason.rows.length} preseason, ${setPieces.rows.length} set-piece, ${defcon.rows.length} defcon)`,
   );
 }
 

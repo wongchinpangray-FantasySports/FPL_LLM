@@ -20,8 +20,6 @@ export const dynamic = "force-dynamic";
 type Props = { params: { locale: string; slug: string } };
 
 const PLACEHOLDER_SLUGS = new Set([
-  "set-pieces",
-  "defcon",
   "transfers",
   "differentials",
   "fixture-swing",
