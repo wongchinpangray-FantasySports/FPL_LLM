@@ -57,29 +57,35 @@ async function loadOwnershipDeltas(
 
   const supa = getServerSupabase();
   const gws = [currentGw - 1, currentGw].filter((g) => g >= 1);
-  const { data } = await supa
-    .from("player_gw_stats")
-    .select("player_id,gw,selected")
-    .eq("season", season)
-    .in("player_id", playerIds)
-    .in("gw", gws);
+  const BATCH = 200;
 
-  const byPlayer = new Map<number, Map<number, number>>();
-  for (const row of data ?? []) {
-    const pid = row.player_id as number;
-    const gw = row.gw as number;
-    const sel = num(row.selected);
-    if (sel == null) continue;
-    if (!byPlayer.has(pid)) byPlayer.set(pid, new Map());
-    byPlayer.get(pid)!.set(gw, sel);
+  for (let i = 0; i < playerIds.length; i += BATCH) {
+    const chunk = playerIds.slice(i, i + BATCH);
+    const { data } = await supa
+      .from("player_gw_stats")
+      .select("player_id,gw,selected")
+      .eq("season", season)
+      .in("player_id", chunk)
+      .in("gw", gws);
+
+    const byPlayer = new Map<number, Map<number, number>>();
+    for (const row of data ?? []) {
+      const pid = row.player_id as number;
+      const gw = row.gw as number;
+      const sel = num(row.selected);
+      if (sel == null) continue;
+      if (!byPlayer.has(pid)) byPlayer.set(pid, new Map());
+      byPlayer.get(pid)!.set(gw, sel);
+    }
+
+    for (const [pid, gwMap] of byPlayer) {
+      const prev = gwMap.get(currentGw - 1);
+      const curr = gwMap.get(currentGw);
+      if (prev == null || curr == null || prev <= 0) continue;
+      out.set(pid, ((curr - prev) / prev) * 100);
+    }
   }
 
-  for (const [pid, gwMap] of byPlayer) {
-    const prev = gwMap.get(currentGw - 1);
-    const curr = gwMap.get(currentGw);
-    if (prev == null || curr == null || prev <= 0) continue;
-    out.set(pid, ((curr - prev) / prev) * 100);
-  }
   return out;
 }
 
@@ -90,24 +96,26 @@ export async function loadTransferMomentumRaw(): Promise<{
   const season = await getCurrentFplSeason();
   const { current } = await resolveCurrentGw();
   const supa = getServerSupabase();
-  const { data, error } = await supa
-    .from("players_static")
-    .select(STATIC_COLS)
-    .gte("minutes", 90);
+  const { data, error } = await supa.from("players_static").select(STATIC_COLS);
 
   if (error) throw new Error(error.message);
 
   const staticRows = (data ?? [])
     .filter((r) => {
       const s = (r.status as string | null) ?? "a";
-      return s !== "u" && s !== "n";
+      return s === "a" || s === "d";
     })
     .map((r) => toStaticRow(r as Record<string, unknown>));
 
   const ids = staticRows.map((r) => r.fpl_id);
   const deltas = await loadOwnershipDeltas(ids, season, current);
 
-  const rows: TransferRow[] = staticRows
+  const withActivity = staticRows.filter(
+    (r) => r.transfers_in > 0 || r.transfers_out > 0,
+  );
+  const pool = withActivity.length > 0 ? withActivity : staticRows;
+
+  const rows: TransferRow[] = pool
     .map((r) => ({
       ...r,
       ownership_delta: deltas.get(r.fpl_id) ?? null,
@@ -116,14 +124,13 @@ export async function loadTransferMomentumRaw(): Promise<{
       const net = b.net_transfers - a.net_transfers;
       if (net !== 0) return net;
       return b.transfers_in - a.transfers_in;
-    })
-    .slice(0, 150);
+    });
 
   return { rows, gw: current };
 }
 
 export const loadTransferMomentum = unstable_cache(
   loadTransferMomentumRaw,
-  ["fpl-insights-transfers-v1"],
+  ["fpl-insights-transfers-v2"],
   { revalidate: 120 },
 );

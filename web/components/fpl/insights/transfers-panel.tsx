@@ -234,7 +234,7 @@ export function TransfersPanel({
               </tr>
             </thead>
             <tbody>
-              {sorted.slice(0, 80).map((row) => (
+              {sorted.map((row) => (
                 <tr
                   key={row.fpl_id}
                   className="border-b border-border/60 hover:bg-card/50"
