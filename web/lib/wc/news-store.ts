@@ -99,7 +99,7 @@ export async function syncWcNews(): Promise<{
   const cachedFplX = existing.items.filter((item) => item.feed_id === "fpl-x");
   const items = withoutWorldCupNews(
     await fetchWcNewsItems({
-      limit: 150,
+      limit: 180,
       editorialOnly: false,
       cachedFplXItems: cachedFplX,
     }),

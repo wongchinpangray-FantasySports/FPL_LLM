@@ -20,6 +20,7 @@ const CATEGORIES = new Set<NewsCategory>([
   "worldcup",
   "leagues",
   "events",
+  "creators",
 ]);
 
 export async function GET(req: Request) {

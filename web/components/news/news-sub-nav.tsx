@@ -13,6 +13,12 @@ export function NewsSubNav() {
   const tabs = [
     { href: "/news", label: t("navAllNews"), active: pathname === "/news", gated: false },
     {
+      href: "/news/fpl-creators",
+      label: t("navFplCreators"),
+      active: pathname.startsWith("/news/fpl-creators"),
+      gated: false,
+    },
+    {
       href: "/news/fpl-daily",
       label: t("navFplDaily"),
       active: pathname.startsWith("/news/fpl-daily"),

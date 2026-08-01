@@ -12,7 +12,8 @@ export type NewsCategory =
   | "epl"
   | "worldcup"
   | "leagues"
-  | "events";
+  | "events"
+  | "creators";
 
 export type NewsLeague =
   | "epl"
@@ -488,7 +489,7 @@ function extractImageUrl(block: string, rawSummary: string): string | null {
   return null;
 }
 
-function parseRssItems(xml: string): Array<{
+export function parseRssItems(xml: string): Array<{
   title: string;
   url: string;
   summary: string;
@@ -508,7 +509,11 @@ function parseRssItems(xml: string): Array<{
   const blocks = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
   for (const block of blocks) {
     const title = stripHtml(extractTag(block, "title"));
-    const url = extractLink(block);
+    let url = extractLink(block);
+    if (!url) {
+      const enc = block.match(/<enclosure[^>]+url=["']([^"']+)["']/i)?.[1]?.trim();
+      if (enc?.startsWith("http")) url = enc;
+    }
     if (!title || !url) continue;
 
     const rawDesc =
@@ -585,7 +590,7 @@ function dedupeKey(title: string, url: string): string {
   }
 }
 
-async function fetchFeedXml(url: string): Promise<string | null> {
+export async function fetchFeedXml(url: string): Promise<string | null> {
   try {
     const headers: Record<string, string> = { ...FETCH_HEADERS };
     if (url.includes("news.google.com")) {
@@ -629,21 +634,24 @@ export async function fetchWcNewsItems(opts?: {
   editorialOnly?: boolean;
   cachedFplXItems?: WcNewsItem[];
 }): Promise<WcNewsItem[]> {
-  const limit = Math.min(150, Math.max(20, opts?.limit ?? 100));
+  const limit = Math.min(180, Math.max(20, opts?.limit ?? 150));
   const editorialOnly = opts?.editorialOnly ?? false;
 
   const { fetchPremierLeagueNewsItems } = await import("@/lib/wc/premierleague-news");
   const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
-  const [plItems, fplTweetItems] = await Promise.all([
+  const { fetchFplCreatorsItems } = await import("@/lib/fpl/fpl-creators-feed");
+  const [plItems, fplTweetItems, creatorItems] = await Promise.all([
     fetchPremierLeagueNewsItems({ limit: 35 }).catch(() => [] as WcNewsItem[]),
     fetchFplXTweets({
       limit: 45,
       cachedItems: opts?.cachedFplXItems,
     }).catch(() => [] as WcNewsItem[]),
+    fetchFplCreatorsItems({ limit: 48 }).catch(() => [] as WcNewsItem[]),
   ]);
   const plBudget = Math.min(plItems.length, 35);
   const fplTweetBudget = Math.min(fplTweetItems.length, 45);
-  const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget);
+  const creatorBudget = Math.min(creatorItems.length, 48);
+  const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget - creatorBudget);
 
   const batches = await mapWithConcurrency(ACTIVE_NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
@@ -710,6 +718,7 @@ export async function fetchWcNewsItems(opts?: {
   for (const item of [
     ...plItems,
     ...fplTweetItems,
+    ...creatorItems,
     ...rssMerged.slice(0, rssLimit),
   ]) {
     const key = dedupeKey(item.title, item.url);
