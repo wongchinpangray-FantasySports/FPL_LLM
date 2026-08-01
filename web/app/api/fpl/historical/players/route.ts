@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { requireAuthForApi } from "@/lib/auth/require-auth-api";
 import {
   HISTORICAL_SEASON_ALL,
   isHistoricalAllSeasons,
@@ -9,9 +8,6 @@ import {
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 export async function GET(req: Request) {
-  const access = await requireAuthForApi();
-  if (access instanceof NextResponse) return access;
-
   const { searchParams } = new URL(req.url);
   const locale = searchParams.get("locale") ?? "";
   const q = searchParams.get("q")?.trim() ?? "";

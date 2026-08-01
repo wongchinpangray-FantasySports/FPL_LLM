@@ -63,6 +63,12 @@ export function FplHub() {
         <HubTile href={managerHref} title={t("manager")} description={t("managerBody")} />
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
         <HubTile
+          href="/fpl/insights"
+          title={t("insightsTitle")}
+          description={t("insightsBody")}
+          accent
+        />
+        <HubTile
           href="/fpl/fixtures"
           title={t("fixturesLinkTitle")}
           description={t("fixturesLinkBody")}
@@ -71,11 +77,6 @@ export function FplHub() {
           href="/fpl/preseason"
           title={t("preseasonLinkTitle")}
           description={t("preseasonLinkBody")}
-        />
-        <HubTile
-          href="/fpl/historical"
-          title={t("historicalTitle")}
-          description={t("historicalBody")}
         />
       </div>
     </div>

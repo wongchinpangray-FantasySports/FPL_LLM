@@ -17,6 +17,7 @@ export const FPL_PUBLIC_PREFIXES = [
   "/fpl/preseason",
   "/fpl/fixtures",
   "/fpl/historical",
+  "/fpl/insights",
 ];
 
 /** FPL tools linked from the hub (excluding the hub page itself). */
@@ -61,6 +62,8 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/squad-builder/")) return true;
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;
+  if (pathname.startsWith("/api/fpl/insights/")) return false;
+  if (pathname.startsWith("/api/fpl/historical/")) return false;
   if (pathname.startsWith("/api/fpl/")) return true;
   return false;
 }

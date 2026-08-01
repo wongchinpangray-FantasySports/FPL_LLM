@@ -196,6 +196,16 @@ export function SiteHeader() {
                   active={pathname === "/players" || pathname.startsWith("/player/")}
                 />
                 <MenuLink
+                  href="/fpl/insights"
+                  label={t("insights")}
+                  active={
+                    pathname === "/fpl/insights" ||
+                    pathname.startsWith("/fpl/insights/") ||
+                    pathname === "/fpl/historical" ||
+                    pathname.startsWith("/fpl/historical/")
+                  }
+                />
+                <MenuLink
                   href="/fpl/fixtures"
                   label={t("fixtures")}
                   active={pathname === "/fpl/fixtures" || pathname.startsWith("/fpl/fixtures/")}
@@ -204,11 +214,6 @@ export function SiteHeader() {
                   href="/fpl/preseason"
                   label={t("preseason")}
                   active={pathname === "/fpl/preseason" || pathname.startsWith("/fpl/preseason/")}
-                />
-                <MenuLink
-                  href="/fpl/historical"
-                  label={t("historical")}
-                  active={pathname === "/fpl/historical" || pathname.startsWith("/fpl/historical/")}
                 />
               </MenuSection>
 

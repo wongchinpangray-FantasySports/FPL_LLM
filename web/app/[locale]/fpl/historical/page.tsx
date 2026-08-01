@@ -1,7 +1,10 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplHistoricalData } from "@/components/fpl/fpl-historical-data";
+import { InsightsSubNav } from "@/components/fpl/insights/insights-sub-nav";
+import { InsightsUpdatedBanner } from "@/components/fpl/insights/insights-updated-banner";
 import { loadHistoricalMeta } from "@/lib/fpl/historical-data";
+import { loadInsightsMeta } from "@/lib/fpl/insights/meta";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +16,21 @@ export default async function FplHistoricalPage({ params }: Props) {
     locale: params.locale,
     namespace: "fplHistorical",
   });
-  const common = await getTranslations({
+  const tInsights = await getTranslations({
     locale: params.locale,
-    namespace: "common",
+    namespace: "fplInsights",
   });
 
   let meta;
+  let insightsMeta;
   try {
-    meta = await loadHistoricalMeta();
+    [meta, insightsMeta] = await Promise.all([
+      loadHistoricalMeta(),
+      loadInsightsMeta(),
+    ]);
   } catch {
     meta = null;
+    insightsMeta = null;
   }
 
   const labels = {
@@ -101,12 +109,24 @@ export default async function FplHistoricalPage({ params }: Props) {
 
   return (
     <PageShell
-      backHref="/"
-      backLabel={common("backHome")}
+      backHref="/fpl/insights"
+      backLabel={tInsights("backInsights")}
       eyebrow={t("eyebrow")}
       title={t("title")}
       width="6xl"
     >
+      {insightsMeta ? (
+        <InsightsUpdatedBanner
+          meta={insightsMeta}
+          locale={params.locale}
+          labels={{
+            gwOpen: tInsights("bannerGwOpen"),
+            gwClosed: tInsights("bannerGwClosed"),
+            synced: tInsights("bannerSynced"),
+          }}
+        />
+      ) : null}
+      <InsightsSubNav />
       <FplHistoricalData meta={meta} labels={labels} />
     </PageShell>
   );
