@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Link } from "@/i18n/navigation";
@@ -9,14 +9,20 @@ import { cn } from "@/lib/utils";
 import type { TeamTheme } from "@/lib/team-themes";
 import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
 import { FplClubSelectForm } from "@/components/account/fpl-club-select-form";
+import { AccountInsightsBilling } from "@/components/account/account-insights-billing";
 
 type AccountDetails = {
   email: string;
+  billing?: {
+    insightsConfigured: boolean;
+  };
   profile: {
     login_days: number;
     fpl_entry_id: number | null;
     onboarding_completed_at: string | null;
     theme_team_type: "club" | "national";
+    insights_plan?: "free" | "premium";
+    insights_plan_expires_at?: string | null;
   };
   preferences: {
     national_team: { code: string; name: string; short_name: string } | null;
@@ -164,6 +170,26 @@ export function AccountPanel() {
       </div>
 
       <div className="space-y-6 bg-card p-6">
+        <Suspense fallback={null}>
+          <AccountInsightsBilling
+            plan={details.profile.insights_plan === "premium" ? "premium" : "free"}
+            expiresAt={details.profile.insights_plan_expires_at ?? null}
+            billingConfigured={details.billing?.insightsConfigured ?? false}
+            labels={{
+              title: t("insightsProTitle"),
+              body: t("insightsProBody"),
+              active: t("insightsProActive"),
+              free: t("insightsProFree"),
+              expires: t("insightsProExpires"),
+              upgrade: t("insightsProUpgrade"),
+              manage: t("insightsProManage"),
+              success: t("insightsProSuccess"),
+              cancelled: t("insightsProCancelled"),
+              comingSoon: t("insightsProComingSoon"),
+            }}
+          />
+        </Suspense>
+
         {(canClubTheme || canNationalTheme) ? (
           <div>
             <h2 className="text-sm font-medium text-foreground/70">{t("pageTheme")}</h2>

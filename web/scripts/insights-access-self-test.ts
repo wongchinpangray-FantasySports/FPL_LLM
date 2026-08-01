@@ -18,6 +18,8 @@ import { loadDifferentialsRaw } from "../lib/fpl/insights/differentials";
 import { loadFixtureSwingRaw } from "../lib/fpl/insights/fixture-swing";
 import { loadXgDivergenceRaw } from "../lib/fpl/insights/xg-divergence";
 import { loadPriceChangesRaw } from "../lib/fpl/insights/price-changes";
+import { loadXpAccuracyRaw } from "../lib/fpl/insights/xp-accuracy";
+import { isStripeConfigured } from "../lib/stripe/server";
 
 function loadEnvLocal(): void {
   const envPath = join(process.cwd(), ".env.local");
@@ -57,6 +59,7 @@ async function main(): Promise<void> {
   assert.ok(getInsightById("fixture-swing")?.status === "live");
   assert.ok(getInsightById("xg-divergence")?.status === "live");
   assert.ok(getInsightById("price-changes")?.status === "live");
+  assert.ok(getInsightById("xp-accuracy")?.status === "live");
 
   const preseason = await loadPreseasonSignalsRaw();
   assert.ok(preseason.rows.length > 0, "expected preseason signal rows");
@@ -85,8 +88,11 @@ async function main(): Promise<void> {
   const priceChanges = await loadPriceChangesRaw();
   assert.ok(Array.isArray(priceChanges.rows), "price changes load ok");
 
+  const xpAccuracy = await loadXpAccuracyRaw();
+  assert.ok(Array.isArray(xpAccuracy.gws), "xp accuracy load ok");
+
   console.log(
-    `insights-access-self-test: ok (${preseason.rows.length} preseason, ${transfers.rows.length} transfers, ${differentials.rows.length} diffs, ${fixtureSwing.rows.length} fixture swing)`,
+    `insights-access-self-test: ok (${preseason.rows.length} preseason, ${transfers.rows.length} transfers, ${differentials.rows.length} diffs, ${fixtureSwing.rows.length} fixture swing, ${xpAccuracy.gws.length} xp-accuracy gws, stripe=${isStripeConfigured()})`,
   );
 }
 

@@ -97,7 +97,7 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     href: "/fpl/insights/xp-accuracy",
     tier: "premium",
     phase: 3,
-    status: "soon",
+    status: "live",
     titleKey: "xpAccuracy.title",
     descriptionKey: "xpAccuracy.description",
     badgeKey: "badgePremium",

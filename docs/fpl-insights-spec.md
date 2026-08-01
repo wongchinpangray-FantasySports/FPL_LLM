@@ -280,5 +280,6 @@ Hub targets: “FPL insights”, “GW1 prep”, “FPL transfer trends”, “F
 ## 12. Open items (post Phase 0)
 
 - [x] Ungate `/api/fpl/historical/*` (Phase 1 — done)
-- [ ] Stripe products for Insights Pro (Phase 3)
+- [x] Stripe products for Insights Pro (Phase 3 — checkout + webhook wired; set env to enable)
+- [ ] Set `INSIGHTS_PREMIUM_ENFORCE=true` when ready to gate premium pages
 - [ ] Weekly transfer email / sponsor pack (commercial)

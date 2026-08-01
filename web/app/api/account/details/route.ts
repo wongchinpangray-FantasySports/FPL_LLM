@@ -5,6 +5,7 @@ import { getSupabaseAuthEnv } from "@/lib/supabase/auth-config";
 import { resolveAccountTheme } from "@/lib/team-themes";
 import { recordLoginDay } from "@/lib/auth/record-login-day";
 import { resolveFplClubFromPrefs } from "@/lib/auth/fpl-club-preference";
+import { isStripeConfigured } from "@/lib/stripe/server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export async function GET() {
       admin
         .from("profiles")
         .select(
-          "id,display_name,fpl_entry_id,onboarding_completed_at,locale,login_days,theme_team_type",
+          "id,display_name,fpl_entry_id,onboarding_completed_at,locale,login_days,theme_team_type,insights_plan,insights_plan_expires_at,stripe_customer_id",
         )
         .eq("id", userId)
         .maybeSingle(),
@@ -81,6 +82,9 @@ export async function GET() {
 
     return NextResponse.json({
       email: authData.user.email,
+      billing: {
+        insightsConfigured: isStripeConfigured(),
+      },
       profile: profile ?? {
         id: userId,
         login_days: 0,
