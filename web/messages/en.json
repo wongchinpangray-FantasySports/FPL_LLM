@@ -826,6 +826,7 @@
     "clearSlot": "Clear this slot",
     "gkSlotOnly": "This slot is for a goalkeeper only.",
     "outfieldNoGk": "Goalkeepers must be picked in the GK slot.",
+    "duplicatePlayer": "That player is already in your squad.",
     "captain": "C",
     "vice": "VC",
     "searchPlaceholder": "Search name…",

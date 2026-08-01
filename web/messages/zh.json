@@ -825,6 +825,7 @@
     "clearSlot": "清空此位置",
     "gkSlotOnly": "此位置只能选择门将。",
     "outfieldNoGk": "门将请选在最下方门将位。",
+    "duplicatePlayer": "该球员已在阵容中。",
     "captain": "队长",
     "vice": "副队",
     "searchPlaceholder": "搜索姓名…",

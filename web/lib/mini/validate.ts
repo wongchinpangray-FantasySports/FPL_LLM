@@ -1,9 +1,12 @@
 /** Mini fantasy squad rules: 5 picks, 1 GKP, max 2 per outfield position, max 2 per club. */
 
+import { hasDuplicateMiniPlayerIdentity } from "@/lib/mini/player-identity";
+
 export interface MiniPickInput {
   fpl_id: number;
   position: string | null;
   team_id: number | null;
+  web_name?: string | null;
 }
 
 export interface MiniValidationIssue {
@@ -38,6 +41,8 @@ export function validatePartialSquad(picks: MiniPickInput[]): MiniValidationIssu
 
   const ids = picks.map((p) => p.fpl_id);
   if (new Set(ids).size !== ids.length) {
+    issues.push({ code: "duplicate", message: "Each player can only be picked once." });
+  } else if (hasDuplicateMiniPlayerIdentity(picks)) {
     issues.push({ code: "duplicate", message: "Each player can only be picked once." });
   }
 
@@ -97,6 +102,8 @@ export function validateMiniSquad(picks: MiniPickInput[]): MiniValidationIssue[]
 
   const ids = picks.map((p) => p.fpl_id);
   if (new Set(ids).size !== ids.length) {
+    issues.push({ code: "duplicate", message: "Each player can only be picked once." });
+  } else if (hasDuplicateMiniPlayerIdentity(picks)) {
     issues.push({ code: "duplicate", message: "Each player can only be picked once." });
   }
 

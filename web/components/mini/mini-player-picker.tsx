@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { MiniModal } from "./mini-modal";
 import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
+import { miniPlayerIdentityKey } from "@/lib/mini/player-identity";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
 type PlayerHit = MiniPlayerDisplay;
@@ -16,7 +17,8 @@ export function MiniPlayerPicker({
   searchingLabel,
   noResultsLabel,
   clearSlotLabel,
-  playersApi = "/api/planner/players",
+  playersApi = "/api/mini/players",
+  excludeIdentities = [],
   onClose,
   onSelect,
   onClearSlot,
@@ -24,12 +26,13 @@ export function MiniPlayerPicker({
 }: {
   open: boolean;
   title: string;
-  positionFilter?: "GKP" | null;
+  positionFilter?: "GKP" | "MID" | "DEF" | "FWD" | null;
   searchPlaceholder: string;
   searchingLabel: string;
   noResultsLabel: string;
   clearSlotLabel: string;
   playersApi?: string;
+  excludeIdentities?: string[];
   onClose: () => void;
   onSelect: (player: PlayerHit) => void;
   onClearSlot?: () => void;
@@ -39,6 +42,7 @@ export function MiniPlayerPicker({
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PlayerHit[]>([]);
   const [loading, setLoading] = useState(false);
+  const excluded = useMemo(() => new Set(excludeIdentities), [excludeIdentities]);
 
   useEffect(() => {
     if (!open) {
@@ -59,7 +63,10 @@ export function MiniPlayerPicker({
           if (positionFilter) params.set("position", positionFilter);
           const res = await fetch(`${playersApi}?${params}`);
           const data = (await res.json()) as { players?: PlayerHit[] };
-          setHits(data.players ?? []);
+          const players = (data.players ?? []).filter(
+            (p) => !excluded.has(miniPlayerIdentityKey(p)),
+          );
+          setHits(players);
         } catch {
           setHits([]);
         } finally {
@@ -68,7 +75,7 @@ export function MiniPlayerPicker({
       })();
     }, 220);
     return () => window.clearTimeout(id);
-  }, [q, open, positionFilter, playersApi, locale]);
+  }, [q, open, positionFilter, playersApi, locale, excluded]);
 
   return (
     <MiniModal

@@ -91,6 +91,7 @@ export async function POST(req: Request) {
       fpl_id: id,
       position: p.position,
       team_id: p.team_id,
+      web_name: p.web_name,
     };
   });
 

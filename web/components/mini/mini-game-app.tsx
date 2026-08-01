@@ -14,6 +14,7 @@ import {
   type MiniPickInput,
 } from "@/lib/mini/validate";
 import type { MiniPickStored } from "@/lib/mini/types";
+import { miniPlayerIdentityKey } from "@/lib/mini/player-identity";
 import {
   MINI_GK_SLOT,
   MINI_SLOT_COUNT,
@@ -54,6 +55,7 @@ function toPickInput(p: PlayerHit): MiniPickInput {
     fpl_id: p.fpl_id,
     position: p.position,
     team_id: p.team_id,
+    web_name: p.web_name,
   };
 }
 
@@ -237,6 +239,16 @@ export function MiniGameApp({ locale }: { locale: string }) {
     if (slotIndex !== MINI_GK_SLOT && player.position === "GKP") {
       showNotice(t("outfieldNoGk"));
       return;
+    }
+
+    const identity = miniPlayerIdentityKey(player);
+    for (let i = 0; i < slots.length; i++) {
+      if (i === slotIndex) continue;
+      const existing = slots[i];
+      if (existing && miniPlayerIdentityKey(existing) === identity) {
+        showNotice(t("duplicatePlayer"));
+        return;
+      }
     }
 
     const next = [...slots];
@@ -532,11 +544,13 @@ export function MiniGameApp({ locale }: { locale: string }) {
         open={pickerSlot != null}
         title={pickerTitle}
         positionFilter={pickerSlot === MINI_GK_SLOT ? "GKP" : null}
+        excludeIdentities={picks.map((p) => miniPlayerIdentityKey(p))}
         searchPlaceholder={t("searchPlaceholder")}
         searchingLabel={t("searching")}
         noResultsLabel={t("noResults")}
         clearSlotLabel={t("clearSlot")}
         showClear={pickerSlot != null && slots[pickerSlot!] != null}
+        playersApi="/api/mini/players"
         onClose={() => setPickerSlot(null)}
         onClearSlot={() => {
           if (pickerSlot != null) clearSlot(pickerSlot);
