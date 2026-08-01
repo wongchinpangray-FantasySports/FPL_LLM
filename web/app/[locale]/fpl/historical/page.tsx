@@ -2,9 +2,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FplHistoricalData } from "@/components/fpl/fpl-historical-data";
 import { InsightsSubNav } from "@/components/fpl/insights/insights-sub-nav";
-import { InsightsUpdatedBanner } from "@/components/fpl/insights/insights-updated-banner";
 import { loadHistoricalMeta } from "@/lib/fpl/historical-data";
-import { loadInsightsMeta } from "@/lib/fpl/insights/meta";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +20,10 @@ export default async function FplHistoricalPage({ params }: Props) {
   });
 
   let meta;
-  let insightsMeta;
   try {
-    [meta, insightsMeta] = await Promise.all([
-      loadHistoricalMeta(),
-      loadInsightsMeta(),
-    ]);
+    meta = await loadHistoricalMeta();
   } catch {
     meta = null;
-    insightsMeta = null;
   }
 
   const labels = {
@@ -115,17 +108,6 @@ export default async function FplHistoricalPage({ params }: Props) {
       title={t("title")}
       width="6xl"
     >
-      {insightsMeta ? (
-        <InsightsUpdatedBanner
-          meta={insightsMeta}
-          locale={params.locale}
-          labels={{
-            gwOpen: tInsights("bannerGwOpen"),
-            gwClosed: tInsights("bannerGwClosed"),
-            synced: tInsights("bannerSynced"),
-          }}
-        />
-      ) : null}
       <InsightsSubNav />
       <FplHistoricalData meta={meta} labels={labels} />
     </PageShell>

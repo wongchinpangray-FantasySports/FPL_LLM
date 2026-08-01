@@ -1236,6 +1236,7 @@ function HomeFeatureGroups({
     chat: string;
     mini: string;
     news: string;
+    insights: string;
   };
 }) {
   const { entryId } = useEntryId();
@@ -1255,6 +1256,7 @@ function HomeFeatureGroups({
   ];
 
   const tools: FeatureLink[] = [
+    { href: "/fpl/insights", label: labels.insights },
     { href: "/chat", label: labels.chat },
     { href: "/news", label: labels.news },
   ];
@@ -1398,6 +1400,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               chat: t("exploreChatTitle"),
               mini: t("exploreMiniTitle"),
               news: t("sidebarNews"),
+              insights: t("exploreInsightsTitle"),
             }}
           />
 

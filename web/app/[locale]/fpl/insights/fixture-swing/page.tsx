@@ -1,9 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { InsightsSubNav } from "@/components/fpl/insights/insights-sub-nav";
-import { InsightsUpdatedBanner } from "@/components/fpl/insights/insights-updated-banner";
 import { FixtureSwingPanel } from "@/components/fpl/insights/fixture-swing-panel";
-import { loadInsightsMeta } from "@/lib/fpl/insights/meta";
 import { loadFixtureSwing } from "@/lib/fpl/insights/fixture-swing";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +11,7 @@ type Props = { params: { locale: string } };
 export default async function FixtureSwingPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "fplInsights" });
-  const [meta, data] = await Promise.all([loadInsightsMeta(), loadFixtureSwing()]);
+  const data = await loadFixtureSwing();
 
   return (
     <PageShell
@@ -23,15 +21,6 @@ export default async function FixtureSwingPage({ params }: Props) {
       description={t("fixtureSwing.description")}
       width="6xl"
     >
-      <InsightsUpdatedBanner
-        meta={meta}
-        locale={params.locale}
-        labels={{
-          gwOpen: t("bannerGwOpen"),
-          gwClosed: t("bannerGwClosed"),
-          synced: t("bannerSynced"),
-        }}
-      />
       <InsightsSubNav />
       <FixtureSwingPanel
         rows={data.rows}

@@ -189,7 +189,8 @@
     "exploreFixturesTitle": "赛程与难度",
     "exploreSquadBuilderBody": "从零组建 15 人阵容，并查看每轮预期积分 (xPt)。",
     "exploreHistoricalTitle": "历史数据",
-    "exploreHistoricalBody": "跨赛季对比球员逐轮 FPL 表现。"
+    "exploreHistoricalBody": "跨赛季对比球员逐轮 FPL 表现。",
+    "exploreInsightsTitle": "洞察"
   },
   "entryForm": {
     "label": "Entry ID",

@@ -1,7 +1,6 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { InsightsSubNav } from "@/components/fpl/insights/insights-sub-nav";
-import { InsightsUpdatedBanner } from "@/components/fpl/insights/insights-updated-banner";
 import { InsightsPaywall } from "@/components/fpl/insights/insights-paywall";
 import { InsightsSponsorBanner } from "@/components/fpl/insights/insights-sponsor-banner";
 import { TransfersPanel } from "@/components/fpl/insights/transfers-panel";
@@ -10,7 +9,6 @@ import {
   getInsightsSponsor,
   isInsightsPremiumEnforced,
 } from "@/lib/fpl/insights/access";
-import { loadInsightsMeta } from "@/lib/fpl/insights/meta";
 import { loadTransferMomentum } from "@/lib/fpl/insights/transfers";
 import { getAuthUser } from "@/lib/auth/session";
 
@@ -22,10 +20,7 @@ export default async function TransfersInsightPage({ params }: Props) {
   setRequestLocale(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: "fplInsights" });
   const user = await getAuthUser();
-  const [meta, allowed] = await Promise.all([
-    loadInsightsMeta(),
-    canAccessInsight("transfers", user?.id),
-  ]);
+  const allowed = await canAccessInsight("transfers", user?.id);
   const sponsor = getInsightsSponsor();
   const enforce = isInsightsPremiumEnforced();
   const data = allowed || !enforce ? await loadTransferMomentum() : null;
@@ -38,15 +33,6 @@ export default async function TransfersInsightPage({ params }: Props) {
       description={t("transfers.description")}
       width="6xl"
     >
-      <InsightsUpdatedBanner
-        meta={meta}
-        locale={params.locale}
-        labels={{
-          gwOpen: t("bannerGwOpen"),
-          gwClosed: t("bannerGwClosed"),
-          synced: t("bannerSynced"),
-        }}
-      />
       <InsightsSubNav />
       {sponsor ? (
         <InsightsSponsorBanner
