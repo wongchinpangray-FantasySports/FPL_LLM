@@ -38,16 +38,18 @@ export default async function FplInsightsHubPage({ params }: Props) {
           synced: t("bannerSynced"),
         }}
       />
-      <InsightsSubNav />
-      <InsightsHub
-        entries={INSIGHT_CATALOG}
-        featuredId="preseason-signals"
-        lockedIds={access.lockedInsightIds}
-        enforcePremium={access.enforcePremium}
-      />
-      {access.enforcePremium ? (
-        <p className="text-xs text-muted-foreground">{t("premiumNote")}</p>
-      ) : null}
+      <div className="flex flex-col gap-5">
+        <InsightsSubNav />
+        <InsightsHub
+          entries={INSIGHT_CATALOG}
+          featuredId="preseason-signals"
+          lockedIds={access.lockedInsightIds}
+          enforcePremium={access.enforcePremium}
+        />
+        {access.enforcePremium ? (
+          <p className="text-xs text-muted-foreground">{t("premiumNote")}</p>
+        ) : null}
+      </div>
     </PageShell>
   );
 }

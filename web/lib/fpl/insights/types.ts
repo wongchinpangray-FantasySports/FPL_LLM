@@ -6,14 +6,20 @@ export type InsightsStatus = "live" | "soon";
 
 export type InsightsPlan = "free" | "premium";
 
+/** Hub section grouping for Insights layout. */
+export type InsightGroup = "prep" | "squad" | "market" | "models" | "archive";
+
 export type InsightDefinition = {
   id: string;
   href: string;
   tier: InsightsTier;
   phase: InsightsPhase;
   status: InsightsStatus;
-  /** i18n keys under fplInsights.catalog.{id} */
+  group: InsightGroup;
+  /** Page heading — keep short; detail lives in descriptionKey. */
   titleKey: string;
+  /** Compact sub-nav label; falls back to titleKey when omitted. */
+  navTitleKey?: string;
   descriptionKey: string;
   badgeKey?: "badgeLive" | "badgeSoon" | "badgePremium" | "badgeFree";
 };

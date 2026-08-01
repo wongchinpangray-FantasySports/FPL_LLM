@@ -1,4 +1,4 @@
-import type { InsightDefinition } from "@/lib/fpl/insights/types";
+import type { InsightDefinition, InsightGroup } from "@/lib/fpl/insights/types";
 
 /** Central registry for all insight pages — tiers, routes, rollout phase. */
 export const INSIGHT_CATALOG: InsightDefinition[] = [
@@ -8,7 +8,9 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "free",
     phase: 0,
     status: "live",
+    group: "prep",
     titleKey: "preseasonSignals.title",
+    navTitleKey: "nav.preseason",
     descriptionKey: "preseasonSignals.description",
     badgeKey: "badgeLive",
   },
@@ -18,7 +20,9 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "free",
     phase: 1,
     status: "live",
+    group: "squad",
     titleKey: "setPieces.title",
+    navTitleKey: "nav.setPieces",
     descriptionKey: "setPieces.description",
     badgeKey: "badgeLive",
   },
@@ -28,8 +32,22 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "free",
     phase: 1,
     status: "live",
+    group: "squad",
     titleKey: "defcon.title",
+    navTitleKey: "nav.defcon",
     descriptionKey: "defcon.description",
+    badgeKey: "badgeLive",
+  },
+  {
+    id: "fixture-swing",
+    href: "/fpl/insights/fixture-swing",
+    tier: "free",
+    phase: 2,
+    status: "live",
+    group: "squad",
+    titleKey: "fixtureSwing.title",
+    navTitleKey: "nav.fixtures",
+    descriptionKey: "fixtureSwing.description",
     badgeKey: "badgeLive",
   },
   {
@@ -38,7 +56,9 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "premium",
     phase: 1,
     status: "live",
+    group: "market",
     titleKey: "transfers.title",
+    navTitleKey: "nav.transfers",
     descriptionKey: "transfers.description",
     badgeKey: "badgePremium",
   },
@@ -48,28 +68,10 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "premium",
     phase: 1,
     status: "live",
+    group: "market",
     titleKey: "differentials.title",
+    navTitleKey: "nav.differentials",
     descriptionKey: "differentials.description",
-    badgeKey: "badgePremium",
-  },
-  {
-    id: "fixture-swing",
-    href: "/fpl/insights/fixture-swing",
-    tier: "free",
-    phase: 2,
-    status: "live",
-    titleKey: "fixtureSwing.title",
-    descriptionKey: "fixtureSwing.description",
-    badgeKey: "badgeLive",
-  },
-  {
-    id: "xg-divergence",
-    href: "/fpl/insights/xg-divergence",
-    tier: "premium",
-    phase: 2,
-    status: "live",
-    titleKey: "xgDivergence.title",
-    descriptionKey: "xgDivergence.description",
     badgeKey: "badgePremium",
   },
   {
@@ -78,8 +80,34 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "premium",
     phase: 2,
     status: "live",
+    group: "market",
     titleKey: "priceChanges.title",
+    navTitleKey: "nav.prices",
     descriptionKey: "priceChanges.description",
+    badgeKey: "badgePremium",
+  },
+  {
+    id: "xg-divergence",
+    href: "/fpl/insights/xg-divergence",
+    tier: "premium",
+    phase: 2,
+    status: "live",
+    group: "models",
+    titleKey: "xgDivergence.title",
+    navTitleKey: "nav.xg",
+    descriptionKey: "xgDivergence.description",
+    badgeKey: "badgePremium",
+  },
+  {
+    id: "xp-accuracy",
+    href: "/fpl/insights/xp-accuracy",
+    tier: "premium",
+    phase: 3,
+    status: "live",
+    group: "models",
+    titleKey: "xpAccuracy.title",
+    navTitleKey: "nav.xp",
+    descriptionKey: "xpAccuracy.description",
     badgeKey: "badgePremium",
   },
   {
@@ -88,20 +116,23 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     tier: "free",
     phase: 1,
     status: "live",
+    group: "archive",
     titleKey: "historical.title",
+    navTitleKey: "nav.historical",
     descriptionKey: "historical.description",
     badgeKey: "badgeFree",
   },
-  {
-    id: "xp-accuracy",
-    href: "/fpl/insights/xp-accuracy",
-    tier: "premium",
-    phase: 3,
-    status: "live",
-    titleKey: "xpAccuracy.title",
-    descriptionKey: "xpAccuracy.description",
-    badgeKey: "badgePremium",
-  },
+];
+
+export const INSIGHT_GROUP_ORDER: {
+  id: InsightGroup;
+  labelKey: string;
+}[] = [
+  { id: "prep", labelKey: "groupPrep" },
+  { id: "squad", labelKey: "groupSquad" },
+  { id: "market", labelKey: "groupMarket" },
+  { id: "models", labelKey: "groupModels" },
+  { id: "archive", labelKey: "groupArchive" },
 ];
 
 export const DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP = 5;
@@ -118,4 +149,24 @@ export function listPremiumInsightIds(): string[] {
   return INSIGHT_CATALOG.filter((entry) => entry.tier === "premium").map(
     (entry) => entry.id,
   );
+}
+
+export function insightsByGroup(
+  entries: InsightDefinition[] = INSIGHT_CATALOG,
+): Map<InsightGroup, InsightDefinition[]> {
+  const map = new Map<InsightGroup, InsightDefinition[]>();
+  for (const group of INSIGHT_GROUP_ORDER) {
+    map.set(group.id, []);
+  }
+  for (const entry of entries) {
+    if (entry.status !== "live") continue;
+    const list = map.get(entry.group) ?? [];
+    list.push(entry);
+    map.set(entry.group, list);
+  }
+  return map;
+}
+
+export function insightNavLabelKey(entry: InsightDefinition): string {
+  return entry.navTitleKey ?? entry.titleKey;
 }
