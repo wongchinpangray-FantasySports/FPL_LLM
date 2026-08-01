@@ -3,8 +3,30 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { TransferRow } from "@/lib/fpl/insights/transfers";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
 type Tab = "net" | "in" | "out" | "ownership";
+type SortKey =
+  | "player"
+  | "team"
+  | "pos"
+  | "price"
+  | "own"
+  | "ownDelta"
+  | "in"
+  | "out"
+  | "net";
+
+const TAB_SORT: Record<Tab, SortKey> = {
+  net: "net",
+  in: "in",
+  out: "out",
+  ownership: "ownDelta",
+};
 
 function fmtNum(v: number | null | undefined, d = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
@@ -15,6 +37,33 @@ function fmtInt(v: number): string {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}m`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
   return String(v);
+}
+
+function transferSortValue(
+  row: TransferRow,
+  key: SortKey,
+): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "team":
+      return row.team;
+    case "pos":
+      return row.position;
+    case "price":
+      return row.base_price;
+    case "own":
+      return row.selected_by_percent;
+    case "ownDelta":
+      return row.ownership_delta;
+    case "in":
+      return row.transfers_in;
+    case "out":
+      return row.transfers_out;
+    case "net":
+    default:
+      return row.net_transfers;
+  }
 }
 
 export function TransfersPanel({
@@ -52,26 +101,19 @@ export function TransfersPanel({
 }) {
   const [tab, setTab] = useState<Tab>("net");
   const [position, setPosition] = useState("all");
+  const { sortKey, sortDir, toggle, setSort } = useInsightsTableSort<SortKey>("net");
 
   const sorted = useMemo(() => {
     let list = [...rows];
     if (position !== "all") {
       list = list.filter((r) => r.position === position);
     }
-    switch (tab) {
-      case "in":
-        return list.sort((a, b) => b.transfers_in - a.transfers_in);
-      case "out":
-        return list.sort((a, b) => b.transfers_out - a.transfers_out);
-      case "ownership":
-        return list.sort(
-          (a, b) => (b.ownership_delta ?? -999) - (a.ownership_delta ?? -999),
-        );
-      case "net":
-      default:
-        return list.sort((a, b) => b.net_transfers - a.net_transfers);
-    }
-  }, [rows, tab, position]);
+    return sortInsightRows(
+      list,
+      (row) => transferSortValue(row, sortKey),
+      sortDir,
+    );
+  }, [rows, position, sortKey, sortDir]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "net", label: labels.tabNet },
@@ -91,7 +133,10 @@ export function TransfersPanel({
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setTab(t.id);
+              setSort(TAB_SORT[t.id], "desc");
+            }}
             className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               tab === t.id
                 ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
@@ -125,15 +170,66 @@ export function TransfersPanel({
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2">{labels.colPos}</th>
-                <th className="px-3 py-2 text-right">{labels.colPrice}</th>
-                <th className="px-3 py-2 text-right">{labels.colOwn}</th>
-                <th className="px-3 py-2 text-right">{labels.colOwnDelta}</th>
-                <th className="px-3 py-2 text-right">{labels.colIn}</th>
-                <th className="px-3 py-2 text-right">{labels.colOut}</th>
-                <th className="px-3 py-2 text-right">{labels.colNet}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPos}
+                  active={sortKey === "pos"}
+                  dir={sortDir}
+                  onSort={() => toggle("pos", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPrice}
+                  active={sortKey === "price"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("price")}
+                />
+                <InsightsSortableTh
+                  label={labels.colOwn}
+                  active={sortKey === "own"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("own")}
+                />
+                <InsightsSortableTh
+                  label={labels.colOwnDelta}
+                  active={sortKey === "ownDelta"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("ownDelta")}
+                />
+                <InsightsSortableTh
+                  label={labels.colIn}
+                  active={sortKey === "in"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("in")}
+                />
+                <InsightsSortableTh
+                  label={labels.colOut}
+                  active={sortKey === "out"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("out")}
+                />
+                <InsightsSortableTh
+                  label={labels.colNet}
+                  active={sortKey === "net"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("net")}
+                />
                 <th className="px-3 py-2">{labels.colProfile}</th>
               </tr>
             </thead>

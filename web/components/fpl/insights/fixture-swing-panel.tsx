@@ -6,8 +6,13 @@ import { fdrClass, normalizeFplFdr, type FplFdrLevel } from "@/lib/fpl/fdr";
 import { FplFdrLegend } from "@/components/fpl/fpl-fdr-legend";
 import { getFplTeamBadgeStyle } from "@/lib/team-themes";
 import type { FixtureSwingRow } from "@/lib/fpl/insights/fixture-swing";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
-type SortKey = "easiest" | "hardest";
+type SortKey = "team" | "avgFdr";
 
 function FixtureChip({
   fx,
@@ -54,13 +59,9 @@ export function FixtureSwingPanel({
     horizon: string;
     horizon5: string;
     horizon8: string;
-    sortBy: string;
-    sortEasiest: string;
-    sortHardest: string;
     colTeam: string;
     colAvgFdr: string;
     colFixtures: string;
-    colRuns: string;
     empty: string;
     fdrLegend: Record<FplFdrLevel, string>;
     home: string;
@@ -68,7 +69,10 @@ export function FixtureSwingPanel({
   };
 }) {
   const [horizon, setHorizon] = useState(defaultHorizon);
-  const [sort, setSort] = useState<SortKey>("easiest");
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>(
+    "avgFdr",
+    "asc",
+  );
 
   const displayed = useMemo(() => {
     const list = rows.map((row) => {
@@ -81,10 +85,12 @@ export function FixtureSwingPanel({
       return { ...row, fixtures, avg_fdr: avg, total_fdr: total };
     });
 
-    return [...list].sort((a, b) =>
-      sort === "hardest" ? b.avg_fdr - a.avg_fdr : a.avg_fdr - b.avg_fdr,
+    return sortInsightRows(
+      list,
+      (row) => (sortKey === "team" ? row.name : row.avg_fdr),
+      sortDir,
     );
-  }, [rows, horizon, sort]);
+  }, [rows, horizon, sortKey, sortDir]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -94,30 +100,17 @@ export function FixtureSwingPanel({
 
       <FplFdrLegend labels={labels.fdrLegend} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.horizon}
-          <select
-            value={horizon}
-            onChange={(e) => setHorizon(Number(e.target.value))}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value={5}>{labels.horizon5}</option>
-            <option value={8}>{labels.horizon8}</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.sortBy}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="easiest">{labels.sortEasiest}</option>
-            <option value="hardest">{labels.sortHardest}</option>
-          </select>
-        </label>
-      </div>
+      <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+        {labels.horizon}
+        <select
+          value={horizon}
+          onChange={(e) => setHorizon(Number(e.target.value))}
+          className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
+        >
+          <option value={5}>{labels.horizon5}</option>
+          <option value={8}>{labels.horizon8}</option>
+        </select>
+      </label>
 
       {displayed.length === 0 ? (
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
@@ -126,8 +119,19 @@ export function FixtureSwingPanel({
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2 text-right">{labels.colAvgFdr}</th>
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colAvgFdr}
+                  active={sortKey === "avgFdr"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("avgFdr", "asc")}
+                />
                 <th className="px-3 py-2">{labels.colFixtures}</th>
               </tr>
             </thead>

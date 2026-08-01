@@ -42,13 +42,9 @@ export default async function FixtureSwingPage({ params }: Props) {
           horizon: t("fixtureSwing.horizon"),
           horizon5: t("fixtureSwing.horizon5"),
           horizon8: t("fixtureSwing.horizon8"),
-          sortBy: t("fixtureSwing.sortBy"),
-          sortEasiest: t("fixtureSwing.sortEasiest"),
-          sortHardest: t("fixtureSwing.sortHardest"),
           colTeam: t("fixtureSwing.colTeam"),
           colAvgFdr: t("fixtureSwing.colAvgFdr"),
           colFixtures: t("fixtureSwing.colFixtures"),
-          colRuns: t("fixtureSwing.colRuns"),
           empty: t("fixtureSwing.empty"),
           fdrLegend: {
             1: t("fixtureSwing.fdr1"),

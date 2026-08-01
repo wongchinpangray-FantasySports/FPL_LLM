@@ -4,11 +4,38 @@ import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { PreseasonSignalRow } from "@/lib/fpl/insights/preseason-signals";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
-type SortKey = "score" | "goals" | "assists" | "starts";
+type SortKey = "player" | "club" | "goals" | "assists" | "starts" | "subs";
 
 function rowScore(row: PreseasonSignalRow): number {
   return row.goals * 4 + row.assists * 3 + row.starts * 2 + row.sub_appearances;
+}
+
+function preseasonSortValue(
+  row: PreseasonSignalRow,
+  key: SortKey,
+): string | number {
+  switch (key) {
+    case "player":
+      return row.name;
+    case "club":
+      return row.pl_name;
+    case "goals":
+      return row.goals;
+    case "assists":
+      return row.assists;
+    case "starts":
+      return row.starts;
+    case "subs":
+      return row.sub_appearances;
+    default:
+      return rowScore(row);
+  }
 }
 
 export function PreseasonSignalsPanel({
@@ -22,7 +49,6 @@ export function PreseasonSignalsPanel({
     intro: string;
     filterClub: string;
     filterAll: string;
-    sortBy: string;
     colPlayer: string;
     colClub: string;
     colGoals: string;
@@ -37,7 +63,7 @@ export function PreseasonSignalsPanel({
   };
 }) {
   const [club, setClub] = useState<string>("all");
-  const [sort, setSort] = useState<SortKey>("score");
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("goals");
 
   const clubs = useMemo(() => {
     const set = new Set(rows.map((r) => r.pl_code));
@@ -46,21 +72,12 @@ export function PreseasonSignalsPanel({
 
   const filtered = useMemo(() => {
     let list = club === "all" ? rows : rows.filter((r) => r.pl_code === club);
-    list = [...list].sort((a, b) => {
-      switch (sort) {
-        case "goals":
-          return b.goals - a.goals || b.assists - a.assists;
-        case "assists":
-          return b.assists - a.assists || b.goals - a.goals;
-        case "starts":
-          return b.starts - a.starts || b.goals - a.goals;
-        case "score":
-        default:
-          return rowScore(b) - rowScore(a);
-      }
-    });
-    return list;
-  }, [rows, club, sort]);
+    return sortInsightRows(
+      list,
+      (row) => preseasonSortValue(row, sortKey),
+      sortDir,
+    );
+  }, [rows, club, sortKey, sortDir]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -68,36 +85,21 @@ export function PreseasonSignalsPanel({
         {labels.intro.replace("{n}", String(matchCount))}
       </p>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.filterClub}
-          <select
-            value={club}
-            onChange={(e) => setClub(e.target.value)}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="all">{labels.filterAll}</option>
-            {clubs.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.sortBy}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="score">{labels.colGoals} + form</option>
-            <option value="goals">{labels.colGoals}</option>
-            <option value="assists">{labels.colAssists}</option>
-            <option value="starts">{labels.colStarts}</option>
-          </select>
-        </label>
-      </div>
+      <label className="flex w-fit items-center gap-2 text-sm text-muted-foreground">
+        {labels.filterClub}
+        <select
+          value={club}
+          onChange={(e) => setClub(e.target.value)}
+          className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
+        >
+          <option value="all">{labels.filterAll}</option>
+          {clubs.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </label>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
@@ -106,12 +108,46 @@ export function PreseasonSignalsPanel({
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colClub}</th>
-                <th className="px-3 py-2 text-right">{labels.colGoals}</th>
-                <th className="px-3 py-2 text-right">{labels.colAssists}</th>
-                <th className="px-3 py-2 text-right">{labels.colStarts}</th>
-                <th className="px-3 py-2 text-right">{labels.colSubs}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colClub}
+                  active={sortKey === "club"}
+                  dir={sortDir}
+                  onSort={() => toggle("club", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colGoals}
+                  active={sortKey === "goals"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("goals")}
+                />
+                <InsightsSortableTh
+                  label={labels.colAssists}
+                  active={sortKey === "assists"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("assists")}
+                />
+                <InsightsSortableTh
+                  label={labels.colStarts}
+                  active={sortKey === "starts"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("starts")}
+                />
+                <InsightsSortableTh
+                  label={labels.colSubs}
+                  active={sortKey === "subs"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("subs")}
+                />
                 <th className="px-3 py-2">{labels.colFpl}</th>
               </tr>
             </thead>

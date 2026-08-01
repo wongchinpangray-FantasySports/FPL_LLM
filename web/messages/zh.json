@@ -1294,6 +1294,11 @@
     "groupMarket": "转会与身价",
     "groupModels": "模型分析",
     "groupArchive": "历史档案",
+    "table": {
+      "sortColumn": "按 {column} 排序",
+      "sortedAsc": "升序排列",
+      "sortedDesc": "降序排列"
+    },
     "bannerGwOpen": "GW{gw} 可提交 · 截止 {deadline}",
     "bannerGwClosed": "GW{gw} · 实时数据",
     "bannerSynced": "{season} 赛季 · 球员数据同步于 {time}",

@@ -3,11 +3,53 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { DifferentialRow } from "@/lib/fpl/insights/differentials";
-import { DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP } from "@/lib/fpl/insights/catalog";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
+
+type SortKey =
+  | "player"
+  | "team"
+  | "pos"
+  | "price"
+  | "own"
+  | "form"
+  | "xp"
+  | "xpGw"
+  | "value";
 
 function fmtNum(v: number | null | undefined, d = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return v.toFixed(d);
+}
+
+function differentialSortValue(
+  row: DifferentialRow,
+  key: SortKey,
+): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "team":
+      return row.team;
+    case "pos":
+      return row.position;
+    case "price":
+      return row.price;
+    case "own":
+      return row.ownership;
+    case "form":
+      return row.form;
+    case "xpGw":
+      return row.xp_per_game;
+    case "value":
+      return row.value_per_million;
+    case "xp":
+    default:
+      return row.xp_total;
+  }
 }
 
 export function DifferentialsPanel({
@@ -45,11 +87,16 @@ export function DifferentialsPanel({
   };
 }) {
   const [position, setPosition] = useState("all");
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("xp");
 
   const filtered = useMemo(() => {
-    if (position === "all") return rows;
-    return rows.filter((r) => r.position === position);
-  }, [rows, position]);
+    let list = position === "all" ? rows : rows.filter((r) => r.position === position);
+    return sortInsightRows(
+      list,
+      (row) => differentialSortValue(row, sortKey),
+      sortDir,
+    );
+  }, [rows, position, sortKey, sortDir]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -81,15 +128,66 @@ export function DifferentialsPanel({
           <table className="w-full min-w-[880px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2">{labels.colPos}</th>
-                <th className="px-3 py-2 text-right">{labels.colPrice}</th>
-                <th className="px-3 py-2 text-right">{labels.colOwn}</th>
-                <th className="px-3 py-2 text-right">{labels.colForm}</th>
-                <th className="px-3 py-2 text-right">{labels.colXp}</th>
-                <th className="px-3 py-2 text-right">{labels.colXpGw}</th>
-                <th className="px-3 py-2 text-right">{labels.colValue}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPos}
+                  active={sortKey === "pos"}
+                  dir={sortDir}
+                  onSort={() => toggle("pos", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPrice}
+                  active={sortKey === "price"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("price")}
+                />
+                <InsightsSortableTh
+                  label={labels.colOwn}
+                  active={sortKey === "own"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("own")}
+                />
+                <InsightsSortableTh
+                  label={labels.colForm}
+                  active={sortKey === "form"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("form")}
+                />
+                <InsightsSortableTh
+                  label={labels.colXp}
+                  active={sortKey === "xp"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("xp")}
+                />
+                <InsightsSortableTh
+                  label={labels.colXpGw}
+                  active={sortKey === "xpGw"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("xpGw")}
+                />
+                <InsightsSortableTh
+                  label={labels.colValue}
+                  active={sortKey === "value"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("value")}
+                />
                 <th className="px-3 py-2">{labels.colFixtures}</th>
                 <th className="px-3 py-2">{labels.colProfile}</th>
               </tr>
@@ -151,5 +249,3 @@ export function DifferentialsPanel({
     </div>
   );
 }
-
-export { DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP };

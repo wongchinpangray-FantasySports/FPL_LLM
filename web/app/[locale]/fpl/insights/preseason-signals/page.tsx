@@ -40,7 +40,6 @@ export default async function PreseasonSignalsPage({ params }: Props) {
           intro: t("preseasonSignals.intro"),
           filterClub: t("preseasonSignals.filterClub"),
           filterAll: t("preseasonSignals.filterAll"),
-          sortBy: t("preseasonSignals.sortBy"),
           colPlayer: t("preseasonSignals.colPlayer"),
           colClub: t("preseasonSignals.colClub"),
           colGoals: t("preseasonSignals.colGoals"),

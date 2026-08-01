@@ -44,7 +44,6 @@ export default async function DefconPage({ params }: Props) {
           posMid: t("defcon.posMid"),
           posFwd: t("defcon.posFwd"),
           minMinutes: t("defcon.minMinutes"),
-          sortBy: t("defcon.sortBy"),
           colPlayer: t("defcon.colPlayer"),
           colTeam: t("defcon.colTeam"),
           colPos: t("defcon.colPos"),

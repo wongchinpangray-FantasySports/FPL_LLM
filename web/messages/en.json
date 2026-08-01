@@ -1294,6 +1294,11 @@
     "groupMarket": "Transfers & prices",
     "groupModels": "Models",
     "groupArchive": "Archive",
+    "table": {
+      "sortColumn": "Sort by {column}",
+      "sortedAsc": "Sorted ascending",
+      "sortedDesc": "Sorted descending"
+    },
     "bannerGwOpen": "Submissions open for GW{gw} · deadline {deadline}",
     "bannerGwClosed": "GW{gw} · live data",
     "bannerSynced": "{season} season · player data synced {time}",

@@ -4,12 +4,50 @@ import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { DefconRow } from "@/lib/fpl/insights/defcon";
 import { DEFAULT_DEFCON_MIN_MINUTES } from "@/lib/fpl/insights/defcon";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
-type SortKey = "defcon" | "defcon90" | "cbi" | "minutes";
+type SortKey =
+  | "player"
+  | "team"
+  | "pos"
+  | "defcon"
+  | "defcon90"
+  | "cbi"
+  | "rec"
+  | "tkl"
+  | "minutes";
 
 function fmtNum(v: number | null | undefined, d = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return v.toFixed(d);
+}
+
+function defconSortValue(row: DefconRow, key: SortKey): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "team":
+      return row.team;
+    case "pos":
+      return row.position;
+    case "defcon90":
+      return row.defensive_contribution_per_90;
+    case "cbi":
+      return row.cbi;
+    case "rec":
+      return row.recoveries;
+    case "tkl":
+      return row.tackles;
+    case "minutes":
+      return row.minutes;
+    case "defcon":
+    default:
+      return row.defensive_contribution;
+  }
 }
 
 export function DefconPanel({
@@ -26,7 +64,6 @@ export function DefconPanel({
     posMid: string;
     posFwd: string;
     minMinutes: string;
-    sortBy: string;
     colPlayer: string;
     colTeam: string;
     colPos: string;
@@ -43,30 +80,15 @@ export function DefconPanel({
 }) {
   const [position, setPosition] = useState<string>("all");
   const [minMinutes, setMinMinutes] = useState(DEFAULT_DEFCON_MIN_MINUTES);
-  const [sort, setSort] = useState<SortKey>("defcon");
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("defcon");
 
   const filtered = useMemo(() => {
     let list = rows.filter((r) => r.minutes >= minMinutes);
     if (position !== "all") {
       list = list.filter((r) => r.position === position);
     }
-    return [...list].sort((a, b) => {
-      switch (sort) {
-        case "defcon90":
-          return (
-            (b.defensive_contribution_per_90 ?? 0) -
-            (a.defensive_contribution_per_90 ?? 0)
-          );
-        case "cbi":
-          return (b.cbi ?? 0) - (a.cbi ?? 0);
-        case "minutes":
-          return b.minutes - a.minutes;
-        case "defcon":
-        default:
-          return b.defensive_contribution - a.defensive_contribution;
-      }
-    });
-  }, [rows, position, minMinutes, sort]);
+    return sortInsightRows(list, (row) => defconSortValue(row, sortKey), sortDir);
+  }, [rows, position, minMinutes, sortKey, sortDir]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -100,19 +122,6 @@ export function DefconPanel({
             <option value={900}>900</option>
           </select>
         </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.sortBy}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="defcon">{labels.colDefcon}</option>
-            <option value="defcon90">{labels.colDefcon90}</option>
-            <option value="cbi">{labels.colCbi}</option>
-            <option value="minutes">{labels.colMins}</option>
-          </select>
-        </label>
       </div>
 
       {filtered.length === 0 ? (
@@ -122,15 +131,66 @@ export function DefconPanel({
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2">{labels.colPos}</th>
-                <th className="px-3 py-2 text-right">{labels.colDefcon}</th>
-                <th className="px-3 py-2 text-right">{labels.colDefcon90}</th>
-                <th className="px-3 py-2 text-right">{labels.colCbi}</th>
-                <th className="px-3 py-2 text-right">{labels.colRec}</th>
-                <th className="px-3 py-2 text-right">{labels.colTkl}</th>
-                <th className="px-3 py-2 text-right">{labels.colMins}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPos}
+                  active={sortKey === "pos"}
+                  dir={sortDir}
+                  onSort={() => toggle("pos", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colDefcon}
+                  active={sortKey === "defcon"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("defcon")}
+                />
+                <InsightsSortableTh
+                  label={labels.colDefcon90}
+                  active={sortKey === "defcon90"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("defcon90")}
+                />
+                <InsightsSortableTh
+                  label={labels.colCbi}
+                  active={sortKey === "cbi"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("cbi")}
+                />
+                <InsightsSortableTh
+                  label={labels.colRec}
+                  active={sortKey === "rec"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("rec")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTkl}
+                  active={sortKey === "tkl"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("tkl")}
+                />
+                <InsightsSortableTh
+                  label={labels.colMins}
+                  active={sortKey === "minutes"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("minutes")}
+                />
                 <th className="px-3 py-2">{labels.colProfile}</th>
               </tr>
             </thead>

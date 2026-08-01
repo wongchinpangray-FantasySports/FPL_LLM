@@ -3,13 +3,23 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { XgDivergenceRow } from "@/lib/fpl/insights/xg-divergence";
-import { DEFAULT_XG_DIVERGENCE_MIN_MINUTES } from "@/lib/fpl/insights/xg-divergence";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
 type SortKey =
-  | "fpl_under"
-  | "fpl_over"
-  | "us_under"
-  | "fpl_vs_us";
+  | "player"
+  | "team"
+  | "pos"
+  | "mins"
+  | "goals"
+  | "fplXg"
+  | "usXg"
+  | "fplDelta"
+  | "usDelta"
+  | "fplUs";
 
 function fmtNum(v: number | null | undefined, d = 2): string {
   if (v == null || !Number.isFinite(v)) return "—";
@@ -22,6 +32,34 @@ function deltaClass(v: number | null | undefined): string {
     return "text-muted-foreground";
   }
   return v > 0 ? "text-emerald-400" : "text-red-400";
+}
+
+function xgSortValue(row: XgDivergenceRow, key: SortKey): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "team":
+      return row.team;
+    case "pos":
+      return row.position;
+    case "mins":
+      return row.minutes;
+    case "goals":
+      return row.goals;
+    case "fplXg":
+      return row.fpl_xg;
+    case "usXg":
+      return row.understat_xg;
+    case "fplDelta":
+      return row.fpl_vs_actual;
+    case "usDelta":
+      return row.understat_vs_actual;
+    case "fplUs":
+    default:
+      return row.fpl_vs_understat != null
+        ? Math.abs(row.fpl_vs_understat)
+        : null;
+  }
 }
 
 export function XgDivergencePanel({
@@ -39,11 +77,6 @@ export function XgDivergencePanel({
     posMid: string;
     posFwd: string;
     minMinutes: string;
-    sortBy: string;
-    sortFplUnder: string;
-    sortFplOver: string;
-    sortUsUnder: string;
-    sortFplVsUs: string;
     colPlayer: string;
     colTeam: string;
     colPos: string;
@@ -62,32 +95,15 @@ export function XgDivergencePanel({
 }) {
   const [position, setPosition] = useState("all");
   const [minMins, setMinMins] = useState(minMinutes);
-  const [sort, setSort] = useState<SortKey>("fpl_under");
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("fplDelta");
 
   const filtered = useMemo(() => {
     let list = rows.filter((r) => r.minutes >= minMins);
     if (position !== "all") {
       list = list.filter((r) => r.position === position);
     }
-    return [...list].sort((a, b) => {
-      switch (sort) {
-        case "fpl_over":
-          return a.fpl_vs_actual - b.fpl_vs_actual;
-        case "us_under":
-          return (
-            (b.understat_vs_actual ?? -999) - (a.understat_vs_actual ?? -999)
-          );
-        case "fpl_vs_us":
-          return (
-            Math.abs(b.fpl_vs_understat ?? 0) -
-            Math.abs(a.fpl_vs_understat ?? 0)
-          );
-        case "fpl_under":
-        default:
-          return b.fpl_vs_actual - a.fpl_vs_actual;
-      }
-    });
-  }, [rows, position, minMins, sort]);
+    return sortInsightRows(list, (row) => xgSortValue(row, sortKey), sortDir);
+  }, [rows, position, minMins, sortKey, sortDir]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -121,19 +137,6 @@ export function XgDivergencePanel({
             <option value={900}>900</option>
           </select>
         </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          {labels.sortBy}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="fpl_under">{labels.sortFplUnder}</option>
-            <option value="fpl_over">{labels.sortFplOver}</option>
-            <option value="us_under">{labels.sortUsUnder}</option>
-            <option value="fpl_vs_us">{labels.sortFplVsUs}</option>
-          </select>
-        </label>
       </div>
 
       {filtered.length === 0 ? (
@@ -143,16 +146,73 @@ export function XgDivergencePanel({
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2">{labels.colPos}</th>
-                <th className="px-3 py-2 text-right">{labels.colMins}</th>
-                <th className="px-3 py-2 text-right">{labels.colGoals}</th>
-                <th className="px-3 py-2 text-right">{labels.colFplXg}</th>
-                <th className="px-3 py-2 text-right">{labels.colUsXg}</th>
-                <th className="px-3 py-2 text-right">{labels.colFplDelta}</th>
-                <th className="px-3 py-2 text-right">{labels.colUsDelta}</th>
-                <th className="px-3 py-2 text-right">{labels.colFplUs}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPos}
+                  active={sortKey === "pos"}
+                  dir={sortDir}
+                  onSort={() => toggle("pos", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colMins}
+                  active={sortKey === "mins"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("mins")}
+                />
+                <InsightsSortableTh
+                  label={labels.colGoals}
+                  active={sortKey === "goals"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("goals")}
+                />
+                <InsightsSortableTh
+                  label={labels.colFplXg}
+                  active={sortKey === "fplXg"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("fplXg")}
+                />
+                <InsightsSortableTh
+                  label={labels.colUsXg}
+                  active={sortKey === "usXg"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("usXg")}
+                />
+                <InsightsSortableTh
+                  label={labels.colFplDelta}
+                  active={sortKey === "fplDelta"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("fplDelta")}
+                />
+                <InsightsSortableTh
+                  label={labels.colUsDelta}
+                  active={sortKey === "usDelta"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("usDelta")}
+                />
+                <InsightsSortableTh
+                  label={labels.colFplUs}
+                  active={sortKey === "fplUs"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("fplUs")}
+                />
                 <th className="px-3 py-2">{labels.colProfile}</th>
               </tr>
             </thead>

@@ -4,12 +4,40 @@ import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { SetPieceTeamGroup } from "@/lib/fpl/insights/set-pieces";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
+
+type SortKey = "player" | "pos" | "pen" | "fk" | "corners";
+
+type SetPieceRow = SetPieceTeamGroup["rows"][number];
 
 function orderLabel(order: number | null, note: string | null): string {
   if (order == null) return "—";
   if (order === 1) return note?.trim() || "1st";
   if (order === 2) return note?.trim() || "2nd";
   return note?.trim() || `${order}`;
+}
+
+function setPieceSortValue(
+  row: SetPieceRow,
+  key: SortKey,
+): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "pos":
+      return row.position;
+    case "pen":
+      return row.penalties_order;
+    case "fk":
+      return row.direct_freekicks_order;
+    case "corners":
+    default:
+      return row.corners_order;
+  }
 }
 
 export function SetPiecesPanel({
@@ -35,6 +63,10 @@ export function SetPiecesPanel({
 }) {
   const [teamFilter, setTeamFilter] = useState("all");
   const [primaryOnly, setPrimaryOnly] = useState(true);
+  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>(
+    "pen",
+    "asc",
+  );
 
   const filtered = useMemo(() => {
     let list = teams;
@@ -42,25 +74,82 @@ export function SetPiecesPanel({
       list = list.filter((g) => g.team === teamFilter);
     }
     if (!primaryOnly) return list;
-    return list.map((g) => ({
-      ...g,
-      rows: g.rows.filter(
-        (r) =>
-          r.penalties_order === 1 ||
-          r.direct_freekicks_order === 1 ||
-          r.corners_order === 1 ||
-          (r.penalties_order != null && r.penalties_order <= 2) ||
-          (r.direct_freekicks_order != null && r.direct_freekicks_order <= 2) ||
-          (r.corners_order != null && r.corners_order <= 2),
-      ),
-    })).filter((g) => g.rows.length > 0);
+    return list
+      .map((g) => ({
+        ...g,
+        rows: g.rows.filter(
+          (r) =>
+            r.penalties_order === 1 ||
+            r.direct_freekicks_order === 1 ||
+            r.corners_order === 1 ||
+            (r.penalties_order != null && r.penalties_order <= 2) ||
+            (r.direct_freekicks_order != null &&
+              r.direct_freekicks_order <= 2) ||
+            (r.corners_order != null && r.corners_order <= 2),
+        ),
+      }))
+      .filter((g) => g.rows.length > 0);
   }, [teams, teamFilter, primaryOnly]);
+
+  const sortedGroups = useMemo(
+    () =>
+      filtered.map((group) => ({
+        ...group,
+        rows: sortInsightRows(
+          group.rows,
+          (row) => setPieceSortValue(row, sortKey),
+          sortDir,
+        ),
+      })),
+    [filtered, sortKey, sortDir],
+  );
 
   const teamNames = useMemo(() => teams.map((g) => g.team).sort(), [teams]);
 
   if (teams.length === 0) {
     return <p className="text-sm text-muted-foreground">{labels.empty}</p>;
   }
+
+  const headerRow = (
+    <tr className="border-b border-border/60 text-xs uppercase tracking-wider text-muted-foreground">
+      <InsightsSortableTh
+        label={labels.colPlayer}
+        active={sortKey === "player"}
+        dir={sortDir}
+        onSort={() => toggle("player", "asc")}
+        className="px-3 py-2"
+      />
+      <InsightsSortableTh
+        label={labels.colPos}
+        active={sortKey === "pos"}
+        dir={sortDir}
+        onSort={() => toggle("pos", "asc")}
+        className="px-3 py-2"
+      />
+      <InsightsSortableTh
+        label={labels.colPen}
+        active={sortKey === "pen"}
+        dir={sortDir}
+        onSort={() => toggle("pen", "asc")}
+        className="px-3 py-2"
+      />
+      <InsightsSortableTh
+        label={labels.colFk}
+        active={sortKey === "fk"}
+        dir={sortDir}
+        onSort={() => toggle("fk", "asc")}
+        className="px-3 py-2"
+      />
+      <InsightsSortableTh
+        label={labels.colCorners}
+        active={sortKey === "corners"}
+        dir={sortDir}
+        onSort={() => toggle("corners", "asc")}
+        className="px-3 py-2"
+      />
+      <th className="px-3 py-2">{labels.colProfile}</th>
+    </tr>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -94,7 +183,7 @@ export function SetPiecesPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        {filtered.map((group) => (
+        {sortedGroups.map((group) => (
           <section
             key={group.team}
             className="overflow-hidden rounded-xl border border-border"
@@ -104,16 +193,7 @@ export function SetPiecesPanel({
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 text-xs uppercase tracking-wider text-muted-foreground">
-                    <th className="px-3 py-2">{labels.colPlayer}</th>
-                    <th className="px-3 py-2">{labels.colPos}</th>
-                    <th className="px-3 py-2">{labels.colPen}</th>
-                    <th className="px-3 py-2">{labels.colFk}</th>
-                    <th className="px-3 py-2">{labels.colCorners}</th>
-                    <th className="px-3 py-2">{labels.colProfile}</th>
-                  </tr>
-                </thead>
+                <thead>{headerRow}</thead>
                 <tbody>
                   {group.rows.map((row) => (
                     <tr
@@ -129,7 +209,8 @@ export function SetPiecesPanel({
                       <td
                         className={cn(
                           "px-3 py-2 tabular-nums",
-                          row.penalties_order === 1 && "font-medium text-brand-accent",
+                          row.penalties_order === 1 &&
+                            "font-medium text-brand-accent",
                         )}
                       >
                         {orderLabel(row.penalties_order, row.penalties_note)}
@@ -141,12 +222,16 @@ export function SetPiecesPanel({
                             "font-medium text-brand-accent",
                         )}
                       >
-                        {orderLabel(row.direct_freekicks_order, row.freekicks_note)}
+                        {orderLabel(
+                          row.direct_freekicks_order,
+                          row.freekicks_note,
+                        )}
                       </td>
                       <td
                         className={cn(
                           "px-3 py-2 tabular-nums",
-                          row.corners_order === 1 && "font-medium text-brand-accent",
+                          row.corners_order === 1 &&
+                            "font-medium text-brand-accent",
                         )}
                       >
                         {orderLabel(row.corners_order, row.corners_note)}

@@ -3,8 +3,29 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { PriceChangeRow } from "@/lib/fpl/insights/price-changes";
+import {
+  InsightsSortableTh,
+  sortInsightRows,
+  useInsightsTableSort,
+} from "@/components/fpl/insights/insights-table-sort";
 
 type Tab = "recent" | "risers" | "fallers" | "volatile";
+type SortKey =
+  | "player"
+  | "team"
+  | "pos"
+  | "price"
+  | "net"
+  | "changes"
+  | "lastGw"
+  | "lastDelta";
+
+const TAB_SORT: Record<Tab, { key: SortKey; dir: "asc" | "desc" }> = {
+  recent: { key: "lastGw", dir: "desc" },
+  risers: { key: "net", dir: "desc" },
+  fallers: { key: "net", dir: "asc" },
+  volatile: { key: "changes", dir: "desc" },
+};
 
 function fmtPrice(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "—";
@@ -19,6 +40,31 @@ function fmtDelta(v: number): string {
 function deltaClass(v: number): string {
   if (Math.abs(v) < 0.05) return "text-muted-foreground";
   return v > 0 ? "text-emerald-400" : "text-red-400";
+}
+
+function priceSortValue(
+  row: PriceChangeRow,
+  key: SortKey,
+): string | number | null {
+  switch (key) {
+    case "player":
+      return row.web_name;
+    case "team":
+      return row.team;
+    case "pos":
+      return row.position;
+    case "price":
+      return row.current_price;
+    case "net":
+      return row.net_change;
+    case "changes":
+      return row.change_count;
+    case "lastGw":
+      return row.last_change?.gw ?? null;
+    case "lastDelta":
+    default:
+      return row.last_change?.delta ?? null;
+  }
 }
 
 export function PriceChangesPanel({
@@ -56,6 +102,10 @@ export function PriceChangesPanel({
 }) {
   const [tab, setTab] = useState<Tab>("recent");
   const [position, setPosition] = useState("all");
+  const { sortKey, sortDir, toggle, setSort } = useInsightsTableSort<SortKey>(
+    "lastGw",
+    "desc",
+  );
 
   const sorted = useMemo(() => {
     let list = [...rows];
@@ -64,25 +114,20 @@ export function PriceChangesPanel({
     }
     switch (tab) {
       case "risers":
-        return list
-          .filter((r) => r.net_change > 0)
-          .sort((a, b) => b.net_change - a.net_change);
+        list = list.filter((r) => r.net_change > 0);
+        break;
       case "fallers":
-        return list
-          .filter((r) => r.net_change < 0)
-          .sort((a, b) => a.net_change - b.net_change);
-      case "volatile":
-        return list.sort((a, b) => b.change_count - a.change_count);
-      case "recent":
+        list = list.filter((r) => r.net_change < 0);
+        break;
       default:
-        return list.sort((a, b) => {
-          const agw = a.last_change?.gw ?? 0;
-          const bgw = b.last_change?.gw ?? 0;
-          if (bgw !== agw) return bgw - agw;
-          return Math.abs(b.last_change?.delta ?? 0) - Math.abs(a.last_change?.delta ?? 0);
-        });
+        break;
     }
-  }, [rows, tab, position]);
+    return sortInsightRows(
+      list,
+      (row) => priceSortValue(row, sortKey),
+      sortDir,
+    );
+  }, [rows, tab, position, sortKey, sortDir]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "recent", label: labels.tabRecent },
@@ -102,7 +147,11 @@ export function PriceChangesPanel({
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setTab(t.id);
+              const preset = TAB_SORT[t.id];
+              setSort(preset.key, preset.dir);
+            }}
             className={
               tab === t.id
                 ? "rounded-lg bg-brand-accent px-3 py-1.5 text-sm font-medium text-brand-accent-foreground"
@@ -138,14 +187,59 @@ export function PriceChangesPanel({
           <table className="w-full min-w-[880px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2">{labels.colPlayer}</th>
-                <th className="px-3 py-2">{labels.colTeam}</th>
-                <th className="px-3 py-2">{labels.colPos}</th>
-                <th className="px-3 py-2 text-right">{labels.colPrice}</th>
-                <th className="px-3 py-2 text-right">{labels.colNet}</th>
-                <th className="px-3 py-2 text-right">{labels.colChanges}</th>
-                <th className="px-3 py-2 text-right">{labels.colLastGw}</th>
-                <th className="px-3 py-2 text-right">{labels.colLastDelta}</th>
+                <InsightsSortableTh
+                  label={labels.colPlayer}
+                  active={sortKey === "player"}
+                  dir={sortDir}
+                  onSort={() => toggle("player", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colTeam}
+                  active={sortKey === "team"}
+                  dir={sortDir}
+                  onSort={() => toggle("team", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPos}
+                  active={sortKey === "pos"}
+                  dir={sortDir}
+                  onSort={() => toggle("pos", "asc")}
+                />
+                <InsightsSortableTh
+                  label={labels.colPrice}
+                  active={sortKey === "price"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("price")}
+                />
+                <InsightsSortableTh
+                  label={labels.colNet}
+                  active={sortKey === "net"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("net")}
+                />
+                <InsightsSortableTh
+                  label={labels.colChanges}
+                  active={sortKey === "changes"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("changes")}
+                />
+                <InsightsSortableTh
+                  label={labels.colLastGw}
+                  active={sortKey === "lastGw"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("lastGw")}
+                />
+                <InsightsSortableTh
+                  label={labels.colLastDelta}
+                  active={sortKey === "lastDelta"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("lastDelta")}
+                />
                 <th className="px-3 py-2">{labels.colRecent}</th>
                 <th className="px-3 py-2">{labels.colProfile}</th>
               </tr>
