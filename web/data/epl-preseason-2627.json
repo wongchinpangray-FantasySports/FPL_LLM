@@ -1345,7 +1345,67 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-3-3",
+        "starters": [
+          {
+            "name": "Ewen Jaouen",
+            "number": 24,
+            "minute_on": null
+          },
+          {
+            "name": "Lewis Hall",
+            "number": 3,
+            "minute_on": null
+          },
+          {
+            "name": "Sven Botman",
+            "number": 4,
+            "minute_on": null
+          },
+          {
+            "name": "Fabian Schär",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "Jacob Murphy",
+            "number": 23,
+            "minute_on": null
+          },
+          {
+            "name": "Sean Steur",
+            "number": 14,
+            "minute_on": null
+          },
+          {
+            "name": "Joe Willock",
+            "number": 28,
+            "minute_on": null
+          },
+          {
+            "name": "Jacob Ramsey",
+            "number": 41,
+            "minute_on": null
+          },
+          {
+            "name": "Harvey Barnes",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Anthony Elanga",
+            "number": 19,
+            "minute_on": null
+          },
+          {
+            "name": "Sean Neave",
+            "number": 62,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "tot-2026-07-29-98",
@@ -1526,7 +1586,26 @@
       "pl_goals": 1,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Sandro Tonali",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "17'",
+          "scorer": "Tonali",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "",
+          "scorer": "Richarlison",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1602,11 +1681,18 @@
       "pl_home": true,
       "venue": "Hong Kong",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Matteo Lavelli",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1638,7 +1724,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Sandro Tonali",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Richarlison",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Richarlison",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
