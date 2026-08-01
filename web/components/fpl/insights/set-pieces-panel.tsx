@@ -1,9 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import type { SetPieceTeamGroup } from "@/lib/fpl/insights/set-pieces";
+import {
+  formatSetPieceOrdinal,
+  formatSetPieceRole,
+  hasPrimaryOrBackupRole,
+  type SetPieceTeamGroup,
+} from "@/lib/fpl/insights/set-pieces";
 import {
   InsightsSortableTh,
   sortInsightRows,
@@ -13,13 +19,6 @@ import {
 type SortKey = "player" | "pos" | "pen" | "fk" | "corners";
 
 type SetPieceRow = SetPieceTeamGroup["rows"][number];
-
-function orderLabel(order: number | null, note: string | null): string {
-  if (order == null) return "—";
-  if (order === 1) return note?.trim() || "1st";
-  if (order === 2) return note?.trim() || "2nd";
-  return note?.trim() || `${order}`;
-}
 
 function setPieceSortValue(
   row: SetPieceRow,
@@ -38,6 +37,10 @@ function setPieceSortValue(
     default:
       return row.corners_order;
   }
+}
+
+function isPrimaryRole(order: number | null): boolean {
+  return order === 1;
 }
 
 export function SetPiecesPanel({
@@ -59,13 +62,25 @@ export function SetPiecesPanel({
     empty: string;
     primaryOnly: string;
     showAll: string;
+    rolePrimary: string;
+    roleBackup: string;
   };
 }) {
+  const locale = useLocale();
   const [teamFilter, setTeamFilter] = useState("all");
   const [primaryOnly, setPrimaryOnly] = useState(true);
   const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>(
     "pen",
     "asc",
+  );
+
+  const roleLabels = useMemo(
+    () => ({
+      primary: labels.rolePrimary,
+      backup: labels.roleBackup,
+      ordinal: (order: number) => formatSetPieceOrdinal(order, locale),
+    }),
+    [labels.roleBackup, labels.rolePrimary, locale],
   );
 
   const filtered = useMemo(() => {
@@ -77,16 +92,7 @@ export function SetPiecesPanel({
     return list
       .map((g) => ({
         ...g,
-        rows: g.rows.filter(
-          (r) =>
-            r.penalties_order === 1 ||
-            r.direct_freekicks_order === 1 ||
-            r.corners_order === 1 ||
-            (r.penalties_order != null && r.penalties_order <= 2) ||
-            (r.direct_freekicks_order != null &&
-              r.direct_freekicks_order <= 2) ||
-            (r.corners_order != null && r.corners_order <= 2),
-        ),
+        rows: g.rows.filter(hasPrimaryOrBackupRole),
       }))
       .filter((g) => g.rows.length > 0);
   }, [teams, teamFilter, primaryOnly]);
@@ -164,9 +170,9 @@ export function SetPiecesPanel({
             className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
           >
             <option value="all">{labels.filterAll}</option>
-            {teamNames.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            {teamNames.map((team) => (
+              <option key={team} value={team}>
+                {team}
               </option>
             ))}
           </select>
@@ -208,33 +214,42 @@ export function SetPiecesPanel({
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 tabular-nums",
-                          row.penalties_order === 1 &&
+                          "px-3 py-2",
+                          isPrimaryRole(row.penalties_order) &&
                             "font-medium text-brand-accent",
                         )}
                       >
-                        {orderLabel(row.penalties_order, row.penalties_note)}
+                        {formatSetPieceRole(
+                          row.penalties_order,
+                          !primaryOnly,
+                          roleLabels,
+                        )}
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 tabular-nums",
-                          row.direct_freekicks_order === 1 &&
+                          "px-3 py-2",
+                          isPrimaryRole(row.direct_freekicks_order) &&
                             "font-medium text-brand-accent",
                         )}
                       >
-                        {orderLabel(
+                        {formatSetPieceRole(
                           row.direct_freekicks_order,
-                          row.freekicks_note,
+                          !primaryOnly,
+                          roleLabels,
                         )}
                       </td>
                       <td
                         className={cn(
-                          "px-3 py-2 tabular-nums",
-                          row.corners_order === 1 &&
+                          "px-3 py-2",
+                          isPrimaryRole(row.corners_order) &&
                             "font-medium text-brand-accent",
                         )}
                       >
-                        {orderLabel(row.corners_order, row.corners_note)}
+                        {formatSetPieceRole(
+                          row.corners_order,
+                          !primaryOnly,
+                          roleLabels,
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <Link

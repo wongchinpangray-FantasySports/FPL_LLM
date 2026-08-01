@@ -1337,7 +1337,7 @@
     "setPieces": {
       "title": "定位球",
       "description": "各队点球、任意球与角球主罚。",
-      "intro": "来自 FPL 官方阵容的定位球顺序；高亮为第一主罚。",
+      "intro": "来自 FPL 官方阵容的定位球主罚顺序。Primary = 第一主罚，Backup = 替补；默认隐藏更低顺位，可勾选显示全部。",
       "filterTeam": "球队",
       "filterAll": "全部",
       "colPlayer": "球员",
@@ -1348,8 +1348,10 @@
       "colProfile": "FPL",
       "profileLink": "主页",
       "empty": "暂无定位球数据。",
-      "primaryOnly": "主罚与替补（第1–2）",
-      "showAll": "显示全部顺序"
+      "primaryOnly": "仅主罚与替补",
+      "showAll": "显示全部顺序",
+      "rolePrimary": "主罚",
+      "roleBackup": "替补"
     },
     "defcon": {
       "title": "Defcon",

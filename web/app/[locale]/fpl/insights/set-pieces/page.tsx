@@ -49,6 +49,8 @@ export default async function SetPiecesPage({ params }: Props) {
           empty: t("setPieces.empty"),
           primaryOnly: t("setPieces.primaryOnly"),
           showAll: t("setPieces.showAll"),
+          rolePrimary: t("setPieces.rolePrimary"),
+          roleBackup: t("setPieces.roleBackup"),
         }}
       />
     </PageShell>

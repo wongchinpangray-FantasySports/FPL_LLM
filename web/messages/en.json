@@ -1337,7 +1337,7 @@
     "setPieces": {
       "title": "Set-pieces",
       "description": "Penalty, free-kick, and corner takers by team.",
-      "intro": "Primary and backup set-piece takers from official FPL squad data. Highlighted cells are first-choice roles.",
+      "intro": "Primary and backup set-piece takers from official FPL squad data. Primary = first choice; Backup = second. Lower-priority roles are hidden unless you show all orders.",
       "filterTeam": "Team",
       "filterAll": "All teams",
       "colPlayer": "Player",
@@ -1348,8 +1348,10 @@
       "colProfile": "FPL",
       "profileLink": "Profile",
       "empty": "No set-piece data loaded.",
-      "primaryOnly": "Primary & backups (1st–2nd)",
-      "showAll": "Show all orders"
+      "primaryOnly": "Primary & backup only",
+      "showAll": "Show all orders",
+      "rolePrimary": "Primary",
+      "roleBackup": "Backup"
     },
     "defcon": {
       "title": "Defcon",

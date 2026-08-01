@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 
 const COLS =
-  "fpl_id,web_name,name,team,team_id,position,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order,penalties_text,direct_freekicks_text,corners_and_indirect_freekicks_text";
+  "fpl_id,web_name,name,team,team_id,position,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order";
 
 export type SetPieceRow = {
   fpl_id: number;
@@ -13,9 +13,6 @@ export type SetPieceRow = {
   penalties_order: number | null;
   direct_freekicks_order: number | null;
   corners_order: number | null;
-  penalties_note: string | null;
-  freekicks_note: string | null;
-  corners_note: string | null;
 };
 
 export type SetPieceTeamGroup = {
@@ -48,10 +45,77 @@ function toRow(row: Record<string, unknown>): SetPieceRow {
     penalties_order: num(row.penalties_order),
     direct_freekicks_order: num(row.direct_freekicks_order),
     corners_order: num(row.corners_and_indirect_freekicks_order),
-    penalties_note: (row.penalties_text as string | null) ?? null,
-    freekicks_note: (row.direct_freekicks_text as string | null) ?? null,
-    corners_note: (row.corners_and_indirect_freekicks_text as string | null) ?? null,
   };
+}
+
+function bestSetPieceRank(row: SetPieceRow): number {
+  return Math.min(
+    row.penalties_order ?? 99,
+    row.direct_freekicks_order ?? 99,
+    row.corners_order ?? 99,
+  );
+}
+
+/** Drop duplicate squad rows (same name on one team) and repeated fpl_id rows. */
+function dedupeSetPieceRows(rows: SetPieceRow[]): SetPieceRow[] {
+  const byId = new Map<number, SetPieceRow>();
+  for (const row of rows) {
+    const existing = byId.get(row.fpl_id);
+    if (!existing || bestSetPieceRank(row) < bestSetPieceRank(existing)) {
+      byId.set(row.fpl_id, row);
+    }
+  }
+
+  const byName = new Map<string, SetPieceRow>();
+  for (const row of byId.values()) {
+    const key = `${row.team}\0${row.web_name.trim().toLowerCase()}`;
+    const existing = byName.get(key);
+    if (!existing || bestSetPieceRank(row) < bestSetPieceRank(existing)) {
+      byName.set(key, row);
+    }
+  }
+
+  return [...byName.values()];
+}
+
+export type SetPieceRoleLabels = {
+  primary: string;
+  backup: string;
+  ordinal: (order: number) => string;
+};
+
+export function formatSetPieceRole(
+  order: number | null,
+  showDeep: boolean,
+  labels: SetPieceRoleLabels,
+): string {
+  if (order == null) return "—";
+  if (order === 1) return labels.primary;
+  if (order === 2) return labels.backup;
+  if (!showDeep) return "—";
+  return labels.ordinal(order);
+}
+
+export function formatSetPieceOrdinal(order: number, locale: string): string {
+  if (locale.startsWith("zh")) return `第${order}`;
+  const mod100 = order % 100;
+  const mod10 = order % 10;
+  if (mod100 >= 11 && mod100 <= 13) return `${order}th`;
+  if (mod10 === 1) return `${order}st`;
+  if (mod10 === 2) return `${order}nd`;
+  if (mod10 === 3) return `${order}rd`;
+  return `${order}th`;
+}
+
+export function hasPrimaryOrBackupRole(row: SetPieceRow): boolean {
+  return (
+    row.penalties_order === 1 ||
+    row.penalties_order === 2 ||
+    row.direct_freekicks_order === 1 ||
+    row.direct_freekicks_order === 2 ||
+    row.corners_order === 1 ||
+    row.corners_order === 2
+  );
 }
 
 export async function loadSetPiecesRaw(): Promise<{
@@ -62,10 +126,11 @@ export async function loadSetPiecesRaw(): Promise<{
   const { data, error } = await supa.from("players_static").select(COLS);
   if (error) throw new Error(error.message);
 
-  const rows = (data ?? [])
-    .filter(hasSetPieceRole)
-    .map((r) => toRow(r as Record<string, unknown>))
-    .sort((a, b) => {
+  const rows = dedupeSetPieceRows(
+    (data ?? [])
+      .filter(hasSetPieceRole)
+      .map((r) => toRow(r as Record<string, unknown>)),
+  ).sort((a, b) => {
       const tc = a.team.localeCompare(b.team);
       if (tc !== 0) return tc;
       const penA = a.penalties_order ?? 99;
@@ -94,6 +159,6 @@ export async function loadSetPiecesRaw(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v1"],
+  ["fpl-insights-set-pieces-v2"],
   { revalidate: 300 },
 );
