@@ -15,6 +15,9 @@ import { loadSetPiecesRaw } from "../lib/fpl/insights/set-pieces";
 import { loadDefconLeadersRaw } from "../lib/fpl/insights/defcon";
 import { loadTransferMomentumRaw } from "../lib/fpl/insights/transfers";
 import { loadDifferentialsRaw } from "../lib/fpl/insights/differentials";
+import { loadFixtureSwingRaw } from "../lib/fpl/insights/fixture-swing";
+import { loadXgDivergenceRaw } from "../lib/fpl/insights/xg-divergence";
+import { loadPriceChangesRaw } from "../lib/fpl/insights/price-changes";
 
 function loadEnvLocal(): void {
   const envPath = join(process.cwd(), ".env.local");
@@ -51,6 +54,9 @@ async function main(): Promise<void> {
 
   assert.ok(getInsightById("transfers")?.status === "live");
   assert.ok(getInsightById("differentials")?.status === "live");
+  assert.ok(getInsightById("fixture-swing")?.status === "live");
+  assert.ok(getInsightById("xg-divergence")?.status === "live");
+  assert.ok(getInsightById("price-changes")?.status === "live");
 
   const preseason = await loadPreseasonSignalsRaw();
   assert.ok(preseason.rows.length > 0, "expected preseason signal rows");
@@ -69,8 +75,18 @@ async function main(): Promise<void> {
   assert.ok(differentials.rows.length > 0, "expected differential rows");
   assert.equal(differentials.maxOwnership, 5);
 
+  const fixtureSwing = await loadFixtureSwingRaw();
+  assert.ok(fixtureSwing.rows.length > 0, "expected fixture swing rows");
+  assert.ok(fixtureSwing.fromGw >= 1);
+
+  const xgDiv = await loadXgDivergenceRaw({ limit: 10 });
+  assert.ok(xgDiv.rows.length >= 0, "xg divergence load ok");
+
+  const priceChanges = await loadPriceChangesRaw();
+  assert.ok(Array.isArray(priceChanges.rows), "price changes load ok");
+
   console.log(
-    `insights-access-self-test: ok (${preseason.rows.length} preseason, ${transfers.rows.length} transfers, ${differentials.rows.length} diffs)`,
+    `insights-access-self-test: ok (${preseason.rows.length} preseason, ${transfers.rows.length} transfers, ${differentials.rows.length} diffs, ${fixtureSwing.rows.length} fixture swing)`,
   );
 }
 
