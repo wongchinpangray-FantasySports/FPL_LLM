@@ -664,7 +664,7 @@ const getDifferentials: ToolHandler = {
       },
       max_ownership: {
         type: "number",
-        description: "Max selected-by-percent (default 10.0).",
+        description: "Max selected-by-percent (default 5.0).",
       },
       min_price: {
         type: "number",
@@ -685,64 +685,41 @@ const getDifferentials: ToolHandler = {
     },
   },
   async run(input) {
-    const supa = getServerSupabase();
     const position = input.position as Position | undefined;
-    const maxOwn = Number(input.max_ownership ?? 10.0);
+    const maxOwn = Number(input.max_ownership ?? 5.0);
     const minPrice = Number(input.min_price ?? 0);
     const maxPrice = Number(input.max_price ?? 15.0);
     const horizon = Math.min(Math.max(Number(input.horizon ?? 5) || 5, 1), 8);
     const limit = Math.min(Math.max(Number(input.limit ?? 10) || 10, 1), 20);
 
-    let q = supa
-      .from("players_static")
-      .select("fpl_id,position,base_price,selected_by_percent,status,chance_of_playing,minutes")
-      .lte("selected_by_percent", maxOwn)
-      .gte("base_price", minPrice)
-      .lte("base_price", maxPrice)
-      .gte("minutes", 270);
-    if (position) q = q.eq("position", position);
-    const { data: pool } = await q;
-
-    const ids = (pool ?? [])
-      .filter((r) => {
-        const s = r.status ?? "a";
-        if (s === "u" || s === "n" || s === "s") return false;
-        const cop = r.chance_of_playing;
-        if (typeof cop === "number" && cop < 75) return false;
-        return true;
-      })
-      .map((r) => r.fpl_id as number);
-
-    const { current, next } = await resolveCurrentGw();
-    const projections = await projectPlayers(ids, {
-      currentGw: current,
-      fromGw: next,
-      toGw: next + horizon - 1,
+    const { loadDifferentialsRaw } = await import("@/lib/fpl/insights/differentials");
+    const { rows } = await loadDifferentialsRaw({
+      position,
+      maxOwnership: maxOwn,
+      minPrice,
+      maxPrice,
+      horizon,
+      limit,
     });
 
-    const ranked = Array.from(projections.values())
-      .sort((a, b) => b.xp_total - a.xp_total)
-      .slice(0, limit)
-      .map((p) => ({
-        fpl_id: p.fpl_id,
-        web_name: p.web_name,
-        team: p.team,
-        position: p.position,
-        price: p.price,
-        ownership: p.ownership,
-        set_pieces: p.set_pieces,
-        xp_total: p.xp_total,
-        xp_per_game: p.xp_per_game,
-        value_per_million: p.value_per_million,
-        form: p.form,
-        fixtures: p.fixtures.map((f) => ({
-          gw: f.gw,
-          opp: f.opp_short,
-          home: f.home,
-          xp: f.xp_total,
-          opp_history_games: f.opp_history?.games ?? 0,
-        })),
-      }));
+    const ranked = rows.map((p) => ({
+      fpl_id: p.fpl_id,
+      web_name: p.web_name,
+      team: p.team,
+      position: p.position,
+      price: p.price,
+      ownership: p.ownership,
+      xp_total: p.xp_total,
+      xp_per_game: p.xp_per_game,
+      value_per_million: p.value_per_million,
+      form: p.form,
+      fixtures: p.fixtures.map((f) => ({
+        gw: f.gw,
+        opp: f.opp,
+        home: f.home,
+        xp: f.xp,
+      })),
+    }));
 
     return {
       filters: { position, maxOwn, minPrice, maxPrice, horizon },
