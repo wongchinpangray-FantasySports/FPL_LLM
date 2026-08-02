@@ -10,6 +10,7 @@ import {
   canAccessInsight,
   isInsightsPremiumEnforced,
 } from "../lib/fpl/insights/access";
+import { hasDuplicateFplIds } from "../lib/fpl/insights/dedupe";
 import { loadPreseasonSignalsRaw } from "../lib/fpl/insights/preseason-signals";
 import { loadSetPiecesRaw } from "../lib/fpl/insights/set-pieces";
 import { loadDefconLeadersRaw } from "../lib/fpl/insights/defcon";
@@ -64,15 +65,43 @@ async function main(): Promise<void> {
   const preseason = await loadPreseasonSignalsRaw();
   assert.ok(preseason.rows.length > 0, "expected preseason signal rows");
   assert.ok(preseason.match_count > 0);
+  assert.equal(
+    new Set(preseason.rows.map((r) => r.key)).size,
+    preseason.rows.length,
+    "preseason signals: duplicate row keys",
+  );
+  assert.equal(
+    hasDuplicateFplIds(
+      preseason.rows.filter((r) => r.fpl_id != null) as { fpl_id: number }[],
+    ),
+    false,
+    "preseason signals: duplicate fpl_id rows",
+  );
 
   const setPieces = await loadSetPiecesRaw();
   assert.ok(setPieces.teams.length > 0, "expected set-piece teams");
+  const setPieceRows = setPieces.teams.flatMap((g) => g.rows);
+  assert.equal(
+    hasDuplicateFplIds(setPieceRows),
+    false,
+    "set-pieces: duplicate fpl_id rows",
+  );
 
   const defcon = await loadDefconLeadersRaw();
   assert.ok(defcon.rows.length > 0, "expected defcon rows");
+  assert.equal(
+    hasDuplicateFplIds(defcon.rows),
+    false,
+    "defcon: duplicate fpl_id rows",
+  );
 
   const transfers = await loadTransferMomentumRaw();
   assert.ok(transfers.rows.length > 0, "expected transfer rows");
+  assert.equal(
+    hasDuplicateFplIds(transfers.rows),
+    false,
+    "transfers: duplicate fpl_id rows",
+  );
 
   const differentials = await loadDifferentialsRaw({ limit: 10 });
   assert.ok(differentials.rows.length > 0, "expected differential rows");

@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
+import { dedupeRowsByFplId } from "@/lib/fpl/insights/dedupe";
 
 const COLS =
   "fpl_id,web_name,name,team,team_id,position,minutes,starts,defensive_contribution,defensive_contribution_per_90,clearances_blocks_interceptions,recoveries,tackles,base_price,selected_by_percent";
@@ -63,7 +64,9 @@ export async function loadDefconLeadersRaw(opts?: {
 
   if (error) throw new Error(error.message);
 
-  const rows = (data ?? []).map((r) => toRow(r as Record<string, unknown>));
+  const rows = dedupeRowsByFplId(
+    (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
+  );
   return { rows };
 }
 

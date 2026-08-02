@@ -56,7 +56,7 @@ function bestSetPieceRank(row: SetPieceRow): number {
   );
 }
 
-/** Drop duplicate squad rows (same name on one team) and repeated fpl_id rows. */
+/** Drop duplicate rows for the same FPL element id. */
 function dedupeSetPieceRows(rows: SetPieceRow[]): SetPieceRow[] {
   const byId = new Map<number, SetPieceRow>();
   for (const row of rows) {
@@ -65,17 +65,7 @@ function dedupeSetPieceRows(rows: SetPieceRow[]): SetPieceRow[] {
       byId.set(row.fpl_id, row);
     }
   }
-
-  const byName = new Map<string, SetPieceRow>();
-  for (const row of byId.values()) {
-    const key = `${row.team}\0${row.web_name.trim().toLowerCase()}`;
-    const existing = byName.get(key);
-    if (!existing || bestSetPieceRank(row) < bestSetPieceRank(existing)) {
-      byName.set(key, row);
-    }
-  }
-
-  return [...byName.values()];
+  return [...byId.values()];
 }
 
 export type SetPieceRoleLabels = {
@@ -159,6 +149,6 @@ export async function loadSetPiecesRaw(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v2"],
+  ["fpl-insights-set-pieces-v3"],
   { revalidate: 300 },
 );

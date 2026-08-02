@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { resolveCurrentGw } from "@/lib/xp";
+import { dedupeRowsByFplId } from "@/lib/fpl/insights/dedupe";
 
 const STATIC_COLS =
   "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,transfers_in_event,transfers_out_event,minutes,status";
@@ -115,16 +116,18 @@ export async function loadTransferMomentumRaw(): Promise<{
   );
   const pool = withActivity.length > 0 ? withActivity : staticRows;
 
-  const rows: TransferRow[] = pool
-    .map((r) => ({
-      ...r,
-      ownership_delta: deltas.get(r.fpl_id) ?? null,
-    }))
-    .sort((a, b) => {
-      const net = b.net_transfers - a.net_transfers;
-      if (net !== 0) return net;
-      return b.transfers_in - a.transfers_in;
-    });
+  const rows: TransferRow[] = dedupeRowsByFplId(
+    pool
+      .map((r) => ({
+        ...r,
+        ownership_delta: deltas.get(r.fpl_id) ?? null,
+      }))
+      .sort((a, b) => {
+        const net = b.net_transfers - a.net_transfers;
+        if (net !== 0) return net;
+        return b.transfers_in - a.transfers_in;
+      }),
+  );
 
   return { rows, gw: current };
 }

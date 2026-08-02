@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import {
   getPreseasonBundle,
+  normPreseasonPlayerName,
   type PreseasonMatch,
 } from "@/lib/fpl/preseason";
 import { loadPreseasonFplPlayerIndex } from "@/lib/fpl/preseason-fpl-players";
@@ -19,7 +20,39 @@ export type PreseasonSignalRow = {
 };
 
 function playerKey(name: string, plCode: string): string {
-  return `${plCode.toUpperCase()}::${name.trim().toLowerCase()}`;
+  return `${plCode.toUpperCase()}::${normPreseasonPlayerName(name)}`;
+}
+
+function pickDisplayName(current: string, next: string): string {
+  if (!current) return next;
+  if (next.length > current.length) return next;
+  return current;
+}
+
+function mergePreseasonSignalRows(
+  rows: PreseasonSignalRow[],
+): PreseasonSignalRow[] {
+  const merged = new Map<string, PreseasonSignalRow>();
+
+  for (const row of rows) {
+    const mergeKey = row.fpl_id != null ? `id:${row.fpl_id}` : row.key;
+    const existing = merged.get(mergeKey);
+    if (!existing) {
+      merged.set(mergeKey, { ...row, key: mergeKey });
+      continue;
+    }
+    existing.goals += row.goals;
+    existing.assists += row.assists;
+    existing.starts += row.starts;
+    existing.sub_appearances += row.sub_appearances;
+    existing.name = pickDisplayName(existing.name, row.name);
+    existing.matches_involved = Math.max(
+      existing.starts + existing.sub_appearances,
+      existing.goals > 0 || existing.assists > 0 ? 1 : 0,
+    );
+  }
+
+  return [...merged.values()];
 }
 
 function tallyLineup(
@@ -112,7 +145,9 @@ export async function loadPreseasonSignalsRaw(): Promise<{
     );
   }
 
-  const sorted = [...rows.values()]
+  const merged = mergePreseasonSignalRows([...rows.values()]);
+
+  const sorted = merged
     .filter(
       (r) =>
         r.goals > 0 ||
@@ -139,7 +174,7 @@ export async function loadPreseasonSignalsRaw(): Promise<{
 
 export const loadPreseasonSignals = unstable_cache(
   loadPreseasonSignalsRaw,
-  ["fpl-insights-preseason-signals-v1"],
+  ["fpl-insights-preseason-signals-v2"],
   { revalidate: 300 },
 );
 

@@ -277,7 +277,7 @@ export type PreseasonLeaderboardRow = {
   count: number;
 };
 
-function normPreseasonPlayerName(name: string): string {
+export function normPreseasonPlayerName(name: string): string {
   return name
     .trim()
     .toLowerCase()
