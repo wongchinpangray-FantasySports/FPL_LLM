@@ -105,7 +105,7 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
     {
       title: t("guestPreseasonTitle"),
       body: t("guestPreseasonBody"),
-      href: "/fpl/preseason",
+      href: "/auth/signup?next=%2Ffpl%2Fpreseason",
     },
     {
       title: t("guestFeature1Title"),
@@ -158,7 +158,7 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
             {t("guestLogin")}
           </Link>
           <Link
-            href="/fpl/preseason"
+            href="/auth/signup?next=%2Ffpl%2Fpreseason"
             className="text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
           >
             {t("guestBrowsePreseason")} →
