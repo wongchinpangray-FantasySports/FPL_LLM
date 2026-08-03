@@ -149,7 +149,7 @@ async function main(): Promise<void> {
       false,
       "xg-divergence: duplicate player identity rows",
     );
-    for (const pos of ["DEF", "MID", "FWD"] as const) {
+    for (const pos of ["GKP", "DEF", "MID", "FWD"] as const) {
       assert.ok(
         xgDiv.rows.some((r) => r.position === pos),
         `xg-divergence: expected ${pos} rows`,
@@ -170,7 +170,7 @@ async function main(): Promise<void> {
       false,
       "xa-divergence: duplicate player identity rows",
     );
-    for (const pos of ["DEF", "MID", "FWD"] as const) {
+    for (const pos of ["GKP", "DEF", "MID", "FWD"] as const) {
       assert.ok(
         xaDiv.rows.some((r) => r.position === pos),
         `xa-divergence: expected ${pos} rows`,

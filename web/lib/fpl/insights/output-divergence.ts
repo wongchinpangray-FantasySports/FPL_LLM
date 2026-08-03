@@ -100,7 +100,7 @@ export async function loadOutputDivergenceRaw(opts?: {
     .from("players_static")
     .select(PLAYER_COLS)
     .gt("minutes", 0)
-    .in("position", ["DEF", "MID", "FWD"]);
+    .in("position", ["GKP", "DEF", "MID", "FWD"]);
 
   if (error) throw new Error(error.message);
 
@@ -180,6 +180,6 @@ export async function loadOutputDivergenceRaw(opts?: {
 
 export const loadOutputDivergence = unstable_cache(
   async () => loadOutputDivergenceRaw(),
-  ["fpl-insights-output-divergence-v1"],
+  ["fpl-insights-output-divergence-v2"],
   { revalidate: 300 },
 );

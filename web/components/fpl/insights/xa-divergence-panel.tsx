@@ -73,10 +73,12 @@ export function XaDivergencePanel({
     intro: string;
     filterPos: string;
     posAll: string;
+    posGkp: string;
     posDef: string;
     posMid: string;
     posFwd: string;
     minMinutes: string;
+    showingCount: string;
     colPlayer: string;
     colTeam: string;
     colPos: string;
@@ -119,6 +121,7 @@ export function XaDivergencePanel({
             className="rounded-lg border border-border bg-input px-2 py-1.5 text-sm text-foreground"
           >
             <option value="all">{labels.posAll}</option>
+            <option value="GKP">{labels.posGkp}</option>
             <option value="DEF">{labels.posDef}</option>
             <option value="MID">{labels.posMid}</option>
             <option value="FWD">{labels.posFwd}</option>
@@ -138,6 +141,10 @@ export function XaDivergencePanel({
           </select>
         </label>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        {labels.showingCount.replace("{count}", String(filtered.length))}
+      </p>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
