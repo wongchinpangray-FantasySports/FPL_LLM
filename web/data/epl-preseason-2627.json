@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-01",
+  "updated_at": "2026-08-03",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -1486,11 +1486,18 @@
       "pl_home": true,
       "venue": "New Jersey",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "8'",
+          "scorer": "Lukas Nmecha",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1502,9 +1509,9 @@
       "pl_home": true,
       "venue": "New Jersey",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 0,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -1522,7 +1529,14 @@
       "pl_goals": 1,
       "opp_goals": 4,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "2'",
+          "scorer": "Igor Jesus",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1538,7 +1552,38 @@
       "pl_goals": 4,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "16'",
+          "scorer": "Kai Havertz",
+          "assist": "Max Dowman",
+          "side": "pl"
+        },
+        {
+          "minute": "30'",
+          "scorer": "Christos Tzolis",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "53'",
+          "scorer": "Max Dowman",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "55'",
+          "scorer": "Gabriel Jesus",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "50'",
+          "scorer": "Arnau Martinez",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1554,7 +1599,32 @@
       "pl_goals": 3,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "3'",
+          "scorer": "Emiliano Buendia",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "44'",
+          "scorer": "Ross Barkley",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "55'",
+          "scorer": "Brian Madjo",
+          "assist": "Luka Lynch",
+          "side": "pl"
+        },
+        {
+          "minute": "83'",
+          "scorer": "Arkhan Kaka",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1570,7 +1640,32 @@
       "pl_goals": 4,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "17'",
+          "scorer": "Pascal Gross",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "23'",
+          "scorer": "Olivier Boscagli",
+          "assist": "Pascal Gross",
+          "side": "pl"
+        },
+        {
+          "minute": "47'",
+          "scorer": "Eiran Cashin",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Ibrahim Osman",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1621,7 +1716,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "40'",
+          "scorer": "Merlin Röhl",
+          "assist": "Thierno Barry",
+          "side": "pl"
+        },
+        {
+          "minute": "90+4'",
+          "scorer": "Jordan Torunarigha (OG)",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "50'",
+          "scorer": "Patson Daka",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1637,7 +1751,20 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "51'",
+          "scorer": "Oli McBurnie",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "47'",
+          "scorer": "Mortadha Ben Ouanes",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1650,8 +1777,8 @@
       "venue": null,
       "note": null,
       "status": "finished",
-      "pl_goals": 2,
-      "opp_goals": 0,
+      "pl_goals": 0,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -1669,7 +1796,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "75'",
+          "scorer": "Cameron Humphreys",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "90'",
+          "scorer": "Cameron Humphreys",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "56'",
+          "scorer": "Emre Tezgel",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1708,7 +1854,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "53'",
+          "scorer": "Bryan Mbeumo",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "74'",
+          "scorer": "Bryan Mbeumo",
+          "assist": "Jack Fletcher",
+          "side": "pl"
+        },
+        {
+          "minute": "5'",
+          "scorer": "Arnau Ortiz",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1787,9 +1952,9 @@
       "pl_home": true,
       "venue": "Philadelphia",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null

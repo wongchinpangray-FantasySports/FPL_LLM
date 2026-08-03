@@ -82,6 +82,45 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://www.bbc.co.uk/sport/football/articles/ce85z509qpno",
     "https://www.fcaugsburg.de/en/article/fca-beaten-5-2-by-bournemouth-in-eventful-friendly-23298",
   ],
+  "lee-2026-07-30-83": [
+    "https://www.leedsunited.com/en/news/pre-season-report-leeds-united-1-0-sunderland",
+    "https://www.bbc.co.uk/sport/football/articles/c5yw0x7y08do",
+  ],
+  "nfo-2026-07-31-22": [
+    "https://www.bbc.co.uk/sport/football/articles/c20j6vzypr6o",
+    "https://www.nottinghampost.com/sport/football/match-reports/nottingham-forest-live-updates-sporting-11087715",
+    "https://www.beinsports.com/en-us/soccer/primeira-liga/articles/sporting-cp-rallies-to-rout-nottingham-forest-in-preseason-friendly-2026-07-31",
+  ],
+  "ars-2026-08-01-47": [
+    "https://www.skysports.com/football/girona-vs-arsenal/report/562155",
+    "https://www.bbc.co.uk/sport/football/live/cy45kl7k0wzt",
+    "https://www.arsenal.com/news/report-girona-1-4-arsenal-aIyhn9r9XmW4",
+  ],
+  "avl-2026-08-01-54": [
+    "https://readastonvilla.com/2026/08/01/indonesia-all-stars-1-3-aston-villa-garnacho-makes-debut-in-comfortable-win/",
+    "https://www.birminghammail.co.uk/sport/football/football-news/indonesia-stars-1-3-aston-34388865",
+  ],
+  "bha-2026-08-01-10": [
+    "https://www.bbc.com/sport/football/articles/czxe06dx697o",
+    "https://www.theargus.co.uk/sport/26428888.see-brighton-fared-friendly-austria/",
+  ],
+  "eve-2026-08-01-16": [
+    "https://www.bbc.com/sport/football/articles/cj4kw4plz40o",
+    "https://www.hsv.de/en/news/hsv-beaten-2-1-late-on-by-everton",
+    "https://readeverton.com/everton-2-1-hamburg-match-report/",
+  ],
+  "hul-2026-08-01-73": [
+    "https://www.bbc.co.uk/sport/football/articles/c5yrvpnneg9o",
+    "https://www.hulldailymail.co.uk/sport/football/match-reports/oli-mcburnie-strike-sees-hull-11088437",
+  ],
+  "ips-2026-08-01-78": [
+    "https://www.bbc.co.uk/sport/football/articles/c62x62l2mrzo",
+    "https://www.twtd.co.uk/ipswich-town-news/52438/wycombe-wanderers-1-2-ipswich-town--match-report",
+  ],
+  "mun-2026-08-01-43": [
+    "https://www.skysports.com/football/manchester-united-vs-atletico-madrid/report/559826",
+    "https://www.skysports.com/football/news/11667/13569042/man-utd-2-1-atletico-madrid-bryan-mbeumo-scores-twice-as-united-come-from-behind-to-win-snapdragon-cup",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

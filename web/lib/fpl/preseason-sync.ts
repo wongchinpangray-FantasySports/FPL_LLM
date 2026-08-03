@@ -113,7 +113,7 @@ async function resolveMatchUpdates(
     const reportUrls = findReportUrlsForMatch(next, externalResults);
     if (reportUrls.length > 0) {
       const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
-        skipDiscovery: true,
+        skipDiscovery: reportUrls.length > 0,
       });
     const goals =
       fetched.length > 0
