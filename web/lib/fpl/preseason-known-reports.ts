@@ -121,6 +121,10 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://www.skysports.com/football/manchester-united-vs-atletico-madrid/report/559826",
     "https://www.skysports.com/football/news/11667/13569042/man-utd-2-1-atletico-madrid-bryan-mbeumo-scores-twice-as-united-come-from-behind-to-win-snapdragon-cup",
   ],
+  "sun-2026-08-02-37": [
+    "https://rokerreport.sbnation.com/report-amp-player-ratings/146923/andys-player-ratings-sunderland-1-0-wrexham-usa-tour-ends-in-victory",
+    "https://www.vavel.com/en/football/2026/08/02/sunderland/1267105-sunderland-vs-wrexham.html",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

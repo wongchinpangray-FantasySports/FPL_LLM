@@ -1956,7 +1956,14 @@
       "pl_goals": 1,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "34'",
+          "scorer": "Nordi Mukiele",
+          "assist": "Brian Brobbey",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {

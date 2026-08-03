@@ -513,7 +513,18 @@ export function mergeExternalResultsOntoMatch<
 
   for (const result of results) {
     const applied = applyExternalResultToMatch(match, result);
-    if (applied) return { ...base, ...applied };
+    if (!applied) continue;
+
+    // Keep committed JSON scorelines — RSS/PL article can lag or mis-state lower-league results.
+    if (
+      match.status === "finished" &&
+      match.pl_goals != null &&
+      match.opp_goals != null
+    ) {
+      continue;
+    }
+
+    return { ...base, ...applied };
   }
 
   return base;
