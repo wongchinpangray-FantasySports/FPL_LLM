@@ -1926,11 +1926,48 @@
       "pl_home": true,
       "venue": "Chicago",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 4,
+      "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "60'",
+          "scorer": "Brenden Aaronson",
+          "assist": "Ethan Ampadu",
+          "side": "pl"
+        },
+        {
+          "minute": "71'",
+          "scorer": "Dominic Calvert-Lewin",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "73'",
+          "scorer": "Sean Longstaff",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "84'",
+          "scorer": "Dominic Calvert-Lewin",
+          "assist": "Sebastiaan Bornauw",
+          "side": "pl"
+        },
+        {
+          "minute": "7'",
+          "scorer": "Luke Chambers",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "40'",
+          "scorer": "Florian Wirtz",
+          "assist": "Jeremie Frimpong",
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -1942,11 +1979,48 @@
       "pl_home": true,
       "venue": "Chicago",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 4,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "7'",
+          "scorer": "Luke Chambers",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "40'",
+          "scorer": "Florian Wirtz",
+          "assist": "Jeremie Frimpong",
+          "side": "pl"
+        },
+        {
+          "minute": "60'",
+          "scorer": "Brenden Aaronson",
+          "assist": "Ethan Ampadu",
+          "side": "opp"
+        },
+        {
+          "minute": "71'",
+          "scorer": "Dominic Calvert-Lewin",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "73'",
+          "scorer": "Sean Longstaff",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "84'",
+          "scorer": "Dominic Calvert-Lewin",
+          "assist": "Sebastiaan Bornauw",
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {

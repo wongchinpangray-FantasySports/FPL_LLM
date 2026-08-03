@@ -129,6 +129,16 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://football-italia.net/inter-beat-manchester-city-penalties-friendly/",
     "https://www.espn.com/soccer/story/_/id/49506906/enzo-maresca-suffers-shootout-defeat-first-manchester-city-game-new-manager-slowly-going-improve",
   ],
+  "lee-2026-08-02-84": [
+    "https://www.leedsunited.com/en/news/pre-season-report-liverpool-2-4-leeds-united",
+    "https://www.skysports.com/football/liverpool-vs-leeds/report/554987",
+    "https://www.bbc.co.uk/sport/football/live/c5yvxvy9q2lt",
+  ],
+  "liv-2026-08-02-89": [
+    "https://www.leedsunited.com/en/news/pre-season-report-liverpool-2-4-leeds-united",
+    "https://www.skysports.com/football/liverpool-vs-leeds/report/554987",
+    "https://www.espn.com/soccer/story/_/id/49515940/liverpool-stunned-four-goal-leeds-comeback-calvert-lewin-brace-iraola-eases-frimpong-injury-concerns",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(
