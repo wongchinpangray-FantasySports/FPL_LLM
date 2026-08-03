@@ -1,4 +1,17 @@
 import { miniPlayerIdentityKey } from "@/lib/mini/player-identity";
+import { fetchOfficialFplPlayers } from "@/lib/squad-builder/fpl-live-players";
+
+export type InsightPlayerRow = {
+  fpl_id: number;
+  web_name?: string | null;
+  team_id?: number | null;
+};
+
+/** Current-season FPL element ids from bootstrap-static. */
+export async function loadOfficialFplPlayerIdSet(): Promise<Set<number>> {
+  const players = await fetchOfficialFplPlayers();
+  return new Set(players.map((p) => p.fpl_id));
+}
 
 /** Keep one row per FPL element id (first occurrence wins). */
 export function dedupeRowsByFplId<T extends { fpl_id: number }>(rows: T[]): T[] {
@@ -10,16 +23,31 @@ export function dedupeRowsByFplId<T extends { fpl_id: number }>(rows: T[]): T[] 
 }
 
 /** Collapse stale duplicate `players_static` rows for the same name/club. */
-export function dedupeRowsByPlayerIdentity<
-  T extends { fpl_id: number; web_name?: string | null; team_id?: number | null },
->(rows: T[]): T[] {
+export function dedupeRowsByPlayerIdentity<T extends InsightPlayerRow>(
+  rows: T[],
+  merge?: (prev: T, next: T) => T,
+): T[] {
   const best = new Map<string, T>();
   for (const row of rows) {
     const key = miniPlayerIdentityKey(row);
     const prev = best.get(key);
-    if (!prev || row.fpl_id > prev.fpl_id) best.set(key, row);
+    if (!prev) {
+      best.set(key, row);
+      continue;
+    }
+    best.set(key, merge ? merge(prev, row) : row.fpl_id > prev.fpl_id ? row : prev);
   }
   return [...best.values()];
+}
+
+/** Drop stale rows and collapse duplicate names for Insights player tables. */
+export function normalizeInsightPlayerRows<T extends InsightPlayerRow>(
+  rows: T[],
+  officialIds: Set<number>,
+  merge?: (prev: T, next: T) => T,
+): T[] {
+  const current = rows.filter((row) => officialIds.has(row.fpl_id));
+  return dedupeRowsByPlayerIdentity(dedupeRowsByFplId(current), merge);
 }
 
 export function hasDuplicateFplIds(rows: { fpl_id: number }[]): boolean {

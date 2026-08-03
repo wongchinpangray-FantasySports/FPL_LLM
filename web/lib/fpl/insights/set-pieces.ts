@@ -1,5 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 
 const COLS =
   "fpl_id,web_name,name,team,team_id,position,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order";
@@ -48,24 +52,23 @@ function toRow(row: Record<string, unknown>): SetPieceRow {
   };
 }
 
-function bestSetPieceRank(row: SetPieceRow): number {
-  return Math.min(
-    row.penalties_order ?? 99,
-    row.direct_freekicks_order ?? 99,
-    row.corners_order ?? 99,
-  );
+function pickBestOrder(a: number | null, b: number | null): number | null {
+  if (a == null) return b;
+  if (b == null) return a;
+  return Math.min(a, b);
 }
 
-/** Drop duplicate rows for the same FPL element id. */
-function dedupeSetPieceRows(rows: SetPieceRow[]): SetPieceRow[] {
-  const byId = new Map<number, SetPieceRow>();
-  for (const row of rows) {
-    const existing = byId.get(row.fpl_id);
-    if (!existing || bestSetPieceRank(row) < bestSetPieceRank(existing)) {
-      byId.set(row.fpl_id, row);
-    }
-  }
-  return [...byId.values()];
+function mergeSetPieceRows(a: SetPieceRow, b: SetPieceRow): SetPieceRow {
+  const base = a.fpl_id > b.fpl_id ? a : b;
+  return {
+    ...base,
+    penalties_order: pickBestOrder(a.penalties_order, b.penalties_order),
+    direct_freekicks_order: pickBestOrder(
+      a.direct_freekicks_order,
+      b.direct_freekicks_order,
+    ),
+    corners_order: pickBestOrder(a.corners_order, b.corners_order),
+  };
 }
 
 export type SetPieceRoleLabels = {
@@ -112,14 +115,19 @@ export async function loadSetPiecesRaw(): Promise<{
   rows: SetPieceRow[];
   teams: SetPieceTeamGroup[];
 }> {
-  const supa = getServerSupabase();
+  const [supa, officialIds] = await Promise.all([
+    Promise.resolve(getServerSupabase()),
+    loadOfficialFplPlayerIdSet(),
+  ]);
   const { data, error } = await supa.from("players_static").select(COLS);
   if (error) throw new Error(error.message);
 
-  const rows = dedupeSetPieceRows(
+  const rows = normalizeInsightPlayerRows(
     (data ?? [])
       .filter(hasSetPieceRole)
       .map((r) => toRow(r as Record<string, unknown>)),
+    officialIds,
+    mergeSetPieceRows,
   ).sort((a, b) => {
       const tc = a.team.localeCompare(b.team);
       if (tc !== 0) return tc;
@@ -149,6 +157,6 @@ export async function loadSetPiecesRaw(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v3"],
+  ["fpl-insights-set-pieces-v4"],
   { revalidate: 300 },
 );

@@ -1,6 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 import { projectPlayers } from "@/lib/xp";
 
 export const DEFAULT_XP_ACCURACY_GW_WINDOW = 5;
@@ -55,6 +59,7 @@ function round3(v: number): number {
 async function backtestGw(
   targetGw: number,
   season: string,
+  officialIds: Set<number>,
 ): Promise<XpAccuracyGwSummary | null> {
   const supa = getServerSupabase();
   const { data: actualRows, error } = await supa
@@ -67,19 +72,28 @@ async function backtestGw(
   if (error) throw new Error(error.message);
   if (!actualRows?.length) return null;
 
-  const ids = actualRows.map((r) => r.player_id as number);
+  const ids = actualRows
+    .map((r) => r.player_id as number)
+    .filter((id) => officialIds.has(id));
   const actualByPid = new Map<number, number>();
   for (const r of actualRows) {
-    actualByPid.set(r.player_id as number, num(r.total_points));
+    const pid = r.player_id as number;
+    if (!officialIds.has(pid)) continue;
+    actualByPid.set(pid, num(r.total_points));
   }
 
   const { data: staticRows } = await supa
     .from("players_static")
-    .select("fpl_id,web_name,name,team,position")
+    .select("fpl_id,web_name,name,team,team_id,position")
     .in("fpl_id", ids);
   const metaByPid = new Map<
     number,
-    { web_name: string; team: string; position: string | null }
+    {
+      web_name: string;
+      team: string;
+      team_id: number | null;
+      position: string | null;
+    }
   >();
   for (const r of staticRows ?? []) {
     metaByPid.set(r.fpl_id as number, {
@@ -88,6 +102,7 @@ async function backtestGw(
         (r.name as string) ??
         `#${r.fpl_id}`,
       team: (r.team as string) ?? "—",
+      team_id: (r.team_id as number | null) ?? null,
       position: (r.position as string | null) ?? null,
     });
   }
@@ -206,6 +221,7 @@ async function backtestGw(
 async function loadLatestGwMisses(
   targetGw: number,
   season: string,
+  officialIds: Set<number>,
   limit = 15,
 ): Promise<XpAccuracyMiss[]> {
   const supa = getServerSupabase();
@@ -218,15 +234,19 @@ async function loadLatestGwMisses(
 
   if (!actualRows?.length) return [];
 
-  const ids = actualRows.map((r) => r.player_id as number);
+  const ids = actualRows
+    .map((r) => r.player_id as number)
+    .filter((id) => officialIds.has(id));
   const actualByPid = new Map<number, number>();
   for (const r of actualRows) {
-    actualByPid.set(r.player_id as number, num(r.total_points));
+    const pid = r.player_id as number;
+    if (!officialIds.has(pid)) continue;
+    actualByPid.set(pid, num(r.total_points));
   }
 
   const { data: staticRows } = await supa
     .from("players_static")
-    .select("fpl_id,web_name,name,team,position")
+    .select("fpl_id,web_name,name,team,team_id,position")
     .in("fpl_id", ids);
 
   const preds = new Map<number, number>();
@@ -244,7 +264,7 @@ async function loadLatestGwMisses(
     }
   }
 
-  const misses: XpAccuracyMiss[] = [];
+  const misses: (XpAccuracyMiss & { team_id: number | null })[] = [];
   for (const r of staticRows ?? []) {
     const pid = r.fpl_id as number;
     const pred = preds.get(pid);
@@ -258,6 +278,7 @@ async function loadLatestGwMisses(
         (r.name as string) ??
         `#${pid}`,
       team: (r.team as string) ?? "—",
+      team_id: (r.team_id as number | null) ?? null,
       position: (r.position as string | null) ?? null,
       predicted: round3(pred),
       actual,
@@ -266,7 +287,10 @@ async function loadLatestGwMisses(
     });
   }
 
-  return misses.sort((a, b) => b.abs_error - a.abs_error).slice(0, limit);
+  return normalizeInsightPlayerRows(misses, officialIds)
+    .map(({ team_id: _teamId, ...row }) => row)
+    .sort((a, b) => b.abs_error - a.abs_error)
+    .slice(0, limit);
 }
 
 export async function loadXpAccuracyRaw(
@@ -285,6 +309,7 @@ export async function loadXpAccuracyRaw(
   top_misses: XpAccuracyMiss[];
 }> {
   const season = await getCurrentFplSeason();
+  const officialIds = await loadOfficialFplPlayerIdSet();
   const supa = getServerSupabase();
   const { data: finishedGws } = await supa
     .from("gameweeks")
@@ -301,7 +326,7 @@ export async function loadXpAccuracyRaw(
 
   const gws: XpAccuracyGwSummary[] = [];
   for (const gw of targetGws) {
-    const summary = await backtestGw(gw, season);
+    const summary = await backtestGw(gw, season, officialIds);
     if (summary) gws.push(summary);
   }
 
@@ -333,13 +358,15 @@ export async function loadXpAccuracyRaw(
 
   const latest_gw = gws.length > 0 ? gws[gws.length - 1]!.gw : null;
   const top_misses =
-    latest_gw != null ? await loadLatestGwMisses(latest_gw, season) : [];
+    latest_gw != null
+      ? await loadLatestGwMisses(latest_gw, season, officialIds)
+      : [];
 
   return { gws, season, aggregate, latest_gw, top_misses };
 }
 
 export const loadXpAccuracy = unstable_cache(
   async () => loadXpAccuracyRaw(),
-  ["fpl-insights-xp-accuracy-v1"],
+  ["fpl-insights-xp-accuracy-v2"],
   { revalidate: 3600 },
 );

@@ -1,6 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { DEFAULT_DIFFERENTIALS_MAX_OWNERSHIP } from "@/lib/fpl/insights/catalog";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
 
 export type DifferentialFixture = {
@@ -46,10 +50,11 @@ export async function loadDifferentialsRaw(
   const limit = Math.min(Math.max(opts.limit ?? DEFAULT_DIFFERENTIALS_LIMIT, 1), 80);
 
   const supa = getServerSupabase();
+  const officialIds = await loadOfficialFplPlayerIdSet();
   let q = supa
     .from("players_static")
     .select(
-      "fpl_id,web_name,name,team,position,base_price,selected_by_percent,status,chance_of_playing,minutes,form",
+      "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,status,chance_of_playing,minutes,form",
     )
     .lte("selected_by_percent", maxOwnership)
     .gte("base_price", minPrice)
@@ -61,15 +66,25 @@ export async function loadDifferentialsRaw(
   const { data: pool, error } = await q;
   if (error) throw new Error(error.message);
 
-  const ids = (pool ?? [])
-    .filter((r) => {
-      const s = (r.status as string | null) ?? "a";
-      if (s === "u" || s === "n" || s === "s") return false;
-      const cop = r.chance_of_playing;
-      if (typeof cop === "number" && cop < 75) return false;
-      return true;
-    })
-    .map((r) => r.fpl_id as number);
+  const ids = normalizeInsightPlayerRows(
+    (pool ?? [])
+      .filter((r) => {
+        const s = (r.status as string | null) ?? "a";
+        if (s === "u" || s === "n" || s === "s") return false;
+        const cop = r.chance_of_playing;
+        if (typeof cop === "number" && cop < 75) return false;
+        return true;
+      })
+      .map((r) => ({
+        fpl_id: r.fpl_id as number,
+        web_name:
+          (r.web_name as string | null) ??
+          (r.name as string) ??
+          `#${r.fpl_id}`,
+        team_id: (r.team_id as number | null) ?? null,
+      })),
+    officialIds,
+  ).map((r) => r.fpl_id);
 
   const { current, next } = await resolveCurrentGw();
   const projections = await projectPlayers(ids, {
@@ -105,6 +120,6 @@ export async function loadDifferentialsRaw(
 
 export const loadDifferentials = unstable_cache(
   async () => loadDifferentialsRaw(),
-  ["fpl-insights-differentials-v1"],
+  ["fpl-insights-differentials-v2"],
   { revalidate: 300 },
 );

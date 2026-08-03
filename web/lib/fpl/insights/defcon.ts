@@ -1,9 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
-import { fetchOfficialFplPlayers } from "@/lib/squad-builder/fpl-live-players";
 import {
-  dedupeRowsByFplId,
-  dedupeRowsByPlayerIdentity,
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
 } from "@/lib/fpl/insights/dedupe";
 
 const COLS =
@@ -34,8 +33,11 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function normalizeDefconRows(rows: DefconRow[]): DefconRow[] {
-  return dedupeRowsByPlayerIdentity(dedupeRowsByFplId(rows));
+function normalizeDefconRows(
+  rows: DefconRow[],
+  officialIds: Set<number>,
+): DefconRow[] {
+  return normalizeInsightPlayerRows(rows, officialIds);
 }
 
 function toRow(row: Record<string, unknown>): DefconRow {
@@ -61,11 +63,10 @@ export async function loadDefconLeadersRaw(opts?: {
   minMinutes?: number;
 }): Promise<{ rows: DefconRow[] }> {
   const minMinutes = Math.max(0, opts?.minMinutes ?? DEFAULT_DEFCON_MIN_MINUTES);
-  const [supa, officialPlayers] = await Promise.all([
+  const [supa, officialIds] = await Promise.all([
     Promise.resolve(getServerSupabase()),
-    fetchOfficialFplPlayers(),
+    loadOfficialFplPlayerIdSet(),
   ]);
-  const officialIds = new Set(officialPlayers.map((p) => p.fpl_id));
   const { data, error } = await supa
     .from("players_static")
     .select(COLS)
@@ -77,9 +78,8 @@ export async function loadDefconLeadersRaw(opts?: {
   if (error) throw new Error(error.message);
 
   const rows = normalizeDefconRows(
-    (data ?? [])
-      .map((r) => toRow(r as Record<string, unknown>))
-      .filter((r) => officialIds.has(r.fpl_id)),
+    (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
+    officialIds,
   );
   return { rows };
 }
@@ -112,16 +112,13 @@ export async function loadDefconLeadersFiltered(opts: {
     q = q.eq("team_id", opts.teamId);
   }
 
-  const officialIds = new Set(
-    (await fetchOfficialFplPlayers()).map((p) => p.fpl_id),
-  );
+  const officialIds = await loadOfficialFplPlayerIdSet();
   const { data, error } = await q;
   if (error) throw new Error(error.message);
   return {
     rows: normalizeDefconRows(
-      (data ?? [])
-        .map((r) => toRow(r as Record<string, unknown>))
-        .filter((r) => officialIds.has(r.fpl_id)),
+      (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
+      officialIds,
     ),
   };
 }

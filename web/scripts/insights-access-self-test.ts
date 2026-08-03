@@ -89,6 +89,11 @@ async function main(): Promise<void> {
     false,
     "set-pieces: duplicate fpl_id rows",
   );
+  assert.equal(
+    hasDuplicatePlayerIdentity(setPieceRows),
+    false,
+    "set-pieces: duplicate player identity rows",
+  );
 
   const defcon = await loadDefconLeadersRaw();
   assert.ok(defcon.rows.length > 0, "expected defcon rows");
@@ -110,10 +115,20 @@ async function main(): Promise<void> {
     false,
     "transfers: duplicate fpl_id rows",
   );
+  assert.equal(
+    hasDuplicatePlayerIdentity(transfers.rows),
+    false,
+    "transfers: duplicate player identity rows",
+  );
 
   const differentials = await loadDifferentialsRaw({ limit: 10 });
   assert.ok(differentials.rows.length > 0, "expected differential rows");
   assert.equal(differentials.maxOwnership, 5);
+  assert.equal(
+    hasDuplicateFplIds(differentials.rows),
+    false,
+    "differentials: duplicate fpl_id rows",
+  );
 
   const fixtureSwing = await loadFixtureSwingRaw();
   assert.ok(fixtureSwing.rows.length > 0, "expected fixture swing rows");
@@ -121,12 +136,43 @@ async function main(): Promise<void> {
 
   const xgDiv = await loadXgDivergenceRaw({ limit: 10 });
   assert.ok(xgDiv.rows.length >= 0, "xg divergence load ok");
+  if (xgDiv.rows.length > 0) {
+    assert.equal(
+      hasDuplicateFplIds(xgDiv.rows),
+      false,
+      "xg-divergence: duplicate fpl_id rows",
+    );
+    assert.equal(
+      hasDuplicatePlayerIdentity(xgDiv.rows),
+      false,
+      "xg-divergence: duplicate player identity rows",
+    );
+  }
 
   const priceChanges = await loadPriceChangesRaw();
   assert.ok(Array.isArray(priceChanges.rows), "price changes load ok");
+  if (priceChanges.rows.length > 0) {
+    assert.equal(
+      hasDuplicateFplIds(priceChanges.rows),
+      false,
+      "price-changes: duplicate fpl_id rows",
+    );
+    assert.equal(
+      hasDuplicatePlayerIdentity(priceChanges.rows),
+      false,
+      "price-changes: duplicate player identity rows",
+    );
+  }
 
   const xpAccuracy = await loadXpAccuracyRaw();
   assert.ok(Array.isArray(xpAccuracy.gws), "xp accuracy load ok");
+  if (xpAccuracy.top_misses.length > 0) {
+    assert.equal(
+      hasDuplicateFplIds(xpAccuracy.top_misses),
+      false,
+      "xp-accuracy: duplicate fpl_id in top misses",
+    );
+  }
 
   console.log(
     `insights-access-self-test: ok (${preseason.rows.length} preseason, ${transfers.rows.length} transfers, ${differentials.rows.length} diffs, ${fixtureSwing.rows.length} fixture swing, ${xpAccuracy.gws.length} xp-accuracy gws, stripe=${isStripeConfigured()})`,

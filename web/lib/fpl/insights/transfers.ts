@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { resolveCurrentGw } from "@/lib/xp";
-import { dedupeRowsByFplId } from "@/lib/fpl/insights/dedupe";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 
 const STATIC_COLS =
   "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,transfers_in_event,transfers_out_event,minutes,status";
@@ -96,7 +99,10 @@ export async function loadTransferMomentumRaw(): Promise<{
 }> {
   const season = await getCurrentFplSeason();
   const { current } = await resolveCurrentGw();
-  const supa = getServerSupabase();
+  const [supa, officialIds] = await Promise.all([
+    Promise.resolve(getServerSupabase()),
+    loadOfficialFplPlayerIdSet(),
+  ]);
   const { data, error } = await supa.from("players_static").select(STATIC_COLS);
 
   if (error) throw new Error(error.message);
@@ -116,7 +122,7 @@ export async function loadTransferMomentumRaw(): Promise<{
   );
   const pool = withActivity.length > 0 ? withActivity : staticRows;
 
-  const rows: TransferRow[] = dedupeRowsByFplId(
+  const rows: TransferRow[] = normalizeInsightPlayerRows(
     pool
       .map((r) => ({
         ...r,
@@ -127,6 +133,7 @@ export async function loadTransferMomentumRaw(): Promise<{
         if (net !== 0) return net;
         return b.transfers_in - a.transfers_in;
       }),
+    officialIds,
   );
 
   return { rows, gw: current };
@@ -134,6 +141,6 @@ export async function loadTransferMomentumRaw(): Promise<{
 
 export const loadTransferMomentum = unstable_cache(
   loadTransferMomentumRaw,
-  ["fpl-insights-transfers-v2"],
+  ["fpl-insights-transfers-v3"],
   { revalidate: 120 },
 );

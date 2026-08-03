@@ -1,17 +1,22 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 
 export const DEFAULT_XG_DIVERGENCE_MIN_MINUTES = 270;
 export const DEFAULT_XG_DIVERGENCE_LIMIT = 80;
 
 const PLAYER_COLS =
-  "fpl_id,web_name,name,team,position,minutes,goals_scored,expected_goals,expected_assists,status";
+  "fpl_id,web_name,name,team,team_id,position,minutes,goals_scored,expected_goals,expected_assists,status";
 
 export type XgDivergenceRow = {
   fpl_id: number;
   web_name: string;
   team: string;
+  team_id: number | null;
   position: string | null;
   minutes: number;
   goals: number;
@@ -81,7 +86,10 @@ export async function loadXgDivergenceRaw(opts?: {
   );
 
   const season = await getCurrentFplSeason();
-  const supa = getServerSupabase();
+  const [supa, officialIds] = await Promise.all([
+    Promise.resolve(getServerSupabase()),
+    loadOfficialFplPlayerIdSet(),
+  ]);
   const { data, error } = await supa
     .from("players_static")
     .select(PLAYER_COLS)
@@ -90,20 +98,33 @@ export async function loadXgDivergenceRaw(opts?: {
 
   if (error) throw new Error(error.message);
 
-  const pool = (data ?? []).filter((r) => {
-    const s = (r.status as string | null) ?? "a";
-    return s !== "u" && s !== "n";
-  });
+  const pool = normalizeInsightPlayerRows(
+    (data ?? [])
+      .filter((r) => {
+        const s = (r.status as string | null) ?? "a";
+        return s !== "u" && s !== "n";
+      })
+      .map((r) => ({
+        fpl_id: r.fpl_id as number,
+        web_name:
+          (r.web_name as string | null) ??
+          (r.name as string) ??
+          `#${r.fpl_id}`,
+        team_id: (r.team_id as number | null) ?? null,
+        raw: r,
+      })),
+    officialIds,
+  );
 
-  const ids = pool.map((r) => r.fpl_id as number);
+  const ids = pool.map((r) => r.fpl_id);
   const understat = await loadUnderstatSeasonTotals(ids, season);
 
   const rows: XgDivergenceRow[] = pool
-    .map((r) => {
+    .map(({ raw: r, fpl_id, web_name, team_id }) => {
       const minutes = num(r.minutes);
       const goals = num(r.goals_scored);
       const fpl_xg = num(r.expected_goals);
-      const us = understat.get(r.fpl_id as number) ?? null;
+      const us = understat.get(fpl_id) ?? null;
       const understat_xg = us?.xg ?? null;
       const understat_xa = us?.xa ?? null;
 
@@ -118,12 +139,10 @@ export async function loadXgDivergenceRaw(opts?: {
           : null;
 
       return {
-        fpl_id: r.fpl_id as number,
-        web_name:
-          (r.web_name as string | null) ??
-          (r.name as string) ??
-          `#${r.fpl_id}`,
+        fpl_id,
+        web_name,
         team: (r.team as string) ?? "—",
+        team_id,
         position: (r.position as string | null) ?? null,
         minutes,
         goals,
@@ -151,6 +170,6 @@ export async function loadXgDivergenceRaw(opts?: {
 
 export const loadXgDivergence = unstable_cache(
   async () => loadXgDivergenceRaw(),
-  ["fpl-insights-xg-divergence-v1"],
+  ["fpl-insights-xg-divergence-v2"],
   { revalidate: 300 },
 );

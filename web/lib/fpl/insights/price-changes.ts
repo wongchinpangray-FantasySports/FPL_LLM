@@ -1,6 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
 import { resolveCurrentGw } from "@/lib/xp";
 
 export type PriceChangeEvent = {
@@ -14,6 +18,7 @@ export type PriceChangeRow = {
   fpl_id: number;
   web_name: string;
   team: string;
+  team_id: number | null;
   position: string | null;
   current_price: number;
   season_start_price: number | null;
@@ -60,6 +65,7 @@ export async function loadPriceChangesRaw(): Promise<{
   const season = await getCurrentFplSeason();
   const { current } = await resolveCurrentGw();
   const supa = getServerSupabase();
+  const officialIds = await loadOfficialFplPlayerIdSet();
 
   const [{ data: gwRows, error: gwError }, { data: staticRows, error: staticError }] =
     await Promise.all([
@@ -71,16 +77,26 @@ export async function loadPriceChangesRaw(): Promise<{
         .order("gw"),
       supa
         .from("players_static")
-        .select("fpl_id,web_name,name,team,position,base_price,status")
+        .select("fpl_id,web_name,name,team,team_id,position,base_price,status")
         .gte("minutes", 0),
     ]);
 
   if (gwError) throw new Error(gwError.message);
   if (staticError) throw new Error(staticError.message);
 
+  const staticList = staticRows ?? [];
+  const normalizedStatic = normalizeInsightPlayerRows(
+    staticList.map((r) => ({
+      fpl_id: r.fpl_id as number,
+      web_name: (r.web_name as string | null) ?? (r.name as string),
+      team_id: (r.team_id as number | null) ?? null,
+    })),
+    officialIds,
+  );
   const staticById = new Map<number, Record<string, unknown>>();
-  for (const row of staticRows ?? []) {
-    staticById.set(row.fpl_id as number, row as Record<string, unknown>);
+  for (const stub of normalizedStatic) {
+    const full = staticList.find((r) => r.fpl_id === stub.fpl_id);
+    if (full) staticById.set(stub.fpl_id, full as Record<string, unknown>);
   }
 
   const byPlayer = new Map<number, { gw: number; value: number }[]>();
@@ -95,6 +111,7 @@ export async function loadPriceChangesRaw(): Promise<{
   const rows: PriceChangeRow[] = [];
 
   for (const [pid, gwValues] of byPlayer) {
+    if (!officialIds.has(pid)) continue;
     gwValues.sort((a, b) => a.gw - b.gw);
     const events = buildPriceHistory(gwValues);
     if (events.length === 0) continue;
@@ -120,6 +137,7 @@ export async function loadPriceChangesRaw(): Promise<{
         (stat?.name as string) ??
         `#${pid}`,
       team: (stat?.team as string) ?? "—",
+      team_id: (stat?.team_id as number | null) ?? null,
       position: (stat?.position as string | null) ?? null,
       current_price: currentPrice,
       season_start_price: seasonStart,
@@ -139,11 +157,14 @@ export async function loadPriceChangesRaw(): Promise<{
     return Math.abs(b.last_change?.delta ?? 0) - Math.abs(a.last_change?.delta ?? 0);
   });
 
-  return { rows, gw: current };
+  return {
+    rows: normalizeInsightPlayerRows(rows, officialIds),
+    gw: current,
+  };
 }
 
 export const loadPriceChanges = unstable_cache(
   loadPriceChangesRaw,
-  ["fpl-insights-price-changes-v1"],
+  ["fpl-insights-price-changes-v2"],
   { revalidate: 300 },
 );
