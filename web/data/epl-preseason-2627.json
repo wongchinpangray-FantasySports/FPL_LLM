@@ -1833,10 +1833,16 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "",
-          "scorer": "Matteo Lavelli",
-          "assist": null,
+          "minute": "14'",
+          "scorer": "Divin Mubama",
+          "assist": "Antoine Semenyo",
           "side": "pl"
+        },
+        {
+          "minute": "20'",
+          "scorer": "Benjamin Pavard",
+          "assist": null,
+          "side": "opp"
         }
       ],
       "lineup": null

@@ -125,6 +125,10 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://rokerreport.sbnation.com/report-amp-player-ratings/146923/andys-player-ratings-sunderland-1-0-wrexham-usa-tour-ends-in-victory",
     "https://www.vavel.com/en/football/2026/08/02/sunderland/1267105-sunderland-vs-wrexham.html",
   ],
+  "mci-2026-08-01-92": [
+    "https://football-italia.net/inter-beat-manchester-city-penalties-friendly/",
+    "https://www.espn.com/soccer/story/_/id/49506906/enzo-maresca-suffers-shootout-defeat-first-manchester-city-game-new-manager-slowly-going-improve",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(
