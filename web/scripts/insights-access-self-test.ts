@@ -21,6 +21,7 @@ import { loadTransferMomentumRaw } from "../lib/fpl/insights/transfers";
 import { loadDifferentialsRaw } from "../lib/fpl/insights/differentials";
 import { loadFixtureSwingRaw } from "../lib/fpl/insights/fixture-swing";
 import { loadXgDivergenceRaw } from "../lib/fpl/insights/xg-divergence";
+import { loadXaDivergenceRaw } from "../lib/fpl/insights/xa-divergence";
 import { loadPriceChangesRaw } from "../lib/fpl/insights/price-changes";
 import { loadXpAccuracyRaw } from "../lib/fpl/insights/xp-accuracy";
 import { isStripeConfigured } from "../lib/stripe/server";
@@ -62,6 +63,7 @@ async function main(): Promise<void> {
   assert.ok(getInsightById("differentials")?.status === "live");
   assert.ok(getInsightById("fixture-swing")?.status === "live");
   assert.ok(getInsightById("xg-divergence")?.status === "live");
+  assert.ok(getInsightById("xa-divergence")?.status === "live");
   assert.ok(getInsightById("price-changes")?.status === "live");
   assert.ok(getInsightById("xp-accuracy")?.status === "live");
 
@@ -151,6 +153,27 @@ async function main(): Promise<void> {
       assert.ok(
         xgDiv.rows.some((r) => r.position === pos),
         `xg-divergence: expected ${pos} rows`,
+      );
+    }
+  }
+
+  const xaDiv = await loadXaDivergenceRaw();
+  assert.ok(xaDiv.rows.length >= 0, "xa divergence load ok");
+  if (xaDiv.rows.length > 0) {
+    assert.equal(
+      hasDuplicateFplIds(xaDiv.rows),
+      false,
+      "xa-divergence: duplicate fpl_id rows",
+    );
+    assert.equal(
+      hasDuplicatePlayerIdentity(xaDiv.rows),
+      false,
+      "xa-divergence: duplicate player identity rows",
+    );
+    for (const pos of ["DEF", "MID", "FWD"] as const) {
+      assert.ok(
+        xaDiv.rows.some((r) => r.position === pos),
+        `xa-divergence: expected ${pos} rows`,
       );
     }
   }

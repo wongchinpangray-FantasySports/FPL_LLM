@@ -99,6 +99,18 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     badgeKey: "badgePremium",
   },
   {
+    id: "xa-divergence",
+    href: "/fpl/insights/xa-divergence",
+    tier: "premium",
+    phase: 2,
+    status: "live",
+    group: "models",
+    titleKey: "xaDivergence.title",
+    navTitleKey: "nav.xa",
+    descriptionKey: "xaDivergence.description",
+    badgeKey: "badgePremium",
+  },
+  {
     id: "xp-accuracy",
     href: "/fpl/insights/xp-accuracy",
     tier: "premium",
