@@ -1,6 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
-import { dedupeRowsByFplId } from "@/lib/fpl/insights/dedupe";
+import { fetchOfficialFplPlayers } from "@/lib/squad-builder/fpl-live-players";
+import {
+  dedupeRowsByFplId,
+  dedupeRowsByPlayerIdentity,
+} from "@/lib/fpl/insights/dedupe";
 
 const COLS =
   "fpl_id,web_name,name,team,team_id,position,minutes,starts,defensive_contribution,defensive_contribution_per_90,clearances_blocks_interceptions,recoveries,tackles,base_price,selected_by_percent";
@@ -30,6 +34,10 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizeDefconRows(rows: DefconRow[]): DefconRow[] {
+  return dedupeRowsByPlayerIdentity(dedupeRowsByFplId(rows));
+}
+
 function toRow(row: Record<string, unknown>): DefconRow {
   return {
     fpl_id: row.fpl_id as number,
@@ -53,7 +61,11 @@ export async function loadDefconLeadersRaw(opts?: {
   minMinutes?: number;
 }): Promise<{ rows: DefconRow[] }> {
   const minMinutes = Math.max(0, opts?.minMinutes ?? DEFAULT_DEFCON_MIN_MINUTES);
-  const supa = getServerSupabase();
+  const [supa, officialPlayers] = await Promise.all([
+    Promise.resolve(getServerSupabase()),
+    fetchOfficialFplPlayers(),
+  ]);
+  const officialIds = new Set(officialPlayers.map((p) => p.fpl_id));
   const { data, error } = await supa
     .from("players_static")
     .select(COLS)
@@ -64,15 +76,17 @@ export async function loadDefconLeadersRaw(opts?: {
 
   if (error) throw new Error(error.message);
 
-  const rows = dedupeRowsByFplId(
-    (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
+  const rows = normalizeDefconRows(
+    (data ?? [])
+      .map((r) => toRow(r as Record<string, unknown>))
+      .filter((r) => officialIds.has(r.fpl_id)),
   );
   return { rows };
 }
 
 export const loadDefconLeaders = unstable_cache(
   async () => loadDefconLeadersRaw(),
-  ["fpl-insights-defcon-v1"],
+  ["fpl-insights-defcon-v2"],
   { revalidate: 300 },
 );
 
@@ -98,7 +112,16 @@ export async function loadDefconLeadersFiltered(opts: {
     q = q.eq("team_id", opts.teamId);
   }
 
+  const officialIds = new Set(
+    (await fetchOfficialFplPlayers()).map((p) => p.fpl_id),
+  );
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return { rows: (data ?? []).map((r) => toRow(r as Record<string, unknown>)) };
+  return {
+    rows: normalizeDefconRows(
+      (data ?? [])
+        .map((r) => toRow(r as Record<string, unknown>))
+        .filter((r) => officialIds.has(r.fpl_id)),
+    ),
+  };
 }

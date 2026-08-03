@@ -10,7 +10,10 @@ import {
   canAccessInsight,
   isInsightsPremiumEnforced,
 } from "../lib/fpl/insights/access";
-import { hasDuplicateFplIds } from "../lib/fpl/insights/dedupe";
+import {
+  hasDuplicateFplIds,
+  hasDuplicatePlayerIdentity,
+} from "../lib/fpl/insights/dedupe";
 import { loadPreseasonSignalsRaw } from "../lib/fpl/insights/preseason-signals";
 import { loadSetPiecesRaw } from "../lib/fpl/insights/set-pieces";
 import { loadDefconLeadersRaw } from "../lib/fpl/insights/defcon";
@@ -93,6 +96,11 @@ async function main(): Promise<void> {
     hasDuplicateFplIds(defcon.rows),
     false,
     "defcon: duplicate fpl_id rows",
+  );
+  assert.equal(
+    hasDuplicatePlayerIdentity(defcon.rows),
+    false,
+    "defcon: duplicate player identity rows",
   );
 
   const transfers = await loadTransferMomentumRaw();

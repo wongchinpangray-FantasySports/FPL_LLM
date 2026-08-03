@@ -64,7 +64,7 @@ function num(val: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-async function fetchOfficialFplPlayers(): Promise<FplLiveBrowsePlayer[]> {
+export async function fetchOfficialFplPlayers(): Promise<FplLiveBrowsePlayer[]> {
   const raw = await fplGet<BootstrapPayload>("/bootstrap-static/", {
     cacheBust: true,
   });
