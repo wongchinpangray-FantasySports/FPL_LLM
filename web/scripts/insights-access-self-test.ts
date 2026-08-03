@@ -134,7 +134,7 @@ async function main(): Promise<void> {
   assert.ok(fixtureSwing.rows.length > 0, "expected fixture swing rows");
   assert.ok(fixtureSwing.fromGw >= 1);
 
-  const xgDiv = await loadXgDivergenceRaw({ limit: 10 });
+  const xgDiv = await loadXgDivergenceRaw();
   assert.ok(xgDiv.rows.length >= 0, "xg divergence load ok");
   if (xgDiv.rows.length > 0) {
     assert.equal(
@@ -147,6 +147,12 @@ async function main(): Promise<void> {
       false,
       "xg-divergence: duplicate player identity rows",
     );
+    for (const pos of ["DEF", "MID", "FWD"] as const) {
+      assert.ok(
+        xgDiv.rows.some((r) => r.position === pos),
+        `xg-divergence: expected ${pos} rows`,
+      );
+    }
   }
 
   const priceChanges = await loadPriceChangesRaw();

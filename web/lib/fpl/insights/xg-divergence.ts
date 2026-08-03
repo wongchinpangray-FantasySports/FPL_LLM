@@ -7,7 +7,6 @@ import {
 } from "@/lib/fpl/insights/dedupe";
 
 export const DEFAULT_XG_DIVERGENCE_MIN_MINUTES = 270;
-export const DEFAULT_XG_DIVERGENCE_LIMIT = 80;
 
 const PLAYER_COLS =
   "fpl_id,web_name,name,team,team_id,position,minutes,goals_scored,expected_goals,expected_assists,status";
@@ -76,14 +75,9 @@ async function loadUnderstatSeasonTotals(
 
 export async function loadXgDivergenceRaw(opts?: {
   minMinutes?: number;
-  limit?: number;
 }): Promise<{ rows: XgDivergenceRow[]; minMinutes: number }> {
   const minMinutes =
     opts?.minMinutes ?? DEFAULT_XG_DIVERGENCE_MIN_MINUTES;
-  const limit = Math.min(
-    Math.max(opts?.limit ?? DEFAULT_XG_DIVERGENCE_LIMIT, 1),
-    150,
-  );
 
   const season = await getCurrentFplSeason();
   const [supa, officialIds] = await Promise.all([
@@ -93,8 +87,8 @@ export async function loadXgDivergenceRaw(opts?: {
   const { data, error } = await supa
     .from("players_static")
     .select(PLAYER_COLS)
-    .gte("minutes", minMinutes)
-    .in("position", ["MID", "FWD", "DEF"]);
+    .gt("minutes", 0)
+    .in("position", ["DEF", "MID", "FWD"]);
 
   if (error) throw new Error(error.message);
 
@@ -162,14 +156,13 @@ export async function loadXgDivergenceRaw(opts?: {
         fpl_vs_understat,
       };
     })
-    .sort((a, b) => b.fpl_vs_actual - a.fpl_vs_actual)
-    .slice(0, limit);
+    .sort((a, b) => b.fpl_vs_actual - a.fpl_vs_actual);
 
   return { rows, minMinutes };
 }
 
 export const loadXgDivergence = unstable_cache(
   async () => loadXgDivergenceRaw(),
-  ["fpl-insights-xg-divergence-v2"],
+  ["fpl-insights-xg-divergence-v3"],
   { revalidate: 300 },
 );
