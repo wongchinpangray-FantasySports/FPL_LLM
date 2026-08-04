@@ -1,5 +1,6 @@
 import { miniPlayerIdentityKey } from "@/lib/mini/player-identity";
 import { fetchOfficialFplPlayers } from "@/lib/squad-builder/fpl-live-players";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 export type InsightPlayerRow = {
   fpl_id: number;
@@ -9,8 +10,10 @@ export type InsightPlayerRow = {
 
 /** Current-season FPL element ids from bootstrap-static. */
 export async function loadOfficialFplPlayerIdSet(): Promise<Set<number>> {
-  const players = await fetchOfficialFplPlayers();
-  return new Set(players.map((p) => p.fpl_id));
+  return withIsolateCache("official-fpl-player-ids", 120_000, async () => {
+    const players = await fetchOfficialFplPlayers();
+    return new Set(players.map((p) => p.fpl_id));
+  });
 }
 
 /** Keep one row per FPL element id (first occurrence wins). */

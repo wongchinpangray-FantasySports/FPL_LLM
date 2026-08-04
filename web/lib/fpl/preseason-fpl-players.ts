@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 export type PreseasonFplPlayerIndex = {
   resolveFplId: (scorerName: string, plCode: string) => number | null;
@@ -25,6 +26,12 @@ type FplRow = {
 };
 
 export async function loadPreseasonFplPlayerIndex(): Promise<PreseasonFplPlayerIndex> {
+  return withIsolateCache("preseason-fpl-player-index", 300_000, () =>
+    loadPreseasonFplPlayerIndexUncached(),
+  );
+}
+
+async function loadPreseasonFplPlayerIndexUncached(): Promise<PreseasonFplPlayerIndex> {
   const empty: PreseasonFplPlayerIndex = {
     resolveFplId: () => null,
   };

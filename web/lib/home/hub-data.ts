@@ -24,6 +24,7 @@ import {
   localizeLeaderboardRows,
 } from "@/lib/wc/localize-players";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 export type HomeMatchSnippet = {
   id: number;
@@ -337,9 +338,14 @@ export function loadHomeHubDataCached(locale: string): Promise<HomeHubData> {
 }
 
 export function loadHomeHubDataLiteCached(locale: string): Promise<HomeHubData> {
-  return unstable_cache(
-    () => loadHomeHubDataLite(locale),
-    ["home-hub-lite", locale],
-    { revalidate: 90 },
-  )();
+  return withIsolateCache(
+    `home-hub-lite:${locale}`,
+    90_000,
+    () =>
+      unstable_cache(
+        () => loadHomeHubDataLite(locale),
+        ["home-hub-lite", locale],
+        { revalidate: 90 },
+      )(),
+  );
 }

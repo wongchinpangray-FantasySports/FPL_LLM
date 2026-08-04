@@ -22,5 +22,8 @@
 			"binding": "WORKER_SELF_REFERENCE",
 			"service": "fplllm"
 		}
-	]
+	],
+	"limits": {
+		"cpu_ms": 30000
+	}
 }

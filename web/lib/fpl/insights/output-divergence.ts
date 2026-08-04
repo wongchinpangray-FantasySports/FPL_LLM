@@ -5,6 +5,7 @@ import {
   loadOfficialFplPlayerIdSet,
   normalizeInsightPlayerRows,
 } from "@/lib/fpl/insights/dedupe";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 export const DEFAULT_OUTPUT_DIVERGENCE_MIN_MINUTES = 270;
 
@@ -90,7 +91,16 @@ export async function loadOutputDivergenceRaw(opts?: {
 }): Promise<{ rows: OutputDivergenceRow[]; minMinutes: number }> {
   const minMinutes =
     opts?.minMinutes ?? DEFAULT_OUTPUT_DIVERGENCE_MIN_MINUTES;
+  return withIsolateCache(
+    `output-divergence:${minMinutes}`,
+    120_000,
+    () => loadOutputDivergenceRawUncached(minMinutes),
+  );
+}
 
+async function loadOutputDivergenceRawUncached(
+  minMinutes: number,
+): Promise<{ rows: OutputDivergenceRow[]; minMinutes: number }> {
   const season = await getCurrentFplSeason();
   const [supa, officialIds] = await Promise.all([
     Promise.resolve(getServerSupabase()),
@@ -180,6 +190,6 @@ export async function loadOutputDivergenceRaw(opts?: {
 
 export const loadOutputDivergence = unstable_cache(
   async () => loadOutputDivergenceRaw(),
-  ["fpl-insights-output-divergence-v2"],
+  ["fpl-insights-output-divergence-v3"],
   { revalidate: 300 },
 );

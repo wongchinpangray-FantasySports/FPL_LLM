@@ -65,9 +65,7 @@ function num(val: unknown): number | null {
 }
 
 export async function fetchOfficialFplPlayers(): Promise<FplLiveBrowsePlayer[]> {
-  const raw = await fplGet<BootstrapPayload>("/bootstrap-static/", {
-    cacheBust: true,
-  });
+  const raw = await fplGet<BootstrapPayload>("/bootstrap-static/");
   const teamsById = new Map(
     (raw.teams ?? []).map((t) => [t.id, t.name] as const),
   );

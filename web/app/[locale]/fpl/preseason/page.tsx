@@ -9,8 +9,8 @@ import {
 } from "@/lib/fpl/preseason";
 import { loadPreseasonFplPlayerIndex } from "@/lib/fpl/preseason-fpl-players";
 
-/** Bundled JSON — enriched by CI sync / backfill scripts, not at request time. */
 export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type Props = { params: { locale: string } };
 

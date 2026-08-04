@@ -3,7 +3,6 @@ import { loadHomeHubDataLiteCached } from "@/lib/home/hub-data";
 import { readLocaleFromRequest } from "@/lib/wc/localize-players";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   try {

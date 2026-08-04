@@ -4,6 +4,7 @@ import {
   loadOfficialFplPlayerIdSet,
   normalizeInsightPlayerRows,
 } from "@/lib/fpl/insights/dedupe";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 const COLS =
   "fpl_id,web_name,name,team,team_id,position,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order";
@@ -115,6 +116,15 @@ export async function loadSetPiecesRaw(): Promise<{
   rows: SetPieceRow[];
   teams: SetPieceTeamGroup[];
 }> {
+  return withIsolateCache("insights-set-pieces", 120_000, () =>
+    loadSetPiecesRawUncached(),
+  );
+}
+
+async function loadSetPiecesRawUncached(): Promise<{
+  rows: SetPieceRow[];
+  teams: SetPieceTeamGroup[];
+}> {
   const [supa, officialIds] = await Promise.all([
     Promise.resolve(getServerSupabase()),
     loadOfficialFplPlayerIdSet(),
@@ -157,6 +167,6 @@ export async function loadSetPiecesRaw(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v4"],
+  ["fpl-insights-set-pieces-v5"],
   { revalidate: 300 },
 );
