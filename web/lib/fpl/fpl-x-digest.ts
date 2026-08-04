@@ -368,7 +368,7 @@ ${facts}
 - 最多 4 条要点
 
 ## 伤病与阵容
-- 最多 8 条：球员 + 俱乐部 + 状态/预计出场（有则写）
+- 最多 8 条：球员姓名 + 状态/预计出场（有则写）；不要写俱乐部名称
 
 ## 转会
 - 最多 8 条：具体人名/俱乐部 + 来源
@@ -380,7 +380,8 @@ ${facts}
 - 全文 ≤${FPL_DIGEST_SUMMARY_MAX_CHARS_ZH} 字，每条要点一行，信息密度高，可写得更完整
 - 每条末尾标注来源（@账号 或媒体名）
 - 无内容的板块整段省略
-- 不要开篇套话或结尾废话`
+- 不要开篇套话或结尾废话
+- 「伤病与阵容」条目中不要写俱乐部名称，也不要在球员名后用括号标注俱乐部`
         : `Write an FPL (Fantasy Premier League) daily briefing for managers.
 Window: the past ${FPL_DIGEST_WINDOW_HOURS} hours (approx ${windowLabel}; digest date ${digestDate}).
 Use ONLY the sources below — do not invent injuries, transfers, or official announcements.
@@ -393,7 +394,7 @@ Format (Markdown — follow exactly):
 - up to 4 bullets
 
 ## Injuries & team news
-- up to 8 bullets: player + club + status/availability (when known)
+- up to 8 bullets: player name + status/availability (when known); do not include club names
 
 ## Transfers
 - up to 8 bullets: named players/clubs + source
@@ -406,6 +407,7 @@ Rules:
 - End each bullet with the source (@handle or outlet)
 - Omit entire sections with no supporting sources
 - No intro fluff or closing paragraph
+- In Injuries & team news, never put a club in parentheses after a player name
 - Prefer PL beat journalists (Ornstein, Romano, Stone, Pearce, etc.) for injury/transfer facts when present`;
 
     const resp = await ai.models.generateContent({
