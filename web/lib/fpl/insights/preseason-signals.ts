@@ -81,25 +81,33 @@ function tallyLineup(
   }
 }
 
-export async function loadPreseasonSignalsRaw(): Promise<{
-  rows: PreseasonSignalRow[];
-  updated_at: string;
-  season: string;
-  match_count: number;
-}> {
-  const bundle = getPreseasonBundle();
-  const fplIndex = await loadPreseasonFplPlayerIndex();
-  const rows = new Map<string, PreseasonSignalRow>();
+function processPreseasonMatch(
+  rows: Map<string, PreseasonSignalRow>,
+  match: PreseasonMatch,
+): void {
+  for (const goal of match.goals ?? []) {
+    if (!goal.scorer) continue;
+    const key = playerKey(goal.scorer, match.pl_code);
+    const row = rows.get(key) ?? {
+      key,
+      name: goal.scorer,
+      pl_code: match.pl_code,
+      pl_name: match.pl_name,
+      fpl_id: null,
+      goals: 0,
+      assists: 0,
+      starts: 0,
+      sub_appearances: 0,
+      matches_involved: 0,
+    };
+    row.goals += 1;
+    rows.set(key, row);
 
-  for (const match of bundle.matches) {
-    if (match.status !== "finished") continue;
-
-    for (const goal of match.goals ?? []) {
-      if (!goal.scorer) continue;
-      const key = playerKey(goal.scorer, match.pl_code);
-      const row = rows.get(key) ?? {
-        key,
-        name: goal.scorer,
+    if (goal.assist) {
+      const aKey = playerKey(goal.assist, match.pl_code);
+      const aRow = rows.get(aKey) ?? {
+        key: aKey,
+        name: goal.assist,
         pl_code: match.pl_code,
         pl_name: match.pl_name,
         fpl_id: null,
@@ -109,34 +117,21 @@ export async function loadPreseasonSignalsRaw(): Promise<{
         sub_appearances: 0,
         matches_involved: 0,
       };
-      row.goals += 1;
-      rows.set(key, row);
-
-      if (goal.assist) {
-        const aKey = playerKey(goal.assist, match.pl_code);
-        const aRow = rows.get(aKey) ?? {
-          key: aKey,
-          name: goal.assist,
-          pl_code: match.pl_code,
-          pl_name: match.pl_name,
-          fpl_id: null,
-          goals: 0,
-          assists: 0,
-          starts: 0,
-          sub_appearances: 0,
-          matches_involved: 0,
-        };
-        aRow.assists += 1;
-        rows.set(aKey, aRow);
-      }
-    }
-
-    if (match.lineup) {
-      tallyLineup(rows, match, match.lineup.starters ?? [], "start");
-      tallyLineup(rows, match, match.lineup.subs ?? [], "sub");
+      aRow.assists += 1;
+      rows.set(aKey, aRow);
     }
   }
 
+  if (match.lineup) {
+    tallyLineup(rows, match, match.lineup.starters ?? [], "start");
+    tallyLineup(rows, match, match.lineup.subs ?? [], "sub");
+  }
+}
+
+function finalizePreseasonRows(
+  rows: Map<string, PreseasonSignalRow>,
+  fplIndex: Awaited<ReturnType<typeof loadPreseasonFplPlayerIndex>>,
+): PreseasonSignalRow[] {
   for (const row of rows.values()) {
     row.fpl_id = fplIndex.resolveFplId(row.name, row.pl_code);
     row.matches_involved = Math.max(
@@ -147,7 +142,7 @@ export async function loadPreseasonSignalsRaw(): Promise<{
 
   const merged = mergePreseasonSignalRows([...rows.values()]);
 
-  const sorted = merged
+  return merged
     .filter(
       (r) =>
         r.goals > 0 ||
@@ -163,6 +158,68 @@ export async function loadPreseasonSignalsRaw(): Promise<{
       if (scoreB !== scoreA) return scoreB - scoreA;
       return a.name.localeCompare(b.name);
     });
+}
+
+export type PreseasonMatchSummary = {
+  pl_name: string;
+  opponent: string;
+  pl_goals: number;
+  opp_goals: number;
+};
+
+/** Stats from finished friendlies on a single calendar date (YYYY-MM-DD). */
+export async function loadPreseasonSignalsForMatchDate(matchDate: string): Promise<{
+  rows: PreseasonSignalRow[];
+  match_date: string;
+  match_count: number;
+  matches: PreseasonMatchSummary[];
+  season: string;
+  updated_at: string;
+}> {
+  const bundle = getPreseasonBundle();
+  const fplIndex = await loadPreseasonFplPlayerIndex();
+  const rows = new Map<string, PreseasonSignalRow>();
+  const dayMatches: PreseasonMatchSummary[] = [];
+
+  for (const match of bundle.matches) {
+    if (match.status !== "finished" || match.date !== matchDate) continue;
+    if (match.pl_goals != null && match.opp_goals != null) {
+      dayMatches.push({
+        pl_name: match.pl_name,
+        opponent: match.opponent,
+        pl_goals: match.pl_goals,
+        opp_goals: match.opp_goals,
+      });
+    }
+    processPreseasonMatch(rows, match);
+  }
+
+  return {
+    rows: finalizePreseasonRows(rows, fplIndex),
+    match_date: matchDate,
+    match_count: dayMatches.length,
+    matches: dayMatches,
+    season: bundle.season,
+    updated_at: bundle.updated_at,
+  };
+}
+
+export async function loadPreseasonSignalsRaw(): Promise<{
+  rows: PreseasonSignalRow[];
+  updated_at: string;
+  season: string;
+  match_count: number;
+}> {
+  const bundle = getPreseasonBundle();
+  const fplIndex = await loadPreseasonFplPlayerIndex();
+  const rows = new Map<string, PreseasonSignalRow>();
+
+  for (const match of bundle.matches) {
+    if (match.status !== "finished") continue;
+    processPreseasonMatch(rows, match);
+  }
+
+  const sorted = finalizePreseasonRows(rows, fplIndex);
 
   return {
     rows: sorted,

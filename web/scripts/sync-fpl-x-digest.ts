@@ -1,5 +1,6 @@
 /**
  * Generate today's FPL daily digest (past 48 hours of X feeds + headlines) via Gemini.
+ * Scheduled ~07:00 Asia/Shanghai (23:00 UTC) for morning WeChat card sharing.
  * Requires: SUPABASE_* , GEMINI_API_KEY, migration 0023_fpl_x_digests.sql
  */
 import { readFileSync, existsSync } from "node:fs";

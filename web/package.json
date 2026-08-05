@@ -17,7 +17,10 @@
     "test:preseason-scorers": "tsx scripts/preseason-scorers-self-test.ts",
     "validate:preseason-goals": "tsx scripts/validate-preseason-goals.ts",
     "render:commercial-frames": "node scripts/render-brand-frames.mjs",
-    "capture:commercial": "node scripts/capture-commercial-ui.mjs"
+    "capture:commercial": "node scripts/capture-commercial-ui.mjs",
+    "generate:wechat-card": "tsx scripts/generate-wechat-daily-card.ts",
+    "render:wechat-card": "node scripts/render-wechat-daily-card.mjs",
+    "wechat:daily": "tsx scripts/generate-wechat-daily-card.ts --png"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

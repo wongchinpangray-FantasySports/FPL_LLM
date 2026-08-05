@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, initial-scale=1" />
+    <title>FPL 每日卡片</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1080px;
+        min-height: 1440px;
+        font-family: "Noto Sans SC", system-ui, sans-serif;
+        background: #0b0a0f;
+        color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .card {
+        width: 1080px;
+        min-height: 1440px;
+        padding: 56px 52px 64px;
+        background:
+          radial-gradient(900px 500px at 10% -5%, rgba(56, 189, 148, 0.14), transparent 55%),
+          radial-gradient(700px 420px at 95% 0%, rgba(99, 102, 241, 0.12), transparent 50%),
+          #0b0a0f;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+
+      .brand-name {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #a7f3d0;
+      }
+
+      .brand-date {
+        font-size: 24px;
+        color: #a1a1aa;
+      }
+
+      h1 {
+        font-size: 44px;
+        line-height: 1.2;
+        margin-bottom: 36px;
+      }
+
+      .section {
+        margin-bottom: 28px;
+      }
+
+      .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #e4e4e7;
+      }
+
+      .section ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .section li {
+        position: relative;
+        padding-left: 22px;
+        margin-bottom: 10px;
+        font-size: 24px;
+        line-height: 1.45;
+        color: #d4d4d8;
+      }
+
+      .section li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #34d399;
+      }
+
+      .tip,
+      .discussion {
+        border-radius: 16px;
+        padding: 20px 22px;
+        margin-top: 8px;
+        font-size: 24px;
+        line-height: 1.45;
+      }
+
+      .tip {
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(129, 140, 248, 0.25);
+      }
+
+      .discussion {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.25);
+        margin-top: 20px;
+      }
+
+      .footer {
+        margin-top: 36px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 22px;
+        color: #a1a1aa;
+        line-height: 1.6;
+      }
+
+      .footer strong {
+        color: #d4d4d8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function render(card) {
+        const root = document.getElementById("root");
+        const sections = (card.sections || [])
+          .map(
+            (s) => `
+          <div class="section">
+            <div class="section-title">${esc(s.title)}</div>
+            <ul>${s.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+          </div>`,
+          )
+          .join("");
+
+        const links = (card.links || [])
+          .map((l) => `<div>${esc(l.label)}：${esc(l.href)}</div>`)
+          .join("");
+
+        root.innerHTML = `
+          <div class="brand">
+            <div class="brand-name">FALEAGUE AI</div>
+            <div class="brand-date">${esc(card.card_date)}</div>
+          </div>
+          <h1>📋 FPL 每日卡片</h1>
+          ${sections}
+          <div class="discussion">💬 ${esc(card.discussion_prompt)}</div>
+          <div class="footer">
+            <strong>链接</strong>
+            ${links}
+          </div>`;
+      }
+
+      if (window.__CARD__) render(window.__CARD__);
+    </script>
+  </body>
+</html>
