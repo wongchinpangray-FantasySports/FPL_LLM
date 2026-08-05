@@ -20,7 +20,10 @@
     "capture:commercial": "node scripts/capture-commercial-ui.mjs",
     "generate:wechat-card": "tsx scripts/generate-wechat-daily-card.ts",
     "render:wechat-card": "node scripts/render-wechat-daily-card.mjs",
-    "wechat:daily": "tsx scripts/generate-wechat-daily-card.ts --png"
+    "wechat:daily": "tsx scripts/generate-wechat-daily-card.ts --png",
+    "generate:gw1-draft": "tsx scripts/generate-gw1-draft.ts",
+    "render:gw1-draft": "node scripts/render-gw1-draft.mjs",
+    "gw1:daily": "tsx scripts/generate-gw1-draft.ts --png"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

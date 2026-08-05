@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, initial-scale=1" />
+    <title>FALEAGUE GW1 Draft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px;
+        font-family: Inter, system-ui, sans-serif;
+        background: #0b0a0f;
+        color: #fff;
+        -webkit-font-smoothing: antialiased;
+      }
+      .card {
+        width: 1080px;
+        min-height: 1620px;
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(11,10,15,0.15) 0%, rgba(11,10,15,0.55) 72%, #0b0a0f 100%),
+          repeating-linear-gradient(
+            90deg,
+            #1a7a3a 0px,
+            #1a7a3a 54px,
+            #176f35 54px,
+            #176f35 108px
+          );
+      }
+      .pitch-lines {
+        position: absolute;
+        inset: 48px 40px 280px;
+        border: 3px solid rgba(255,255,255,0.35);
+        border-radius: 8px;
+        pointer-events: none;
+      }
+      .pitch-lines::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        margin-left: -1.5px;
+        background: rgba(255,255,255,0.28);
+        display: none;
+      }
+      .center-circle {
+        position: absolute;
+        left: 50%;
+        top: 42%;
+        width: 180px;
+        height: 180px;
+        margin: -90px 0 0 -90px;
+        border: 3px solid rgba(255,255,255,0.28);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .xi {
+        position: relative;
+        z-index: 2;
+        padding: 72px 36px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-height: 1100px;
+      }
+      .row {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        flex-wrap: nowrap;
+      }
+      .player {
+        width: 148px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+      .shirt {
+        width: 112px;
+        height: 148px;
+        object-fit: contain;
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
+      }
+      .badge {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #18181b;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255,255,255,0.35);
+        z-index: 3;
+      }
+      .badge.c { background: #00ff87; color: #0b0a0f; border-color: #00ff87; }
+      .plate {
+        margin-top: -8px;
+        width: 100%;
+        background: #fff;
+        border-radius: 10px;
+        padding: 8px 6px 7px;
+        text-align: center;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+      }
+      .name {
+        color: #111;
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .fx {
+        color: #71717a;
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .bench-wrap {
+        position: relative;
+        z-index: 2;
+        margin: 8px 40px 0;
+        padding: 18px 16px 14px;
+        background: rgba(11,10,15,0.55);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px;
+      }
+      .bench-label {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #00ff87;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+      .bench-row { display: flex; justify-content: center; gap: 14px; }
+      .bench-row .player { width: 128px; }
+      .bench-row .shirt { width: 88px; height: 116px; }
+      .bench-row .name { font-size: 17px; }
+      .bench-row .fx { font-size: 13px; }
+      .footer {
+        position: relative;
+        z-index: 2;
+        margin-top: 28px;
+        padding: 8px 40px 0;
+        text-align: center;
+      }
+      .title {
+        font-size: 64px;
+        font-weight: 900;
+        font-style: italic;
+        letter-spacing: -0.03em;
+        color: #f5ff3d;
+        text-shadow: 0 0 24px rgba(245,255,61,0.35);
+        line-height: 1;
+      }
+      .meta {
+        margin-top: 10px;
+        font-size: 20px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.78);
+      }
+      .brand-bar {
+        margin-top: 28px;
+        height: 18px;
+        background: linear-gradient(90deg, #ff2d95 0%, #7c3aed 45%, #00ff87 78%, #f5ff3d 100%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function playerHtml(p) {
+        const badge = p.is_captain
+          ? '<div class="badge c">C</div>'
+          : p.is_vice
+            ? '<div class="badge">V</div>'
+            : "";
+        return `<div class="player">
+          ${badge}
+          <img class="shirt" src="${esc(p.shirt_url)}" alt="" />
+          <div class="plate">
+            <div class="name">${esc(p.web_name)}</div>
+            <div class="fx">${esc(p.fixture || "GW1")}</div>
+          </div>
+        </div>`;
+      }
+
+      function row(players) {
+        return `<div class="row">${players.map(playerHtml).join("")}</div>`;
+      }
+
+      function render(draft) {
+        const starters = draft.starters || [];
+        const gk = starters.filter((p) => p.position === "GKP");
+        const def = starters.filter((p) => p.position === "DEF");
+        const mid = starters.filter((p) => p.position === "MID");
+        const fwd = starters.filter((p) => p.position === "FWD");
+        const bench = draft.bench || [];
+
+        document.getElementById("root").innerHTML = `
+          <div class="pitch-lines"></div>
+          <div class="center-circle"></div>
+          <div class="xi">
+            ${row(gk)}
+            ${row(def)}
+            ${row(mid)}
+            ${row(fwd)}
+          </div>
+          <div class="bench-wrap">
+            <div class="bench-label">Bench</div>
+            <div class="bench-row">${bench.map(playerHtml).join("")}</div>
+          </div>
+          <div class="footer">
+            <div class="title">FALEAGUE GW${esc(draft.gw)} DRAFT</div>
+            <div class="meta">${esc(draft.formation)} · £${esc(draft.spend_m)}m · XI xP ${esc(draft.xi_xp)} · ${esc(draft.card_date)}</div>
+          </div>
+          <div class="brand-bar"></div>`;
+      }
+
+      if (window.__DRAFT__) render(window.__DRAFT__);
+    </script>
+  </body>
+</html>

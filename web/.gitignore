@@ -12,3 +12,4 @@ next-env.d.ts
 scripts/commercial/.auth-state.json
 public/commercial/captures/
 output/wechat-daily/
+output/gw1-draft/

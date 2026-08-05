@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, initial-scale=1" />
+    <title>FALEAGUE Draft Rationale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f;
+        color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .card {
+        width: 1080px;
+        min-height: 1440px;
+        padding: 56px 52px 48px;
+        background:
+          radial-gradient(900px 480px at 8% -8%, rgba(0,255,135,0.16), transparent 55%),
+          radial-gradient(700px 420px at 100% 0%, rgba(124,58,237,0.18), transparent 50%),
+          #0b0a0f;
+      }
+      .brand {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+      }
+      .brand-name {
+        font-family: Inter, sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #00ff87;
+      }
+      .brand-date { font-size: 22px; color: #a1a1aa; }
+      h1 {
+        font-family: Inter, sans-serif;
+        font-size: 48px;
+        font-weight: 900;
+        font-style: italic;
+        color: #f5ff3d;
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        font-size: 24px;
+        color: #d4d4d8;
+        margin-bottom: 36px;
+        line-height: 1.4;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 36px;
+      }
+      .stat {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .stat-k {
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #a1a1aa;
+        margin-bottom: 6px;
+      }
+      .stat-v {
+        font-family: Inter, sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        color: #fff;
+      }
+      .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #e4e4e7;
+      }
+      ul { list-style: none; }
+      li {
+        position: relative;
+        padding-left: 26px;
+        margin-bottom: 14px;
+        font-size: 26px;
+        line-height: 1.45;
+        color: #d4d4d8;
+      }
+      li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #00ff87;
+        font-weight: 700;
+      }
+      .footer {
+        margin-top: 40px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        font-size: 20px;
+        color: #a1a1aa;
+        line-height: 1.5;
+      }
+      .bar {
+        margin: 36px -52px -48px;
+        height: 16px;
+        background: linear-gradient(90deg, #ff2d95 0%, #7c3aed 45%, #00ff87 78%, #f5ff3d 100%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function bulletsFromMarkdown(md) {
+        return String(md || "")
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter((l) => /^[-*•]/.test(l))
+          .map((l) => l.replace(/^[-*•]\s*/, "").replace(/\*\*/g, ""));
+      }
+
+      function render(draft) {
+        const locale = window.__LOCALE__ || "zh";
+        const md = locale === "en" ? draft.rationale_en : draft.rationale_zh;
+        const bullets = bulletsFromMarkdown(md);
+        const title = locale === "en" ? "Draft rationale" : "阵容解读";
+        const sub =
+          locale === "en"
+            ? `GW${draft.gw} · ${draft.formation} · Captain ${draft.captain.web_name}`
+            : `GW${draft.gw} · ${draft.formation} · 队长 ${draft.captain.web_name}`;
+
+        document.getElementById("root").innerHTML = `
+          <div class="brand">
+            <div class="brand-name">FALEAGUE AI</div>
+            <div class="brand-date">${esc(draft.card_date)}</div>
+          </div>
+          <h1>${esc(title)}</h1>
+          <div class="sub">${esc(sub)}</div>
+          <div class="stats">
+            <div class="stat"><div class="stat-k">XI xP</div><div class="stat-v">${esc(draft.xi_xp)}</div></div>
+            <div class="stat"><div class="stat-k">Spend</div><div class="stat-v">£${esc(draft.spend_m)}m</div></div>
+            <div class="stat"><div class="stat-k">Bank</div><div class="stat-v">£${esc(draft.bank_m)}m</div></div>
+          </div>
+          <div class="section-title">${locale === "en" ? "Key points" : "要点"}</div>
+          <ul>${bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
+          <div class="footer">
+            ${locale === "en"
+              ? "Projections update daily — treat as a starting point, not gospel."
+              : "投影每日更新 — 仅供参考，请结合伤病与个人风险偏好调整。"}
+            <br/>www.faleague-ai.com
+          </div>
+          <div class="bar"></div>`;
+      }
+
+      if (window.__DRAFT__) render(window.__DRAFT__);
+    </script>
+  </body>
+</html>
