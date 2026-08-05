@@ -153,8 +153,8 @@
             <div class="brand-name">FALEAGUE AI</div>
             <div class="brand-date">${esc(draft.card_date)}</div>
           </div>
-          <h1>${esc(title)}</h1>
-          <div class="sub">${esc(sub)}</div>
+          <h1>${esc(draft.theme?.title_zh || title)}</h1>
+          <div class="sub">${esc(draft.talking_point_zh || sub)}</div>
           <div class="stats">
             <div class="stat"><div class="stat-k">XI xP</div><div class="stat-v">${esc(draft.xi_xp)}</div></div>
             <div class="stat"><div class="stat-k">Spend</div><div class="stat-v">£${esc(draft.spend_m)}m</div></div>

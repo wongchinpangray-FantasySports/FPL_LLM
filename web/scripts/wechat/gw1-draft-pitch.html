@@ -238,8 +238,9 @@
             <div class="bench-row">${bench.map(playerHtml).join("")}</div>
           </div>
           <div class="footer">
-            <div class="title">FALEAGUE GW${esc(draft.gw)} DRAFT</div>
-            <div class="meta">${esc(draft.formation)} · £${esc(draft.spend_m)}m · XI xP ${esc(draft.xi_xp)} · ${esc(draft.card_date)}</div>
+            <div class="title">FALEAGUE · ${esc(draft.theme?.title_zh || `GW${draft.gw} DRAFT`)}</div>
+            <div class="meta">${esc(draft.talking_point_zh || "")}</div>
+            <div class="meta" style="margin-top:6px;font-size:18px;opacity:0.85">${esc(draft.formation)} · £${esc(draft.spend_m)}m · XI xP ${esc(draft.xi_xp)} · ${esc(draft.card_date)}</div>
           </div>
           <div class="brand-bar"></div>`;
       }

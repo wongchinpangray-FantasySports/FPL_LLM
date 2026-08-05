@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Render output/gw1-draft/draft.json → pitch.png + rationale.png
+ * Render themed drafts: pitch-{id}.png + rationale-{id}.png
  */
-import { existsSync, mkdirSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { chromium } from "playwright";
@@ -10,7 +10,6 @@ import { chromium } from "playwright";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const outDir = join(root, "output", "gw1-draft");
-const jsonPath = join(outDir, "draft.json");
 
 async function shot(htmlPath, outPath, draft, locale) {
   const browser = await chromium.launch();
@@ -36,24 +35,53 @@ async function shot(htmlPath, outPath, draft, locale) {
 }
 
 async function main() {
-  if (!existsSync(jsonPath)) {
-    throw new Error(`Missing ${jsonPath} — run generate-gw1-draft.ts first.`);
-  }
-  const draft = JSON.parse(readFileSync(jsonPath, "utf8"));
   mkdirSync(outDir, { recursive: true });
 
-  await shot(
-    join(__dirname, "wechat", "gw1-draft-pitch.html"),
-    join(outDir, "pitch.png"),
-    draft,
-    "zh",
-  );
-  await shot(
-    join(__dirname, "wechat", "gw1-draft-rationale.html"),
-    join(outDir, "rationale.png"),
-    draft,
-    "zh",
-  );
+  const packPath = join(outDir, "pack.json");
+  let drafts = [];
+  if (existsSync(packPath)) {
+    drafts = JSON.parse(readFileSync(packPath, "utf8"));
+  } else {
+    const files = readdirSync(outDir).filter((f) => /^draft-.+\.json$/.test(f));
+    for (const f of files) {
+      drafts.push(JSON.parse(readFileSync(join(outDir, f), "utf8")));
+    }
+    if (!drafts.length && existsSync(join(outDir, "draft.json"))) {
+      drafts = [JSON.parse(readFileSync(join(outDir, "draft.json"), "utf8"))];
+    }
+  }
+
+  if (!drafts.length) {
+    throw new Error(`No drafts in ${outDir} — run generate-gw1-draft.ts first.`);
+  }
+
+  for (const draft of drafts) {
+    const id = draft.theme?.id ?? "template";
+    await shot(
+      join(__dirname, "wechat", "gw1-draft-pitch.html"),
+      join(outDir, `pitch-${id}.png`),
+      draft,
+      "zh",
+    );
+    await shot(
+      join(__dirname, "wechat", "gw1-draft-rationale.html"),
+      join(outDir, `rationale-${id}.png`),
+      draft,
+      "zh",
+    );
+  }
+
+  // Alias primary outputs
+  const primary = drafts[0];
+  if (primary) {
+    const id = primary.theme?.id ?? "template";
+    const { copyFileSync } = await import("fs");
+    copyFileSync(join(outDir, `pitch-${id}.png`), join(outDir, "pitch.png"));
+    copyFileSync(
+      join(outDir, `rationale-${id}.png`),
+      join(outDir, "rationale.png"),
+    );
+  }
 }
 
 main().catch((err) => {

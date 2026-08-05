@@ -56,10 +56,12 @@ jobs:
         with:
           name: faleague-gw1-draft-${{ github.run_id }}
           path: |
-            web/output/gw1-draft/draft.txt
-            web/output/gw1-draft/draft.json
-            web/output/gw1-draft/rationale-zh.txt
-            web/output/gw1-draft/rationale-en.txt
+            web/output/gw1-draft/pack.txt
+            web/output/gw1-draft/pack.json
+            web/output/gw1-draft/draft-*.txt
+            web/output/gw1-draft/draft-*.json
+            web/output/gw1-draft/pitch-*.png
+            web/output/gw1-draft/rationale-*.png
             web/output/gw1-draft/pitch.png
             web/output/gw1-draft/rationale.png
           if-no-files-found: warn
