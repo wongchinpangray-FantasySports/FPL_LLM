@@ -106,9 +106,9 @@ const CLUB_BEAT_JOURNALIST_RE =
   /pearce|watts|kilpatrick|whitwell|crafton|dorsett|bascombe|king \(liverpool\)|sam lee|cross \(mirror\)|hughes|ames|lawton|steinberg|wheatley|ashton/i;
 
 function digestSourcePriority(s: FplXDigestSource): number {
+  if (TIER1_JOURNALIST_RE.test(s.outlet)) return 100;
+  if (CLUB_BEAT_JOURNALIST_RE.test(s.outlet)) return 85;
   if (s.kind === "tweet") {
-    if (TIER1_JOURNALIST_RE.test(s.outlet)) return 100;
-    if (CLUB_BEAT_JOURNALIST_RE.test(s.outlet)) return 85;
     if (/fpl official/i.test(s.outlet)) return 75;
     if (/ffscout|fpl hints|ben crellin|premier injuries|physioroom/i.test(s.outlet)) {
       return 50;
@@ -118,6 +118,43 @@ function digestSourcePriority(s: FplXDigestSource): number {
   if (/ffscout/i.test(s.outlet)) return 42;
   if (/bbc sport|the guardian|sky sports|athletic/i.test(s.outlet)) return 32;
   return 28;
+}
+
+/** Google News RSS when X syndication is empty/rate-limited. */
+const JOURNALIST_GOOGLE_NEWS: Array<{ outlet: string; query: string }> = [
+  { outlet: "David Ornstein", query: '"David Ornstein" OR Ornstein (transfer OR injury OR FPL OR "Premier League")' },
+  { outlet: "Fabrizio Romano", query: '"Fabrizio Romano" (transfer OR "here we go" OR Premier)' },
+  { outlet: "Kaveh Solhekol (Sky)", query: '"Kaveh Solhekol" OR SkyKaveh (transfer OR injury)' },
+  { outlet: "Simon Stone (BBC)", query: '"Simon Stone" (transfer OR injury OR Manchester OR United)' },
+  { outlet: "Paul Joyce", query: '"Paul Joyce" (Liverpool OR transfer OR injury)' },
+  { outlet: "James Pearce (Liverpool)", query: '"James Pearce" Liverpool (transfer OR injury OR team)' },
+  { outlet: "Sam Lee (Man City)", query: '"Sam Lee" (City OR Guardiola) (transfer OR injury)' },
+  { outlet: "Charles Watts (Arsenal)", query: '"Charles Watts" Arsenal (transfer OR injury)' },
+  { outlet: "Laurie Whitwell (Man Utd)", query: '"Laurie Whitwell" (United OR transfer OR injury)' },
+  { outlet: "Adam Crafton (Chelsea)", query: '"Adam Crafton" Chelsea (transfer OR injury)' },
+  { outlet: "Dan Kilpatrick (Spurs)", query: '"Dan Kilpatrick" (Tottenham OR Spurs) (transfer OR injury)' },
+  { outlet: "Sami Mokbel (Mail)", query: '"Sami Mokbel" (transfer OR Arsenal OR Chelsea)' },
+];
+
+function googleNewsRssUrl(query: string): string {
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} when:2d`)}&hl=en-GB&gl=GB&ceid=GB:en`;
+}
+
+async function fetchJournalistGoogleNews(
+  limitPerJournalist = 3,
+): Promise<FplXDigestSource[]> {
+  const batches = await Promise.all(
+    JOURNALIST_GOOGLE_NEWS.map(async ({ outlet, query }) => {
+      const items = await fetchRssHeadlines(
+        googleNewsRssUrl(query),
+        outlet,
+        limitPerJournalist,
+        /./, // accept any title — query already filters
+      );
+      return items;
+    }),
+  );
+  return batches.flat();
 }
 
 /** Journalists and beat reporters surface first in digest / Gemini input. */
@@ -259,11 +296,12 @@ export async function collectFplXDigestSources(opts?: {
     sources.push(item);
   }
 
-  const [bbcPl, guardian] = await Promise.all([
+  const [bbcPl, guardian, journalistNews] = await Promise.all([
     fetchRssHeadlines(BBC_PL_RSS, "BBC Sport", 6, PL_NEWS_RE),
     fetchRssHeadlines(GUARDIAN_FOOTBALL_RSS, "The Guardian", 6, PL_NEWS_RE),
+    fetchJournalistGoogleNews(3).catch(() => [] as FplXDigestSource[]),
   ]);
-  for (const item of [...bbcPl, ...guardian]) {
+  for (const item of [...bbcPl, ...guardian, ...journalistNews]) {
     if (!inWindow(item.published_at, startMs, endMs)) continue;
     sources.push(item);
   }

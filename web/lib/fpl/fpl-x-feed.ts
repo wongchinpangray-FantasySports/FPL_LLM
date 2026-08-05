@@ -830,6 +830,10 @@ export async function fetchFplXTweets(opts?: {
 export async function fetchFplJournalistTweetsForDigest(opts?: {
   limit?: number;
 }): Promise<WcNewsItem[]> {
+  if (process.env.FPL_X_SKIP_JOURNALIST_SYNDICATION === "1") {
+    return [];
+  }
+
   const limit = Math.min(50, Math.max(12, opts?.limit ?? 40));
   const tier1 = FPL_X_ACCOUNTS.filter(
     (account) => "digestTier" in account && account.digestTier === "tier1",
@@ -848,23 +852,29 @@ export async function fetchFplJournalistTweetsForDigest(opts?: {
   });
 
   const out: WcNewsItem[] = [];
-  const delayMs = 900;
+  const batchSize = 4;
 
-  for (const account of ordered) {
-    const perAccount =
-      "digestTier" in account && account.digestTier === "tier1" ? 5 : 3;
-    const { tweets, rateLimited } = await fetchSyndicationProfile(
-      account.handle,
-      perAccount,
+  for (let i = 0; i < ordered.length; i += batchSize) {
+    const batch = ordered.slice(i, i + batchSize);
+    const results = await Promise.all(
+      batch.map(async (account) => {
+        const perAccount =
+          "digestTier" in account && account.digestTier === "tier1" ? 5 : 3;
+        const { tweets } = await fetchSyndicationProfile(
+          account.handle,
+          perAccount,
+        );
+        const items: WcNewsItem[] = [];
+        for (const tweet of tweets) {
+          const item = mapSyndicationTweet(tweet, account);
+          if (item) items.push(item);
+        }
+        return items;
+      }),
     );
-    for (const tweet of tweets) {
-      const item = mapSyndicationTweet(tweet, account);
-      if (item) out.push(item);
-    }
-    if (rateLimited) {
-      await new Promise((r) => setTimeout(r, 2500));
-    } else {
-      await new Promise((r) => setTimeout(r, delayMs));
+    for (const items of results) out.push(...items);
+    if (i + batchSize < ordered.length) {
+      await new Promise((r) => setTimeout(r, 800));
     }
   }
 
