@@ -14,7 +14,7 @@
  * Note: personal WeChat 群聊 has no official auto-post API.
  */
 import { execSync } from "node:child_process";
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildWechatDailyCard,
@@ -22,28 +22,9 @@ import {
   notifyWechatDailyCard,
   shanghaiDateIso,
 } from "../lib/fpl/wechat-daily-card";
+import { loadScriptEnv } from "./load-env";
 
-function loadEnvLocal(): void {
-  const envPath = join(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return;
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const eq = t.indexOf("=");
-    if (eq <= 0) continue;
-    const k = t.slice(0, eq).trim();
-    let v = t.slice(eq + 1).trim();
-    if (
-      (v.startsWith('"') && v.endsWith('"')) ||
-      (v.startsWith("'") && v.endsWith("'"))
-    ) {
-      v = v.slice(1, -1);
-    }
-    if (!process.env[k]) process.env[k] = v;
-  }
-}
-
-loadEnvLocal();
+loadScriptEnv();
 
 async function main() {
   const withPng = process.argv.includes("--png");

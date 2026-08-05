@@ -30,39 +30,204 @@ const FPL_X_ACCOUNTS = [
   { handle: "FootballInjuries", outlet: "Football Injuries", alwaysInclude: false },
   { handle: "premierleague", outlet: "Premier League", alwaysInclude: false },
   { handle: "SkySportsPL", outlet: "Sky Sports PL", alwaysInclude: false },
-  { handle: "FabrizioRomano", outlet: "Fabrizio Romano", alwaysInclude: false },
-  { handle: "David_Ornstein", outlet: "David Ornstein", alwaysInclude: false },
-  { handle: "PaulJoyce", outlet: "Paul Joyce", alwaysInclude: false, plBeat: true },
-  { handle: "_pauljoyce", outlet: "Paul Joyce", alwaysInclude: false, plBeat: true },
-  { handle: "SimonStone", outlet: "Simon Stone (BBC)", alwaysInclude: false, plBeat: true },
-  { handle: "JamesPearceLFC", outlet: "James Pearce (Liverpool)", alwaysInclude: false, plBeat: true },
-  { handle: "SamLee", outlet: "Sam Lee (Man City)", alwaysInclude: false, plBeat: true },
-  { handle: "CharlesWatts", outlet: "Charles Watts (Arsenal)", alwaysInclude: false, plBeat: true },
-  { handle: "Dan_KP", outlet: "Dan Kilpatrick (Spurs)", alwaysInclude: false, plBeat: true },
-  { handle: "LaurieWhitwell", outlet: "Laurie Whitwell (Man Utd)", alwaysInclude: false, plBeat: true },
-  { handle: "MattSlater", outlet: "Matt Slater (The Athletic)", alwaysInclude: false, plBeat: true },
-  { handle: "DominicKing", outlet: "Dominic King (Liverpool)", alwaysInclude: false, plBeat: true },
-  { handle: "ChrisBascombe", outlet: "Chris Bascombe (Liverpool)", alwaysInclude: false, plBeat: true },
-  { handle: "LyallThomas", outlet: "Lyall Thomas (Sky)", alwaysInclude: false, plBeat: true },
-  { handle: "MarkOgden", outlet: "Mark Ogden (ESPN)", alwaysInclude: false, plBeat: true },
-  { handle: "JasonBurt", outlet: "Jason Burt (Telegraph)", alwaysInclude: false, plBeat: true },
-  { handle: "MikeMcGrath", outlet: "Mike McGrath (Telegraph)", alwaysInclude: false, plBeat: true },
-  { handle: "SamiMokbel", outlet: "Sami Mokbel (Mail)", alwaysInclude: false, plBeat: true },
-  { handle: "AdamCrafton", outlet: "Adam Crafton (Chelsea)", alwaysInclude: false, plBeat: true },
-  { handle: "NeilAshton", outlet: "Neil Ashton", alwaysInclude: false, plBeat: true },
-  { handle: "JohnCrossMirror", outlet: "John Cross (Mirror)", alwaysInclude: false, plBeat: true },
-  { handle: "Simon_Hughes", outlet: "Simon Hughes", alwaysInclude: false, plBeat: true },
-  { handle: "RobDorsett", outlet: "Rob Dorsett (Sky)", alwaysInclude: false, plBeat: true },
-  { handle: "MattLawton", outlet: "Matt Lawton (Sun)", alwaysInclude: false, plBeat: true },
-  { handle: "JacobSteinberg", outlet: "Jacob Steinberg (Chelsea)", alwaysInclude: false, plBeat: true },
-  { handle: "NickAmes", outlet: "Nick Ames (Guardian)", alwaysInclude: false, plBeat: true },
+  {
+    handle: "FabrizioRomano",
+    outlet: "Fabrizio Romano",
+    alwaysInclude: false,
+    digestTier: "tier1",
+  },
+  {
+    handle: "David_Ornstein",
+    outlet: "David Ornstein",
+    alwaysInclude: false,
+    digestTier: "tier1",
+  },
+  {
+    handle: "SkyKaveh",
+    outlet: "Kaveh Solhekol (Sky)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+  },
+  {
+    handle: "PaulJoyce",
+    outlet: "Paul Joyce",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "SimonStone",
+    outlet: "Simon Stone (BBC)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "MattSlater",
+    outlet: "Matt Slater (The Athletic)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "SamiMokbel",
+    outlet: "Sami Mokbel (Mail)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "JasonBurt",
+    outlet: "Jason Burt (Telegraph)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "MikeMcGrath",
+    outlet: "Mike McGrath (Telegraph)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "LyallThomas",
+    outlet: "Lyall Thomas (Sky)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "MarkOgden",
+    outlet: "Mark Ogden (ESPN)",
+    alwaysInclude: false,
+    digestTier: "tier1",
+    plBeat: true,
+  },
+  {
+    handle: "JamesPearceLFC",
+    outlet: "James Pearce (Liverpool)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "SamLee",
+    outlet: "Sam Lee (Man City)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "CharlesWatts",
+    outlet: "Charles Watts (Arsenal)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "ChrisWheatley",
+    outlet: "Chris Wheatley (Arsenal)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "Dan_KP",
+    outlet: "Dan Kilpatrick (Spurs)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "LaurieWhitwell",
+    outlet: "Laurie Whitwell (Man Utd)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "DominicKing",
+    outlet: "Dominic King (Liverpool)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "ChrisBascombe",
+    outlet: "Chris Bascombe (Liverpool)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "AdamCrafton",
+    outlet: "Adam Crafton (Chelsea)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "NeilAshton",
+    outlet: "Neil Ashton",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "JohnCrossMirror",
+    outlet: "John Cross (Mirror)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "Simon_Hughes",
+    outlet: "Simon Hughes",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "RobDorsett",
+    outlet: "Rob Dorsett (Sky)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "MattLawton",
+    outlet: "Matt Lawton (Sun)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "JacobSteinberg",
+    outlet: "Jacob Steinberg (Chelsea)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
+  {
+    handle: "NickAmes",
+    outlet: "Nick Ames (Guardian)",
+    alwaysInclude: false,
+    plBeat: true,
+    digestTier: "club",
+  },
 ] as const;
 
 export type FplXAccount = (typeof FPL_X_ACCOUNTS)[number];
 
 export function resolveFplXAccount(
   handle: string,
-): { outlet: string; alwaysInclude: boolean; plBeat?: boolean } | null {
+): {
+  outlet: string;
+  alwaysInclude: boolean;
+  plBeat?: boolean;
+  digestTier?: "tier1" | "club";
+} | null {
   const normalized = handle.replace(/^@/, "").trim().toLowerCase();
   if (!normalized) return null;
   const account = FPL_X_ACCOUNTS.find(
@@ -73,6 +238,7 @@ export function resolveFplXAccount(
         outlet: account.outlet,
         alwaysInclude: account.alwaysInclude,
         plBeat: "plBeat" in account ? account.plBeat : undefined,
+        digestTier: "digestTier" in account ? account.digestTier : undefined,
       }
     : null;
 }
@@ -660,19 +826,34 @@ export async function fetchFplXTweets(opts?: {
   );
 }
 
-/** PL beat journalists — fetched in full each digest run (transfers, injuries, line-ups). */
+/** PL beat journalists — always fetched for digest (tier-1 + club reporters). */
 export async function fetchFplJournalistTweetsForDigest(opts?: {
   limit?: number;
 }): Promise<WcNewsItem[]> {
-  const limit = Math.min(40, Math.max(8, opts?.limit ?? 28));
-  const journalists = FPL_X_ACCOUNTS.filter(
-    (account) => "plBeat" in account && account.plBeat,
+  const limit = Math.min(50, Math.max(12, opts?.limit ?? 40));
+  const tier1 = FPL_X_ACCOUNTS.filter(
+    (account) => "digestTier" in account && account.digestTier === "tier1",
   );
-  const perAccount = Math.max(2, Math.ceil(limit / journalists.length));
-  const out: WcNewsItem[] = [];
+  const club = FPL_X_ACCOUNTS.filter(
+    (account) =>
+      ("plBeat" in account && account.plBeat) ||
+      ("digestTier" in account && account.digestTier === "club"),
+  );
+  const seenHandles = new Set<string>();
+  const ordered = [...tier1, ...club].filter((account) => {
+    const key = account.handle.toLowerCase();
+    if (seenHandles.has(key)) return false;
+    seenHandles.add(key);
+    return true;
+  });
 
-  for (const account of journalists) {
-    const { tweets } = await fetchSyndicationProfile(
+  const out: WcNewsItem[] = [];
+  const delayMs = 900;
+
+  for (const account of ordered) {
+    const perAccount =
+      "digestTier" in account && account.digestTier === "tier1" ? 5 : 3;
+    const { tweets, rateLimited } = await fetchSyndicationProfile(
       account.handle,
       perAccount,
     );
@@ -680,7 +861,11 @@ export async function fetchFplJournalistTweetsForDigest(opts?: {
       const item = mapSyndicationTweet(tweet, account);
       if (item) out.push(item);
     }
-    await new Promise((r) => setTimeout(r, 1200));
+    if (rateLimited) {
+      await new Promise((r) => setTimeout(r, 2500));
+    } else {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
   }
 
   return dedupeFplTweets(out).slice(0, limit);

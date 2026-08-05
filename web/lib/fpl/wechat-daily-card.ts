@@ -1,4 +1,5 @@
 import {
+  ensureDigestChineseSummary,
   loadFplXDigestFromDb,
   londonDigestDateIso,
   pickDigestSummary,
@@ -38,8 +39,15 @@ const SECTION_ALIASES: Record<string, string[]> = {
     "伤病与球队新闻",
     "伤病 & 球队新闻",
   ],
-  transfers: ["transfers & rumours", "transfers and rumours", "转会", "转会与流言"],
+  transfers: [
+    "transfers & rumours",
+    "transfers and rumours",
+    "transfers",
+    "转会",
+    "转会与流言",
+  ],
   community: ["fpl community", "fpl 社区", "社区"],
+  official: ["official fpl", "官方 fpl"],
 };
 
 function normalizeHeading(value: string): string {
@@ -159,13 +167,21 @@ export async function buildWechatDailyCard(opts?: {
   cardDate?: string;
   locale?: "zh" | "en";
   asOf?: Date;
+  /** Translate digest to Chinese via Gemini when summary_zh is missing. */
+  translateDigest?: boolean;
 }): Promise<WechatDailyCardData> {
   const locale = opts?.locale ?? "zh";
   const asOf = opts?.asOf ?? new Date();
   const cardDate = opts?.cardDate ?? shanghaiDateIso(asOf);
   const yesterday = shanghaiYesterdayIso(asOf);
+  const translateDigest = opts?.translateDigest ?? locale === "zh";
   const siteUrl = resolveWechatCardSiteUrl();
   const base = `${siteUrl}/${locale === "zh" ? "zh" : "en"}`;
+
+  if (translateDigest) {
+    await ensureDigestChineseSummary(cardDate);
+    await ensureDigestChineseSummary(londonDigestDateIso(asOf));
+  }
 
   const [digestPrimary, preseasonDay] = await Promise.all([
     loadFplXDigestFromDb(cardDate),
@@ -237,7 +253,7 @@ export async function buildWechatDailyCard(opts?: {
 
 export function formatWechatDailyCardText(card: WechatDailyCardData): string {
   const lines: string[] = [
-    `📋 FPL 每日卡片 · ${card.card_date}`,
+    `📋 FALEAGUE DAILY · ${card.card_date}`,
     "",
   ];
 
@@ -286,7 +302,7 @@ export async function notifyWechatDailyCard(
   text: string,
 ): Promise<WechatNotifyResult[]> {
   const results: WechatNotifyResult[] = [];
-  const title = `FPL 每日卡片 ${card.card_date}`;
+  const title = `FALEAGUE DAILY ${card.card_date}`;
 
   const workUrl = process.env.WECHAT_WORK_WEBHOOK_URL?.trim();
   if (workUrl) {

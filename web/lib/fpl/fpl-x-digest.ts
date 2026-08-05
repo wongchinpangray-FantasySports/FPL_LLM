@@ -97,7 +97,36 @@ function dedupeSources(items: FplXDigestSource[]): FplXDigestSource[] {
     seen.add(key);
     out.push(item);
   }
-  return out.sort((a, b) => {
+  return prioritizeDigestSources(out);
+}
+
+const TIER1_JOURNALIST_RE =
+  /ornstein|romano|solhekol|kaveh|stone \(bbc\)|joyce|slater|mokbel|burt|mcgrath|ogden|lyall thomas/i;
+const CLUB_BEAT_JOURNALIST_RE =
+  /pearce|watts|kilpatrick|whitwell|crafton|dorsett|bascombe|king \(liverpool\)|sam lee|cross \(mirror\)|hughes|ames|lawton|steinberg|wheatley|ashton/i;
+
+function digestSourcePriority(s: FplXDigestSource): number {
+  if (s.kind === "tweet") {
+    if (TIER1_JOURNALIST_RE.test(s.outlet)) return 100;
+    if (CLUB_BEAT_JOURNALIST_RE.test(s.outlet)) return 85;
+    if (/fpl official/i.test(s.outlet)) return 75;
+    if (/ffscout|fpl hints|ben crellin|premier injuries|physioroom/i.test(s.outlet)) {
+      return 50;
+    }
+    return 40;
+  }
+  if (/ffscout/i.test(s.outlet)) return 42;
+  if (/bbc sport|the guardian|sky sports|athletic/i.test(s.outlet)) return 32;
+  return 28;
+}
+
+/** Journalists and beat reporters surface first in digest / Gemini input. */
+export function prioritizeDigestSources(
+  sources: FplXDigestSource[],
+): FplXDigestSource[] {
+  return [...sources].sort((a, b) => {
+    const scoreDiff = digestSourcePriority(b) - digestSourcePriority(a);
+    if (scoreDiff !== 0) return scoreDiff;
     const ta = a.published_at ? Date.parse(a.published_at) : 0;
     const tb = b.published_at ? Date.parse(b.published_at) : 0;
     return tb - ta;
@@ -187,7 +216,7 @@ export async function collectFplXDigestSources(opts?: {
   const [embeds, liveTweets, journalistTweets] = await Promise.all([
     fetchFplXFromPlEmbeds({ limit: 25, weekOnly: false }),
     fetchFplXTweets({ limit: 45 }).catch(() => [] as WcNewsItem[]),
-    fetchFplJournalistTweetsForDigest({ limit: 28 }).catch(
+    fetchFplJournalistTweetsForDigest({ limit: 40 }).catch(
       () => [] as WcNewsItem[],
     ),
   ]);
@@ -224,15 +253,15 @@ export async function collectFplXDigestSources(opts?: {
     sources.push(mapNewsItemToSource(item, "headline"));
   }
 
-  const ffscout = await fetchFfscoutHeadlines(12);
+  const ffscout = await fetchFfscoutHeadlines(8);
   for (const item of ffscout) {
     if (!inWindow(item.published_at, startMs, endMs)) continue;
     sources.push(item);
   }
 
   const [bbcPl, guardian] = await Promise.all([
-    fetchRssHeadlines(BBC_PL_RSS, "BBC Sport", 10, PL_NEWS_RE),
-    fetchRssHeadlines(GUARDIAN_FOOTBALL_RSS, "The Guardian", 10, PL_NEWS_RE),
+    fetchRssHeadlines(BBC_PL_RSS, "BBC Sport", 6, PL_NEWS_RE),
+    fetchRssHeadlines(GUARDIAN_FOOTBALL_RSS, "The Guardian", 6, PL_NEWS_RE),
   ]);
   for (const item of [...bbcPl, ...guardian]) {
     if (!inWindow(item.published_at, startMs, endMs)) continue;
@@ -261,7 +290,9 @@ function formatSourcesBlock(sources: FplXDigestSource[]): string {
     return "(No FPL-related posts or headlines were collected for this window.)";
   }
 
-  return sources
+  const ordered = prioritizeDigestSources(sources).slice(0, 45);
+
+  return ordered
     .map((s, i) => {
       const when = s.published_at
         ? new Intl.DateTimeFormat("en-GB", {
@@ -342,6 +373,80 @@ function templateDigest(
   return sections.join("\n\n");
 }
 
+/** Translate an English digest body to Chinese (e.g. after template fallback). */
+export async function translateDigestSummaryToZh(
+  summaryEn: string,
+  digestDate: string,
+): Promise<string | null> {
+  if (!summaryEn.trim()) return null;
+  try {
+    const ai = await getGenAI();
+    const prompt = `将以下 FPL（Fantasy Premier League）每日简报翻译成简体中文 Markdown。
+
+规则：
+- 保留 ## 板块标题结构；可使用：## 伤病与阵容、## 转会、## FPL 社区、## 官方 FPL
+- 保留每条末尾的来源标注（括号内的 @账号 或媒体名）
+- 不得增删事实；仅翻译
+- 「伤病与阵容」条目中不要写俱乐部名称，也不要在球员名后用括号标注俱乐部
+- 全文 ≤${FPL_DIGEST_SUMMARY_MAX_CHARS_ZH} 字
+- 不要开篇套话或结尾废话
+
+原文（发布日 ${digestDate}）：
+${summaryEn}`;
+
+    const resp = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { temperature: 0.25 },
+    });
+
+    const text = (resp.candidates?.[0]?.content?.parts ?? [])
+      .map((p) => ("text" in p ? p.text : ""))
+      .join("")
+      .trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Fill summary_zh on an existing digest row when missing. */
+export async function ensureDigestChineseSummary(
+  digestDate: string,
+): Promise<FplXDigestRecord | null> {
+  const record = await loadFplXDigestFromDb(digestDate);
+  if (!record?.summary_en?.trim()) return record;
+  if (record.summary_zh?.trim()) return record;
+
+  const summaryZh = await translateDigestSummaryToZh(
+    record.summary_en,
+    digestDate,
+  );
+  if (!summaryZh) return record;
+
+  const updated: Omit<FplXDigestRecord, "source"> = {
+    ...record,
+    summary_zh: summaryZh,
+  };
+  await saveDigest(updated);
+  return { ...updated, source: record.source };
+}
+
+/** Persist a Chinese summary on an existing digest row. */
+export async function patchDigestSummaryZh(
+  digestDate: string,
+  summaryZh: string,
+): Promise<FplXDigestRecord | null> {
+  const record = await loadFplXDigestFromDb(digestDate);
+  if (!record) return null;
+  const updated: Omit<FplXDigestRecord, "source"> = {
+    ...record,
+    summary_zh: summaryZh.trim(),
+  };
+  await saveDigest(updated);
+  return { ...updated, source: record.source };
+}
+
 async function generateDigestWithGemini(
   digestDate: string,
   windowStart: string,
@@ -381,10 +486,12 @@ ${facts}
 - 每条末尾标注来源（@账号 或媒体名）
 - 无内容的板块整段省略
 - 不要开篇套话或结尾废话
-- 「伤病与阵容」条目中不要写俱乐部名称，也不要在球员名后用括号标注俱乐部`
+- 「伤病与阵容」条目中不要写俱乐部名称，也不要在球员名后用括号标注俱乐部
+- **优先采用** Ornstein、Romano、Solhekol 等 Tier-1 记者及俱乐部跟队记者；FFScout/BBC/Guardian 仅作补充`
         : `Write an FPL (Fantasy Premier League) daily briefing for managers.
 Window: the past ${FPL_DIGEST_WINDOW_HOURS} hours (approx ${windowLabel}; digest date ${digestDate}).
 Use ONLY the sources below — do not invent injuries, transfers, or official announcements.
+Sources are ordered with **Tier-1 PL journalists first** (Ornstein, Romano, Stone, Joyce, etc.), then club beat reporters, then headlines.
 
 Sources:
 ${facts}
@@ -408,7 +515,7 @@ Rules:
 - Omit entire sections with no supporting sources
 - No intro fluff or closing paragraph
 - In Injuries & team news, never put a club in parentheses after a player name
-- Prefer PL beat journalists (Ornstein, Romano, Stone, Pearce, etc.) for injury/transfer facts when present`;
+- **Always prefer** Ornstein, Romano, Solhekol, Stone, Joyce, Pearce, Watts, and other beat reporters over BBC/Guardian/FFScout headlines when they cover the same story`;
 
     const resp = await ai.models.generateContent({
       model: DEFAULT_MODEL,
@@ -542,7 +649,7 @@ export async function getOrCreateFplXDigest(opts?: {
         sources,
         "zh",
       )
-    : null;
+    : await translateDigestSummaryToZh(summaryEn, digestDate);
 
   const generated_at = new Date().toISOString();
   const record: FplXDigestRecord = {
