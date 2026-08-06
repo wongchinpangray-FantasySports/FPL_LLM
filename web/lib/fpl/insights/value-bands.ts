@@ -397,7 +397,7 @@ export async function loadValueBandByPresetCached(
   if (!preset) return null;
   return unstable_cache(
     async () => loadValueBandByPreset(preset),
-    ["fpl-insights-bop-v1", id],
+    ["fpl-insights-bop-v2", id],
     { revalidate: 300 },
   )();
 }

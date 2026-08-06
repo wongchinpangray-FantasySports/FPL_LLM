@@ -610,6 +610,44 @@ export async function loadPlayers(
   return out;
 }
 
+/** Max season minutes by team+position — used to spot clear backups. */
+async function loadTeamPositionMaxMinutes(
+  teamIds: number[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  const unique = [...new Set(teamIds.filter((id) => Number.isFinite(id)))];
+  if (unique.length === 0) return out;
+  const supa = getServerSupabase();
+  for (const chunk of chunkArray(unique, 40)) {
+    const { data, error } = await supa
+      .from("players_static")
+      .select("team_id,position,minutes")
+      .in("team_id", chunk);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      const tid = r.team_id as number | null;
+      const pos = (r.position as string | null) ?? null;
+      if (tid == null || !pos) continue;
+      const mins = num(r.minutes);
+      const key = `${tid}:${pos}`;
+      out.set(key, Math.max(out.get(key) ?? 0, mins));
+    }
+  }
+  return out;
+}
+
+function roleShareForPlayer(
+  player: PlayerCoreRow,
+  teamPosMax: Map<string, number>,
+): number | null {
+  if (player.team_id == null || !player.position) return null;
+  const key = `${player.team_id}:${player.position}`;
+  const maxMins = teamPosMax.get(key) ?? 0;
+  const mins = num(player.minutes);
+  if (maxMins <= 0) return mins > 0 ? 1 : null;
+  return clamp(mins / maxMins, 0, 1);
+}
+
 export function setPieceFlags(p: PlayerCoreRow): SetPieceFlags {
   const pen = p.penalties_order ?? null;
   const fk = p.direct_freekicks_order ?? null;
@@ -810,22 +848,96 @@ function availabilityMultiplier(p: PlayerCoreRow): {
 
 // --- expected minutes ------------------------------------------------------
 
-/** When the current campaign has no GW rows yet, anchor on prior-season profile. */
+/**
+ * When rolling GW rows are empty, anchor on season totals / current GW depth.
+ * Do NOT use PPG as a feature-rate proxy — backups with a hot 2–3 game sample
+ * (Ellborg-style) otherwise look "nailed" despite tiny minutes share.
+ */
 function seasonMinutesAnchor(
   seasonMins: number,
   seasonPpg: number | null,
+  seasonStarts: number | null,
+  currentGw: number,
 ): { expMins: number; pAppear: number; p60: number } | null {
-  if (seasonMins < 180 || seasonPpg == null || seasonPpg <= 0) return null;
-  const estApps = clamp(seasonMins / 70, 10, 38);
-  const minsPerApp = seasonMins / estApps;
-  const pFeature = clamp(seasonPpg / 5.0, 0.55, 1.0);
-  const expMins = Math.min(90, minsPerApp * pFeature);
-  const pAppear = pFeature;
-  const p60 =
-    seasonPpg >= 3.2
-      ? pFeature * clamp(seasonPpg / 4.8, 0.78, 0.98)
-      : pFeature * 0.65;
+  if (seasonMins < 180) return null;
+  const depth = clamp(Math.max(1, currentGw), 1, 38);
+  const starts = Math.max(0, seasonStarts ?? 0);
+  const appsEst = Math.max(starts, seasonMins / 90);
+
+  // Per-GW averages over the season so far (backup with 270' in GW36 → ~7.5').
+  let expMins = Math.min(90, seasonMins / depth);
+  let pAppear = clamp(appsEst / depth, 0, 1);
+  const startRate = clamp(starts / depth, 0, 1);
+  let p60 =
+    starts > 0
+      ? startRate *
+        clamp(seasonMins / Math.max(starts * 90, 1), 0.55, 1)
+      : pAppear * clamp(expMins / 60, 0, 0.85);
+
+  // PPG is only a tiny nudge once the sample is large enough to be meaningful.
+  if (seasonMins >= 900 && seasonPpg != null && seasonPpg > 0) {
+    const nudge = clamp(seasonPpg / 4.5, 0.9, 1.06);
+    expMins = Math.min(90, expMins * nudge);
+    pAppear = clamp(pAppear * nudge, 0, 1);
+    p60 = clamp(p60 * nudge, 0, 1);
+  }
+
   return { expMins, pAppear, p60 };
+}
+
+/**
+ * Demote clear backups when a teammate at the same position has far more
+ * season minutes. Keepers are near-binary; outfield rotation is softer.
+ * `share` = playerMins / max teammate minutes at that position (0..1).
+ */
+export function roleShareMultiplier(
+  position: string,
+  share: number,
+): number {
+  const s = clamp(share, 0, 1);
+  if (s >= 0.55) return 1;
+  if (position === "GKP") {
+    if (s < 0.2) return clamp(s / 0.4, 0.04, 0.4);
+    if (s < 0.45) return clamp(0.25 + s * 0.9, 0.3, 0.85);
+    return clamp(0.75 + s * 0.45, 0.85, 1);
+  }
+  if (s < 0.12) return clamp(0.18 + s * 1.6, 0.15, 0.45);
+  if (s < 0.35) return clamp(0.4 + s, 0.4, 0.75);
+  return clamp(0.7 + s * 0.55, 0.75, 1);
+}
+
+/** Apply role-share demotion when season profile (not a hot rolling run) drives minutes. */
+function applyRoleShareToMinutes(args: {
+  position: string;
+  roleShare: number | null | undefined;
+  roll: PlayerRolling;
+  usingAnchor: boolean;
+  expMins: number;
+  pAppear: number;
+  p60: number;
+}): { expMins: number; pAppear: number; p60: number } {
+  const { position, roleShare, roll, usingAnchor } = args;
+  let { expMins, pAppear, p60 } = args;
+  if (roleShare == null || !Number.isFinite(roleShare)) {
+    return { expMins, pAppear, p60 };
+  }
+  const appRate =
+    roll.window_gws > 0 && roll.apps > 0 ? roll.apps / roll.window_gws : 0;
+  // Trust a sustained recent run (possible new #1); demote thin/season-only profiles.
+  let weight = 0;
+  if (usingAnchor) weight = 1;
+  else if (appRate < 0.35) weight = 1;
+  else if (appRate < 0.7) weight = 0.55;
+  else weight = 0;
+  if (weight <= 0) return { expMins, pAppear, p60 };
+
+  const mult = roleShareMultiplier(position, roleShare);
+  const blended = 1 - weight + weight * mult;
+  return {
+    expMins: Math.min(90, expMins * blended),
+    pAppear: clamp(pAppear * blended, 0, 1),
+    p60: clamp(p60 * blended, 0, 1),
+  };
 }
 
 function expectedMinutes(roll: PlayerRolling, avail: number): number {
@@ -891,6 +1003,13 @@ export function projectPlayerForFixture(args: {
   setPieces?: SetPieceFlags;
   oppHistory?: OpponentHistory | null;
   seasonPpg?: number | null;
+  /** Gameweek used as season depth for minutes anchoring. */
+  currentGw?: number;
+  /**
+   * Player season minutes / max season minutes among teammates in the same
+   * position (0..1). Used to demote clear backups with hot small samples.
+   */
+  roleShare?: number | null;
   /** Same-window Understat totals (matched_fpl_id); optional blend into xG/xA. */
   understat?: { xg: number; xa: number; minutes: number } | null;
 }): FixtureProjection {
@@ -904,18 +1023,42 @@ export function projectPlayerForFixture(args: {
     setPieces,
     oppHistory,
     seasonPpg,
+    currentGw = 1,
+    roleShare = null,
     understat,
   } = args;
   const isHome = fixture.home_team_id === myTeam.id;
   const position = player.position ?? "MID";
   const seasonMins = num(player.minutes);
+  const seasonStarts =
+    player.starts != null && Number.isFinite(Number(player.starts))
+      ? Number(player.starts)
+      : null;
   const anchor =
-    roll.apps === 0 ? seasonMinutesAnchor(seasonMins, seasonPpg ?? null) : null;
+    roll.apps === 0
+      ? seasonMinutesAnchor(
+          seasonMins,
+          seasonPpg ?? null,
+          seasonStarts,
+          currentGw,
+        )
+      : null;
 
   // expected playing time (+ modest MID/FWD lift when involvement rate is credible)
   let expMins = anchor
     ? Math.min(90, anchor.expMins * availability)
     : expectedMinutes(roll, availability);
+  let pAppear = anchor
+    ? anchor.pAppear * availability
+    : expMins > 0
+      ? clamp(roll.apps / roll.window_gws, 0, 1) * availability
+      : 0;
+  let p60 = anchor
+    ? anchor.p60 * availability
+    : expMins >= 60
+      ? clamp(roll.starts / Math.max(roll.window_gws, 1), 0, 1) * availability
+      : 0;
+
   if (
     (position === "FWD" || position === "MID") &&
     roll.window_gws > 0 &&
@@ -926,20 +1069,27 @@ export function projectPlayerForFixture(args: {
       const lift = position === "FWD" ? 1.032 : 1.018;
       expMins = Math.min(90, expMins * lift);
     }
-  } else if (anchor && (position === "FWD" || position === "MID") && seasonPpg != null && seasonPpg >= 4.5) {
+  } else if (
+    anchor &&
+    (position === "FWD" || position === "MID") &&
+    seasonMins >= 900 &&
+    seasonPpg != null &&
+    seasonPpg >= 4.5
+  ) {
     const lift = position === "FWD" ? 1.032 : 1.018;
     expMins = Math.min(90, expMins * lift);
   }
-  const pAppear = anchor
-    ? anchor.pAppear * availability
-    : expMins > 0
-      ? clamp(roll.apps / roll.window_gws, 0, 1) * availability
-      : 0;
-  const p60 = anchor
-    ? anchor.p60 * availability
-    : expMins >= 60
-      ? clamp(roll.starts / Math.max(roll.window_gws, 1), 0, 1) * availability
-      : 0;
+
+  ({ expMins, pAppear, p60 } = applyRoleShareToMinutes({
+    position,
+    roleShare,
+    roll,
+    usingAnchor: anchor != null,
+    expMins,
+    pAppear,
+    p60,
+  }));
+
   const minutesFactor = expMins / 90;
 
   // team xG for/against this fixture
@@ -1205,6 +1355,15 @@ export async function projectPlayers(
       ),
     ]);
 
+  const teamIds = [
+    ...new Set(
+      [...players.values()]
+        .map((p) => p.team_id)
+        .filter((id): id is number => id != null),
+    ),
+  ];
+  const teamPosMax = await loadTeamPositionMaxMinutes(teamIds);
+
   // group fixtures by team (skip finished unless backtesting)
   const fixturesByTeam = new Map<number, Fixture[]>();
   const oppIdsSet = new Set<number>();
@@ -1243,6 +1402,7 @@ export async function projectPlayers(
     const roll = rollingAll.get(pid) ?? emptyRolling(0);
     const sp = setPieceFlags(p);
     const seasonPpg = p.points_per_game != null ? Number(p.points_per_game) : null;
+    const roleShare = roleShareForPlayer(p, teamPosMax);
 
     const teamFixtures = fixturesByTeam.get(p.team_id) ?? [];
     const projections: FixtureProjection[] = [];
@@ -1263,6 +1423,8 @@ export async function projectPlayers(
           setPieces: sp,
           oppHistory: hist && hist.games > 0 ? hist : null,
           seasonPpg,
+          currentGw: opts.currentGw,
+          roleShare,
           understat: understatByPlayer.get(pid) ?? null,
         }),
       );
@@ -1338,7 +1500,7 @@ export async function resolveCurrentGw(): Promise<{
 }
 
 export const XP_SCORING_NOTE =
-  "xP = (Poisson team xG + rolling per-90 xG/xA with optional Understat blend; fixture attack context capped) + appearance + CS + GC + saves + DC + bonus×ICT + card EV; E[minutes] uses a small rolling-profile boost for nailed starters; all line items × position output scale (MID/FWD > DEF/GKP). Position calibration before scale. Rolling 6-GW 70/30 FPL blend. H2H PPG on xG/xA. Set-piece / availability.";
+  "xP = (Poisson team xG + rolling per-90 xG/xA with optional Understat blend; fixture attack context capped) + appearance + CS + GC + saves + DC + bonus×ICT + card EV; E[minutes] uses season depth/starts (not PPG-as-nailed) plus teammate minutes-share demotion for backups; small rolling boost for nailed starters; all line items × position output scale (MID/FWD > DEF/GKP). Position calibration before scale. Rolling 6-GW 70/30 FPL blend. H2H PPG on xG/xA. Set-piece / availability.";
 
 // --- EO / ownership-aware captain ranking ----------------------------------
 
