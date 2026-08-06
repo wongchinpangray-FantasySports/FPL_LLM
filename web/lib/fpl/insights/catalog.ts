@@ -15,6 +15,18 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     badgeKey: "badgeLive",
   },
   {
+    id: "value-mid-5-0",
+    href: "/fpl/insights/value/mid-5-0",
+    tier: "free",
+    phase: 0,
+    status: "live",
+    group: "prep",
+    titleKey: "valueMid50.title",
+    navTitleKey: "nav.valueMid50",
+    descriptionKey: "valueMid50.description",
+    badgeKey: "badgeLive",
+  },
+  {
     id: "set-pieces",
     href: "/fpl/insights/set-pieces",
     tier: "free",

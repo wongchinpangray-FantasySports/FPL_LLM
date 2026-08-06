@@ -1280,6 +1280,7 @@
     "navAria": "洞察导航",
     "nav": {
       "preseason": "季前赛",
+      "valueMid50": "£5.0m 中场",
       "setPieces": "定位球",
       "defcon": "Defcon",
       "fixtures": "赛程",
@@ -1335,6 +1336,26 @@
       "noFpl": "—",
       "empty": "暂无季前赛数据。",
       "matchNote": "部分友谊赛有阵容；进球数据覆盖更多比赛。"
+    },
+    "valueMid50": {
+      "title": "最佳 £5.0m 中场",
+      "description": "全部 £5.0m 中场按投影 xP、出场、威胁、DEFCON 与季前赛表现排名。",
+      "intro": "我们评估了 {n} 名身价 £5.0m 的中场。按未来 {horizon} 轮 FALEAGUE xP 排序，并附预期出场、威胁指数、DEFCON/90 与季前赛进球。",
+      "assessed": "本价位共评估 {n} 名球员。",
+      "takeawaysTitle": "今日看点",
+      "colPlayer": "球员",
+      "colTeam": "球队",
+      "colPrice": "身价",
+      "colOwn": "拥有率",
+      "colXp": "xP",
+      "colMins": "预期分钟",
+      "colThreat": "威胁",
+      "colDefcon90": "DC/90",
+      "colPreG": "季前进球",
+      "colValue": "xP/£m",
+      "colProfile": "FPL",
+      "profileLink": "主页",
+      "empty": "暂无 £5.0m 中场数据。"
     },
     "setPieces": {
       "title": "定位球",

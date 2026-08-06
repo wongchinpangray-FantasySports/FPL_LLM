@@ -1,0 +1,307 @@
+import { unstable_cache } from "next/cache";
+import { getServerSupabase } from "@/lib/supabase";
+import {
+  loadOfficialFplPlayerIdSet,
+  normalizeInsightPlayerRows,
+} from "@/lib/fpl/insights/dedupe";
+import { loadPreseasonSignals } from "@/lib/fpl/insights/preseason-signals";
+import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
+
+export type ValueBandPosition = "GKP" | "DEF" | "MID" | "FWD";
+
+export type ValueBandRow = {
+  fpl_id: number;
+  web_name: string;
+  team: string;
+  position: string | null;
+  price: number | null;
+  ownership: number | null;
+  form: number | null;
+  xp_total: number;
+  xp_per_game: number;
+  value_per_million: number | null;
+  expected_minutes_next: number | null;
+  threat: number | null;
+  defensive_contribution: number | null;
+  defensive_contribution_per_90: number | null;
+  minutes: number;
+  preseason_goals: number;
+  preseason_assists: number;
+  preseason_starts: number;
+  fixtures: Array<{ gw: number; opp: string; home: boolean; xp: number }>;
+};
+
+export type ValueBandTakeaway = {
+  kind: "xp" | "defcon" | "attack" | "preseason";
+  fpl_id: number;
+  web_name: string;
+  team: string;
+  blurb_en: string;
+  blurb_zh: string;
+};
+
+export type ValueBandAnalysis = {
+  position: ValueBandPosition;
+  min_price: number;
+  max_price: number;
+  horizon: number;
+  assessed: number;
+  rows: ValueBandRow[];
+  takeaways: ValueBandTakeaway[];
+  generated_at: string;
+};
+
+export const VALUE_BAND_PRESETS = [
+  {
+    id: "mid-5-0",
+    position: "MID" as const,
+    minPrice: 5.0,
+    maxPrice: 5.0,
+    href: "/fpl/insights/value/mid-5-0",
+  },
+] as const;
+
+export type ValueBandPresetId = (typeof VALUE_BAND_PRESETS)[number]["id"];
+
+export function getValueBandPreset(id: string) {
+  return VALUE_BAND_PRESETS.find((p) => p.id === id) ?? null;
+}
+
+function num(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
+  if (!rows.length) return [];
+  const out: ValueBandTakeaway[] = [];
+
+  const topXp = rows[0]!;
+  out.push({
+    kind: "xp",
+    fpl_id: topXp.fpl_id,
+    web_name: topXp.web_name,
+    team: topXp.team,
+    blurb_en: `${topXp.web_name} leads this band on projected xP (${topXp.xp_total.toFixed(1)}) over the next fixtures.`,
+    blurb_zh: `${topXp.web_name} 在该价位以投影 xP ${topXp.xp_total.toFixed(1)} 领跑。`,
+  });
+
+  const defcon = [...rows]
+    .filter((r) => (r.defensive_contribution_per_90 ?? 0) > 0)
+    .sort(
+      (a, b) =>
+        (b.defensive_contribution_per_90 ?? 0) -
+        (a.defensive_contribution_per_90 ?? 0),
+    )[0];
+  if (defcon && defcon.fpl_id !== topXp.fpl_id) {
+    out.push({
+      kind: "defcon",
+      fpl_id: defcon.fpl_id,
+      web_name: defcon.web_name,
+      team: defcon.team,
+      blurb_en: `${defcon.web_name} is the standout DEFCON/90 option at this price (${(defcon.defensive_contribution_per_90 ?? 0).toFixed(1)}).`,
+      blurb_zh: `${defcon.web_name} 是该价位 DEFCON/90 最强选项（${(defcon.defensive_contribution_per_90 ?? 0).toFixed(1)}）。`,
+    });
+  }
+
+  const attack = [...rows]
+    .filter(
+      (r) =>
+        ((r.threat ?? 0) > 0 || r.preseason_goals > 0) &&
+        !out.some((t) => t.fpl_id === r.fpl_id),
+    )
+    .sort(
+      (a, b) =>
+        b.preseason_goals * 10 +
+        (b.threat ?? 0) -
+        (a.preseason_goals * 10 + (a.threat ?? 0)),
+    )[0];
+  if (attack) {
+    const ps =
+      attack.preseason_goals > 0
+        ? `pre-season goals: ${attack.preseason_goals}`
+        : `threat ${attack.threat?.toFixed(1) ?? "—"}`;
+    const psZh =
+      attack.preseason_goals > 0
+        ? `季前赛 ${attack.preseason_goals} 球`
+        : `威胁指数 ${attack.threat?.toFixed(1) ?? "—"}`;
+    out.push({
+      kind: attack.preseason_goals > 0 ? "preseason" : "attack",
+      fpl_id: attack.fpl_id,
+      web_name: attack.web_name,
+      team: attack.team,
+      blurb_en: `${attack.web_name} offers attacking upside (${ps}).`,
+      blurb_zh: `${attack.web_name} 具备进攻上行空间（${psZh}）。`,
+    });
+  }
+
+  return out.slice(0, 3);
+}
+
+export async function loadValueBandAnalysisRaw(opts: {
+  position: ValueBandPosition;
+  minPrice: number;
+  maxPrice: number;
+  horizon?: number;
+  limit?: number;
+}): Promise<ValueBandAnalysis> {
+  const horizon = Math.min(Math.max(opts.horizon ?? 5, 1), 8);
+  const limit = Math.min(Math.max(opts.limit ?? 100, 1), 120);
+  const supa = getServerSupabase();
+  const officialIds = await loadOfficialFplPlayerIdSet();
+
+  const { data: pool, error } = await supa
+    .from("players_static")
+    .select(
+      "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,status,chance_of_playing,minutes,form,threat,defensive_contribution,defensive_contribution_per_90",
+    )
+    .eq("position", opts.position)
+    .gte("base_price", opts.minPrice)
+    .lte("base_price", opts.maxPrice);
+
+  if (error) throw new Error(error.message);
+
+  const filtered = normalizeInsightPlayerRows(
+    (pool ?? [])
+      .filter((r) => {
+        const s = (r.status as string | null) ?? "a";
+        if (s === "u" || s === "n" || s === "s") return false;
+        const cop = r.chance_of_playing;
+        if (typeof cop === "number" && cop < 50) return false;
+        return true;
+      })
+      .map((r) => ({
+        fpl_id: r.fpl_id as number,
+        web_name:
+          (r.web_name as string | null) ??
+          (r.name as string) ??
+          `#${r.fpl_id}`,
+        team_id: (r.team_id as number | null) ?? null,
+        team: (r.team as string) ?? "—",
+        position: (r.position as string | null) ?? null,
+        base_price: num(r.base_price),
+        selected_by_percent: num(r.selected_by_percent),
+        minutes: num(r.minutes) ?? 0,
+        form: num(r.form),
+        threat: num(r.threat),
+        defensive_contribution: num(r.defensive_contribution),
+        defensive_contribution_per_90: num(r.defensive_contribution_per_90),
+      })),
+    officialIds,
+  );
+
+  const byId = new Map(filtered.map((r) => [r.fpl_id, r]));
+  const ids = filtered.map((r) => r.fpl_id);
+
+  const [{ current, next }, preseason] = await Promise.all([
+    resolveCurrentGw(),
+    loadPreseasonSignals().catch(() => ({ rows: [] as Awaited<
+      ReturnType<typeof loadPreseasonSignals>
+    >["rows"] })),
+  ]);
+
+  const preById = new Map<
+    number,
+    { goals: number; assists: number; starts: number }
+  >();
+  for (const row of preseason.rows) {
+    if (row.fpl_id == null) continue;
+    preById.set(row.fpl_id, {
+      goals: row.goals,
+      assists: row.assists,
+      starts: row.starts,
+    });
+  }
+
+  const projections =
+    ids.length > 0
+      ? await projectPlayers(ids, {
+          currentGw: current,
+          fromGw: next,
+          toGw: next + horizon - 1,
+        })
+      : await projectPlayers([], {
+          currentGw: current,
+          fromGw: next,
+          toGw: next + horizon - 1,
+        });
+
+  const rows: ValueBandRow[] = Array.from(projections.values())
+    .map((p) => {
+      const meta = byId.get(p.fpl_id);
+      const pre = preById.get(p.fpl_id);
+      const nextMins =
+        p.fixtures.length > 0
+          ? p.fixtures.reduce(
+              (s: number, f: { expected_minutes: number }) =>
+                s + f.expected_minutes,
+              0,
+            ) / p.fixtures.length
+          : null;
+      return {
+        fpl_id: p.fpl_id,
+        web_name: p.web_name ?? meta?.web_name ?? `#${p.fpl_id}`,
+        team: p.team ?? meta?.team ?? "—",
+        position: p.position ?? meta?.position ?? null,
+        price: p.price ?? meta?.base_price ?? null,
+        ownership: p.ownership ?? meta?.selected_by_percent ?? null,
+        form: p.form ?? meta?.form ?? null,
+        xp_total: p.xp_total,
+        xp_per_game: p.xp_per_game,
+        value_per_million: p.value_per_million,
+        expected_minutes_next:
+          nextMins != null ? Math.round(nextMins * 10) / 10 : null,
+        threat: meta?.threat ?? null,
+        defensive_contribution: meta?.defensive_contribution ?? null,
+        defensive_contribution_per_90:
+          meta?.defensive_contribution_per_90 ?? null,
+        minutes: meta?.minutes ?? 0,
+        preseason_goals: pre?.goals ?? 0,
+        preseason_assists: pre?.assists ?? 0,
+        preseason_starts: pre?.starts ?? 0,
+        fixtures: p.fixtures.map(
+          (f: {
+            gw: number;
+            opp_short: string;
+            home: boolean;
+            xp_total: number;
+          }) => ({
+            gw: f.gw,
+            opp: f.opp_short,
+            home: f.home,
+            xp: f.xp_total,
+          }),
+        ),
+      };
+    })
+    .sort((a, b) => b.xp_total - a.xp_total)
+    .slice(0, limit);
+
+  return {
+    position: opts.position,
+    min_price: opts.minPrice,
+    max_price: opts.maxPrice,
+    horizon,
+    assessed: filtered.length,
+    rows,
+    takeaways: buildTakeaways(rows),
+    generated_at: new Date().toISOString(),
+  };
+}
+
+export async function loadMid50ValueBand(): Promise<ValueBandAnalysis> {
+  return loadValueBandAnalysisRaw({
+    position: "MID",
+    minPrice: 5.0,
+    maxPrice: 5.0,
+    horizon: 5,
+    limit: 100,
+  });
+}
+
+export const loadMid50ValueBandCached = unstable_cache(
+  async () => loadMid50ValueBand(),
+  ["fpl-insights-value-mid-5-0-v1"],
+  { revalidate: 300 },
+);
