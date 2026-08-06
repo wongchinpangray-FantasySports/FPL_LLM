@@ -2202,9 +2202,9 @@
       "pl_home": true,
       "venue": "Dublin",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 3,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
