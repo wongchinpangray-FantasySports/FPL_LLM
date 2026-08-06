@@ -16,6 +16,8 @@ export const FPL_HUB_PATH = "/fpl";
 export const FPL_PUBLIC_PREFIXES = [
   "/fpl/fixtures",
   "/fpl/historical",
+  "/fpl/insights",
+  "/fpl/preseason",
 ];
 
 /** FPL tools linked from the hub (excluding the hub page itself). */
