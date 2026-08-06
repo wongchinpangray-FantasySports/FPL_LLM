@@ -1,5 +1,3 @@
-import { requireSignedInPage } from "@/lib/auth/require-signed-in-page";
-
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -7,7 +5,7 @@ type Props = {
   params: { locale: string };
 };
 
-export default async function FplPreseasonLayout({ children, params }: Props) {
-  await requireSignedInPage(params.locale, "/fpl/preseason");
+/** Pre-season research is public (matches FPL_PUBLIC_PREFIXES). */
+export default async function FplPreseasonLayout({ children }: Props) {
   return children;
 }

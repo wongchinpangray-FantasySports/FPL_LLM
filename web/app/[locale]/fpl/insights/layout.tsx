@@ -1,5 +1,3 @@
-import { requireSignedInPage } from "@/lib/auth/require-signed-in-page";
-
 export const dynamic = "force-dynamic";
 
 type Props = {
@@ -7,7 +5,7 @@ type Props = {
   params: { locale: string };
 };
 
-export default async function FplInsightsLayout({ children, params }: Props) {
-  await requireSignedInPage(params.locale, "/fpl/insights");
+/** Insights are public research pages (premium soft-paywall lives on gated tiles). */
+export default async function FplInsightsLayout({ children }: Props) {
   return children;
 }
