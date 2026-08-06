@@ -1340,7 +1340,7 @@
     "valueMid50": {
       "title": "Best £5.0m midfielders",
       "description": "All £5.0m MIDs ranked by projected xP, minutes, threat, DEFCON and pre-season form.",
-      "intro": "We assessed {n} midfielders priced at £5.0m. Ranked by FALEAGUE xP over the next {horizon} gameweeks — plus expected minutes, ICT threat, DEFCON/90 and pre-season goals.",
+      "intro": "We assessed {n} midfielders priced at £5.0m. Ranked by FALEAGUE xP over the next {horizon} gameweeks — plus average expected minutes per gameweek, ICT threat, DEFCON/90 and pre-season goals.",
       "assessed": "{n} players assessed in this price band.",
       "takeawaysTitle": "Talking points",
       "colPlayer": "Player",
@@ -1348,7 +1348,7 @@
       "colPrice": "Price",
       "colOwn": "Owned",
       "colXp": "xP",
-      "colMins": "Exp mins",
+      "colMins": "Avg xMins",
       "colThreat": "Threat",
       "colDefcon90": "DC/90",
       "colPreG": "PS G",
