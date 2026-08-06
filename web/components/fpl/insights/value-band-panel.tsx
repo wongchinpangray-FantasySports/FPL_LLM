@@ -96,12 +96,8 @@ export function ValueBandPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm text-muted-foreground">
-        {labels.intro
-          .replace("{n}", String(assessed))
-          .replace("{horizon}", String(horizon))}
-      </p>
-      <p className="text-xs text-muted-foreground">{labels.assessed.replace("{n}", String(assessed))}</p>
+      <p className="text-sm text-muted-foreground">{labels.intro}</p>
+      <p className="text-xs text-muted-foreground">{labels.assessed}</p>
 
       {takeaways.length > 0 ? (
         <section className="rounded-xl border border-border bg-card/50 p-4">

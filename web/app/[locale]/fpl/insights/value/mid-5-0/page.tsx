@@ -32,9 +32,12 @@ export default async function Mid50ValueBandPage({ params }: Props) {
         horizon={data.horizon}
         locale={params.locale}
         labels={{
-          intro: t("valueMid50.intro"),
+          intro: t("valueMid50.intro", {
+            n: data.assessed,
+            horizon: data.horizon,
+          }),
           takeawaysTitle: t("valueMid50.takeawaysTitle"),
-          assessed: t("valueMid50.assessed"),
+          assessed: t("valueMid50.assessed", { n: data.assessed }),
           colPlayer: t("valueMid50.colPlayer"),
           colTeam: t("valueMid50.colTeam"),
           colPrice: t("valueMid50.colPrice"),
