@@ -1280,7 +1280,7 @@
     "navAria": "洞察导航",
     "nav": {
       "preseason": "季前赛",
-      "valueMid50": "£5.0m 中场",
+      "bestOfPosition": "位置精选",
       "setPieces": "定位球",
       "defcon": "Defcon",
       "fixtures": "赛程",
@@ -1337,10 +1337,31 @@
       "empty": "暂无季前赛数据。",
       "matchNote": "部分友谊赛有阵容；进球数据覆盖更多比赛。"
     },
-    "valueMid50": {
-      "title": "最佳 £5.0m 中场",
-      "description": "全部 £5.0m 中场按投影 xP、出场、威胁、DEFCON 与季前赛表现排名。",
-      "intro": "我们评估了 {n} 名身价 £5.0m 的中场。按未来 {horizon} 轮 FALEAGUE xP 排序，并附每轮平均预期分钟、威胁指数、DEFCON/90 与季前赛进球。",
+    "bestOfPosition": {
+      "title": "位置精选",
+      "description": "按准确身价段排名门将、后卫、中场与前锋 — 可在系列内一键切换。",
+      "hubIntro": "选择位置与身价。每页按 FALEAGUE xP 排名该价位全部符合条件球员，并附平均预期分钟、威胁、DEFCON/90 与季前赛进球。",
+      "hubPosGKP": "廉价门将到 £5.0–5.5m 选项。",
+      "hubPosDEF": "从 £4.0m 功能型到 £6.0m 主力。",
+      "hubPosMID": "经典性价比阶梯 — £4.5m 到 £8.0m。",
+      "hubPosFWD": "廉价前锋到中高端 £8.0m。",
+      "bandCardTitle": "最佳 £{price}m {position}",
+      "bandCardCta": "查看排名 →",
+      "seriesTitle": "位置精选",
+      "seriesHint": "跳转任意价位",
+      "seriesNavAria": "位置精选身价段",
+      "backSeries": "← 位置精选",
+      "posGKP": "门将",
+      "posDEF": "后卫",
+      "posMID": "中场",
+      "posFWD": "前锋",
+      "posShortGKP": "门将",
+      "posShortDEF": "后卫",
+      "posShortMID": "中场",
+      "posShortFWD": "前锋",
+      "bandTitle": "最佳 £{price}m {position}",
+      "bandDescription": "全部 £{price}m {position}按投影 xP、出场、威胁、DEFCON 与季前赛表现排名。",
+      "intro": "我们评估了 {n} 名身价 £{price}m 的{position}。按未来 {horizon} 轮 FALEAGUE xP 排序，并附每轮平均预期分钟、威胁指数、DEFCON/90 与季前赛进球。",
       "assessed": "本价位共评估 {n} 名球员。",
       "takeawaysTitle": "今日看点",
       "colPlayer": "球员",
@@ -1355,7 +1376,7 @@
       "colValue": "xP/£m",
       "colProfile": "FPL",
       "profileLink": "主页",
-      "empty": "暂无 £5.0m 中场数据。"
+      "empty": "暂无 £{price}m {position}数据。"
     },
     "setPieces": {
       "title": "定位球",

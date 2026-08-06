@@ -51,15 +51,57 @@ export type ValueBandAnalysis = {
   generated_at: string;
 };
 
-export const VALUE_BAND_PRESETS = [
-  {
-    id: "mid-5-0",
-    position: "MID" as const,
-    minPrice: 5.0,
-    maxPrice: 5.0,
-    href: "/fpl/insights/value/mid-5-0",
-  },
-] as const;
+export type ValueBandPreset = {
+  id: string;
+  position: ValueBandPosition;
+  minPrice: number;
+  maxPrice: number;
+  href: string;
+};
+
+/** Exact-price bands for the Best of Position series (budget → mid-premium). */
+const BAND_PRICES: Record<ValueBandPosition, number[]> = {
+  GKP: [4.0, 4.5, 5.0, 5.5],
+  DEF: [4.0, 4.5, 5.0, 5.5, 6.0],
+  MID: [4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
+  FWD: [4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
+};
+
+export const VALUE_BAND_POSITION_ORDER: ValueBandPosition[] = [
+  "GKP",
+  "DEF",
+  "MID",
+  "FWD",
+];
+
+export const BEST_OF_POSITION_HUB_HREF = "/fpl/insights/best-of-position";
+
+export function formatValueBandPrice(price: number): string {
+  return price.toFixed(1);
+}
+
+export function valueBandSlug(position: ValueBandPosition, price: number): string {
+  return `${position.toLowerCase()}-${formatValueBandPrice(price).replace(".", "-")}`;
+}
+
+function buildPreset(
+  position: ValueBandPosition,
+  price: number,
+): ValueBandPreset {
+  const id = valueBandSlug(position, price);
+  return {
+    id,
+    position,
+    minPrice: price,
+    maxPrice: price,
+    href: `${BEST_OF_POSITION_HUB_HREF}/${id}`,
+  };
+}
+
+export const VALUE_BAND_PRESETS: ValueBandPreset[] =
+  VALUE_BAND_POSITION_ORDER.flatMap((position) =>
+    BAND_PRICES[position].map((price) => buildPreset(position, price)),
+  );
 
 export type ValueBandPresetId = (typeof VALUE_BAND_PRESETS)[number]["id"];
 
@@ -68,8 +110,30 @@ export const VALUE_BAND_MIN_DEFCON_MINUTES = 90;
 /** Don't highlight DEFCON options projected for negligible game time. */
 export const VALUE_BAND_MIN_EXPECTED_MINUTES = 30;
 
-export function getValueBandPreset(id: string) {
+export function getValueBandPreset(id: string): ValueBandPreset | null {
   return VALUE_BAND_PRESETS.find((p) => p.id === id) ?? null;
+}
+
+export function listValueBandsByPosition(
+  position: ValueBandPosition,
+): ValueBandPreset[] {
+  return VALUE_BAND_PRESETS.filter((p) => p.position === position);
+}
+
+export function groupValueBandsByPosition(): Map<
+  ValueBandPosition,
+  ValueBandPreset[]
+> {
+  const map = new Map<ValueBandPosition, ValueBandPreset[]>();
+  for (const pos of VALUE_BAND_POSITION_ORDER) {
+    map.set(pos, listValueBandsByPosition(pos));
+  }
+  return map;
+}
+
+/** FPL-style short position code for chips / titles. */
+export function valueBandPositionCode(position: ValueBandPosition): string {
+  return position;
 }
 
 function num(v: unknown): number | null {
@@ -313,14 +377,36 @@ export async function loadValueBandAnalysisRaw(opts: {
   };
 }
 
-export async function loadMid50ValueBand(): Promise<ValueBandAnalysis> {
+export async function loadValueBandByPreset(
+  preset: ValueBandPreset,
+): Promise<ValueBandAnalysis> {
   return loadValueBandAnalysisRaw({
-    position: "MID",
-    minPrice: 5.0,
-    maxPrice: 5.0,
+    position: preset.position,
+    minPrice: preset.minPrice,
+    maxPrice: preset.maxPrice,
     horizon: 5,
     limit: 100,
   });
+}
+
+/** Per-band cached loader (key includes preset id). */
+export async function loadValueBandByPresetCached(
+  id: string,
+): Promise<ValueBandAnalysis | null> {
+  const preset = getValueBandPreset(id);
+  if (!preset) return null;
+  return unstable_cache(
+    async () => loadValueBandByPreset(preset),
+    ["fpl-insights-bop-v1", id],
+    { revalidate: 300 },
+  )();
+}
+
+/** @deprecated Use loadValueBandByPreset / mid-5-0 preset — kept for notify script. */
+export async function loadMid50ValueBand(): Promise<ValueBandAnalysis> {
+  const preset = getValueBandPreset("mid-5-0");
+  if (!preset) throw new Error("mid-5-0 preset missing");
+  return loadValueBandByPreset(preset);
 }
 
 export const loadMid50ValueBandCached = unstable_cache(

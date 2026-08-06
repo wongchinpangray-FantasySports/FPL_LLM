@@ -1280,7 +1280,7 @@
     "navAria": "Insights sections",
     "nav": {
       "preseason": "Pre-season",
-      "valueMid50": "£5.0m MIDs",
+      "bestOfPosition": "Best of Position",
       "setPieces": "Set-pieces",
       "defcon": "Defcon",
       "fixtures": "Fixtures",
@@ -1337,10 +1337,31 @@
       "empty": "No pre-season involvement recorded yet.",
       "matchNote": "Line-ups available for a subset of friendlies; goals cover more matches."
     },
-    "valueMid50": {
-      "title": "Best £5.0m midfielders",
-      "description": "All £5.0m MIDs ranked by projected xP, minutes, threat, DEFCON and pre-season form.",
-      "intro": "We assessed {n} midfielders priced at £5.0m. Ranked by FALEAGUE xP over the next {horizon} gameweeks — plus average expected minutes per gameweek, ICT threat, DEFCON/90 and pre-season goals.",
+    "bestOfPosition": {
+      "title": "Best of Position",
+      "description": "Exact-price rankings for GKP, DEF, MID and FWD — navigate the full budget series by position.",
+      "hubIntro": "Pick a position and price point. Each page ranks every eligible player at that exact price by FALEAGUE xP, with average expected minutes, threat, DEFCON/90 and pre-season goals.",
+      "hubPosGKP": "Budget keepers and £5.0–5.5m options.",
+      "hubPosDEF": "From £4.0m enablers to £6.0m starters.",
+      "hubPosMID": "The classic value ladder — £4.5m through £8.0m.",
+      "hubPosFWD": "Cheap forwards up to mid-premium £8.0m.",
+      "bandCardTitle": "Best £{price}m {position}",
+      "bandCardCta": "Open ranking →",
+      "seriesTitle": "Best of Position",
+      "seriesHint": "Jump to any band",
+      "seriesNavAria": "Best of Position price bands",
+      "backSeries": "← Best of Position",
+      "posGKP": "Goalkeepers",
+      "posDEF": "Defenders",
+      "posMID": "Midfielders",
+      "posFWD": "Forwards",
+      "posShortGKP": "GKP",
+      "posShortDEF": "DEF",
+      "posShortMID": "MID",
+      "posShortFWD": "FWD",
+      "bandTitle": "Best £{price}m {position}",
+      "bandDescription": "All £{price}m {position} ranked by projected xP, minutes, threat, DEFCON and pre-season form.",
+      "intro": "We assessed {n} {position} priced at £{price}m. Ranked by FALEAGUE xP over the next {horizon} gameweeks — plus average expected minutes per gameweek, ICT threat, DEFCON/90 and pre-season goals.",
       "assessed": "{n} players assessed in this price band.",
       "takeawaysTitle": "Talking points",
       "colPlayer": "Player",
@@ -1355,7 +1376,7 @@
       "colValue": "xP/£m",
       "colProfile": "FPL",
       "profileLink": "Profile",
-      "empty": "No £5.0m midfielders available right now."
+      "empty": "No £{price}m {position} available right now."
     },
     "setPieces": {
       "title": "Set-pieces",

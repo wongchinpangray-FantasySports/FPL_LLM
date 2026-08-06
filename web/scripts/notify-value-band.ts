@@ -16,8 +16,8 @@ import {
 import { notificationDedupeKey } from "../lib/notifications/match-results";
 import { loadMid50ValueBand } from "../lib/fpl/insights/value-bands";
 
-const HREF_ZH = "/zh/fpl/insights/value/mid-5-0";
-const HREF_EN = "/en/fpl/insights/value/mid-5-0";
+const HREF_ZH = "/zh/fpl/insights/best-of-position/mid-5-0";
+const HREF_EN = "/en/fpl/insights/best-of-position/mid-5-0";
 const DEDUPE_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function main() {
