@@ -63,6 +63,11 @@ export const VALUE_BAND_PRESETS = [
 
 export type ValueBandPresetId = (typeof VALUE_BAND_PRESETS)[number]["id"];
 
+/** FPL DC/90 is (season_dc / minutes) * 90 — tiny samples inflate wildly (e.g. 1 DC in 2 mins → 45). */
+export const VALUE_BAND_MIN_DEFCON_MINUTES = 90;
+/** Don't highlight DEFCON options projected for negligible game time. */
+export const VALUE_BAND_MIN_EXPECTED_MINUTES = 30;
+
 export function getValueBandPreset(id: string) {
   return VALUE_BAND_PRESETS.find((p) => p.id === id) ?? null;
 }
@@ -71,6 +76,17 @@ function num(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+/** Null out FPL DC/90 until enough season minutes make the rate meaningful. */
+export function reliableDefconPer90(
+  minutes: number,
+  raw: number | null | undefined,
+  minMinutes = VALUE_BAND_MIN_DEFCON_MINUTES,
+): number | null {
+  if (minutes < minMinutes) return null;
+  if (raw == null || !Number.isFinite(raw) || raw <= 0) return null;
+  return raw;
 }
 
 function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
@@ -88,7 +104,11 @@ function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
   });
 
   const defcon = [...rows]
-    .filter((r) => (r.defensive_contribution_per_90 ?? 0) > 0)
+    .filter(
+      (r) =>
+        (r.defensive_contribution_per_90 ?? 0) > 0 &&
+        (r.expected_minutes_next ?? 0) >= VALUE_BAND_MIN_EXPECTED_MINUTES,
+    )
     .sort(
       (a, b) =>
         (b.defensive_contribution_per_90 ?? 0) -
@@ -254,8 +274,11 @@ export async function loadValueBandAnalysisRaw(opts: {
           nextMins != null ? Math.round(nextMins * 10) / 10 : null,
         threat: meta?.threat ?? null,
         defensive_contribution: meta?.defensive_contribution ?? null,
-        defensive_contribution_per_90:
-          meta?.defensive_contribution_per_90 ?? null,
+        // Suppress tiny-sample FPL rates (Dasilva: 1 DC / 2 mins → 45.0).
+        defensive_contribution_per_90: reliableDefconPer90(
+          meta?.minutes ?? 0,
+          meta?.defensive_contribution_per_90,
+        ),
         minutes: meta?.minutes ?? 0,
         preseason_goals: pre?.goals ?? 0,
         preseason_assists: pre?.assists ?? 0,
@@ -302,6 +325,6 @@ export async function loadMid50ValueBand(): Promise<ValueBandAnalysis> {
 
 export const loadMid50ValueBandCached = unstable_cache(
   async () => loadMid50ValueBand(),
-  ["fpl-insights-value-mid-5-0-v1"],
+  ["fpl-insights-value-mid-5-0-v2"],
   { revalidate: 300 },
 );
