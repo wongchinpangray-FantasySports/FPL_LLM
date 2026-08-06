@@ -32,19 +32,17 @@ export function useInsightsTableSort<K extends string>(
   return { sortKey, sortDir, toggle, setSort };
 }
 
+function isEmptySortValue(v: string | number | null | undefined): boolean {
+  if (v == null || v === "") return true;
+  if (typeof v === "number" && !Number.isFinite(v)) return true;
+  return false;
+}
+
 function comparePrimitive(
   a: string | number | null | undefined,
   b: string | number | null | undefined,
 ): number {
-  const aNull = a == null || a === "";
-  const bNull = b == null || b === "";
-  if (aNull && bNull) return 0;
-  if (aNull) return 1;
-  if (bNull) return -1;
   if (typeof a === "number" && typeof b === "number") {
-    if (!Number.isFinite(a) && !Number.isFinite(b)) return 0;
-    if (!Number.isFinite(a)) return 1;
-    if (!Number.isFinite(b)) return -1;
     return a - b;
   }
   return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
@@ -56,7 +54,15 @@ export function sortInsightRows<T>(
   dir: SortDir,
 ): T[] {
   return [...rows].sort((a, b) => {
-    const cmp = comparePrimitive(getValue(a), getValue(b));
+    const av = getValue(a);
+    const bv = getValue(b);
+    const aEmpty = isEmptySortValue(av);
+    const bEmpty = isEmptySortValue(bv);
+    // Always park "—" / missing values at the bottom (asc or desc).
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return 1;
+    if (bEmpty) return -1;
+    const cmp = comparePrimitive(av, bv);
     return dir === "asc" ? cmp : -cmp;
   });
 }

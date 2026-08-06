@@ -283,6 +283,7 @@ export async function buildWechatDailyCard(opts?: {
     discussion_prompt: pickDiscussionPrompt(preseasonTop, injuryLines),
     links: [
       { label: "完整 FPL 简报", href: `${base}/news/fpl-daily` },
+      { label: "位置精选", href: `${base}/fpl/insights/best-of-position` },
       { label: "季前赛信号", href: `${base}/fpl/insights/preseason-signals` },
       { label: "Insights 首页", href: `${base}/fpl/insights` },
     ],
@@ -334,13 +335,12 @@ export type WechatNotifyResult = {
   detail?: string;
 };
 
-/** Optional push — personal WeChat groups have no official bot API. */
-export async function notifyWechatDailyCard(
-  card: WechatDailyCardData,
+/** Push plain text to optional WeChat channels (企微机器人 / PushPlus). */
+export async function notifyWechatText(
+  title: string,
   text: string,
 ): Promise<WechatNotifyResult[]> {
   const results: WechatNotifyResult[] = [];
-  const title = `FALEAGUE DAILY ${card.card_date}`;
 
   const workUrl = process.env.WECHAT_WORK_WEBHOOK_URL?.trim();
   if (workUrl) {
@@ -401,4 +401,12 @@ export async function notifyWechatDailyCard(
   }
 
   return results;
+}
+
+/** Optional push — personal WeChat groups have no official bot API. */
+export async function notifyWechatDailyCard(
+  card: WechatDailyCardData,
+  text: string,
+): Promise<WechatNotifyResult[]> {
+  return notifyWechatText(`FALEAGUE DAILY ${card.card_date}`, text);
 }
