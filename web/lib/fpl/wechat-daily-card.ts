@@ -45,6 +45,7 @@ const SECTION_ALIASES: Record<string, string[]> = {
     "transfers",
     "转会",
     "转会与流言",
+    "转会 & 流言",
   ],
   community: ["fpl community", "fpl 社区", "社区"],
   official: ["official fpl", "官方 fpl"],
@@ -115,6 +116,40 @@ export function parseDigestSections(summary: string): Map<string, string[]> {
 
 function takeBullets(map: Map<string, string[]>, key: string, max: number): string[] {
   return (map.get(key) ?? []).slice(0, max);
+}
+
+/** Prefer high-signal transfer lines (e.g. Guimarães, Jackson) for the card. */
+function pickTransferLines(all: string[], max = 4): string[] {
+  if (all.length <= max) return all;
+
+  const priorityRe =
+    /Guimar[aã]es|吉马良斯|Jackson|杰克逊|Vin[ií]cius|维尼修斯|Salah|萨拉赫|Haaland|Here we go|HERE WE GO/i;
+
+  const priority: string[] = [];
+  const rest: string[] = [];
+  for (const line of all) {
+    if (priorityRe.test(line)) priority.push(line);
+    else rest.push(line);
+  }
+
+  // Always try to keep Spurs–Jackson on the card when the digest has it.
+  const jackson = all.find((l) => /Jackson|杰克逊/i.test(l));
+  const picked = [...priority];
+  for (const line of rest) {
+    if (picked.length >= max) break;
+    if (!picked.includes(line)) picked.push(line);
+  }
+  if (
+    jackson &&
+    !picked.includes(jackson) &&
+    picked.length >= max
+  ) {
+    picked[picked.length - 1] = jackson;
+  } else if (jackson && !picked.includes(jackson) && picked.length < max) {
+    picked.push(jackson);
+  }
+
+  return picked.slice(0, max);
 }
 
 function formatPreseasonRow(row: PreseasonSignalRow): string {
@@ -205,7 +240,10 @@ export async function buildWechatDailyCard(opts?: {
   const parsed = parseDigestSections(summary);
 
   const injuryLines = takeBullets(parsed, "injuries", 4);
-  const transferLines = takeBullets(parsed, "transfers", 3);
+  const transferLines = pickTransferLines(
+    parsed.get("transfers") ?? [],
+    4,
+  );
   const communityLines = takeBullets(parsed, "community", 2);
 
   const sections: WechatDailyCardSection[] = [];
