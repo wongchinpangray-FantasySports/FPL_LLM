@@ -139,6 +139,19 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
     "https://www.skysports.com/football/liverpool-vs-leeds/report/554987",
     "https://www.espn.com/soccer/story/_/id/49515940/liverpool-stunned-four-goal-leeds-comeback-calvert-lewin-brace-iraola-eases-frimpong-injury-concerns",
   ],
+  "avl-2026-08-04-55": [
+    "https://sportsjone.com/bg-pathum-united-vs-aston-villa/",
+  ],
+  "bou-2026-08-04-60": [
+    "https://www.bbc.co.uk/sport/football/articles/cx2rld90y9ko",
+  ],
+  "ips-2026-08-04-79": [
+    "https://www.bbc.co.uk/sport/football/articles/cp8x9n6el4lo",
+    "https://www.twtd.co.uk/ipswich-town-news/52456/ipswich-town-1-0-le-havre--match-report",
+  ],
+  "mci-2026-08-05-93": [
+    "https://www.skysports.com/football/news/11679/13569996/k-league-all-stars-1-3-man-city-tijjani-reijnders-and-antoine-semenyo-shine-in-enzo-marescas-first-win",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

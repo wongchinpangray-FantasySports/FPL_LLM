@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-05",
+  "updated_at": "2026-08-06",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -2052,14 +2052,39 @@
       "pl_code": "AVL",
       "pl_name": "Aston Villa",
       "opponent": "BG Pathum United",
-      "pl_home": true,
+      "pl_home": false,
       "venue": "Pathum Thani",
       "note": null,
       "status": "finished",
       "pl_goals": 3,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "12'",
+          "scorer": "Emiliano Buendía",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "31'",
+          "scorer": "Victor Lindelöf",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "62'",
+          "scorer": "Boubacar Kamara",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "83'",
+          "scorer": "Leon Pitchaya James",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2075,7 +2100,74 @@
       "pl_goals": 10,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Alex Scott",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Alex Scott",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Justin Kluivert",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Justin Kluivert",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Adrien Truffert",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "David Brooks",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Daniel Jebbison",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Malcom Dacosta Gonzalez",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Enes Unal",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Enes Unal",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Mikael Egill Ellertsson",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2091,7 +2183,14 @@
       "pl_goals": 1,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "58'",
+          "scorer": "Chuba Akpom",
+          "assist": "Abdul Fatawu",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2132,14 +2231,39 @@
       "pl_code": "MCI",
       "pl_name": "Man City",
       "opponent": "K-League All-Stars",
-      "pl_home": true,
+      "pl_home": false,
       "venue": "Seoul",
       "note": null,
       "status": "finished",
       "pl_goals": 3,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "9'",
+          "scorer": "Rayan Ait-Nouri",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "12'",
+          "scorer": "Kim Dae-won",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "20'",
+          "scorer": "Tijjani Reijnders",
+          "assist": "Antoine Semenyo",
+          "side": "pl"
+        },
+        {
+          "minute": "23'",
+          "scorer": "Divin Mubama",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
