@@ -1378,6 +1378,19 @@
       "profileLink": "Profile",
       "empty": "No £{price}m {position} available right now."
     },
+    "playerModal": {
+      "close": "Close",
+      "loading": "Loading player…",
+      "error": "Could not load player details.",
+      "openFullProfile": "Open full player page →",
+      "threat": "Threat",
+      "defcon": "DEFCON",
+      "ppg": "PPG",
+      "recentTitle": "Recent gameweeks",
+      "fixturesTitle": "Upcoming · model xP",
+      "colPts": "Pts",
+      "emptyGw": "No recent gameweek rows yet."
+    },
     "setPieces": {
       "title": "Set-pieces",
       "description": "Penalty, free-kick, and corner takers by team.",

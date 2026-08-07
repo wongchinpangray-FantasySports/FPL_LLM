@@ -1378,6 +1378,19 @@
       "profileLink": "主页",
       "empty": "暂无 £{price}m {position}数据。"
     },
+    "playerModal": {
+      "close": "关闭",
+      "loading": "加载球员中…",
+      "error": "无法加载球员详情。",
+      "openFullProfile": "打开完整球员页 →",
+      "threat": "威胁",
+      "defcon": "DEFCON",
+      "ppg": "场均得分",
+      "recentTitle": "近期场次",
+      "fixturesTitle": "即将迎战 · 模型 xP",
+      "colPts": "得分",
+      "emptyGw": "暂无近期场次数据。"
+    },
     "setPieces": {
       "title": "定位球",
       "description": "各队点球、任意球与角球主罚。",

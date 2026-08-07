@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Link } from "@/i18n/navigation";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type {
   ValueBandRow,
   ValueBandTakeaway,
@@ -11,6 +11,10 @@ import {
   sortInsightRows,
   useInsightsTableSort,
 } from "@/components/fpl/insights/insights-table-sort";
+import {
+  FplPlayerPerformanceModal,
+  type PlayerPerformanceProfile,
+} from "@/components/fpl/insights/fpl-player-performance-modal";
 
 type SortKey =
   | "player"
@@ -87,12 +91,87 @@ export function ValueBandPanel({
     empty: string;
   };
 }) {
+  const tPlayer = useTranslations("playerPage");
+  const tModal = useTranslations("fplInsights.playerModal");
   const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("xp");
   const sorted = useMemo(
     () => sortInsightRows(rows, (row) => sortValue(row, sortKey), sortDir),
     [rows, sortKey, sortDir],
   );
   const zh = locale.toLowerCase().startsWith("zh");
+
+  const [openId, setOpenId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<PlayerPerformanceProfile | null>(null);
+
+  const openProfile = useCallback(
+    async (fplId: number) => {
+      setOpenId(fplId);
+      setLoading(true);
+      setError(null);
+      setDetail(null);
+      try {
+        const res = await fetch(
+          `/api/player/${fplId}/profile?horizon=${horizon}`,
+        );
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(body?.error || tModal("error"));
+        }
+        const data = (await res.json()) as PlayerPerformanceProfile;
+        setDetail(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : tModal("error"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [horizon, tModal],
+  );
+
+  const closeProfile = useCallback(() => {
+    setOpenId(null);
+    setError(null);
+    setDetail(null);
+    setLoading(false);
+  }, []);
+
+  const modalLabels = useMemo(
+    () => ({
+      close: tModal("close"),
+      loading: tModal("loading"),
+      error: tModal("error"),
+      openFullProfile: tModal("openFullProfile"),
+      price: tPlayer("price"),
+      form: tPlayer("form"),
+      ownership: tPlayer("ownership"),
+      status: tPlayer("status"),
+      xpHorizon: tPlayer("xpHorizon"),
+      valueXm: tPlayer("valueXm"),
+      news: tPlayer("news"),
+      seasonSection: tPlayer("seasonSection"),
+      totalPts: tPlayer("totalPts"),
+      minutes: tPlayer("minutes"),
+      goalsAssists: tPlayer("goalsAssists"),
+      cleanSheets: tPlayer("cleanSheets"),
+      ict: tPlayer("ict"),
+      threat: tModal("threat"),
+      defcon: tModal("defcon"),
+      ppg: tModal("ppg"),
+      recentTitle: tModal("recentTitle"),
+      fixturesTitle: tModal("fixturesTitle"),
+      colGw: tPlayer("tblGw"),
+      colOpp: tPlayer("tblOpp"),
+      colMins: tPlayer("tblMins"),
+      colPts: tModal("colPts"),
+      colXp: tPlayer("tblXp"),
+      emptyGw: tModal("emptyGw"),
+    }),
+    [tModal, tPlayer],
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -106,13 +185,17 @@ export function ValueBandPanel({
           </h2>
           <ul className="flex flex-col gap-2.5">
             {takeaways.map((t) => (
-              <li key={`${t.kind}-${t.fpl_id}`} className="text-sm text-foreground/90">
-                <Link
-                  href={`/fpl/player/${t.fpl_id}`}
+              <li
+                key={`${t.kind}-${t.fpl_id}`}
+                className="text-sm text-foreground/90"
+              >
+                <button
+                  type="button"
+                  onClick={() => void openProfile(t.fpl_id)}
                   className="font-medium text-primary underline-offset-2 hover:underline"
                 >
                   {t.web_name}
-                </Link>
+                </button>
                 <span className="text-muted-foreground"> · {t.team} — </span>
                 {zh ? t.blurb_zh : t.blurb_en}
               </li>
@@ -198,14 +281,22 @@ export function ValueBandPanel({
                   className="border-b border-border/60 last:border-0 hover:bg-muted/20"
                 >
                   <td className="px-3 py-2 font-medium text-foreground">
-                    {row.web_name}
+                    <button
+                      type="button"
+                      onClick={() => void openProfile(row.fpl_id)}
+                      className="text-left hover:text-brand-accent hover:underline"
+                    >
+                      {row.web_name}
+                    </button>
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">{row.team}</td>
                   <td className="px-3 py-2 tabular-nums">
                     {row.price != null ? `£${row.price.toFixed(1)}` : "—"}
                   </td>
                   <td className="px-3 py-2 tabular-nums">
-                    {row.ownership != null ? `${fmtNum(row.ownership, 1)}%` : "—"}
+                    {row.ownership != null
+                      ? `${fmtNum(row.ownership, 1)}%`
+                      : "—"}
                   </td>
                   <td className="px-3 py-2 tabular-nums font-medium">
                     {fmtNum(row.xp_total, 1)}
@@ -213,7 +304,9 @@ export function ValueBandPanel({
                   <td className="px-3 py-2 tabular-nums">
                     {fmtNum(row.expected_minutes_next, 0)}
                   </td>
-                  <td className="px-3 py-2 tabular-nums">{fmtNum(row.threat, 1)}</td>
+                  <td className="px-3 py-2 tabular-nums">
+                    {fmtNum(row.threat, 1)}
+                  </td>
                   <td className="px-3 py-2 tabular-nums">
                     {fmtNum(row.defensive_contribution_per_90, 1)}
                   </td>
@@ -224,12 +317,13 @@ export function ValueBandPanel({
                     {fmtNum(row.value_per_million, 2)}
                   </td>
                   <td className="px-3 py-2">
-                    <Link
-                      href={`/fpl/player/${row.fpl_id}`}
+                    <button
+                      type="button"
+                      onClick={() => void openProfile(row.fpl_id)}
                       className="text-primary underline-offset-2 hover:underline"
                     >
                       {labels.profileLink}
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -237,6 +331,15 @@ export function ValueBandPanel({
           </table>
         </div>
       )}
+
+      <FplPlayerPerformanceModal
+        open={openId != null}
+        loading={loading}
+        error={error}
+        detail={detail}
+        labels={modalLabels}
+        onClose={closeProfile}
+      />
     </div>
   );
 }
