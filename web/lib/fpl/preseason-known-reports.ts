@@ -152,6 +152,16 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
   "mci-2026-08-05-93": [
     "https://www.skysports.com/football/news/11679/13569996/k-league-all-stars-1-3-man-city-tijjani-reijnders-and-antoine-semenyo-shine-in-enzo-marescas-first-win",
   ],
+  "ars-2026-08-05-48": [
+    "https://www.arsenal.com/news/report-arsenal-1-3-real-betis-awgne2i48xSI",
+    "https://www.skysports.com/football/arsenal-vs-real-betis/report/555716",
+  ],
+  "che-2026-08-05-66": [
+    "https://www.skysports.com/football/chelsea-vs-juventus/report/556017",
+  ],
+  "avl-2026-08-07-56": [
+    "https://www.skysports.com/football/bayern-munich-vs-aston-villa/report/555764",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

@@ -26,7 +26,10 @@ import {
   preseasonGoalsChanged,
   preseasonGoalsComplete,
 } from "@/lib/fpl/preseason-scorers";
-import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
+import {
+  isPlausiblePreseasonScorerName,
+  preseasonGoalsHaveInvalidRows,
+} from "@/lib/fpl/preseason-report-goals";
 
 export type PreseasonSyncResult = {
   path: string;
@@ -38,6 +41,11 @@ export type PreseasonSyncResult = {
   external_results: number;
   wrote_file: boolean;
 };
+
+/** Only run slow web discovery for matches within this many days. */
+const ENRICH_RECENT_DAYS = 4;
+/** Cap expensive Google/DDG discovery calls per sync run (prevents hang). */
+const MAX_WEB_DISCOVERIES_PER_RUN = 8;
 
 function normalizeMatch(
   m: PreseasonBundle["matches"][number],
@@ -56,6 +64,16 @@ function needsLineupFetch(match: PreseasonMatch): boolean {
   return starters === 0 || starters < 11;
 }
 
+function daysSinceMatch(date: string, asOf = new Date()): number {
+  const ms = Date.parse(`${date}T12:00:00Z`);
+  if (!Number.isFinite(ms)) return 99;
+  return Math.floor((asOf.getTime() - ms) / 86_400_000);
+}
+
+function isRecentEnoughForEnrichment(match: PreseasonMatch): boolean {
+  return daysSinceMatch(match.date) <= ENRICH_RECENT_DAYS;
+}
+
 function matchSyncChanged(before: PreseasonMatch, after: PreseasonMatch): boolean {
   return (
     preseasonAppliedChanged(before, after) ||
@@ -64,9 +82,12 @@ function matchSyncChanged(before: PreseasonMatch, after: PreseasonMatch): boolea
   );
 }
 
+type EnrichBudget = { discoveriesLeft: number };
+
 async function resolveMatchUpdates(
   before: PreseasonMatch,
   externalResults: Awaited<ReturnType<typeof fetchAllPreseasonExternalResults>>,
+  budget: EnrichBudget,
 ): Promise<{ match: PreseasonMatch; goals_updated: boolean; lineups_updated: boolean }> {
   let next = mergeExternalResultsOntoMatch(before, externalResults);
   let lineups_updated = false;
@@ -107,36 +128,55 @@ async function resolveMatchUpdates(
   }
 
   let goals_updated = false;
-  const needsGoals =
-    needsPlScorerBackfill(next) || preseasonGoalsHaveInvalidRows(next);
-  if (needsGoals) {
-    const reportUrls = findReportUrlsForMatch(next, externalResults);
-    if (reportUrls.length > 0) {
-      const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
-        skipDiscovery: reportUrls.length > 0,
-      });
-    const goals =
-      fetched.length > 0
-        ? mergePreseasonGoalLists(next, next.goals ?? [], fetched)
-        : (next.goals ?? []);
-    if (
-      goals.length === 0 &&
-      (next.goals ?? []).length > 0 &&
-      !preseasonGoalsHaveInvalidRows(next)
-    ) {
-      // Keep existing scorers when enrichment finds nothing new.
-    } else if (
-      preseasonGoalsChanged(next.goals, goals) ||
-      (!preseasonGoalsComplete(next) && preseasonGoalsComplete({ ...next, goals })) ||
-      (preseasonGoalsHaveInvalidRows(next) && !preseasonGoalsHaveInvalidRows({ ...next, goals }))
-    ) {
-      next = { ...next, goals };
+  // Always drop junk scorers (club names / parse fragments), even without enrichment.
+  if (preseasonGoalsHaveInvalidRows(next)) {
+    const cleaned = (next.goals ?? []).filter((g) =>
+      isPlausiblePreseasonScorerName(g.scorer, next),
+    );
+    if (preseasonGoalsChanged(next.goals, cleaned)) {
+      next = { ...next, goals: cleaned };
       goals_updated = true;
-    }
     }
   }
 
-  if (needsLineupFetch(next)) {
+  const needsGoals =
+    next.status === "finished" &&
+    (needsPlScorerBackfill(next) || !preseasonGoalsComplete(next));
+  const enrichRecent = isRecentEnoughForEnrichment(next);
+
+  if (needsGoals && enrichRecent) {
+    const reportUrls = findReportUrlsForMatch(next, externalResults);
+    const allowDiscovery =
+      reportUrls.length === 0 && budget.discoveriesLeft > 0;
+    if (allowDiscovery) budget.discoveriesLeft -= 1;
+
+    if (reportUrls.length > 0 || allowDiscovery) {
+      const fetched = await fetchGoalsForFinishedMatch(next, reportUrls, {
+        skipDiscovery: !allowDiscovery,
+      });
+      const goals =
+        fetched.length > 0
+          ? mergePreseasonGoalLists(next, next.goals ?? [], fetched)
+          : (next.goals ?? []);
+      if (
+        goals.length === 0 &&
+        (next.goals ?? []).length > 0 &&
+        preseasonGoalsComplete(next)
+      ) {
+        // Keep existing scorers when enrichment finds nothing new.
+      } else if (
+        preseasonGoalsChanged(next.goals, goals) ||
+        (!preseasonGoalsComplete(next) &&
+          preseasonGoalsComplete({ ...next, goals }))
+      ) {
+        next = { ...next, goals };
+        goals_updated = true;
+      }
+    }
+  }
+
+  // Lineups: known report URLs always; web discovery only for recent + budget.
+  if (needsLineupFetch(next) && enrichRecent) {
     const teamId = getPlApiTeamId(next.pl_code);
     if (process.env.API_FOOTBALL_KEY?.trim() && teamId) {
       const lineup = await resolvePreseasonLineupFromApi(next, teamId);
@@ -154,10 +194,18 @@ async function resolveMatchUpdates(
       if (reportLineup && preseasonLineupChanged(next.lineup, reportLineup)) {
         next = { ...next, lineup: reportLineup };
         lineups_updated = true;
-      } else if (needsLineupFetch(next)) {
-        const discoveredLineup = await fetchLineupForFinishedMatch(next, reportUrls, {
-          skipDiscovery: false,
-        });
+      } else if (
+        needsLineupFetch(next) &&
+        budget.discoveriesLeft > 0 &&
+        // Prefer scorer discovery while scores are still incomplete.
+        preseasonGoalsComplete(next)
+      ) {
+        budget.discoveriesLeft -= 1;
+        const discoveredLineup = await fetchLineupForFinishedMatch(
+          next,
+          reportUrls,
+          { skipDiscovery: false },
+        );
         if (
           discoveredLineup &&
           preseasonLineupChanged(next.lineup, discoveredLineup)
@@ -180,23 +228,48 @@ export async function syncPreseasonResultsJson(
 
   const path = jsonPath ?? join(process.cwd(), "data/epl-preseason-2627.json");
   const bundle = JSON.parse(readFileSync(path, "utf8")) as PreseasonBundle;
+  console.log(
+    `Pre-season sync: loading external results for ${bundle.matches.length} matches…`,
+  );
   const externalResults = await fetchAllPreseasonExternalResults();
+  console.log(`Pre-season sync: ${externalResults.length} external results.`);
 
   let updated = 0;
   let newly_finished = 0;
   let goals_updated = 0;
   let lineups_updated = 0;
-  let matches: PreseasonMatch[] = [];
+  const matches: PreseasonMatch[] = [];
+  const budget: EnrichBudget = {
+    discoveriesLeft: MAX_WEB_DISCOVERIES_PER_RUN,
+  };
 
-  for (const raw of bundle.matches) {
+  // Prefer enriching the newest fixtures first so today's scores/scorers win the budget.
+  const indexed = bundle.matches.map((raw, index) => ({ raw, index }));
+  indexed.sort((a, b) => {
+    const byDate = b.raw.date.localeCompare(a.raw.date);
+    if (byDate !== 0) return byDate;
+    return a.index - b.index;
+  });
+
+  const resolvedByIndex = new Array<PreseasonMatch>(bundle.matches.length);
+
+  for (const { raw, index } of indexed) {
     const before = normalizeMatch(raw);
-    const resolved = await resolveMatchUpdates(before, externalResults);
+    const resolved = await resolveMatchUpdates(
+      before,
+      externalResults,
+      budget,
+    );
     const next = resolved.match;
+    resolvedByIndex[index] = next;
 
     if (matchSyncChanged(before, next)) {
       updated += 1;
       if (before.status === "scheduled" && next.status === "finished") {
         newly_finished += 1;
+        console.log(
+          `Finished: ${next.date} ${next.pl_code} ${next.pl_goals}-${next.opp_goals} ${next.opponent}`,
+        );
       }
       if (resolved.goals_updated) {
         goals_updated += 1;
@@ -205,8 +278,10 @@ export async function syncPreseasonResultsJson(
         lineups_updated += 1;
       }
     }
+  }
 
-    matches.push(next);
+  for (const m of resolvedByIndex) {
+    matches.push(m!);
   }
 
   const wrote_file = updated > 0;
@@ -218,6 +293,10 @@ export async function syncPreseasonResultsJson(
     };
     writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`, "utf8");
   }
+
+  console.log(
+    `Pre-season sync done. discoveries_left=${budget.discoveriesLeft}`,
+  );
 
   return {
     path,

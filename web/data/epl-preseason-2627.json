@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-06",
+  "updated_at": "2026-08-08",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -263,7 +263,67 @@
           "side": "opp"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-2-3-1",
+        "starters": [
+          {
+            "name": "Tom Heaton",
+            "number": 22,
+            "minute_on": null
+          },
+          {
+            "name": "Leny Yoro",
+            "number": 15,
+            "minute_on": null
+          },
+          {
+            "name": "Luke Shaw",
+            "number": 23,
+            "minute_on": null
+          },
+          {
+            "name": "Andrey Santos",
+            "number": 17,
+            "minute_on": null
+          },
+          {
+            "name": "Harry Maguire",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "Ayden Heaven",
+            "number": 26,
+            "minute_on": null
+          },
+          {
+            "name": "Bryan Mbeumo",
+            "number": 19,
+            "minute_on": null
+          },
+          {
+            "name": "Mason Mount",
+            "number": 7,
+            "minute_on": null
+          },
+          {
+            "name": "Joshua Zirkzee",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Jack Fletcher",
+            "number": 38,
+            "minute_on": null
+          },
+          {
+            "name": "Patrick Chinazaekpere Dorgu",
+            "number": 13,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "new-2026-07-18-27",
@@ -2206,7 +2266,32 @@
       "pl_goals": 1,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "9'",
+          "scorer": "Rodrigo Riquelme",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "26'",
+          "scorer": "Nelson Deossa",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "32'",
+          "scorer": "Piero Hincapié",
+          "assist": "Christos Tzolis",
+          "side": "pl"
+        },
+        {
+          "minute": "43'",
+          "scorer": "Pablo Fornals",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2222,7 +2307,14 @@
       "pl_goals": 0,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "68'",
+          "scorer": "Edon Zhegrova",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2275,11 +2367,30 @@
       "pl_home": true,
       "venue": "Hong Kong",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "37'",
+          "scorer": "Kim Min-jae",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "73'",
+          "scorer": "Luis Díaz",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "83'",
+          "scorer": "João Gomes",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {

@@ -2,7 +2,10 @@ import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
 import { opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
 import type { PreseasonMatchRef, PreseasonExternalResult } from "@/lib/fpl/preseason-sources";
 import { externalResultMatchesMatch } from "@/lib/fpl/preseason-sources";
-import { preseasonGoalsHaveInvalidRows } from "@/lib/fpl/preseason-report-goals";
+import {
+  isPlausiblePreseasonScorerName,
+  preseasonGoalsHaveInvalidRows,
+} from "@/lib/fpl/preseason-report-goals";
 import { getKnownPreseasonReportUrls } from "@/lib/fpl/preseason-known-reports";
 
 const ESPN_SEARCH = "https://site.web.api.espn.com/apis/search/v2";
@@ -107,6 +110,7 @@ export function mergePreseasonGoalLists(
 ): PreseasonGoal[] {
   const ranked = lists
     .flat()
+    .filter((g) => isPlausiblePreseasonScorerName(g.scorer, match))
     .sort((a, b) => goalQualityScore(b) - goalQualityScore(a));
 
   const deduped: PreseasonGoal[] = [];

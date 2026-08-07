@@ -1,7 +1,10 @@
 import type { PreseasonGoal } from "@/lib/fpl/preseason-enrich";
 import { guessClubReportUrls, slugifyTeam } from "@/lib/fpl/preseason-club-report-urls";
 import { opponentNameVariants, opponentNamesMatch } from "@/lib/fpl/preseason-opponents";
-import type { PreseasonMatchRef } from "@/lib/fpl/preseason-sources";
+import {
+  PL_TEAM_CODES,
+  type PreseasonMatchRef,
+} from "@/lib/fpl/preseason-sources";
 
 const HTML_FETCH_HEADERS = {
   "User-Agent":
@@ -85,6 +88,9 @@ const BLOCKED_SCORER_NAMES = new Set([
   "brighton",
   "wycombe",
   "wimbledon",
+  "walsall",
+  "bayern",
+  "roma",
   "england",
   "germany",
   "hungarian",
@@ -99,9 +105,21 @@ const BLOCKED_SCORER_NAMES = new Set([
   "august",
 ]);
 
+function isClubNameScorer(name: string): boolean {
+  const n = name.toLowerCase();
+  if (BLOCKED_SCORER_NAMES.has(n)) return true;
+  if (PL_TEAM_CODES[n]) return true;
+  for (const label of Object.keys(PL_TEAM_CODES)) {
+    if (opponentNamesMatch(name, label)) return true;
+  }
+  return false;
+}
+
 function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
   if (name.length < 3 || name.length > 32) return false;
-  if (BLOCKED_SCORER_NAMES.has(name.toLowerCase())) return false;
+  if (isClubNameScorer(name)) return false;
+  // Possessives / truncated fragments from bad HTML parses ("Kim's", "Villa's").
+  if (/['’]s$/i.test(name)) return false;
   if (/^[A-Z][a-z]+$/.test(name) && name.length <= 10) {
     // Reject lone nationality/adjective tokens (e.g. "Hungarian" from BBC copy).
     if (
@@ -121,7 +139,7 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
   if (/\(\d+\)$/.test(name)) return false;
   if (/^own goal$/i.test(name)) return true;
   if (/\(og\)$/i.test(name)) return true;
-  if (/^[A-Z]\.\s+[A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?$/.test(name)) {
+  if (/^[A-Z]\.\s+\p{L}[\p{L}'’\-]+(?:\s+\p{L}[\p{L}'’\-]+)?$/u.test(name)) {
     return true;
   }
   if (match) {
@@ -132,7 +150,9 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
     if (opponentNamesMatch(name, match.opponent)) return false;
     if (opponentNamesMatch(name, match.pl_name)) return false;
   }
-  return /^[A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+){0,3}$/.test(name);
+  return /^\p{Lu}\p{L}*(?:['’\-]\p{L}+)*(?:\s+\p{Lu}\p{L}*(?:['’\-]\p{L}+)*){0,3}$/u.test(
+    name,
+  );
 }
 
 function pushGoal(
