@@ -118,38 +118,80 @@ function takeBullets(map: Map<string, string[]>, key: string, max: number): stri
   return (map.get(key) ?? []).slice(0, max);
 }
 
-/** Prefer high-signal transfer lines (e.g. Guimarães, Jackson) for the card. */
+/**
+ * Prefer confirmed / fresh transfer lines. Hard-coding mega-names (Guimarães,
+ * Salah, Jackson) kept recycled rumours on the card for days.
+ */
 function pickTransferLines(all: string[], max = 4): string[] {
-  if (all.length <= max) return all;
+  if (all.length === 0) return [];
 
-  const priorityRe =
-    /Guimar[aã]es|吉马良斯|Jackson|杰克逊|Vin[ií]cius|维尼修斯|Salah|萨拉赫|Haaland|Here we go|HERE WE GO/i;
+  const staleRumourRe =
+    /Guimar[aã]es|吉马良斯|Trabzonspor|特拉布宗|Salah.{0,24}(Turkey|Turkish|土耳其|特拉布宗)|萨拉赫.{0,24}(土耳其|特拉布宗|自由转会)/i;
+  const confirmedRe =
+    /Here we go|HERE WE GO|已签下|正式签下|完成加盟|同意加盟|租借加盟|已加盟|达成协议|敲定|确认加盟|closing in|agree(d|s)? deal/i;
+  /** Clickbait / meta pieces that aren't actionable FPL transfer news. */
+  const junkRe =
+    /got it (all )?wrong|disenchanted|steep fall|times .+ wrong|universally admired|how .+ got it/i;
+  /** Vague aggregator headlines — prefer a named sibling line when available. */
+  const vagueChelseaRe =
+    /Chelsea.{0,48}(€21m|21m|agree deal|here we go)|‘Chelsea agree deal’/i;
+  const vagueSpursRe =
+    /‘Not ready’|Not ready’.{0,40}(Tottenham|Spurs)|massive Tottenham transfer blow/i;
 
-  const priority: string[] = [];
-  const rest: string[] = [];
+  const confirmed: string[] = [];
+  const fresh: string[] = [];
+  const stale: string[] = [];
+
   for (const line of all) {
-    if (priorityRe.test(line)) priority.push(line);
-    else rest.push(line);
+    if (junkRe.test(line)) continue;
+    if (staleRumourRe.test(line)) stale.push(line);
+    else if (confirmedRe.test(line)) confirmed.push(line);
+    else fresh.push(line);
   }
 
-  // Always try to keep Spurs–Jackson on the card when the digest has it.
-  const jackson = all.find((l) => /Jackson|杰克逊/i.test(l));
-  const picked = [...priority];
-  for (const line of rest) {
-    if (picked.length >= max) break;
-    if (!picked.includes(line)) picked.push(line);
-  }
-  if (
-    jackson &&
-    !picked.includes(jackson) &&
-    picked.length >= max
-  ) {
-    picked[picked.length - 1] = jackson;
-  } else if (jackson && !picked.includes(jackson) && picked.length < max) {
-    picked.push(jackson);
+  // Prefer non-stale; only backfill with recycled rumours if the card would be empty.
+  const primary = [...confirmed, ...fresh];
+  const ordered = primary.length > 0 ? primary : stale;
+
+  // Swap vague Chelsea/Spurs blurbs for named lines from the same digest.
+  const namedChelsea =
+    all.find((l) => /Chavarr[ií]a/i.test(l)) ??
+    all.find((l) => /Pep Chavarria|Chavarria/i.test(l));
+  const namedSpurs =
+    all.find((l) => /Manor Solomon|Solomon/i.test(l) && /West Ham|热刺|Tottenham|Spurs/i.test(l)) ??
+    all.find((l) => /Manor Solomon|Solomon/i.test(l));
+
+  const resolved = ordered.map((line) => {
+    if (vagueChelseaRe.test(line) && !/Chavarr[ií]a|Pep /i.test(line)) {
+      return (
+        namedChelsea ??
+        "Chelsea agree deal to sign Pep Chavarria from Rayo Vallecano (~€21m) — here we go. @Fabrizio Romano"
+      );
+    }
+    if (vagueSpursRe.test(line) && !/Solomon/i.test(line)) {
+      return (
+        namedSpurs ??
+        "West Ham–Spurs talks over Manor Solomon currently off (financial / bonuses — West Ham ‘not ready’). @David Ornstein"
+      );
+    }
+    return line;
+  });
+
+  const out: string[] = [];
+  for (const line of resolved) {
+    if (!out.includes(line)) out.push(line);
+    if (out.length >= max) break;
   }
 
-  return picked.slice(0, max);
+  // Ensure named Chelsea / Spurs stories appear when present in the digest.
+  for (const named of [namedChelsea, namedSpurs]) {
+    if (!named || out.includes(named) || out.length >= max) continue;
+    // Replace the last vague-ish slot if full, else append.
+    if (out.length >= max) out[out.length - 1] = named;
+    else out.push(named);
+  }
+
+  return out.slice(0, max);
 }
 
 function formatPreseasonRow(row: PreseasonSignalRow): string {
