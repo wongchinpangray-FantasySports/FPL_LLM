@@ -2440,14 +2440,14 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "",
-          "scorer": "Bees",
+          "minute": "202'",
+          "scorer": "Matches",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "",
-          "scorer": "Jayden Meghoma",
+          "minute": "197'",
+          "scorer": "Jan",
           "assist": null,
           "side": "pl"
         }
