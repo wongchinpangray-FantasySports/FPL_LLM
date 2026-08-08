@@ -7,12 +7,20 @@ import {
 } from "@/lib/fpl/insights/dedupe";
 import {
   reliableDefconPer90,
+  VALUE_BAND_MIN_DEFCON_MINUTES,
   type ValueBandPosition,
   type ValueBandRow,
 } from "@/lib/fpl/insights/value-bands";
 import { projectPlayers, resolveCurrentGw, type PlayerProjection } from "@/lib/xp";
 
-export type PlayersExplorerRow = ValueBandRow;
+export type PlayersExplorerRow = ValueBandRow & {
+  goals: number | null;
+  assists: number | null;
+  /** Season xG per 90; null until enough minutes (same gate as DC/90). */
+  xg_per_90: number | null;
+  /** Season xA per 90; null until enough minutes. */
+  xa_per_90: number | null;
+};
 
 export type PlayersExplorerData = {
   horizon: number;
@@ -40,6 +48,19 @@ function isAvailablePlayer(status: string | null, chance: unknown): boolean {
   return true;
 }
 
+/** Rate stats need a meaningful sample — mirror DC/90 gating. */
+function reliablePer90(
+  minutes: number,
+  seasonTotal: number | null | undefined,
+  minMinutes = VALUE_BAND_MIN_DEFCON_MINUTES,
+): number | null {
+  if (minutes < minMinutes) return null;
+  if (seasonTotal == null || !Number.isFinite(seasonTotal) || seasonTotal < 0) {
+    return null;
+  }
+  return Math.round((seasonTotal / minutes) * 90 * 100) / 100;
+}
+
 /**
  * Full-pool projected table for /players (same metrics language as Best of Position).
  * Chunks projections like the planner top-xP loader.
@@ -54,7 +75,7 @@ export async function loadPlayersExplorerRaw(
   const { data: pool, error } = await supa
     .from("players_static")
     .select(
-      "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,status,chance_of_playing,minutes,form,threat,defensive_contribution,defensive_contribution_per_90",
+      "fpl_id,web_name,name,team,team_id,position,base_price,selected_by_percent,status,chance_of_playing,minutes,form,threat,goals_scored,assists,expected_goals,expected_assists,defensive_contribution,defensive_contribution_per_90",
     )
     .in("position", ["GKP", "DEF", "MID", "FWD"])
     .not("team_id", "is", null);
@@ -83,6 +104,10 @@ export async function loadPlayersExplorerRaw(
         minutes: num(r.minutes) ?? 0,
         form: num(r.form),
         threat: num(r.threat),
+        goals_scored: num(r.goals_scored),
+        assists: num(r.assists),
+        expected_goals: num(r.expected_goals),
+        expected_assists: num(r.expected_assists),
         defensive_contribution: num(r.defensive_contribution),
         defensive_contribution_per_90: num(r.defensive_contribution_per_90),
       })),
@@ -106,6 +131,7 @@ export async function loadPlayersExplorerRaw(
   const rows: PlayersExplorerRow[] = Array.from(projections.values())
     .map((p) => {
       const meta = byId.get(p.fpl_id);
+      const mins = meta?.minutes ?? 0;
       const nextMins =
         p.fixtures.length > 0
           ? p.fixtures.reduce(
@@ -131,12 +157,16 @@ export async function loadPlayersExplorerRaw(
         expected_minutes_next:
           nextMins != null ? Math.round(nextMins * 10) / 10 : null,
         threat: meta?.threat ?? null,
+        goals: meta?.goals_scored ?? null,
+        assists: meta?.assists ?? null,
+        xg_per_90: reliablePer90(mins, meta?.expected_goals),
+        xa_per_90: reliablePer90(mins, meta?.expected_assists),
         defensive_contribution: meta?.defensive_contribution ?? null,
         defensive_contribution_per_90: reliableDefconPer90(
-          meta?.minutes ?? 0,
+          mins,
           meta?.defensive_contribution_per_90,
         ),
-        minutes: meta?.minutes ?? 0,
+        minutes: mins,
         preseason_goals: 0,
         preseason_assists: 0,
         preseason_starts: 0,
@@ -178,7 +208,7 @@ export async function loadPlayersExplorerCached(
   const h = Math.min(Math.max(horizon, 1), 8);
   return unstable_cache(
     async () => loadPlayersExplorerRaw(h),
-    [`players-explorer-v1-h${h}`],
+    [`players-explorer-v2-h${h}`],
     { revalidate: 300 },
   )();
 }

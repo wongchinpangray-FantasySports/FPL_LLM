@@ -34,7 +34,11 @@ type SortKey =
   | "own"
   | "xp"
   | "mins"
+  | "goals"
+  | "assists"
   | "threat"
+  | "xg90"
+  | "xa90"
   | "defcon90"
   | "value";
 
@@ -48,7 +52,11 @@ type ColId =
   | "own"
   | "xp"
   | "mins"
+  | "goals"
+  | "assists"
   | "threat"
+  | "xg90"
+  | "xa90"
   | "defcon90"
   | "value";
 
@@ -70,7 +78,7 @@ type SearchHit = {
 };
 
 const PAGE_SIZE = 50;
-const COLS_STORAGE_KEY = "players-explorer-cols-v1";
+const COLS_STORAGE_KEY = "players-explorer-cols-v2";
 
 const ALL_COLS: ColId[] = [
   "team",
@@ -79,13 +87,17 @@ const ALL_COLS: ColId[] = [
   "own",
   "xp",
   "mins",
+  "goals",
+  "assists",
   "threat",
+  "xg90",
+  "xa90",
   "defcon90",
   "value",
 ];
 
 const DEFAULT_COLS_DESKTOP: ColId[] = [...ALL_COLS];
-const DEFAULT_COLS_MOBILE: ColId[] = ["pos", "price", "xp", "mins"];
+const DEFAULT_COLS_MOBILE: ColId[] = ["pos", "price", "xp", "mins", "xg90"];
 
 const SORT_KEYS = new Set<SortKey>([
   "player",
@@ -95,7 +107,11 @@ const SORT_KEYS = new Set<SortKey>([
   "own",
   "xp",
   "mins",
+  "goals",
+  "assists",
   "threat",
+  "xg90",
+  "xa90",
   "defcon90",
   "value",
 ]);
@@ -132,8 +148,16 @@ function sortValue(row: PlayersExplorerRow, key: SortKey): string | number | nul
       return row.ownership;
     case "mins":
       return row.expected_minutes_next;
+    case "goals":
+      return row.goals;
+    case "assists":
+      return row.assists;
     case "threat":
       return row.threat;
+    case "xg90":
+      return row.xg_per_90;
+    case "xa90":
+      return row.xa_per_90;
     case "defcon90":
       return row.defensive_contribution_per_90;
     case "value":
@@ -604,8 +628,16 @@ export function PlayersExplorer({
           return t("colXp");
         case "mins":
           return t("colMinsShort");
+        case "goals":
+          return t("colGoals");
+        case "assists":
+          return t("colAssists");
         case "threat":
           return t("colThreat");
+        case "xg90":
+          return t("colXg90");
+        case "xa90":
+          return t("colXa90");
         case "defcon90":
           return t("colDefcon90");
         case "value":
@@ -991,12 +1023,48 @@ export function PlayersExplorer({
                     className={thClass}
                   />
                 ) : null}
+                {showCol("goals") ? (
+                  <InsightsSortableTh
+                    label={t("colGoals")}
+                    active={sortKey === "goals"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("goals")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("assists") ? (
+                  <InsightsSortableTh
+                    label={t("colAssists")}
+                    active={sortKey === "assists"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("assists")}
+                    className={thClass}
+                  />
+                ) : null}
                 {showCol("threat") ? (
                   <InsightsSortableTh
                     label={t("colThreat")}
                     active={sortKey === "threat"}
                     dir={sortDir}
                     onSort={() => toggleSort("threat")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("xg90") ? (
+                  <InsightsSortableTh
+                    label={t("colXg90")}
+                    active={sortKey === "xg90"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("xg90")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("xa90") ? (
+                  <InsightsSortableTh
+                    label={t("colXa90")}
+                    active={sortKey === "xa90"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("xa90")}
                     className={thClass}
                   />
                 ) : null}
@@ -1078,9 +1146,29 @@ export function PlayersExplorer({
                       {fmtNum(row.expected_minutes_next, 0)}
                     </td>
                   ) : null}
+                  {showCol("goals") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {row.goals != null ? String(row.goals) : "—"}
+                    </td>
+                  ) : null}
+                  {showCol("assists") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {row.assists != null ? String(row.assists) : "—"}
+                    </td>
+                  ) : null}
                   {showCol("threat") ? (
                     <td className={cn(tdClass, "tabular-nums")}>
                       {fmtNum(row.threat, 1)}
+                    </td>
+                  ) : null}
+                  {showCol("xg90") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.xg_per_90, 2)}
+                    </td>
+                  ) : null}
+                  {showCol("xa90") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.xa_per_90, 2)}
                     </td>
                   ) : null}
                   {showCol("defcon90") ? (
