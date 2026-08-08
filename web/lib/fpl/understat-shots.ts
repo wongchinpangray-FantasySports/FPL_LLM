@@ -35,6 +35,12 @@ export type PlayerShotMapData = {
     xg: number;
     on_target: number;
   };
+  /** Inclusive date span of returned shots (ISO dates). */
+  coverage: {
+    from: string | null;
+    to: string | null;
+    matches: number;
+  };
   source: "understat";
 };
 
@@ -82,6 +88,7 @@ export async function loadPlayerShotMapRaw(
         season: opts?.season ?? null,
         shots: [],
         totals: { shots: 0, goals: 0, xg: 0, on_target: 0 },
+        coverage: { from: null, to: null, matches: 0 },
         source: "understat",
       };
     }
@@ -123,6 +130,12 @@ export async function loadPlayerShotMapRaw(
       ? ((data?.[0] as { season?: string } | undefined)?.season ?? null)
       : null);
 
+  const dates = shots
+    .map((s) => s.match_date)
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  const matchIds = new Set(shots.map((s) => s.match_id));
+
   return {
     fpl_id: fplId,
     season,
@@ -133,6 +146,11 @@ export async function loadPlayerShotMapRaw(
       xg: Math.round(xg * 1000) / 1000,
       on_target,
     },
+    coverage: {
+      from: dates[0] ?? null,
+      to: dates[dates.length - 1] ?? null,
+      matches: matchIds.size,
+    },
     source: "understat",
   };
 }
@@ -142,8 +160,8 @@ export async function loadPlayerShotMapCached(
   season?: string,
 ): Promise<PlayerShotMapData | null> {
   return unstable_cache(
-    async () => loadPlayerShotMapRaw(fplId, { season, limit: 200 }),
-    [`player-shot-map-v1-${fplId}-${season ?? "all"}`],
+    async () => loadPlayerShotMapRaw(fplId, { season, limit: 400 }),
+    [`player-shot-map-v3-${fplId}-${season ?? "all"}`],
     { revalidate: 600 },
   )();
 }

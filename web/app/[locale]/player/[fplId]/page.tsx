@@ -122,6 +122,8 @@ export default async function PlayerHubPage({
         <PlayerShotMap
           shots={shotMap.shots}
           totals={shotMap.totals}
+          season={shotMap.season}
+          coverage={shotMap.coverage}
           labels={{
             title: t("shotMapTitle"),
             subtitle: t("shotMapSubtitle"),

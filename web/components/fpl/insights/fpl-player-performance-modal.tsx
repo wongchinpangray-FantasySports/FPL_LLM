@@ -308,7 +308,10 @@ export function FplPlayerPerformanceModal({
                 <PlayerShotMap
                   shots={detail.shot_map.shots}
                   totals={detail.shot_map.totals}
+                  season={detail.shot_map.season}
+                  coverage={detail.shot_map.coverage}
                   labels={labels.shotMap}
+                  variant="compact"
                   className="border-border/80 bg-card/40 p-3 sm:p-4"
                 />
               ) : null}
