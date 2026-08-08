@@ -88,6 +88,10 @@ python -m data_sync.sync_fpl_gw_live           # current GW only
 python -m data_sync.sync_understat --season 2026
 ```
 
+`sync_understat` uses Understat’s AJAX endpoints (`getLeagueData` / `getMatchData`) and
+upserts both **`understat_xg`** (match totals) and **`understat_shots`** (pitch x/y + xG
+for player shot maps). Apply `supabase/migrations/0027_understat_shots.sql` first.
+
 `sync_fpl_players` writes **`fpl_meta.current_season`** (from FPL bootstrap, or
 override with env **`FPL_CURRENT_SEASON`**). Fixture and GW-stat rows carry the
 same `season` so the app never mixes last year’s GW numbers with this season.

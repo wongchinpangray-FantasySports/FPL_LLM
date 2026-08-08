@@ -7,8 +7,10 @@ import { PageHeader } from "@/components/page-header";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { loadPlayerProfileBundle } from "@/lib/player-hub";
 import { loadPlayerGwHistory } from "@/lib/player-gw-history";
+import { loadPlayerShotMapCached } from "@/lib/fpl/understat-shots";
 import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import { PlayerRadarCompareSection } from "@/components/player/player-radar-compare-section";
+import { PlayerShotMap } from "@/components/player/player-shot-map";
 import { getServerSupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { FixtureProjection } from "@/lib/xp";
@@ -61,9 +63,10 @@ export default async function PlayerHubPage({
     Math.max(1, Number(searchParams?.horizon) || 5),
   );
 
-  const [data, gwHistory] = await Promise.all([
+  const [data, gwHistory, shotMap] = await Promise.all([
     loadPlayerProfileBundle(fplId, horizon),
     loadPlayerGwHistory(fplId, 10),
+    loadPlayerShotMapCached(fplId).catch(() => null),
   ]);
   if (!data) notFound();
 
@@ -105,6 +108,7 @@ export default async function PlayerHubPage({
         <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-muted-foreground">
           <li>{t("dataSourceFpl")}</li>
           <li>{t("dataSourceModel")}</li>
+          <li>{t("dataSourceUnderstat")}</li>
         </ul>
       </section>
 
@@ -113,6 +117,27 @@ export default async function PlayerHubPage({
         basePosition={row.position}
         baseRadar={radar}
       />
+
+      {shotMap ? (
+        <PlayerShotMap
+          shots={shotMap.shots}
+          totals={shotMap.totals}
+          labels={{
+            title: t("shotMapTitle"),
+            subtitle: t("shotMapSubtitle"),
+            empty: t("shotMapEmpty"),
+            legendGoal: t("shotMapLegendGoal"),
+            legendSaved: t("shotMapLegendSaved"),
+            legendOther: t("shotMapLegendOther"),
+            legendSize: t("shotMapLegendSize"),
+            statShots: t("shotMapStatShots"),
+            statGoals: t("shotMapStatGoals"),
+            statXg: t("shotMapStatXg"),
+            statOnTarget: t("shotMapStatOnTarget"),
+            sourceNote: t("shotMapSource"),
+          }}
+        />
+      ) : null}
 
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-wrap gap-4 border-b border-border pb-4">

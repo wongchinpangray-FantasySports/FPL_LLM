@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import {
+  PlayerShotMap,
+  type PlayerShotMapLabels,
+} from "@/components/player/player-shot-map";
+import type { PlayerShotMapData } from "@/lib/fpl/understat-shots";
 
 export type PlayerPerformanceProfile = {
   fpl_id: number;
@@ -63,6 +68,7 @@ export type PlayerPerformanceProfile = {
     defensive_contribution: number;
     ict_index: number;
   }>;
+  shot_map?: PlayerShotMapData | null;
 };
 
 export type PlayerPerformanceModalLabels = {
@@ -94,6 +100,7 @@ export type PlayerPerformanceModalLabels = {
   colPts: string;
   colXp: string;
   emptyGw: string;
+  shotMap?: PlayerShotMapLabels;
 };
 
 function fmtNum(v: number | null | undefined, d = 1): string {
@@ -296,6 +303,15 @@ export function FplPlayerPerformanceModal({
                   />
                 </div>
               </section>
+
+              {labels.shotMap && detail.shot_map ? (
+                <PlayerShotMap
+                  shots={detail.shot_map.shots}
+                  totals={detail.shot_map.totals}
+                  labels={labels.shotMap}
+                  className="border-border/80 bg-card/40 p-3 sm:p-4"
+                />
+              ) : null}
 
               <section>
                 <h3 className="mb-2 text-sm font-semibold text-foreground">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadPlayerHubData } from "@/lib/player-hub";
 import { loadPlayerGwHistory } from "@/lib/player-gw-history";
+import { loadPlayerShotMapCached } from "@/lib/fpl/understat-shots";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,10 @@ export async function GET(
     Math.max(1, Number(url.searchParams.get("horizon")) || 5),
   );
 
-  const [hub, recentGws] = await Promise.all([
+  const [hub, recentGws, shotMap] = await Promise.all([
     loadPlayerHubData(fplId, horizon),
     loadPlayerGwHistory(fplId, 8),
+    loadPlayerShotMapCached(fplId).catch(() => null),
   ]);
 
   if (!hub) {
@@ -78,5 +80,6 @@ export async function GET(
       })),
     },
     recent_gws: recentGws,
+    shot_map: shotMap,
   });
 }
