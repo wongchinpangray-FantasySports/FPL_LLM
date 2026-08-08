@@ -2463,11 +2463,30 @@
       "pl_home": true,
       "venue": "Jakarta",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "2'",
+          "scorer": "Joao",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "46'",
+          "scorer": "Two",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "49'",
+          "scorer": "Caicedo",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2495,9 +2514,9 @@
       "pl_home": false,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 3,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2511,9 +2530,9 @@
       "pl_home": false,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 0,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2527,9 +2546,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2543,9 +2562,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2559,9 +2578,9 @@
       "pl_home": true,
       "venue": "Gothenburg",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2655,9 +2674,9 @@
       "pl_home": true,
       "venue": null,
       "note": "Behind closed doors",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
