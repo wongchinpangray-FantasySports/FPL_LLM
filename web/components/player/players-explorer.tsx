@@ -1,11 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import {
   InsightsSortableTh,
   sortInsightRows,
-  useInsightsTableSort,
+  type SortDir,
 } from "@/components/fpl/insights/insights-table-sort";
 import {
   FplPlayerPerformanceModal,
@@ -15,6 +24,7 @@ import { PlayerRadarChart } from "@/components/player/player-radar-chart";
 import type { PlayersExplorerRow } from "@/lib/fpl/players-explorer";
 import type { PlayerRadarAxes } from "@/lib/player-hub";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
+import { cn } from "@/lib/utils";
 
 type SortKey =
   | "player"
@@ -29,6 +39,18 @@ type SortKey =
   | "value";
 
 type PosFilter = "ALL" | "GKP" | "DEF" | "MID" | "FWD";
+
+/** Optional table columns (player + actions always shown). */
+type ColId =
+  | "team"
+  | "pos"
+  | "price"
+  | "own"
+  | "xp"
+  | "mins"
+  | "threat"
+  | "defcon90"
+  | "value";
 
 type Six = [number, number, number, number, number, number];
 
@@ -48,6 +70,37 @@ type SearchHit = {
 };
 
 const PAGE_SIZE = 50;
+const COLS_STORAGE_KEY = "players-explorer-cols-v1";
+
+const ALL_COLS: ColId[] = [
+  "team",
+  "pos",
+  "price",
+  "own",
+  "xp",
+  "mins",
+  "threat",
+  "defcon90",
+  "value",
+];
+
+const DEFAULT_COLS_DESKTOP: ColId[] = [...ALL_COLS];
+const DEFAULT_COLS_MOBILE: ColId[] = ["pos", "price", "xp", "mins"];
+
+const SORT_KEYS = new Set<SortKey>([
+  "player",
+  "team",
+  "pos",
+  "price",
+  "own",
+  "xp",
+  "mins",
+  "threat",
+  "defcon90",
+  "value",
+]);
+
+const POS_FILTERS = new Set<PosFilter>(["ALL", "GKP", "DEF", "MID", "FWD"]);
 
 function fmtNum(v: number | null | undefined, d = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
@@ -91,6 +144,66 @@ function sortValue(row: PlayersExplorerRow, key: SortKey): string | number | nul
   }
 }
 
+function parsePos(raw: string | null): PosFilter {
+  if (!raw) return "ALL";
+  const u = raw.toUpperCase() as PosFilter;
+  return POS_FILTERS.has(u) ? u : "ALL";
+}
+
+function parseSort(raw: string | null): SortKey {
+  if (!raw) return "xp";
+  return SORT_KEYS.has(raw as SortKey) ? (raw as SortKey) : "xp";
+}
+
+function parseDir(raw: string | null): SortDir {
+  return raw === "asc" ? "asc" : "desc";
+}
+
+function parseId(raw: string | null): number | null {
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+}
+
+function parseCols(raw: string | null): ColId[] | null {
+  if (!raw?.trim()) return null;
+  const set = new Set<ColId>();
+  for (const part of raw.split(",")) {
+    const id = part.trim() as ColId;
+    if (ALL_COLS.includes(id)) set.add(id);
+  }
+  return set.size > 0 ? ALL_COLS.filter((c) => set.has(c)) : null;
+}
+
+function colsEqual(a: ColId[], b: ColId[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((c, i) => c === b[i]);
+}
+
+function defaultColsForViewport(): ColId[] {
+  if (typeof window === "undefined") return DEFAULT_COLS_DESKTOP;
+  return window.matchMedia("(max-width: 639px)").matches
+    ? DEFAULT_COLS_MOBILE
+    : DEFAULT_COLS_DESKTOP;
+}
+
+function loadStoredCols(): ColId[] | null {
+  try {
+    const raw = localStorage.getItem(COLS_STORAGE_KEY);
+    return parseCols(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredCols(cols: ColId[]) {
+  try {
+    localStorage.setItem(COLS_STORAGE_KEY, cols.join(","));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function PlayersExplorer({
   rows,
   teams,
@@ -110,15 +223,50 @@ export function PlayersExplorer({
   const tPlayer = useTranslations("playerPage");
   const tModal = useTranslations("fplInsights.playerModal");
   const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
 
-  const [q, setQ] = useState("");
-  const [pos, setPos] = useState<PosFilter>("ALL");
-  const [team, setTeam] = useState("ALL");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+  const initialPos = parsePos(searchParams.get("pos"));
+  const initialTeam = searchParams.get("team")?.trim() || "ALL";
+  const initialQ = searchParams.get("q")?.trim() ?? "";
+  const initialMin = searchParams.get("min")?.trim() ?? "";
+  const initialMax = searchParams.get("max")?.trim() ?? "";
+  const initialSort = parseSort(searchParams.get("sort"));
+  const initialDir = parseDir(searchParams.get("dir"));
+  const initialA = parseId(searchParams.get("a"));
+  const initialB = parseId(searchParams.get("b"));
+  const urlCols = parseCols(searchParams.get("cols"));
+
+  const [q, setQ] = useState(initialQ);
+  const [pos, setPos] = useState<PosFilter>(initialPos);
+  const [team, setTeam] = useState(
+    initialTeam !== "ALL" && teams.includes(initialTeam) ? initialTeam : "ALL",
+  );
+  const [minPrice, setMinPrice] = useState(initialMin);
+  const [maxPrice, setMaxPrice] = useState(initialMax);
+  const [sortKey, setSortKey] = useState<SortKey>(initialSort);
+  const [sortDir, setSortDir] = useState<SortDir>(initialDir);
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [colsOpen, setColsOpen] = useState(false);
 
-  const { sortKey, sortDir, toggle } = useInsightsTableSort<SortKey>("xp");
+  const [visibleCols, setVisibleCols] = useState<ColId[]>(() => {
+    if (urlCols) return urlCols;
+    return DEFAULT_COLS_DESKTOP;
+  });
+  const colsHydrated = useRef(false);
+
+  useEffect(() => {
+    if (colsHydrated.current) return;
+    colsHydrated.current = true;
+    if (urlCols) {
+      setVisibleCols(urlCols);
+      return;
+    }
+    const stored = loadStoredCols();
+    setVisibleCols(stored ?? defaultColsForViewport());
+  }, [urlCols]);
 
   const [openId, setOpenId] = useState<number | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -131,6 +279,85 @@ export function PlayersExplorer({
   const [compareHits, setCompareHits] = useState<SearchHit[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRadar, setLoadingRadar] = useState(false);
+  const compareBootstrapped = useRef(false);
+
+  const showCol = useCallback(
+    (id: ColId) => visibleCols.includes(id),
+    [visibleCols],
+  );
+
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
+      setSortDir("desc");
+      return key;
+    });
+  }, []);
+
+  const toggleCol = useCallback((id: ColId) => {
+    setVisibleCols((prev) => {
+      const next = prev.includes(id)
+        ? prev.filter((c) => c !== id)
+        : ALL_COLS.filter((c) => prev.includes(c) || c === id);
+      // Keep at least one metric column besides identity.
+      if (next.length === 0) return prev;
+      saveStoredCols(next);
+      return next;
+    });
+  }, []);
+
+  const resetCols = useCallback(() => {
+    const next = defaultColsForViewport();
+    setVisibleCols(next);
+    saveStoredCols(next);
+  }, []);
+
+  // Sync shareable URL (debounced replace — no history spam).
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams();
+      if (pos !== "ALL") params.set("pos", pos);
+      if (team !== "ALL") params.set("team", team);
+      if (q.trim()) params.set("q", q.trim());
+      if (minPrice.trim()) params.set("min", minPrice.trim());
+      if (maxPrice.trim()) params.set("max", maxPrice.trim());
+      if (sortKey !== "xp") params.set("sort", sortKey);
+      if (sortDir !== "desc") params.set("dir", sortDir);
+      if (compareA) params.set("a", String(compareA.fpl_id));
+      if (compareB) params.set("b", String(compareB.fpl_id));
+      // Persist non-default column sets so shared links keep the same table.
+      if (!colsEqual(visibleCols, DEFAULT_COLS_DESKTOP)) {
+        params.set("cols", visibleCols.join(","));
+      }
+
+      const next = params.toString();
+      const current = searchParams.toString();
+      if (next === current) return;
+
+      const href = next ? `${pathname}?${next}` : pathname;
+      startTransition(() => {
+        router.replace(href, { scroll: false });
+      });
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [
+    pos,
+    team,
+    q,
+    minPrice,
+    maxPrice,
+    sortKey,
+    sortDir,
+    compareA,
+    compareB,
+    visibleCols,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -216,6 +443,34 @@ export function PlayersExplorer({
     };
   }, []);
 
+  // Bootstrap compare slots from ?a=&b=
+  useEffect(() => {
+    if (compareBootstrapped.current) return;
+    if (initialA == null) {
+      compareBootstrapped.current = true;
+      return;
+    }
+    compareBootstrapped.current = true;
+    let cancelled = false;
+    (async () => {
+      setLoadingRadar(true);
+      try {
+        const a = await loadRadar(initialA);
+        if (cancelled) return;
+        if (a) setCompareA(a);
+        if (initialB != null && initialB !== initialA) {
+          const b = await loadRadar(initialB);
+          if (!cancelled && b) setCompareB(b);
+        }
+      } finally {
+        if (!cancelled) setLoadingRadar(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialA, initialB, loadRadar]);
+
   const startCompare = useCallback(
     async (row: PlayersExplorerRow) => {
       setLoadingRadar(true);
@@ -239,6 +494,13 @@ export function PlayersExplorer({
     },
     [loadRadar],
   );
+
+  const clearCompare = useCallback(() => {
+    setCompareA(null);
+    setCompareB(null);
+    setCompareQ("");
+    setCompareHits([]);
+  }, []);
 
   const runCompareSearch = useCallback(
     async (raw: string) => {
@@ -327,6 +589,32 @@ export function PlayersExplorer({
     tPlayer("radarXaP90"),
   ];
 
+  const colLabel = useCallback(
+    (id: ColId): string => {
+      switch (id) {
+        case "team":
+          return t("colTeam");
+        case "pos":
+          return t("colPos");
+        case "price":
+          return t("colPrice");
+        case "own":
+          return t("colOwn");
+        case "xp":
+          return t("colXp");
+        case "mins":
+          return t("colMinsShort");
+        case "threat":
+          return t("colThreat");
+        case "defcon90":
+          return t("colDefcon90");
+        case "value":
+          return t("colValue");
+      }
+    },
+    [t],
+  );
+
   const posMismatch =
     compareA &&
     compareB &&
@@ -335,6 +623,12 @@ export function PlayersExplorer({
     compareA.position !== compareB.position;
 
   const positions: PosFilter[] = ["ALL", "GKP", "DEF", "MID", "FWD"];
+  const metricColCount = visibleCols.length;
+  const tableMinWidth =
+    160 + metricColCount * 72 + 88; /* player + metrics + actions */
+
+  const thClass = "px-2 py-1.5 sm:px-3 sm:py-2";
+  const tdClass = "px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm";
 
   return (
     <div className="flex flex-col gap-5">
@@ -446,13 +740,60 @@ export function PlayersExplorer({
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          {t("filterResultCount", { shown: page.length, total: sorted.length })}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {t("filterResultCount", {
+              shown: page.length,
+              total: sorted.length,
+            })}
+          </p>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setColsOpen((o) => !o)}
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              aria-expanded={colsOpen}
+            >
+              {t("columnsButton")}
+            </button>
+            {colsOpen ? (
+              <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-border bg-card p-3 shadow-lg">
+                <p className="mb-2 text-xs font-medium text-foreground">
+                  {t("columnsTitle")}
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {ALL_COLS.map((id) => (
+                    <li key={id}>
+                      <label className="flex cursor-pointer items-center gap-2 text-xs text-foreground/90">
+                        <input
+                          type="checkbox"
+                          checked={showCol(id)}
+                          onChange={() => toggleCol(id)}
+                          className="rounded border-border"
+                        />
+                        {colLabel(id)}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={resetCols}
+                  className="mt-3 text-xs text-primary underline-offset-2 hover:underline"
+                >
+                  {t("columnsReset")}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {compareA ? (
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <section
+          id="players-compare"
+          className="rounded-xl border border-border bg-card p-3 sm:p-5"
+        >
           <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
             <div>
               <h2 className="text-base font-semibold text-foreground">
@@ -462,12 +803,7 @@ export function PlayersExplorer({
             </div>
             <button
               type="button"
-              onClick={() => {
-                setCompareA(null);
-                setCompareB(null);
-                setCompareQ("");
-                setCompareHits([]);
-              }}
+              onClick={clearCompare}
               className="text-xs text-muted-foreground underline-offset-2 hover:underline"
             >
               {t("compareClear")}
@@ -477,7 +813,9 @@ export function PlayersExplorer({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1 space-y-3">
               <p className="text-sm text-foreground">
-                <span className="text-muted-foreground">{t("comparePlayerA")}: </span>
+                <span className="text-muted-foreground">
+                  {t("comparePlayerA")}:{" "}
+                </span>
                 <span className="font-medium">{compareA.label}</span>
                 {compareA.position ? (
                   <span className="text-muted-foreground">
@@ -506,9 +844,7 @@ export function PlayersExplorer({
               </div>
 
               {loadingSearch ? (
-                <p className="text-xs text-muted-foreground">
-                  {t("searching")}
-                </p>
+                <p className="text-xs text-muted-foreground">{t("searching")}</p>
               ) : compareHits.length > 0 ? (
                 <ul className="max-h-40 overflow-y-auto rounded-lg border border-border bg-black/25 text-sm">
                   {compareHits.map((h) => {
@@ -564,24 +900,22 @@ export function PlayersExplorer({
               ) : null}
             </div>
 
-            {compareA ? (
-              <div className="mx-auto w-full max-w-[280px] shrink-0">
-                <PlayerRadarChart
-                  values={compareA.values}
-                  labels={radarLabels}
-                  caption={
-                    compareB
-                      ? `${compareA.label} vs ${compareB.label}`
-                      : compareA.label
-                  }
-                  compare={
-                    compareB
-                      ? { values: compareB.values, name: compareB.label }
-                      : undefined
-                  }
-                />
-              </div>
-            ) : null}
+            <div className="mx-auto w-full max-w-[260px] shrink-0 sm:max-w-[280px]">
+              <PlayerRadarChart
+                values={compareA.values}
+                labels={radarLabels}
+                caption={
+                  compareB
+                    ? `${compareA.label} vs ${compareB.label}`
+                    : compareA.label
+                }
+                compare={
+                  compareB
+                    ? { values: compareB.values, name: compareB.label }
+                    : undefined
+                }
+              />
+            </div>
           </div>
         </section>
       ) : null}
@@ -589,71 +923,105 @@ export function PlayersExplorer({
       {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("explorerEmpty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
-            <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+        <div className="overflow-x-auto rounded-xl border border-border -mx-1 px-1 sm:mx-0 sm:px-0">
+          <table
+            className="w-full border-collapse text-left"
+            style={{ minWidth: tableMinWidth }}
+          >
+            <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground sm:text-xs">
               <tr>
                 <InsightsSortableTh
                   label={t("colPlayer")}
                   active={sortKey === "player"}
                   dir={sortDir}
-                  onSort={() => toggle("player")}
+                  onSort={() => toggleSort("player")}
+                  className={thClass}
                 />
-                <InsightsSortableTh
-                  label={t("colTeam")}
-                  active={sortKey === "team"}
-                  dir={sortDir}
-                  onSort={() => toggle("team")}
-                />
-                <InsightsSortableTh
-                  label={t("colPos")}
-                  active={sortKey === "pos"}
-                  dir={sortDir}
-                  onSort={() => toggle("pos")}
-                />
-                <InsightsSortableTh
-                  label={t("colPrice")}
-                  active={sortKey === "price"}
-                  dir={sortDir}
-                  onSort={() => toggle("price")}
-                />
-                <InsightsSortableTh
-                  label={t("colOwn")}
-                  active={sortKey === "own"}
-                  dir={sortDir}
-                  onSort={() => toggle("own")}
-                />
-                <InsightsSortableTh
-                  label={t("colXp")}
-                  active={sortKey === "xp"}
-                  dir={sortDir}
-                  onSort={() => toggle("xp")}
-                />
-                <InsightsSortableTh
-                  label={t("colMins")}
-                  active={sortKey === "mins"}
-                  dir={sortDir}
-                  onSort={() => toggle("mins")}
-                />
-                <InsightsSortableTh
-                  label={t("colThreat")}
-                  active={sortKey === "threat"}
-                  dir={sortDir}
-                  onSort={() => toggle("threat")}
-                />
-                <InsightsSortableTh
-                  label={t("colDefcon90")}
-                  active={sortKey === "defcon90"}
-                  dir={sortDir}
-                  onSort={() => toggle("defcon90")}
-                />
-                <InsightsSortableTh
-                  label={t("colValue")}
-                  active={sortKey === "value"}
-                  dir={sortDir}
-                  onSort={() => toggle("value")}
-                />
-                <th className="px-3 py-2 font-medium">{t("colActions")}</th>
+                {showCol("team") ? (
+                  <InsightsSortableTh
+                    label={t("colTeam")}
+                    active={sortKey === "team"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("team")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("pos") ? (
+                  <InsightsSortableTh
+                    label={t("colPos")}
+                    active={sortKey === "pos"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("pos")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("price") ? (
+                  <InsightsSortableTh
+                    label={t("colPrice")}
+                    active={sortKey === "price"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("price")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("own") ? (
+                  <InsightsSortableTh
+                    label={t("colOwn")}
+                    active={sortKey === "own"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("own")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("xp") ? (
+                  <InsightsSortableTh
+                    label={t("colXp")}
+                    active={sortKey === "xp"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("xp")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("mins") ? (
+                  <InsightsSortableTh
+                    label={t("colMinsShort")}
+                    active={sortKey === "mins"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("mins")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("threat") ? (
+                  <InsightsSortableTh
+                    label={t("colThreat")}
+                    active={sortKey === "threat"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("threat")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("defcon90") ? (
+                  <InsightsSortableTh
+                    label={t("colDefcon90")}
+                    active={sortKey === "defcon90"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("defcon90")}
+                    className={thClass}
+                  />
+                ) : null}
+                {showCol("value") ? (
+                  <InsightsSortableTh
+                    label={t("colValue")}
+                    active={sortKey === "value"}
+                    dir={sortDir}
+                    onSort={() => toggleSort("value")}
+                    className={thClass}
+                  />
+                ) : null}
+                <th className={cn(thClass, "font-medium")}>
+                  <span className="sm:hidden">{t("colActionsShort")}</span>
+                  <span className="hidden sm:inline">{t("colActions")}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -662,55 +1030,94 @@ export function PlayersExplorer({
                   key={row.fpl_id}
                   className="border-b border-border/60 last:border-0 hover:bg-muted/20"
                 >
-                  <td className="px-3 py-2 font-medium text-foreground">
+                  <td className={cn(tdClass, "font-medium text-foreground")}>
                     <button
                       type="button"
                       onClick={() => void openProfile(row.fpl_id)}
-                      className="text-left hover:text-brand-accent hover:underline"
+                      className="max-w-[7.5rem] truncate text-left hover:text-brand-accent hover:underline sm:max-w-none"
+                      title={row.web_name}
                     >
                       {row.web_name}
                     </button>
+                    {!showCol("team") ? (
+                      <span className="mt-0.5 block truncate text-[10px] text-muted-foreground sm:hidden">
+                        {row.team}
+                        {row.position ? ` · ${row.position}` : ""}
+                      </span>
+                    ) : null}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">{row.team}</td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {row.position ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {row.price != null ? `£${row.price.toFixed(1)}` : "—"}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {row.ownership != null
-                      ? `${fmtNum(row.ownership, 1)}%`
-                      : "—"}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums font-medium">
-                    {fmtNum(row.xp_total, 1)}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {fmtNum(row.expected_minutes_next, 0)}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {fmtNum(row.threat, 1)}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {fmtNum(row.defensive_contribution_per_90, 1)}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {fmtNum(row.value_per_million, 2)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-2">
+                  {showCol("team") ? (
+                    <td className={cn(tdClass, "text-muted-foreground")}>
+                      {row.team}
+                    </td>
+                  ) : null}
+                  {showCol("pos") ? (
+                    <td className={cn(tdClass, "text-muted-foreground")}>
+                      {row.position ?? "—"}
+                    </td>
+                  ) : null}
+                  {showCol("price") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {row.price != null ? `£${row.price.toFixed(1)}` : "—"}
+                    </td>
+                  ) : null}
+                  {showCol("own") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {row.ownership != null
+                        ? `${fmtNum(row.ownership, 1)}%`
+                        : "—"}
+                    </td>
+                  ) : null}
+                  {showCol("xp") ? (
+                    <td className={cn(tdClass, "tabular-nums font-medium")}>
+                      {fmtNum(row.xp_total, 1)}
+                    </td>
+                  ) : null}
+                  {showCol("mins") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.expected_minutes_next, 0)}
+                    </td>
+                  ) : null}
+                  {showCol("threat") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.threat, 1)}
+                    </td>
+                  ) : null}
+                  {showCol("defcon90") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.defensive_contribution_per_90, 1)}
+                    </td>
+                  ) : null}
+                  {showCol("value") ? (
+                    <td className={cn(tdClass, "tabular-nums")}>
+                      {fmtNum(row.value_per_million, 2)}
+                    </td>
+                  ) : null}
+                  <td className={tdClass}>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-2">
                       <button
                         type="button"
                         onClick={() => void openProfile(row.fpl_id)}
-                        className="text-xs text-primary underline-offset-2 hover:underline"
+                        className="text-left text-[11px] text-primary underline-offset-2 hover:underline sm:text-xs"
                       >
                         {t("actionProfile")}
                       </button>
                       <button
                         type="button"
-                        onClick={() => void startCompare(row)}
-                        className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                        onClick={() => {
+                          void (async () => {
+                            await startCompare(row);
+                            window.requestAnimationFrame(() => {
+                              document
+                                .getElementById("players-compare")
+                                ?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "nearest",
+                                });
+                            });
+                          })();
+                        }}
+                        className="text-left text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline sm:text-xs"
                       >
                         {t("actionCompare")}
                       </button>

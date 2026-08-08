@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { PlayersExplorer } from "@/components/player/players-explorer";
@@ -24,14 +25,20 @@ export default async function PlayersSearchPage({
       description={t("description")}
       width="6xl"
     >
-      <PlayersExplorer
-        rows={data.rows}
-        teams={data.teams}
-        horizon={data.horizon}
-        fromGw={data.from_gw}
-        toGw={data.to_gw}
-        assessed={data.assessed}
-      />
+      <Suspense
+        fallback={
+          <p className="text-sm text-muted-foreground">{t("loadingExplorer")}</p>
+        }
+      >
+        <PlayersExplorer
+          rows={data.rows}
+          teams={data.teams}
+          horizon={data.horizon}
+          fromGw={data.from_gw}
+          toGw={data.to_gw}
+          assessed={data.assessed}
+        />
+      </Suspense>
     </PageShell>
   );
 }
