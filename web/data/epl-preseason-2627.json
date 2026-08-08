@@ -2402,11 +2402,30 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "201'",
+          "scorer": "Copyright",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "28'",
+          "scorer": "Fan Event",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "202'",
+          "scorer": "Tour",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2498,9 +2517,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2610,9 +2629,9 @@
       "pl_home": false,
       "venue": "Udine",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 0,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -2626,9 +2645,9 @@
       "pl_home": false,
       "venue": "Udine",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 0,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
