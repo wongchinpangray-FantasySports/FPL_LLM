@@ -1,6 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
-import { PlayerProfileSearch } from "@/components/player/player-profile-search";
+import { PlayersExplorer } from "@/components/player/players-explorer";
+import { loadPlayersExplorerCached } from "@/lib/fpl/players-explorer";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function PlayersSearchPage({
   const { locale } = params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "playersIndex" });
+  const data = await loadPlayersExplorerCached(5);
 
   return (
     <PageShell
@@ -22,7 +24,14 @@ export default async function PlayersSearchPage({
       description={t("description")}
       width="6xl"
     >
-      <PlayerProfileSearch />
+      <PlayersExplorer
+        rows={data.rows}
+        teams={data.teams}
+        horizon={data.horizon}
+        fromGw={data.from_gw}
+        toGw={data.to_gw}
+        assessed={data.assessed}
+      />
     </PageShell>
   );
 }
