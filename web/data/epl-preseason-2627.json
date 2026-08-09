@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-08",
+  "updated_at": "2026-08-09",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -2569,7 +2569,26 @@
       "pl_goals": 3,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "197'",
+          "scorer": "Jan",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "1'",
+          "scorer": "Venezia Bundesliga",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "07'",
+          "scorer": "Stuttgart SV",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2585,7 +2604,20 @@
       "pl_goals": 2,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "7'",
+          "scorer": "Calvert-Lewin",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "109'",
+          "scorer": "Nmecha",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2617,7 +2649,20 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "202'",
+          "scorer": "Aug",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "08'",
+          "scorer": "Friendly Sat",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2697,7 +2742,14 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "201'",
+          "scorer": "January",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
