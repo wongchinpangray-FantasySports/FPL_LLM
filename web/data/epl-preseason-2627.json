@@ -2818,6 +2818,12 @@
           "scorer": "Football Johor",
           "assist": null,
           "side": "opp"
+        },
+        {
+          "minute": "3'",
+          "scorer": "Johor Draw",
+          "assist": null,
+          "side": "opp"
         }
       ],
       "lineup": null
@@ -2831,11 +2837,24 @@
       "pl_home": true,
       "venue": "Anfield",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "1'",
+          "scorer": "Ligue",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "190'",
+          "scorer": "Como",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
