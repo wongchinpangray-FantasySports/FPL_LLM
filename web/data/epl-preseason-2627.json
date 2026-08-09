@@ -2761,11 +2761,24 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "7'",
+          "scorer": "Inacio",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "29'",
+          "scorer": "Karetsas",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2777,11 +2790,36 @@
       "pl_home": true,
       "venue": "Johor",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "3'",
+          "scorer": "Slot",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "2'",
+          "scorer": "Britain Part",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "345'",
+          "scorer": "Travel Partnership",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "3'",
+          "scorer": "Football Johor",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
