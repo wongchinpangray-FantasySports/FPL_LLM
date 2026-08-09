@@ -2537,7 +2537,14 @@
       "pl_goals": 1,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "3'",
+          "scorer": "Friendly Games",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
