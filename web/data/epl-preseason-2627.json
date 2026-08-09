@@ -2809,11 +2809,30 @@
       "pl_home": true,
       "venue": "Seoul",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "57'",
+          "scorer": "Brilliant",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "90'",
+          "scorer": "Rayan",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "1'",
+          "scorer": "Inter Milan",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
