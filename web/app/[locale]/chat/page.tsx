@@ -1,21 +1,11 @@
-import { getTranslations } from "next-intl/server";
-import { PageShell } from "@/components/page-shell";
-import { Chat } from "@/components/chat";
+import { redirect } from "@/i18n/navigation";
 
-export default async function ChatPage() {
-  const t = await getTranslations("chat");
-  const common = await getTranslations("common");
-
-  return (
-    <PageShell
-      backHref="/"
-      backLabel={common("backHome")}
-      eyebrow={t("eyebrow")}
-      title={t("title")}
-      description={t("description")}
-      width="4xl"
-    >
-      <Chat />
-    </PageShell>
-  );
+/** AI chat is not ready for launch — keep route but hide from product UI. */
+export default async function ChatPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  redirect({ href: "/", locale });
 }

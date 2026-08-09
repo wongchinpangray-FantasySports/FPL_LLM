@@ -828,12 +828,6 @@ export function PlannerApp({
           >
             {t("dashboard")}
           </Link>
-          <Link
-            href="/chat"
-            className="rounded-lg border border-brand-accent/25 bg-brand-accent/10 px-3 py-2 text-sm font-medium text-brand-accent transition-colors hover:bg-brand-accent/15"
-          >
-            {t("chat")}
-          </Link>
         </div>
       </section>
 

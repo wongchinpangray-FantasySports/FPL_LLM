@@ -541,26 +541,6 @@ export default async function DashboardPage({
           </table>
         </div>
       </section>
-
-      <section>
-        <Link
-          href="/chat"
-          className="group flex flex-col gap-1 rounded-xl border border-brand-accent/25 bg-brand-accent/[0.06] p-4 transition-colors hover:border-brand-accent/40 hover:bg-brand-accent/[0.09] sm:rounded-2xl sm:p-5 md:flex-row md:items-center md:justify-between md:p-6"
-        >
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.15em] text-brand-accent">
-              {dt("assistantEyebrow")}
-            </p>
-            <p className="mt-1 font-medium text-foreground">{dt("assistantTitle")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {dt("assistantDesc")}
-            </p>
-          </div>
-          <span className="mt-3 shrink-0 text-brand-accent transition-transform group-hover:translate-x-0.5 md:mt-0 md:text-lg">
-            →
-          </span>
-        </Link>
-      </section>
     </div>
   );
   } catch (err) {

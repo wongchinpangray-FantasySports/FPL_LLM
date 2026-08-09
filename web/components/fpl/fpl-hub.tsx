@@ -50,13 +50,6 @@ export function FplHub() {
         </div>
       </section>
 
-      <HubTile
-        href="/chat"
-        title={t("chatTitle")}
-        description={t("chatBody")}
-        accent
-      />
-
       <div className="grid gap-3 sm:grid-cols-2">
         <HubTile href={dashboardHref} title={t("dashboard")} description={t("dashboardBody")} />
         <HubTile href={plannerHref} title={t("planner")} description={t("plannerBody")} />

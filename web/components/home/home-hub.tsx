@@ -1233,7 +1233,6 @@ function HomeFeatureGroups({
     fixtures: string;
     preseason: string;
     historical: string;
-    chat: string;
     mini: string;
     news: string;
     insights: string;
@@ -1257,7 +1256,6 @@ function HomeFeatureGroups({
 
   const tools: FeatureLink[] = [
     { href: "/fpl/insights", label: labels.insights },
-    { href: "/chat", label: labels.chat },
     { href: "/news", label: labels.news },
   ];
 
@@ -1397,7 +1395,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               fixtures: t("exploreFixturesTitle"),
               preseason: t("explorePreseasonTitle"),
               historical: t("exploreHistoricalTitle"),
-              chat: t("exploreChatTitle"),
               mini: t("exploreMiniTitle"),
               news: t("sidebarNews"),
               insights: t("exploreInsightsTitle"),

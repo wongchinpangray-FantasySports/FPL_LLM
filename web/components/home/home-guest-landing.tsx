@@ -113,11 +113,6 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
       href: "/fpl",
     },
     {
-      title: t("guestFeature2Title"),
-      body: t("guestFeature2Body"),
-      href: "/chat",
-    },
-    {
       title: t("guestFeature3Title"),
       body: t("guestFeature3Body"),
       href: "/planner",

@@ -218,7 +218,6 @@ export function SiteHeader() {
               </MenuSection>
 
               <MenuSection title={t("menuSectionTools")}>
-                <MenuLink href="/chat" label={t("chat")} active={pathname === "/chat"} />
                 <MenuLink
                   href="/news"
                   label={t("news")}

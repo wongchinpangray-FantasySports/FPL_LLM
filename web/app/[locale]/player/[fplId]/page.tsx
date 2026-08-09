@@ -375,12 +375,6 @@ export default async function PlayerHubPage({
 
       <section className="flex flex-wrap gap-3 border-t border-border pt-6">
         <Link
-          href="/chat"
-          className="rounded-lg border border-border bg-muted px-4 py-2 text-sm text-foreground/90 transition-colors hover:border-brand-accent/30 hover:text-foreground"
-        >
-          {t("openChat")}
-        </Link>
-        <Link
           href="/dashboard"
           className="rounded-lg border border-border bg-muted px-4 py-2 text-sm text-foreground/90 transition-colors hover:border-brand-accent/30 hover:text-foreground"
         >

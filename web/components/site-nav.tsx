@@ -88,9 +88,6 @@ export function SiteNav() {
       <NavLink href="/" active={pathname === "/"}>
         {t("home")}
       </NavLink>
-      <NavLink href="/chat" active={pathname === "/chat"}>
-        {t("chat")}
-      </NavLink>
 
       <div ref={fplRef} className="relative">
         <button
