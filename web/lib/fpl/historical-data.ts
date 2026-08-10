@@ -28,6 +28,9 @@ import {
   sanitizePlayerQuery,
   scorePlayerSearchMatch,
 } from "@/lib/fpl/player-search";
+import { fplDcPoints } from "@/lib/fpl/dc-points";
+
+export { fplDcPoints } from "@/lib/fpl/dc-points";
 
 const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
 export type HistoricalPosition = (typeof POSITIONS)[number];
@@ -651,6 +654,7 @@ function emptyGameweekStats() {
     expected_assists: 0,
     ict_index: 0,
     defensive_contribution: 0,
+    dc_points: 0,
   };
 }
 
@@ -1706,6 +1710,8 @@ export type HistoricalGameweekRow = {
   expected_assists: number;
   ict_index: number;
   defensive_contribution: number;
+  /** FPL points from hitting the DC threshold (0 or 2; DGW may undercount if stats are aggregated). */
+  dc_points: number;
 };
 
 export type HistoricalPlayerDetail = {
@@ -1713,7 +1719,7 @@ export type HistoricalPlayerDetail = {
   seasonLabel: string;
   gwFrom: number;
   gwTo: number;
-  summary: HistoricalPlayerRow;
+  summary: HistoricalPlayerRow & { dc_points: number };
   gameweeks: HistoricalGameweekRow[];
   hasCurrentProfile: boolean;
 };
@@ -1795,6 +1801,7 @@ export async function loadHistoricalPlayerDetail(
       const opponent = fixtures.length
         ? formatOpponents(teamMap, fixtures)
         : opponentLabel(teamMap, played.opponent_team_id, played.was_home);
+      const dc = played.defensive_contribution;
       gameweeks.push({
         gw,
         kind: "played",
@@ -1810,7 +1817,8 @@ export async function loadHistoricalPlayerDetail(
         expected_goals: Math.round(played.expected_goals * 100) / 100,
         expected_assists: Math.round(played.expected_assists * 100) / 100,
         ict_index: Math.round(played.ict_index * 10) / 10,
-        defensive_contribution: played.defensive_contribution,
+        defensive_contribution: dc,
+        dc_points: fplDcPoints(summary.position, dc),
       });
       continue;
     }
@@ -1831,12 +1839,17 @@ export async function loadHistoricalPlayerDetail(
     .select("fpl_id", { count: "exact", head: true })
     .eq("fpl_id", fplId);
 
+  const dcPointsTotal = gameweeks.reduce(
+    (sum, row) => sum + (row.kind === "played" ? row.dc_points : 0),
+    0,
+  );
+
   return {
     season,
     seasonLabel: seasonLabel(season),
     gwFrom: lo,
     gwTo: hi,
-    summary,
+    summary: { ...summary, dc_points: dcPointsTotal },
     gameweeks,
     hasCurrentProfile: (count ?? 0) > 0,
   };

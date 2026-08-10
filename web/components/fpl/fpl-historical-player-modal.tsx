@@ -28,6 +28,7 @@ type ModalLabels = {
   colApps: string;
   colBps: string;
   colDefcon: string;
+  colDcPts: string;
   colPts90: string;
   colOpponent: string;
   dgw: string;
@@ -210,6 +211,11 @@ export function FplHistoricalPlayerModal({
                     label={labels.colDefcon}
                     value={detail.summary.defensive_contribution}
                   />
+                  <StatCell
+                    label={labels.colDcPts}
+                    value={detail.summary.dc_points}
+                    highlight
+                  />
                 </div>
               </section>
 
@@ -219,7 +225,7 @@ export function FplHistoricalPlayerModal({
                 </h3>
                 {detail.gameweeks.length ? (
                   <div className="overflow-x-auto rounded-xl border border-border">
-                    <table className="w-full min-w-[760px] text-left text-xs">
+                    <table className="w-full min-w-[860px] text-left text-xs">
                       <thead>
                         <tr className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
                           <th className="px-2.5 py-2 font-medium">{labels.colGw}</th>
@@ -233,6 +239,8 @@ export function FplHistoricalPlayerModal({
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colXg}</th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colXa}</th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colIct}</th>
+                          <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colDefcon}</th>
+                          <th className="px-2.5 py-2 font-medium tabular-nums">{labels.colDcPts}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -290,6 +298,12 @@ export function FplHistoricalPlayerModal({
                               {gw.kind === "bgw"
                                 ? "—"
                                 : fmtNum(gw.ict_index, 1)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums">
+                              {statCell(gw.defensive_contribution, gw.kind)}
+                            </td>
+                            <td className="px-2.5 py-2 tabular-nums font-semibold text-foreground">
+                              {statCell(gw.dc_points, gw.kind)}
                             </td>
                           </tr>
                         ))}

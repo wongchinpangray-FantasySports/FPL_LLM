@@ -85,6 +85,7 @@ type Labels = {
   detailColGw: string;
   detailColBps: string;
   detailColDefcon: string;
+  detailColDcPts: string;
   detailColOpponent: string;
   detailDgw: string;
   detailBgw: string;
@@ -518,6 +519,7 @@ export function FplHistoricalData({
       colApps: labels.colApps,
       colBps: labels.detailColBps,
       colDefcon: labels.detailColDefcon,
+      colDcPts: labels.detailColDcPts,
       colPts90: labels.colPts90,
       colOpponent: labels.detailColOpponent,
       dgw: labels.detailDgw,

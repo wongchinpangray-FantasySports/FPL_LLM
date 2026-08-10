@@ -15,6 +15,7 @@ type SortKey =
   | "team"
   | "pos"
   | "defcon"
+  | "dcPts"
   | "defcon90"
   | "cbi"
   | "rec"
@@ -34,6 +35,8 @@ function defconSortValue(row: DefconRow, key: SortKey): string | number | null {
       return row.team;
     case "pos":
       return row.position;
+    case "dcPts":
+      return row.dc_points;
     case "defcon90":
       return row.defensive_contribution_per_90;
     case "cbi":
@@ -68,6 +71,7 @@ export function DefconPanel({
     colTeam: string;
     colPos: string;
     colDefcon: string;
+    colDcPts: string;
     colDefcon90: string;
     colCbi: string;
     colRec: string;
@@ -157,6 +161,13 @@ export function DefconPanel({
                   onSort={() => toggle("defcon")}
                 />
                 <InsightsSortableTh
+                  label={labels.colDcPts}
+                  active={sortKey === "dcPts"}
+                  dir={sortDir}
+                  align="right"
+                  onSort={() => toggle("dcPts")}
+                />
+                <InsightsSortableTh
                   label={labels.colDefcon90}
                   active={sortKey === "defcon90"}
                   dir={sortDir}
@@ -209,6 +220,9 @@ export function DefconPanel({
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums text-brand-accent">
                     {row.defensive_contribution}
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold tabular-nums text-foreground">
+                    {row.dc_points}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
                     {fmtNum(row.defensive_contribution_per_90, 2)}

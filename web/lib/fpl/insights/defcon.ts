@@ -1,5 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase";
+import { chunkArray } from "@/lib/chunk";
+import { fplDcPoints } from "@/lib/fpl/dc-points";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 import {
   loadOfficialFplPlayerIdSet,
   normalizeInsightPlayerRows,
@@ -18,6 +21,8 @@ export type DefconRow = {
   starts: number | null;
   defensive_contribution: number;
   defensive_contribution_per_90: number | null;
+  /** Season FPL points from hitting the DC threshold (sum of 0/2 per GW). */
+  dc_points: number;
   cbi: number | null;
   recoveries: number | null;
   tackles: number | null;
@@ -51,12 +56,60 @@ function toRow(row: Record<string, unknown>): DefconRow {
     starts: num(row.starts),
     defensive_contribution: num(row.defensive_contribution) ?? 0,
     defensive_contribution_per_90: num(row.defensive_contribution_per_90),
+    dc_points: 0,
     cbi: num(row.clearances_blocks_interceptions),
     recoveries: num(row.recoveries),
     tackles: num(row.tackles),
     base_price: num(row.base_price),
     selected_by_percent: num(row.selected_by_percent),
   };
+}
+
+/** Sum per-GW DC points (2 when threshold hit) for the given players. */
+async function loadSeasonDcPoints(
+  rows: DefconRow[],
+  season: string,
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  if (rows.length === 0) return out;
+
+  const positionById = new Map(
+    rows.map((r) => [r.fpl_id, r.position] as const),
+  );
+  const ids = rows.map((r) => r.fpl_id);
+  const supa = getServerSupabase();
+
+  for (const chunk of chunkArray(ids, 100)) {
+    const { data, error } = await supa
+      .from("player_gw_stats")
+      .select("player_id,defensive_contribution")
+      .eq("season", season)
+      .in("player_id", chunk);
+
+    if (error) throw new Error(error.message);
+
+    for (const raw of data ?? []) {
+      const r = raw as Record<string, unknown>;
+      const pid = Number(r.player_id);
+      if (!Number.isFinite(pid)) continue;
+      const pts = fplDcPoints(
+        positionById.get(pid),
+        num(r.defensive_contribution) ?? 0,
+      );
+      out.set(pid, (out.get(pid) ?? 0) + pts);
+    }
+  }
+
+  return out;
+}
+
+async function attachDcPoints(rows: DefconRow[]): Promise<DefconRow[]> {
+  const season = await getCurrentFplSeason();
+  const ptsById = await loadSeasonDcPoints(rows, season);
+  return rows.map((row) => ({
+    ...row,
+    dc_points: ptsById.get(row.fpl_id) ?? 0,
+  }));
 }
 
 export async function loadDefconLeadersRaw(opts?: {
@@ -81,12 +134,12 @@ export async function loadDefconLeadersRaw(opts?: {
     (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
     officialIds,
   );
-  return { rows };
+  return { rows: await attachDcPoints(rows) };
 }
 
 export const loadDefconLeaders = unstable_cache(
   async () => loadDefconLeadersRaw(),
-  ["fpl-insights-defcon-v2"],
+  ["fpl-insights-defcon-v3"],
   { revalidate: 300 },
 );
 
@@ -115,10 +168,9 @@ export async function loadDefconLeadersFiltered(opts: {
   const officialIds = await loadOfficialFplPlayerIdSet();
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return {
-    rows: normalizeDefconRows(
-      (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
-      officialIds,
-    ),
-  };
+  const rows = normalizeDefconRows(
+    (data ?? []).map((r) => toRow(r as Record<string, unknown>)),
+    officialIds,
+  );
+  return { rows: await attachDcPoints(rows) };
 }

@@ -1522,6 +1522,7 @@
       "colTeam": "俱乐部",
       "colPos": "位置",
       "colDefcon": "Defcon",
+      "colDcPts": "防守贡献分",
       "colDefcon90": "Defcon/90",
       "colCbi": "CBI",
       "colRec": "夺回",
@@ -1887,6 +1888,7 @@
     "detailColGw": "轮次",
     "detailColBps": "BPS",
     "detailColDefcon": "防守贡献",
+    "detailColDcPts": "防守贡献分",
     "detailColOpponent": "对手",
     "detailDgw": "双赛",
     "detailBgw": "空轮"

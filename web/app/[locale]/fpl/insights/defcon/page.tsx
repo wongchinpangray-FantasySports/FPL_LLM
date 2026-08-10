@@ -37,6 +37,7 @@ export default async function DefconPage({ params }: Props) {
           colTeam: t("defcon.colTeam"),
           colPos: t("defcon.colPos"),
           colDefcon: t("defcon.colDefcon"),
+          colDcPts: t("defcon.colDcPts"),
           colDefcon90: t("defcon.colDefcon90"),
           colCbi: t("defcon.colCbi"),
           colRec: t("defcon.colRec"),

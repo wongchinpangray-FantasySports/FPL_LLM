@@ -1522,6 +1522,7 @@
       "colTeam": "Team",
       "colPos": "Pos",
       "colDefcon": "Defcon",
+      "colDcPts": "DC pts",
       "colDefcon90": "Defcon/90",
       "colCbi": "CBI",
       "colRec": "Rec",
@@ -1887,6 +1888,7 @@
     "detailColGw": "GW",
     "detailColBps": "BPS",
     "detailColDefcon": "Def. contr.",
+    "detailColDcPts": "DC pts",
     "detailColOpponent": "Opponent",
     "detailDgw": "DGW",
     "detailBgw": "BGW"
