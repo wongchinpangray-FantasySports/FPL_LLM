@@ -3,7 +3,11 @@ import { getCurrentFplSeason } from "@/lib/fpl-season";
 
 export interface MiniGameweekContext {
   season: string;
-  /** GW open for new submissions (FPL `is_next` before deadline). */
+  /**
+   * GW open for submissions (FPL `is_next` while before deadline).
+   * Deadline is FPL's official `deadline_time` ≈ 90 minutes before the
+   * first kickoff of that GW. Users may upsert picks unlimited times until then.
+   */
   submission_gw: number | null;
   submission_open: boolean;
   deadline_time: string | null;

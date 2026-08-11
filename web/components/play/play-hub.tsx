@@ -42,12 +42,6 @@ export function PlayHub() {
         description={t("miniFplBody")}
         accent
       />
-      <HubTile
-        href="/play/wc-mini"
-        title={t("miniWcTitle")}
-        description={t("miniWcBody")}
-        accent
-      />
     </div>
   );
 }

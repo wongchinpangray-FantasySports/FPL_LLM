@@ -240,11 +240,6 @@ export function SiteHeader() {
                   label={t("miniFpl")}
                   active={pathname === "/play/mini" || pathname === "/mini"}
                 />
-                <MenuLink
-                  href="/play/wc-mini"
-                  label={t("miniWc")}
-                  active={pathname === "/play/wc-mini"}
-                />
               </MenuSection>
 
               <MenuSection title={t("menuSectionWorldCup")}>
