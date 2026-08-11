@@ -11,16 +11,26 @@ import {
   rowToMiniPlayerDisplay,
 } from "@/lib/mini/player-stats";
 import type { MiniPickStored } from "@/lib/mini/types";
+import { mergeBadges, type MiniBadgeId } from "@/lib/mini/badges";
+import { getMiniHotPicks } from "@/lib/mini/hot-picks";
+import {
+  guestEntryIdFromProfileId,
+  isValidNickname,
+  sanitizeNickname,
+} from "@/lib/mini/profile";
 
 export const dynamic = "force-dynamic";
 
 interface SubmitBody {
   entry_id?: number;
   entry_name?: string;
+  nickname?: string;
+  profile_id?: string;
   gw?: number;
   picks?: number[];
   captain_fpl_id?: number;
   vice_fpl_id?: number;
+  used_template?: boolean;
 }
 
 export async function POST(req: Request) {
@@ -31,9 +41,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const entryId = Number(body.entry_id);
-  if (!Number.isInteger(entryId) || entryId <= 0) {
-    return NextResponse.json({ error: "Valid entry_id is required" }, { status: 400 });
+  const profileId =
+    typeof body.profile_id === "string" ? body.profile_id.trim() : "";
+  const nicknameRaw = body.nickname ?? body.entry_name ?? "";
+  const hasNickname = isValidNickname(nicknameRaw);
+  const nickname = hasNickname ? sanitizeNickname(nicknameRaw) : null;
+
+  let entryId = Number(body.entry_id);
+  if (profileId && (!Number.isInteger(entryId) || entryId <= 0)) {
+    entryId = guestEntryIdFromProfileId(profileId);
+  }
+  if (!Number.isInteger(entryId) || entryId === 0) {
+    return NextResponse.json(
+      { error: "Valid entry_id or profile_id is required" },
+      { status: 400 },
+    );
+  }
+  if (!profileId && entryId < 0) {
+    return NextResponse.json(
+      { error: "profile_id is required for guest entries" },
+      { status: 400 },
+    );
+  }
+  if (!hasNickname && entryId < 0) {
+    return NextResponse.json(
+      { error: "Nickname must be 2–24 characters" },
+      { status: 400 },
+    );
   }
 
   const pickIds = body.picks;
@@ -106,25 +140,78 @@ export async function POST(req: Request) {
   }
 
   const picksStored: MiniPickStored[] = pickIds.map((id) => byId.get(id)!);
+  const unlock: MiniBadgeId[] = ["first_squad", "gw_ready"];
+  if (body.used_template) unlock.push("template_starter");
+
+  try {
+    const hot = await getMiniHotPicks(gwMeta.gw, 8);
+    const topOwned = hot.picks.slice(0, 5).map((p) => p.fpl_id);
+    if (topOwned.includes(captainFplId)) {
+      unlock.push("hot_captain");
+    }
+  } catch {
+    // Hot picks optional for badge unlock
+  }
+
+  let newlyUnlocked: MiniBadgeId[] = unlock;
+  if (profileId) {
+    const { data: existing, error: readProfErr } = await supa
+      .from("mini_profiles")
+      .select("badges")
+      .eq("id", profileId)
+      .maybeSingle();
+
+    if (!readProfErr) {
+      const prev = (existing?.badges as string[] | null) ?? [];
+      const badges = mergeBadges(prev, unlock);
+      newlyUnlocked = unlock.filter((id) => !prev.includes(id));
+      const { error: profErr } = await supa.from("mini_profiles").upsert(
+        {
+          id: profileId,
+          nickname: nickname ?? "Manager",
+          fpl_entry_id: entryId > 0 ? entryId : null,
+          badges,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      );
+      if (profErr && !/schema cache|does not exist|Could not find/i.test(profErr.message)) {
+        return NextResponse.json({ error: profErr.message }, { status: 500 });
+      }
+    }
+  }
 
   const entryName =
-    typeof body.entry_name === "string" && body.entry_name.trim()
+    nickname ??
+    (typeof body.entry_name === "string" && body.entry_name.trim()
       ? body.entry_name.trim().slice(0, 80)
-      : null;
+      : null);
 
-  const { error: upErr } = await supa.from("mini_entries").upsert(
-    {
-      entry_id: entryId,
-      gw: gwMeta.gw,
-      season: gwMeta.season,
-      entry_name: entryName,
-      picks: picksStored,
-      captain_fpl_id: captainFplId,
-      vice_fpl_id: viceFplId,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "entry_id,gw,season" },
-  );
+  const baseRow = {
+    entry_id: entryId,
+    gw: gwMeta.gw,
+    season: gwMeta.season,
+    entry_name: entryName,
+    picks: picksStored,
+    captain_fpl_id: captainFplId,
+    vice_fpl_id: viceFplId,
+    updated_at: new Date().toISOString(),
+  };
+
+  let upErr = (
+    await supa.from("mini_entries").upsert(
+      { ...baseRow, profile_id: profileId || null },
+      { onConflict: "entry_id,gw,season" },
+    )
+  ).error;
+
+  if (upErr && /profile_id|schema cache|does not exist/i.test(upErr.message)) {
+    upErr = (
+      await supa.from("mini_entries").upsert(baseRow, {
+        onConflict: "entry_id,gw,season",
+      })
+    ).error;
+  }
 
   if (upErr) {
     return NextResponse.json({ error: upErr.message }, { status: 500 });
@@ -133,11 +220,13 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     entry_id: entryId,
+    profile_id: profileId || null,
     gw: gwMeta.gw,
     season: gwMeta.season,
     deadline_time: gwMeta.deadline_time,
     picks: picksStored,
     captain_fpl_id: captainFplId,
     vice_fpl_id: viceFplId,
+    newly_unlocked: newlyUnlocked,
   });
 }

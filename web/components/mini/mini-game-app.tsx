@@ -23,6 +23,29 @@ import {
 import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 import { MiniModal, MiniModalActions } from "@/components/mini/mini-modal";
 import { MiniPlayerPicker } from "@/components/mini/mini-player-picker";
+import {
+  MiniTemplates,
+  type MiniTemplatePayload,
+} from "@/components/mini/mini-templates";
+import {
+  MiniHotPicks,
+  type MiniHotPickRow,
+} from "@/components/mini/mini-hot-picks";
+import { MiniBadges } from "@/components/mini/mini-badges";
+import { MiniShareCard } from "@/components/mini/mini-share-card";
+import { MiniLeaguesPanel } from "@/components/mini/mini-leagues-panel";
+import type { MiniBadgeId } from "@/lib/mini/badges";
+import {
+  MINI_NICKNAME_KEY,
+  MINI_PROFILE_ID_KEY,
+  MINI_USED_TEMPLATE_KEY,
+  guestEntryIdFromProfileId,
+  isValidNickname,
+  newMiniProfileId,
+  sanitizeNickname,
+} from "@/lib/mini/profile";
+
+const MINI_BADGES_KEY = "miniBadges";
 
 type PlayerHit = MiniPlayerDisplay;
 
@@ -44,6 +67,16 @@ type LeaderboardRow = {
   picks: MiniPickStored[];
   updated_at: string;
 };
+
+type SeasonRow = {
+  rank: number;
+  entry_id: number;
+  entry_name: string | null;
+  total_points: number;
+  gws_played: number;
+};
+
+type TabId = "pick" | "leaderboard" | "season" | "social";
 
 const EMPTY_SLOTS: (PlayerHit | null)[] = Array.from(
   { length: MINI_SLOT_COUNT },
@@ -86,9 +119,28 @@ function formatDeadline(iso: string | null, locale: string): string {
   }
 }
 
+function readLocal(key: string): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeLocal(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function MiniGameApp({ locale }: { locale: string }) {
   const t = useTranslations("mini");
   const { entryId: storedEntryId, setEntryId } = useEntryId();
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [nickname, setNickname] = useState("");
   const [entryInput, setEntryInput] = useState("");
   const [ctx, setCtx] = useState<MiniContext | null>(null);
   const [slots, setSlots] = useState<(PlayerHit | null)[]>([...EMPTY_SLOTS]);
@@ -108,13 +160,48 @@ export function MiniGameApp({ locale }: { locale: string }) {
     submission_open: boolean;
   } | null>(null);
   const [lbLoading, setLbLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pick" | "leaderboard">("pick");
+  const [activeTab, setActiveTab] = useState<TabId>("pick");
+  const [templates, setTemplates] = useState<MiniTemplatePayload[]>([]);
+  const [hotPicks, setHotPicks] = useState<MiniHotPickRow[]>([]);
+  const [hotEntries, setHotEntries] = useState(0);
+  const [hotGw, setHotGw] = useState<number | null>(null);
+  const [badges, setBadges] = useState<MiniBadgeId[]>([]);
+  const [badgeFlash, setBadgeFlash] = useState<MiniBadgeId[]>([]);
+  const [usedTemplate, setUsedTemplate] = useState(false);
+  const [seasonRows, setSeasonRows] = useState<SeasonRow[]>([]);
+  const [seasonLoading, setSeasonLoading] = useState(false);
 
-  const entryId = entryInput.trim() || storedEntryId || "";
   const picks = useMemo(() => slotsToPicks(slots), [slots]);
   const submissionOpen = Boolean(ctx?.submission_open);
 
+  const effectiveEntryId = useMemo(() => {
+    const typed = entryInput.trim();
+    if (/^\d+$/.test(typed)) return Number(typed);
+    if (profileId) return guestEntryIdFromProfileId(profileId);
+    return null;
+  }, [entryInput, profileId]);
+
+  const myRank = useMemo(() => {
+    if (effectiveEntryId == null) return null;
+    return leaderboard.find((r) => r.entry_id === effectiveEntryId) ?? null;
+  }, [leaderboard, effectiveEntryId]);
+
   useEffect(() => {
+    let pid = readLocal(MINI_PROFILE_ID_KEY);
+    if (!pid) {
+      pid = newMiniProfileId();
+      writeLocal(MINI_PROFILE_ID_KEY, pid);
+    }
+    setProfileId(pid);
+    const nick = readLocal(MINI_NICKNAME_KEY);
+    if (nick) setNickname(nick);
+    if (readLocal(MINI_USED_TEMPLATE_KEY) === "1") setUsedTemplate(true);
+    try {
+      const raw = readLocal(MINI_BADGES_KEY);
+      if (raw) setBadges(JSON.parse(raw) as MiniBadgeId[]);
+    } catch {
+      /* ignore */
+    }
     if (storedEntryId) setEntryInput(storedEntryId);
   }, [storedEntryId]);
 
@@ -122,6 +209,23 @@ export function MiniGameApp({ locale }: { locale: string }) {
     setNoticeMessage(message);
     setNoticeOpen(true);
   }, []);
+
+  const absorbBadges = useCallback((unlocked: MiniBadgeId[]) => {
+    if (!unlocked.length) return;
+    setBadges((prev) => {
+      const trulyNew = unlocked.filter((id) => !prev.includes(id));
+      if (!trulyNew.length) return prev;
+      const next = Array.from(new Set([...prev, ...trulyNew])) as MiniBadgeId[];
+      writeLocal(MINI_BADGES_KEY, JSON.stringify(next));
+      setBadgeFlash(trulyNew);
+      showNotice(
+        trulyNew.length === 1
+          ? t("badgeUnlockedOne")
+          : t("badgeUnlockedMany", { n: trulyNew.length }),
+      );
+      return next;
+    });
+  }, [showNotice, t]);
 
   const loadContext = useCallback(async () => {
     const res = await fetch("/api/mini/context");
@@ -137,7 +241,6 @@ export function MiniGameApp({ locale }: { locale: string }) {
         gw?: number;
         submission_gw?: number | null;
         submission_open?: boolean;
-        error?: string;
       };
       if (res.ok) {
         setLeaderboard(data.rows ?? []);
@@ -152,9 +255,72 @@ export function MiniGameApp({ locale }: { locale: string }) {
     }
   }, []);
 
-  const loadExistingEntry = useCallback(async (eid: string) => {
-    if (!/^\d+$/.test(eid)) return;
-    const res = await fetch(`/api/mini/entry?entry_id=${encodeURIComponent(eid)}`);
+  const loadExtras = useCallback(async () => {
+    const [tplRes, hotRes] = await Promise.all([
+      fetch("/api/mini/templates"),
+      fetch("/api/mini/hot-picks"),
+    ]);
+    if (tplRes.ok) {
+      const data = (await tplRes.json()) as { templates?: MiniTemplatePayload[] };
+      setTemplates(data.templates ?? []);
+    }
+    if (hotRes.ok) {
+      const data = (await hotRes.json()) as {
+        gw?: number;
+        entries?: number;
+        picks?: MiniHotPickRow[];
+      };
+      setHotGw(data.gw ?? null);
+      setHotEntries(data.entries ?? 0);
+      setHotPicks(data.picks ?? []);
+    }
+  }, []);
+
+  const loadProfile = useCallback(async (pid: string) => {
+    const res = await fetch(
+      `/api/mini/profile?profile_id=${encodeURIComponent(pid)}`,
+    );
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      profile: {
+        nickname?: string;
+        fpl_entry_id?: number | null;
+        badges?: MiniBadgeId[];
+      } | null;
+    };
+    if (!data.profile) return;
+    const profile = data.profile;
+    if (profile.nickname) {
+      setNickname(profile.nickname);
+      writeLocal(MINI_NICKNAME_KEY, profile.nickname);
+    }
+    if (profile.fpl_entry_id) {
+      setEntryInput(String(profile.fpl_entry_id));
+    }
+    setBadges((prev) => {
+      const merged = Array.from(
+        new Set([...(prev ?? []), ...(profile.badges ?? [])]),
+      ) as MiniBadgeId[];
+      writeLocal(MINI_BADGES_KEY, JSON.stringify(merged));
+      return merged;
+    });
+  }, []);
+
+  const loadSeason = useCallback(async () => {
+    setSeasonLoading(true);
+    try {
+      const res = await fetch("/api/mini/season-ladder");
+      if (res.ok) {
+        const data = (await res.json()) as { rows?: SeasonRow[] };
+        setSeasonRows(data.rows ?? []);
+      }
+    } finally {
+      setSeasonLoading(false);
+    }
+  }, []);
+
+  const loadExistingEntry = useCallback(async (eid: number) => {
+    const res = await fetch(`/api/mini/entry?entry_id=${eid}`);
     if (!res.ok) return;
     const data = (await res.json()) as {
       entry: {
@@ -163,12 +329,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
         vice_fpl_id: number;
       } | null;
     };
-    if (!data.entry) {
-      setSlots([...EMPTY_SLOTS]);
-      setCaptainId(null);
-      setViceId(null);
-      return;
-    }
+    if (!data.entry) return;
     const restored: PlayerHit[] = data.entry.picks.map((p) => ({
       fpl_id: p.fpl_id,
       web_name: p.web_name,
@@ -194,7 +355,12 @@ export function MiniGameApp({ locale }: { locale: string }) {
   useEffect(() => {
     void loadContext();
     void loadLeaderboard();
-  }, [loadContext, loadLeaderboard]);
+    void loadExtras();
+  }, [loadContext, loadLeaderboard, loadExtras]);
+
+  useEffect(() => {
+    if (profileId) void loadProfile(profileId);
+  }, [profileId, loadProfile]);
 
   useEffect(() => {
     if (!ctx || ctx.scoring_finished) return;
@@ -203,10 +369,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
   }, [ctx, loadLeaderboard]);
 
   useEffect(() => {
-    if (entryId && /^\d+$/.test(entryId)) void loadExistingEntry(entryId);
-  }, [entryId, loadExistingEntry, ctx?.submission_gw]);
+    if (effectiveEntryId != null) void loadExistingEntry(effectiveEntryId);
+  }, [effectiveEntryId, loadExistingEntry, ctx?.submission_gw]);
 
-  const posCounts = useMemo(() => countMiniByPosition(picks.map(toPickInput)), [picks]);
+  useEffect(() => {
+    if (activeTab === "season") void loadSeason();
+  }, [activeTab, loadSeason]);
+
+  const posCounts = useMemo(
+    () => countMiniByPosition(picks.map(toPickInput)),
+    [picks],
+  );
 
   const validationIssues = useMemo(() => {
     const inputs = picks.map(toPickInput);
@@ -224,11 +397,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
   }, [picks, captainId, viceId, t]);
 
   const squadComplete = picks.length === 5 && validationIssues.length === 0;
-
+  const nicknameOk = isValidNickname(nickname);
   const canSubmit = Boolean(
-    submissionOpen &&
-    squadComplete &&
-    /^\d+$/.test(entryInput.trim()),
+    submissionOpen && squadComplete && nicknameOk && profileId,
   );
 
   function assignPlayerToSlot(slotIndex: number, player: PlayerHit) {
@@ -287,10 +458,39 @@ export function MiniGameApp({ locale }: { locale: string }) {
     setPickerSlot(slotIndex);
   }
 
+  function applyTemplate(tpl: MiniTemplatePayload) {
+    if (!submissionOpen) {
+      showNotice(t("submissionsClosed"));
+      return;
+    }
+    const restored: PlayerHit[] = tpl.players.map((p) => ({
+      fpl_id: p.fpl_id,
+      web_name: p.web_name,
+      team: p.team,
+      team_id: p.team_id,
+      position: p.position,
+      base_price: p.base_price ?? null,
+      status: p.status ?? null,
+      form: p.form ?? null,
+      total_points: p.total_points ?? null,
+      points_per_game: p.points_per_game ?? null,
+      selected_by_percent: p.selected_by_percent ?? null,
+      goals_scored: p.goals_scored ?? null,
+      assists: p.assists ?? null,
+      expected_goals: p.expected_goals ?? null,
+      expected_assists: p.expected_assists ?? null,
+    }));
+    setSlots(picksToSlots(restored));
+    setCaptainId(tpl.captain_fpl_id);
+    setViceId(tpl.vice_fpl_id);
+    setUsedTemplate(true);
+    writeLocal(MINI_USED_TEMPLATE_KEY, "1");
+    showNotice(t("templateApplied"));
+  }
+
   async function performSubmit() {
-    const eid = entryInput.trim();
-    if (!/^\d+$/.test(eid)) {
-      showNotice(t("invalidEntry"));
+    if (!nicknameOk || !profileId) {
+      showNotice(t("invalidNickname"));
       return;
     }
     if (!squadComplete) {
@@ -303,23 +503,32 @@ export function MiniGameApp({ locale }: { locale: string }) {
     }
 
     setSubmitStatus("loading");
-    setEntryId(eid);
+    const nick = sanitizeNickname(nickname);
+    writeLocal(MINI_NICKNAME_KEY, nick);
+
+    const typed = entryInput.trim();
+    const fplId = /^\d+$/.test(typed) ? Number(typed) : null;
+    if (fplId != null) setEntryId(String(fplId));
 
     const res = await fetch("/api/mini/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        entry_id: Number(eid),
+        profile_id: profileId,
+        nickname: nick,
+        entry_id: fplId ?? undefined,
         picks: picks.map((p) => p.fpl_id),
         captain_fpl_id: captainId,
         vice_fpl_id: viceId,
         gw: ctx.submission_gw ?? undefined,
+        used_template: usedTemplate,
       }),
     });
 
     const data = (await res.json()) as {
       error?: string;
       issues?: { message: string }[];
+      newly_unlocked?: MiniBadgeId[];
     };
     if (!res.ok) {
       setSubmitStatus("error");
@@ -327,14 +536,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
       return;
     }
     setSubmitStatus("ok");
+    if (data.newly_unlocked?.length) absorbBadges(data.newly_unlocked);
     void loadLeaderboard();
+    void loadExtras();
+    void loadProfile(profileId);
   }
 
   function onSubmitClick() {
     if (!canSubmit) {
-      if (picks.length < 5) showNotice(t("needFivePlayers"));
+      if (!nicknameOk) showNotice(t("invalidNickname"));
+      else if (picks.length < 5) showNotice(t("needFivePlayers"));
       else if (validationIssues[0]) showNotice(validationIssues[0].message);
-      else if (!/^\d+$/.test(entryInput.trim())) showNotice(t("invalidEntry"));
       else showNotice(t("submissionsClosed"));
       return;
     }
@@ -343,9 +555,14 @@ export function MiniGameApp({ locale }: { locale: string }) {
 
   const submissionGw = ctx?.submission_gw;
   const pickerTitle =
-    pickerSlot === MINI_GK_SLOT
-      ? t("pickerTitleGk")
-      : t("pickerTitleOut");
+    pickerSlot === MINI_GK_SLOT ? t("pickerTitleGk") : t("pickerTitleOut");
+
+  const tabs: { id: TabId; label: string }[] = [
+    { id: "pick", label: t("tabPick") },
+    { id: "leaderboard", label: t("tabLeaderboard") },
+    { id: "season", label: t("tabSeason") },
+    { id: "social", label: t("tabSocial") },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -361,46 +578,66 @@ export function MiniGameApp({ locale }: { locale: string }) {
         <p className="mt-1 text-xs text-muted-foreground">{t("rulesShort")}</p>
       </div>
 
-      <div className="flex gap-2 border-b border-border pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab("pick")}
-          className={`rounded-md px-3 py-1.5 text-sm ${
-            activeTab === "pick"
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {t("tabPick")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("leaderboard")}
-          className={`rounded-md px-3 py-1.5 text-sm ${
-            activeTab === "leaderboard"
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {t("tabLeaderboard")}
-        </button>
+      <div className="flex flex-wrap gap-2 border-b border-border pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm",
+              activeTab === tab.id
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === "pick" ? (
         <div className="flex flex-col gap-6">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t("entryLabel")}
-            </label>
-            <Input
-              inputMode="numeric"
-              pattern="\d*"
-              placeholder={t("entryPlaceholder")}
-              value={entryInput}
-              onChange={(e) => setEntryInput(e.target.value)}
-              className="max-w-xs"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t("nicknameLabel")}
+              </label>
+              <Input
+                placeholder={t("nicknamePlaceholder")}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="max-w-xs"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("nicknameHint")}
+              </p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t("entryLabelOptional")}
+              </label>
+              <Input
+                inputMode="numeric"
+                pattern="\d*"
+                placeholder={t("entryPlaceholder")}
+                value={entryInput}
+                onChange={(e) => setEntryInput(e.target.value)}
+                className="max-w-xs"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("entryOptionalHint")}
+              </p>
+            </div>
           </div>
+
+          <MiniTemplates
+            templates={templates}
+            disabled={!submissionOpen}
+            onApply={applyTemplate}
+          />
+
+          <MiniHotPicks gw={hotGw} entries={hotEntries} picks={hotPicks} />
 
           <div>
             <p className="mb-2 text-sm text-muted-foreground">{t("pitchHint")}</p>
@@ -454,10 +691,26 @@ export function MiniGameApp({ locale }: { locale: string }) {
             {submitStatus === "loading" ? t("submitting") : t("submit")}
           </Button>
           {!canSubmit && picks.length < 5 ? (
-            <p className="text-center text-xs text-muted-foreground">{t("submitLocked")}</p>
+            <p className="text-center text-xs text-muted-foreground">
+              {t("submitLocked")}
+            </p>
           ) : null}
+
+          <MiniShareCard
+            locale={locale}
+            nickname={sanitizeNickname(nickname) || "Manager"}
+            gw={ctx?.submission_gw ?? lbGw}
+            rank={myRank?.rank ?? null}
+            totalPoints={myRank?.total_points ?? null}
+            picks={picks}
+            captainId={captainId}
+          />
+
+          <MiniBadges unlocked={badges} highlight={badgeFlash} />
         </div>
-      ) : (
+      ) : null}
+
+      {activeTab === "leaderboard" ? (
         <div>
           <div className="mb-4 flex items-center justify-between gap-2">
             <div className="text-sm text-muted-foreground">
@@ -516,9 +769,11 @@ export function MiniGameApp({ locale }: { locale: string }) {
                         <span className="text-foreground">
                           {row.entry_name ?? `#${row.entry_id}`}
                         </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {row.entry_id}
-                        </span>
+                        {row.entry_id > 0 ? (
+                          <span className="block text-xs text-muted-foreground">
+                            {row.entry_id}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2 font-semibold text-brand-accent">
                         {row.total_points}
@@ -527,9 +782,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
                         {row.captain_name ?? "—"}
                       </td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {row.picks
-                          .map((p) => p.web_name ?? p.fpl_id)
-                          .join(", ")}
+                        {row.picks.map((p) => p.web_name ?? p.fpl_id).join(", ")}
                       </td>
                     </tr>
                   ))}
@@ -538,7 +791,44 @@ export function MiniGameApp({ locale }: { locale: string }) {
             </div>
           )}
         </div>
-      )}
+      ) : null}
+
+      {activeTab === "season" ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">
+            {t("seasonTitle")}
+          </h3>
+          <p className="text-xs text-muted-foreground">{t("seasonHint")}</p>
+          {seasonLoading ? (
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
+          ) : seasonRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("seasonEmpty")}</p>
+          ) : (
+            <ol className="divide-y divide-border rounded-xl border border-border text-sm">
+              {seasonRows.map((row) => (
+                <li
+                  key={`${row.entry_id}-${row.rank}`}
+                  className="flex items-center justify-between px-3 py-2"
+                >
+                  <span>
+                    #{row.rank}{" "}
+                    <span className="font-medium">
+                      {row.entry_name ?? `#${row.entry_id}`}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {row.total_points} · {t("leagueGws", { n: row.gws_played })}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      ) : null}
+
+      {activeTab === "social" ? (
+        <MiniLeaguesPanel profileId={profileId} onBadge={absorbBadges} />
+      ) : null}
 
       <MiniPlayerPicker
         open={pickerSlot != null}
