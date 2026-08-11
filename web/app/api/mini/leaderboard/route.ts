@@ -3,6 +3,7 @@ import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
 import { scoreMiniSquad } from "@/lib/mini/scoring";
+import { getMiniOwnershipSnapshot } from "@/lib/mini/hot-picks";
 import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 
 export const dynamic = "force-dynamic";
@@ -67,15 +68,36 @@ export async function GET(req: Request) {
     }
   }
 
+  let ownedById: Record<number, number> = {};
+  let miniEntries = rows.length;
+  try {
+    const snap = await getMiniOwnershipSnapshot(gw, season);
+    ownedById = snap.owned_by_id;
+    miniEntries = snap.entries;
+  } catch {
+    /* ownership optional */
+  }
+
   const leaderboard = rows
     .map((row) => {
       const picks = row.picks as MiniPickStored[];
       const pickIds = picks.map((p) => p.fpl_id);
+      const fplOwnedById: Record<number, number> = {};
+      for (const p of picks) {
+        if (p.selected_by_percent != null) {
+          fplOwnedById[p.fpl_id] = p.selected_by_percent;
+        }
+      }
       const scored = scoreMiniSquad(
         pickIds,
         row.captain_fpl_id,
         row.vice_fpl_id,
         statsByPlayer,
+        {
+          miniOwnedById: ownedById,
+          fplOwnedById,
+          miniEntries,
+        },
       );
       const capPick = picks.find((p) => p.fpl_id === row.captain_fpl_id);
       const vicePick = picks.find((p) => p.fpl_id === row.vice_fpl_id);
@@ -84,6 +106,8 @@ export async function GET(req: Request) {
         entry_name: row.entry_name,
         total_points: scored.total,
         doubled_player_id: scored.doubled_player_id,
+        differential_bonus: scored.differential_bonus,
+        differential_captain: scored.differential_captain,
         captain_name: capPick?.web_name ?? null,
         vice_name: vicePick?.web_name ?? null,
         picks,

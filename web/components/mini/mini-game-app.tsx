@@ -28,13 +28,19 @@ import {
   type MiniTemplatePayload,
 } from "@/components/mini/mini-templates";
 import {
-  MiniHotPicks,
+  MiniCrowdVsDiff,
   type MiniHotPickRow,
-} from "@/components/mini/mini-hot-picks";
+} from "@/components/mini/mini-crowd-vs-diff";
+import { MiniMissionPanel } from "@/components/mini/mini-mission-panel";
 import { MiniBadges } from "@/components/mini/mini-badges";
 import { MiniShareCard } from "@/components/mini/mini-share-card";
 import { MiniLeaguesPanel } from "@/components/mini/mini-leagues-panel";
 import type { MiniBadgeId } from "@/lib/mini/badges";
+import {
+  evaluateMission,
+  isDifferentialPick,
+  type MiniMissionId,
+} from "@/lib/mini/incentives";
 import {
   MINI_NICKNAME_KEY,
   MINI_PROFILE_ID_KEY,
@@ -56,6 +62,12 @@ type MiniContext = {
   deadline_time: string | null;
   scoring_gw: number;
   scoring_finished: boolean;
+  mission?: {
+    gw: number;
+    id: MiniMissionId;
+    titleKey: string;
+    bodyKey: string;
+  };
 };
 
 type LeaderboardRow = {
@@ -64,6 +76,8 @@ type LeaderboardRow = {
   entry_name: string | null;
   total_points: number;
   captain_name: string | null;
+  differential_captain?: boolean;
+  differential_bonus?: number;
   picks: MiniPickStored[];
   updated_at: string;
 };
@@ -163,6 +177,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const [activeTab, setActiveTab] = useState<TabId>("pick");
   const [templates, setTemplates] = useState<MiniTemplatePayload[]>([]);
   const [hotPicks, setHotPicks] = useState<MiniHotPickRow[]>([]);
+  const [diffPicks, setDiffPicks] = useState<MiniHotPickRow[]>([]);
   const [hotEntries, setHotEntries] = useState(0);
   const [hotGw, setHotGw] = useState<number | null>(null);
   const [miniOwnedById, setMiniOwnedById] = useState<Record<number, number>>(
@@ -272,11 +287,13 @@ export function MiniGameApp({ locale }: { locale: string }) {
         gw?: number;
         entries?: number;
         picks?: MiniHotPickRow[];
+        differentials?: MiniHotPickRow[];
         owned_by_id?: Record<number, number>;
       };
       setHotGw(data.gw ?? null);
       setHotEntries(data.entries ?? 0);
       setHotPicks(data.picks ?? []);
+      setDiffPicks(data.differentials ?? []);
       setMiniOwnedById(data.owned_by_id ?? {});
     }
   }, []);
@@ -406,6 +423,30 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const canSubmit = Boolean(
     submissionOpen && squadComplete && nicknameOk && profileId,
   );
+
+  const missionLive = useMemo(() => {
+    if (!ctx?.mission || picks.length !== 5 || captainId == null) {
+      return { completed: false, diffCaptainReady: false };
+    }
+    const completed = evaluateMission({
+      missionId: ctx.mission.id,
+      picks: picks.map((p) => ({
+        fpl_id: p.fpl_id,
+        team_id: p.team_id,
+        selected_by_percent: p.selected_by_percent,
+      })),
+      captainFplId: captainId,
+      miniOwnedById,
+      miniEntries: hotEntries,
+    });
+    const cap = picks.find((p) => p.fpl_id === captainId);
+    const diffCaptainReady = isDifferentialPick({
+      miniOwnedPct: miniOwnedById[captainId] ?? null,
+      fplOwnedPct: cap?.selected_by_percent ?? null,
+      miniEntries: hotEntries,
+    });
+    return { completed, diffCaptainReady };
+  }, [ctx?.mission, picks, captainId, miniOwnedById, hotEntries]);
 
   function assignPlayerToSlot(slotIndex: number, player: PlayerHit) {
     if (slotIndex === MINI_GK_SLOT && player.position !== "GKP") {
@@ -581,6 +622,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
             : t("statusClosed", { gw: ctx?.scoring_gw ?? "—" })}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{t("rulesShort")}</p>
+        <p className="mt-2 text-xs font-medium text-brand-accent">
+          {t("diffCaptainReward", {
+            pct: 10,
+            bonus: 2,
+          })}
+          {missionLive.diffCaptainReady ? (
+            <span className="ml-1 text-foreground/70">
+              {t("diffCaptainReady")}
+            </span>
+          ) : null}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-2">
@@ -642,7 +694,21 @@ export function MiniGameApp({ locale }: { locale: string }) {
             onApply={applyTemplate}
           />
 
-          <MiniHotPicks gw={hotGw} entries={hotEntries} picks={hotPicks} />
+          {ctx?.mission ? (
+            <MiniMissionPanel
+              gw={ctx.mission.gw}
+              titleKey={ctx.mission.titleKey}
+              bodyKey={ctx.mission.bodyKey}
+              completed={missionLive.completed}
+            />
+          ) : null}
+
+          <MiniCrowdVsDiff
+            gw={hotGw}
+            entries={hotEntries}
+            crowd={hotPicks}
+            differentials={diffPicks}
+          />
 
           <div>
             <p className="mb-2 text-sm text-muted-foreground">{t("pitchHint")}</p>
@@ -783,6 +849,11 @@ export function MiniGameApp({ locale }: { locale: string }) {
                       </td>
                       <td className="px-3 py-2 font-semibold text-brand-accent">
                         {row.total_points}
+                        {row.differential_captain ? (
+                          <span className="ml-1 text-[10px] font-medium text-muted-foreground">
+                            {t("lbDiffCap")}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2 text-foreground/70">
                         {row.captain_name ?? "—"}

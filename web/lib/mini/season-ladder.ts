@@ -1,6 +1,7 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { scoreMiniSquad } from "@/lib/mini/scoring";
+import { getMiniOwnershipSnapshot } from "@/lib/mini/hot-picks";
 import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 
 export interface SeasonLadderRow {
@@ -93,6 +94,24 @@ export async function buildSeasonLadder(opts?: {
     }
   }
 
+  const ownershipByGw = new Map<
+    number,
+    { owned: Record<number, number>; entries: number }
+  >();
+  await Promise.all(
+    gws.map(async (gw) => {
+      try {
+        const snap = await getMiniOwnershipSnapshot(gw, season);
+        ownershipByGw.set(gw, {
+          owned: snap.owned_by_id,
+          entries: snap.entries,
+        });
+      } catch {
+        ownershipByGw.set(gw, { owned: {}, entries: 0 });
+      }
+    }),
+  );
+
   const byKey = new Map<
     string,
     {
@@ -108,12 +127,25 @@ export async function buildSeasonLadder(opts?: {
     const key = row.profile_id
       ? `p:${row.profile_id}`
       : `e:${row.entry_id}`;
-    const pickIds = (row.picks as MiniPickStored[]).map((p) => p.fpl_id);
+    const picks = row.picks as MiniPickStored[];
+    const pickIds = picks.map((p) => p.fpl_id);
+    const fplOwnedById: Record<number, number> = {};
+    for (const p of picks) {
+      if (p.selected_by_percent != null) {
+        fplOwnedById[p.fpl_id] = p.selected_by_percent;
+      }
+    }
+    const own = ownershipByGw.get(row.gw);
     const scored = scoreMiniSquad(
       pickIds,
       row.captain_fpl_id,
       row.vice_fpl_id,
       statsByGw.get(row.gw) ?? new Map(),
+      {
+        miniOwnedById: own?.owned,
+        fplOwnedById,
+        miniEntries: own?.entries ?? 0,
+      },
     );
     const cur = byKey.get(key) ?? {
       entry_id: row.entry_id,

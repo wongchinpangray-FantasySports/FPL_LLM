@@ -14,6 +14,11 @@ import type { MiniPickStored } from "@/lib/mini/types";
 import { mergeBadges, type MiniBadgeId } from "@/lib/mini/badges";
 import { getMiniHotPicks } from "@/lib/mini/hot-picks";
 import {
+  evaluateMission,
+  isDifferentialPick,
+  missionForGw,
+} from "@/lib/mini/incentives";
+import {
   guestEntryIdFromProfileId,
   isValidNickname,
   sanitizeNickname,
@@ -143,14 +148,39 @@ export async function POST(req: Request) {
   const unlock: MiniBadgeId[] = ["first_squad", "gw_ready"];
   if (body.used_template) unlock.push("template_starter");
 
+  let missionCompleted = false;
+  let diffCaptainPick = false;
   try {
     const hot = await getMiniHotPicks(gwMeta.gw, 8);
     const topOwned = hot.picks.slice(0, 5).map((p) => p.fpl_id);
     if (topOwned.includes(captainFplId)) {
       unlock.push("hot_captain");
     }
+
+    const mission = missionForGw(gwMeta.gw);
+    missionCompleted = evaluateMission({
+      missionId: mission.id,
+      picks: picksStored.map((p) => ({
+        fpl_id: p.fpl_id,
+        team_id: p.team_id,
+        selected_by_percent: p.selected_by_percent,
+      })),
+      captainFplId,
+      miniOwnedById: hot.owned_by_id,
+      miniEntries: hot.entries,
+    });
+    if (missionCompleted) unlock.push("mission_complete");
+
+    diffCaptainPick = isDifferentialPick({
+      miniOwnedPct: hot.owned_by_id[captainFplId] ?? null,
+      fplOwnedPct:
+        picksStored.find((p) => p.fpl_id === captainFplId)?.selected_by_percent ??
+        null,
+      miniEntries: hot.entries,
+    });
+    if (diffCaptainPick) unlock.push("diff_captain");
   } catch {
-    // Hot picks optional for badge unlock
+    // Hot picks / missions optional for badge unlock
   }
 
   let newlyUnlocked: MiniBadgeId[] = unlock;
@@ -228,5 +258,7 @@ export async function POST(req: Request) {
     captain_fpl_id: captainFplId,
     vice_fpl_id: viceFplId,
     newly_unlocked: newlyUnlocked,
+    mission_completed: missionCompleted,
+    diff_captain: diffCaptainPick,
   });
 }

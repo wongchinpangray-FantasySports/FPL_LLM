@@ -3,7 +3,9 @@ export type MiniBadgeId =
   | "gw_ready"
   | "template_starter"
   | "league_joiner"
-  | "hot_captain";
+  | "hot_captain"
+  | "diff_captain"
+  | "mission_complete";
 
 export interface MiniBadgeDef {
   id: MiniBadgeId;
@@ -37,6 +39,16 @@ export const MINI_BADGES: MiniBadgeDef[] = [
     id: "hot_captain",
     titleKey: "badgeHotCaptainTitle",
     descKey: "badgeHotCaptainDesc",
+  },
+  {
+    id: "diff_captain",
+    titleKey: "badgeDiffCaptainTitle",
+    descKey: "badgeDiffCaptainDesc",
+  },
+  {
+    id: "mission_complete",
+    titleKey: "badgeMissionTitle",
+    descKey: "badgeMissionDesc",
   },
 ];
 
