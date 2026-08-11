@@ -16,10 +16,6 @@ function isHomePath(pathname: string): boolean {
   return pathname === "/";
 }
 
-function isWorldCupPath(pathname: string): boolean {
-  return pathname === "/worldcup" || pathname.startsWith("/worldcup/");
-}
-
 function MenuSection({
   title,
   children,
@@ -239,14 +235,6 @@ export function SiteHeader() {
                   href="/play/mini"
                   label={t("miniFpl")}
                   active={pathname === "/play/mini" || pathname === "/mini"}
-                />
-              </MenuSection>
-
-              <MenuSection title={t("menuSectionWorldCup")}>
-                <MenuLink
-                  href="/worldcup"
-                  label={t("worldcupCentre")}
-                  active={isWorldCupPath(pathname)}
                 />
               </MenuSection>
 
