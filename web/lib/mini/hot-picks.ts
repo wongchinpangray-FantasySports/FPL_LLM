@@ -17,6 +17,8 @@ export async function getMiniHotPicks(gw: number, limit = 10): Promise<{
   season: string;
   entries: number;
   picks: MiniHotPick[];
+  /** Mini 5 selection % for every picked player this GW. */
+  owned_by_id: Record<number, number>;
 }> {
   const supa = getServerSupabase();
   const season = await getCurrentFplSeason();
@@ -64,6 +66,11 @@ export async function getMiniHotPicks(gw: number, limit = 10): Promise<{
   }
 
   const n = Math.max(rows.length, 1);
+  const owned_by_id: Record<number, number> = {};
+  for (const [fpl_id, v] of pickCounts) {
+    owned_by_id[fpl_id] = Math.round((v.count / n) * 1000) / 10;
+  }
+
   const picks: MiniHotPick[] = [...pickCounts.entries()]
     .map(([fpl_id, v]) => ({
       fpl_id,
@@ -71,7 +78,7 @@ export async function getMiniHotPicks(gw: number, limit = 10): Promise<{
       team: v.sample?.team ?? null,
       position: v.sample?.position ?? null,
       selected_count: v.count,
-      selected_pct: Math.round((v.count / n) * 1000) / 10,
+      selected_pct: owned_by_id[fpl_id] ?? 0,
       captain_count: v.captains,
     }))
     .sort(
@@ -82,5 +89,5 @@ export async function getMiniHotPicks(gw: number, limit = 10): Promise<{
     )
     .slice(0, limit);
 
-  return { gw, season, entries: rows.length, picks };
+  return { gw, season, entries: rows.length, picks, owned_by_id };
 }

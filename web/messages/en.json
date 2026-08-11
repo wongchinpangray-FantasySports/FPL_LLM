@@ -793,7 +793,7 @@
     "backPlay": "← Play",
     "eyebrow": "Mini fantasy",
     "title": "Pick 5 — live leaderboard",
-    "description": "Five-player squads with FPL scoring. Pick a nickname, submit before the deadline (unlimited changes), climb the weekly and season ladders, and challenge friends in mini leagues."
+    "description": "Five-player squads with FPL scoring — no budget limit. Pick a nickname, submit before the deadline (unlimited changes), climb the weekly and season ladders, and challenge friends in mini leagues."
   },
   "playHub": {
     "backHome": "← Home",
@@ -806,7 +806,7 @@
   "mini": {
     "statusOpen": "Submissions open for GW{gw} · deadline {deadline}",
     "statusClosed": "Submissions closed · live scores for GW{gw}",
-    "rulesShort": "5 players: 1 GK, 4 outfield (max 2 DEF / MID / FWD each), max 2 from one club. FPL points + captain rules.",
+    "rulesShort": "5 players: 1 GK, 4 outfield (max 2 DEF / MID / FWD each), max 2 from one club. No budget limit. FPL points + captain rules.",
     "tabPick": "Pick squad",
     "tabLeaderboard": "Leaderboard",
     "tabSeason": "Season ladder",
@@ -877,7 +877,8 @@
     "cardForm": "Form",
     "cardPpg": "PPG",
     "cardOwn": "Owned",
-    "cardSeasonPts": "Season",
+    "cardMiniOwn": "Mini%",
+    "cardSeasonPts": "Pts",
     "cardPtsUnit": "pts",
     "cardXg": "xG",
     "cardXa": "xA",

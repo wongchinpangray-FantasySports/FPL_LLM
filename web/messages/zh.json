@@ -793,7 +793,7 @@
     "backPlay": "← 游戏",
     "eyebrow": "五人迷你范特西",
     "title": "选 5 人 · 实时积分榜",
-    "description": "五人阵容，沿用 FPL 官方计分。起个昵称即可参加，截止前可无限改阵；冲击周榜与赛季榜，还能拉好友开迷你联赛。"
+    "description": "五人阵容，沿用 FPL 官方计分，无预算限制。起个昵称即可参加，截止前可无限改阵；冲击周榜与赛季榜，还能拉好友开迷你联赛。"
   },
   "playHub": {
     "backHome": "← 返回首页",
@@ -806,7 +806,7 @@
   "mini": {
     "statusOpen": "GW{gw} 可提交 · 截止 {deadline}",
     "statusClosed": "已截止提交 · GW{gw} 实时积分",
-    "rulesShort": "5 人：1 门将，4 场外（DEF/MID/FWD 各最多 2），同一俱乐部最多 2 人。FPL 积分 + 队长规则。",
+    "rulesShort": "5 人：1 门将，4 场外（DEF/MID/FWD 各最多 2），同一俱乐部最多 2 人。无预算限制。FPL 积分 + 队长规则。",
     "tabPick": "选阵",
     "tabLeaderboard": "积分榜",
     "tabSeason": "赛季榜",
@@ -877,7 +877,8 @@
     "cardForm": "状态",
     "cardPpg": "场均",
     "cardOwn": "拥有率",
-    "cardSeasonPts": "赛季",
+    "cardMiniOwn": "Mini%",
+    "cardSeasonPts": "积分",
     "cardPtsUnit": "分",
     "cardXg": "xG",
     "cardXa": "xA",

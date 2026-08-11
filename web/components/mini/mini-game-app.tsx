@@ -165,6 +165,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const [hotPicks, setHotPicks] = useState<MiniHotPickRow[]>([]);
   const [hotEntries, setHotEntries] = useState(0);
   const [hotGw, setHotGw] = useState<number | null>(null);
+  const [miniOwnedById, setMiniOwnedById] = useState<Record<number, number>>(
+    {},
+  );
   const [badges, setBadges] = useState<MiniBadgeId[]>([]);
   const [badgeFlash, setBadgeFlash] = useState<MiniBadgeId[]>([]);
   const [usedTemplate, setUsedTemplate] = useState(false);
@@ -269,10 +272,12 @@ export function MiniGameApp({ locale }: { locale: string }) {
         gw?: number;
         entries?: number;
         picks?: MiniHotPickRow[];
+        owned_by_id?: Record<number, number>;
       };
       setHotGw(data.gw ?? null);
       setHotEntries(data.entries ?? 0);
       setHotPicks(data.picks ?? []);
+      setMiniOwnedById(data.owned_by_id ?? {});
     }
   }, []);
 
@@ -660,6 +665,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
               captainLabel={t("captain")}
               viceLabel={t("vice")}
               emptyLabel={t("tapToPick")}
+              miniOwnedById={miniOwnedById}
               onSlotClick={onSlotClick}
               onSetCaptain={(id) => {
                 if (!submissionOpen) return;
