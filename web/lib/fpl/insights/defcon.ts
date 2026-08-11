@@ -158,25 +158,35 @@ async function loadSeasonDcPoints(
   const gwIds = [...fplIdsByGwId.keys()];
   const ptsByGwId = new Map<number, number>();
   const supa = getServerSupabase();
+  // PostgREST defaults to max 1000 rows; 100 players × ~38 GWs truncates
+  // and leaves many DefCon Pts at 0. Page through every chunk.
+  const PAGE = 1000;
 
   for (const chunk of chunkArray(gwIds, 100)) {
-    const { data, error } = await supa
-      .from("player_gw_stats")
-      .select("player_id,defensive_contribution")
-      .eq("season", season)
-      .in("player_id", chunk);
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supa
+        .from("player_gw_stats")
+        .select("player_id,defensive_contribution")
+        .eq("season", season)
+        .in("player_id", chunk)
+        .order("player_id", { ascending: true })
+        .order("gw", { ascending: true })
+        .range(from, from + PAGE - 1);
 
-    if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message);
 
-    for (const raw of data ?? []) {
-      const r = raw as Record<string, unknown>;
-      const pid = Number(r.player_id);
-      if (!Number.isFinite(pid)) continue;
-      const pts = fplDcPoints(
-        positionByGwId.get(pid),
-        num(r.defensive_contribution) ?? 0,
-      );
-      ptsByGwId.set(pid, (ptsByGwId.get(pid) ?? 0) + pts);
+      for (const raw of data ?? []) {
+        const r = raw as Record<string, unknown>;
+        const pid = Number(r.player_id);
+        if (!Number.isFinite(pid)) continue;
+        const pts = fplDcPoints(
+          positionByGwId.get(pid),
+          num(r.defensive_contribution) ?? 0,
+        );
+        ptsByGwId.set(pid, (ptsByGwId.get(pid) ?? 0) + pts);
+      }
+
+      if ((data?.length ?? 0) < PAGE) break;
     }
   }
 
@@ -228,7 +238,7 @@ export async function loadDefconLeadersRaw(opts?: {
 
 export const loadDefconLeaders = unstable_cache(
   async () => loadDefconLeadersRaw(),
-  ["fpl-insights-defcon-v4"],
+  ["fpl-insights-defcon-v5"],
   { revalidate: 300 },
 );
 
