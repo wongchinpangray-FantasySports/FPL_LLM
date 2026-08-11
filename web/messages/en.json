@@ -19,6 +19,7 @@
     "preseason": "Pre-season",
     "historical": "Historical",
     "insights": "Insights",
+    "recommendedSquad": "Recommended squad",
     "mini": "Mini 5",
     "worldcup": "World Cup",
     "worldcupCentre": "Tournament centre",
@@ -189,7 +190,8 @@
     "exploreSquadBuilderBody": "Build a 15-man squad from scratch with per-GW xPt projections.",
     "exploreHistoricalTitle": "Historical data",
     "exploreHistoricalBody": "Compare per-GW FPL stats across past seasons.",
-    "exploreInsightsTitle": "Insights"
+    "exploreInsightsTitle": "Insights",
+    "exploreRecommendedSquadTitle": "Recommended squad"
   },
   "entryForm": {
     "label": "Entry ID",

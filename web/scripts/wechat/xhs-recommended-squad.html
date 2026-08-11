@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE Recommended Squad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 40px 40px 32px;
+        display: flex; flex-direction: column;
+      }
+      .bg {
+        position: absolute; inset: 0;
+        background:
+          linear-gradient(180deg, rgba(11,10,15,0.15) 0%, rgba(11,10,15,0.88) 58%, #0b0a0f 100%),
+          radial-gradient(ellipse at 20% 0%, rgba(0,255,135,0.18), transparent 45%),
+          radial-gradient(ellipse at 90% 30%, rgba(56,120,255,0.12), transparent 40%),
+          #101018;
+      }
+      .grid {
+        position: absolute; inset: 0; opacity: 0.18; pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+      }
+      .glow-a, .glow-b {
+        position: absolute; border-radius: 50%; pointer-events: none; filter: blur(14px);
+      }
+      .glow-a {
+        width: 520px; height: 520px; top: -180px; left: -140px;
+        background: radial-gradient(circle, rgba(0,255,135,0.3), transparent 70%);
+      }
+      .glow-b {
+        width: 420px; height: 420px; bottom: 80px; right: -120px;
+        background: radial-gradient(circle, rgba(0,255,135,0.14), transparent 70%);
+      }
+      .wm {
+        position: absolute; right: -20px; top: 300px;
+        font-family: Inter, sans-serif; font-size: 180px; font-weight: 900;
+        letter-spacing: -0.08em; color: rgba(255,255,255,0.03);
+        transform: rotate(-12deg); pointer-events: none; z-index: 1;
+      }
+      .content {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; height: 100%; gap: 14px;
+      }
+      .top {
+        display: flex; justify-content: space-between; align-items: flex-start;
+      }
+      .brand { font-family: Inter, sans-serif; font-size: 32px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow {
+        margin-top: 6px; display: inline-flex; align-items: center; gap: 8px;
+        font-family: Inter, sans-serif; font-size: 13px; font-weight: 800;
+        letter-spacing: 0.18em; text-transform: uppercase; color: #00ff87;
+      }
+      .live-dot {
+        width: 9px; height: 9px; border-radius: 50%; background: #00ff87;
+        box-shadow: 0 0 0 4px rgba(0,255,135,0.22);
+      }
+      .date {
+        font-family: Inter, sans-serif; font-size: 44px; font-weight: 900;
+        letter-spacing: -0.05em; text-align: right;
+      }
+      .date small {
+        display: block; margin-top: 2px; font-size: 15px; letter-spacing: 0.16em;
+        color: rgba(244,244,245,0.5); font-weight: 600;
+      }
+      .hero {
+        position: relative; padding: 18px 22px 16px;
+        border-radius: 22px;
+        background: rgba(11,10,15,0.78);
+        border: 1px solid rgba(0,255,135,0.28);
+        overflow: hidden;
+      }
+      .hero::before {
+        content: ""; position: absolute; inset: 0 auto 0 0; width: 9px; background: #00ff87;
+      }
+      .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+      .chip {
+        font-size: 14px; font-weight: 800;
+        padding: 6px 12px; border-radius: 999px;
+        background: rgba(0,255,135,0.12); color: #00ff87;
+        border: 1px solid rgba(0,255,135,0.28);
+      }
+      h1 {
+        font-size: 42px; font-weight: 900; line-height: 1.12; letter-spacing: -0.03em;
+      }
+      h1 .accent { color: #00ff87; }
+      .sub {
+        margin-top: 8px; font-size: 19px; line-height: 1.35;
+        color: rgba(244,244,245,0.72);
+      }
+
+      .main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+      .options {
+        flex: 1 1 auto; min-height: 420px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+        align-items: stretch;
+      }
+      .opt {
+        display: flex; flex-direction: column;
+        border-radius: 20px; overflow: hidden;
+        background: rgba(11,10,15,0.82);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .opt.hot {
+        border-color: rgba(0,255,135,0.45);
+        box-shadow: 0 0 0 1px rgba(0,255,135,0.12), 0 16px 40px rgba(0,0,0,0.35);
+      }
+      .opt-head {
+        padding: 11px 13px 9px;
+        background: linear-gradient(180deg, rgba(0,255,135,0.12), transparent);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .opt.hot .opt-head {
+        background: linear-gradient(180deg, rgba(0,255,135,0.22), transparent);
+      }
+      .opt-kind {
+        font-family: Inter, sans-serif; font-size: 11px; font-weight: 800;
+        letter-spacing: 0.14em; text-transform: uppercase; color: #00ff87;
+      }
+      .opt-title-row {
+        margin-top: 2px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+      }
+      .opt-title {
+        font-size: 26px; font-weight: 900; letter-spacing: -0.03em;
+      }
+      .opt-meta {
+        font-size: 13px; font-weight: 700; color: rgba(244,244,245,0.55); white-space: nowrap;
+      }
+      .opt-body {
+        flex: 1; min-height: 0;
+        padding: 10px 11px 11px;
+        display: flex; flex-direction: column; gap: 7px;
+      }
+      .cap-block {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 11px; border-radius: 14px;
+        background: rgba(0,255,135,0.08);
+        border: 1px solid rgba(0,255,135,0.22);
+      }
+      .cap-badge {
+        flex: 0 0 auto;
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 900;
+        padding: 5px 10px; border-radius: 999px;
+        background: #00ff87; color: #0b0a0f;
+      }
+      .cap-copy .lab {
+        font-size: 12px; font-weight: 700; color: rgba(244,244,245,0.5);
+        letter-spacing: 0.04em;
+      }
+      .cap-copy .name {
+        margin-top: 1px; font-size: 20px; font-weight: 900; letter-spacing: -0.02em;
+      }
+      .stat-row {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      }
+      .stat {
+        text-align: center; padding: 7px 4px 6px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      .stat .lab {
+        font-family: Inter, sans-serif; font-size: 10px; font-weight: 800;
+        letter-spacing: 0.08em; text-transform: uppercase; color: rgba(244,244,245,0.45);
+      }
+      .stat .val {
+        margin-top: 2px; font-family: Inter, sans-serif; font-size: 15px; font-weight: 800;
+        font-variant-numeric: tabular-nums; color: rgba(244,244,245,0.95);
+      }
+      .xi-label {
+        font-family: Inter, sans-serif; font-size: 11px; font-weight: 800;
+        letter-spacing: 0.12em; text-transform: uppercase; color: rgba(244,244,245,0.42);
+        margin-top: 2px;
+      }
+      .player-list {
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      .player {
+        display: flex; justify-content: space-between; align-items: center; gap: 6px;
+        padding: 6px 8px; border-radius: 9px;
+        font-size: 16px; font-weight: 700;
+        background: rgba(255,255,255,0.035);
+      }
+      .player .pos {
+        font-family: Inter, sans-serif; font-size: 11px; font-weight: 800;
+        letter-spacing: 0.06em; color: rgba(244,244,245,0.4); margin-right: 5px;
+      }
+      .player .own {
+        font-family: Inter, sans-serif; font-size: 13px; font-weight: 700;
+        color: rgba(244,244,245,0.45); font-variant-numeric: tabular-nums;
+      }
+      .why-list {
+        margin-top: auto;
+        display: flex; flex-direction: column; gap: 4px;
+        padding: 8px 10px; border-radius: 12px;
+        background: rgba(255,255,255,0.035);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      .why-list .why {
+        font-size: 13px; font-weight: 700; line-height: 1.3;
+        color: rgba(244,244,245,0.7);
+      }
+      .why-list .why::before {
+        content: "· "; color: #00ff87; font-weight: 900;
+      }
+      .opt-foot {
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: rgba(0,255,135,0.08);
+        border: 1px solid rgba(0,255,135,0.18);
+        font-size: 14px; font-weight: 800; color: rgba(244,244,245,0.85); line-height: 1.3;
+      }
+
+      .style-row {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        padding: 14px 16px; border-radius: 16px;
+        background: rgba(11,10,15,0.78);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .style-label {
+        width: 100%;
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.14em; text-transform: uppercase; color: rgba(244,244,245,0.5);
+        margin-bottom: 2px;
+      }
+      .style-chip {
+        font-size: 16px; font-weight: 800;
+        padding: 8px 14px; border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(244,244,245,0.85);
+      }
+      .style-chip.on {
+        background: rgba(0,255,135,0.14);
+        border-color: rgba(0,255,135,0.4);
+        color: #00ff87;
+      }
+
+      .feature-row {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      }
+      .feat {
+        padding: 14px 14px 12px; border-radius: 16px;
+        background: rgba(11,10,15,0.78);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .feat .kicker {
+        font-family: Inter, sans-serif; font-size: 11px; font-weight: 800;
+        letter-spacing: 0.14em; text-transform: uppercase; color: #00ff87;
+        margin-bottom: 6px;
+      }
+      .feat h3 { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.2; }
+      .feat p { margin-top: 6px; font-size: 15px; line-height: 1.35; color: rgba(244,244,245,0.68); }
+
+      .bottom-band {
+        display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px;
+      }
+      .reward {
+        display: flex; align-items: center; gap: 14px;
+        padding: 16px 18px; border-radius: 16px;
+        background: rgba(0,255,135,0.1);
+        border: 1px solid rgba(0,255,135,0.28);
+      }
+      .reward .plus {
+        flex: 0 0 auto;
+        font-family: Inter, sans-serif; font-size: 36px; font-weight: 900;
+        color: #00ff87; letter-spacing: -0.04em;
+      }
+      .reward .copy strong {
+        display: block; font-size: 20px; font-weight: 900; margin-bottom: 4px;
+      }
+      .reward .copy span {
+        font-size: 15px; color: rgba(244,244,245,0.7); line-height: 1.35;
+      }
+      .steps {
+        display: flex; align-items: stretch; gap: 0;
+        padding: 10px 8px; border-radius: 16px;
+        background: rgba(11,10,15,0.78);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .step {
+        flex: 1; text-align: center; padding: 6px 8px; position: relative;
+      }
+      .step:not(:last-child)::after {
+        content: "›"; position: absolute; right: -4px; top: 50%;
+        transform: translateY(-54%);
+        font-size: 22px; font-weight: 900; color: rgba(0,255,135,0.55);
+      }
+      .step .n {
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.12em; color: #00ff87; margin-bottom: 4px;
+      }
+      .step .t { font-size: 18px; font-weight: 900; line-height: 1.2; }
+      .step .d {
+        margin-top: 4px; font-size: 13px; line-height: 1.25;
+        color: rgba(244,244,245,0.6);
+      }
+
+      .footer { flex: 0 0 auto; }
+      .cta-bar {
+        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        padding: 18px 24px; border-radius: 16px; background: #00ff87; color: #0b0a0f;
+        box-shadow: 0 12px 40px rgba(0,255,135,0.25);
+      }
+      .cta-bar .cta { font-size: 24px; font-weight: 900; }
+      .cta-bar .url { font-family: Inter, sans-serif; font-size: 16px; font-weight: 700; opacity: 0.75; }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function stamp(date) {
+        const [y, m, d] = String(date || "").split("-");
+        return { yyyy: y || "", mmdd: `${m || ""}.${d || ""}` };
+      }
+      function render(data) {
+        const d = stamp(data.date);
+        const chips = (data.chips || []).map((c) => `<span class="chip">${esc(c)}</span>`).join("");
+        const styles = (data.styles || []).map((s) =>
+          `<span class="style-chip${s.on ? " on" : ""}">${esc(s.label)}</span>`
+        ).join("");
+        const opts = (data.options || []).map((o) => {
+          const players = (o.players || []).map((p) => `
+            <div class="player">
+              <span><span class="pos">${esc(p.pos)}</span>${esc(p.name)}</span>
+              <span class="own">${esc(p.own)}</span>
+            </div>`).join("");
+          const stats = (o.stats || []).map((s) => `
+            <div class="stat">
+              <div class="lab">${esc(s.lab)}</div>
+              <div class="val">${esc(s.val)}</div>
+            </div>`).join("");
+          return `
+            <div class="opt${o.hot ? " hot" : ""}">
+              <div class="opt-head">
+                <div class="opt-kind">${esc(o.kind)}</div>
+                <div class="opt-title-row">
+                  <div class="opt-title">${esc(o.title)}</div>
+                  <div class="opt-meta">${esc(o.meta)}</div>
+                </div>
+              </div>
+              <div class="opt-body">
+                <div class="cap-block">
+                  <div class="cap-badge">C</div>
+                  <div class="cap-copy">
+                    <div class="lab">${esc(o.capLabel || "队长")}</div>
+                    <div class="name">${esc(o.captain)}</div>
+                  </div>
+                </div>
+                <div class="stat-row">${stats}</div>
+                <div class="xi-label">${esc(o.xiLabel || "KEY XI")}</div>
+                <div class="player-list">${players}</div>
+                <div class="why-list">
+                  ${(o.whys || []).map((w) => `<div class="why">${esc(w)}</div>`).join("")}
+                </div>
+                <div class="opt-foot">${esc(o.foot)}</div>
+              </div>
+            </div>`;
+        }).join("");
+        const feats = (data.features || []).map((f) => `
+          <div class="feat">
+            <div class="kicker">${esc(f.kicker)}</div>
+            <h3>${esc(f.title)}</h3>
+            <p>${esc(f.body)}</p>
+          </div>`).join("");
+        const steps = (data.steps || []).map((s, i) => `
+          <div class="step">
+            <div class="n">0${i + 1}</div>
+            <div class="t">${esc(s.title)}</div>
+            <div class="d">${esc(s.body)}</div>
+          </div>`).join("");
+
+        document.getElementById("root").innerHTML = `
+          <div class="bg"></div>
+          <div class="grid"></div>
+          <div class="glow-a"></div><div class="glow-b"></div>
+          <div class="wm">SQUAD</div>
+          <div class="content">
+            <div class="top">
+              <div>
+                <div class="brand">FA<span>LEAGUE</span></div>
+                <div class="eyebrow"><span class="live-dot"></span>${esc(data.eyebrow)}</div>
+              </div>
+              <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+            </div>
+            <div class="hero">
+              <div class="chip-row">${chips}</div>
+              <h1>${data.titleHtml || esc(data.title)}</h1>
+              <p class="sub">${esc(data.subtitle)}</p>
+            </div>
+            <div class="main">
+              <div class="style-row">
+                <div class="style-label">${esc(data.styleLabel || "STYLE CHIPS")}</div>
+                ${styles}
+              </div>
+              <div class="options">${opts}</div>
+              <div class="feature-row">${feats}</div>
+              <div class="bottom-band">
+                <div class="reward">
+                  <div class="plus">${esc(data.rewardPlus || "×3")}</div>
+                  <div class="copy">
+                    <strong>${esc(data.rewardTitle)}</strong>
+                    <span>${esc(data.rewardBody)}</span>
+                  </div>
+                </div>
+                <div class="steps">${steps}</div>
+              </div>
+            </div>
+            <div class="footer">
+              <div class="cta-bar">
+                <div class="cta">${esc(data.cta)}</div>
+                <div class="url">${esc(data.url)}</div>
+              </div>
+            </div>
+          </div>`;
+      }
+      if (window.__DATA__) render(window.__DATA__);
+    </script>
+  </body>
+</html>

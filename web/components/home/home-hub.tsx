@@ -1236,6 +1236,7 @@ function HomeFeatureGroups({
     mini: string;
     news: string;
     insights: string;
+    recommendedSquad: string;
   };
 }) {
   const { entryId } = useEntryId();
@@ -1255,6 +1256,7 @@ function HomeFeatureGroups({
   ];
 
   const tools: FeatureLink[] = [
+    { href: "/fpl/insights/recommended-squad", label: labels.recommendedSquad },
     { href: "/fpl/insights", label: labels.insights },
     { href: "/news", label: labels.news },
   ];
@@ -1398,6 +1400,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               mini: t("exploreMiniTitle"),
               news: t("sidebarNews"),
               insights: t("exploreInsightsTitle"),
+              recommendedSquad: t("exploreRecommendedSquadTitle"),
             }}
           />
 

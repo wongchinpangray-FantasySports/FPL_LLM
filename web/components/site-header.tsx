@@ -195,8 +195,9 @@ export function SiteHeader() {
                   href="/fpl/insights"
                   label={t("insights")}
                   active={
-                    pathname === "/fpl/insights" ||
-                    pathname.startsWith("/fpl/insights/") ||
+                    ((pathname === "/fpl/insights" ||
+                      pathname.startsWith("/fpl/insights/")) &&
+                      !pathname.startsWith("/fpl/insights/recommended-squad")) ||
                     pathname === "/fpl/historical" ||
                     pathname.startsWith("/fpl/historical/")
                   }
@@ -214,6 +215,11 @@ export function SiteHeader() {
               </MenuSection>
 
               <MenuSection title={t("menuSectionTools")}>
+                <MenuLink
+                  href="/fpl/insights/recommended-squad"
+                  label={t("recommendedSquad")}
+                  active={pathname.startsWith("/fpl/insights/recommended-squad")}
+                />
                 <MenuLink
                   href="/news"
                   label={t("news")}

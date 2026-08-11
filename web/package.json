@@ -29,7 +29,10 @@
     "render:gw1-draft": "node scripts/render-gw1-draft.mjs",
     "gw1:daily": "tsx scripts/generate-gw1-draft.ts --png",
     "notify:value-band": "tsx scripts/notify-value-band.ts",
-    "notify:value-band:dry": "tsx scripts/notify-value-band.ts --dry-run"
+    "notify:value-band:dry": "tsx scripts/notify-value-band.ts --dry-run",
+    "render:xhs-recommended-squad": "node scripts/render-xhs-recommended-squad.mjs",
+    "notify:recommended-squad": "tsx scripts/notify-recommended-squad.ts",
+    "notify:recommended-squad:dry": "tsx scripts/notify-recommended-squad.ts --dry-run"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

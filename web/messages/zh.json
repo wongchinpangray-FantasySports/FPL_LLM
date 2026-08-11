@@ -19,6 +19,7 @@
     "preseason": "季前赛",
     "historical": "历史数据",
     "insights": "洞察",
+    "recommendedSquad": "推荐阵容",
     "mini": "五人赛",
     "worldcup": "世界杯",
     "worldcupCentre": "赛事中心",
@@ -189,7 +190,8 @@
     "exploreSquadBuilderBody": "从零组建 15 人阵容，并查看每轮预期积分 (xPt)。",
     "exploreHistoricalTitle": "历史数据",
     "exploreHistoricalBody": "跨赛季对比球员逐轮 FPL 表现。",
-    "exploreInsightsTitle": "洞察"
+    "exploreInsightsTitle": "洞察",
+    "exploreRecommendedSquadTitle": "推荐阵容"
   },
   "entryForm": {
     "label": "Entry ID",
