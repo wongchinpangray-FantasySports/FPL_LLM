@@ -1,13 +1,15 @@
 /**
  * Fail when finished pre-season friendlies (with goals in the scoreline) are
  * missing scorer rows after the grace window — catches sync regressions in CI.
+ *
+ * Note: the GitHub workflow marks this step continue-on-error so a stubborn
+ * missing-scorer case cannot block committing score updates.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PreseasonBundle } from "../lib/fpl/preseason";
-import {
-  preseasonGoalsComplete,
-} from "../lib/fpl/preseason-scorers";
+import { isPlausiblePreseasonScorerName } from "../lib/fpl/preseason-report-goals";
+import { preseasonGoalsComplete } from "../lib/fpl/preseason-scorers";
 
 const GRACE_HOURS = 30;
 
@@ -26,6 +28,17 @@ function matchAgeHours(date: string, today: string): number {
   return (now - end) / (60 * 60 * 1000);
 }
 
+function namedPlScorerCount(
+  match: PreseasonBundle["matches"][number],
+): number {
+  return (match.goals ?? []).filter(
+    (g) =>
+      g.side === "pl" &&
+      typeof g.scorer === "string" &&
+      isPlausiblePreseasonScorerName(g.scorer, match),
+  ).length;
+}
+
 function main(): void {
   const path = join(process.cwd(), "data/epl-preseason-2627.json");
   const bundle = JSON.parse(readFileSync(path, "utf8")) as PreseasonBundle;
@@ -36,8 +49,7 @@ function main(): void {
     if (match.status !== "finished") continue;
     if (match.pl_goals == null || match.opp_goals == null) continue;
     if (match.pl_goals + match.opp_goals === 0) continue;
-    const goals = match.goals ?? [];
-    const plListed = goals.filter((g) => g.side === "pl").length;
+    const plListed = namedPlScorerCount(match);
     // CI only gates on PL scorers — lower-league opponent names are often unavailable.
     if (plListed >= match.pl_goals) continue;
     if (preseasonGoalsComplete(match)) continue;

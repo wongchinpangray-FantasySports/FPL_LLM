@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-09",
+  "updated_at": "2026-08-11",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -1176,28 +1176,22 @@
       "kickoff_time": null,
       "goals": [
         {
+          "minute": "6'",
+          "scorer": "Satpayev",
+          "assist": null,
+          "side": "pl"
+        },
+        {
           "minute": "14'",
           "scorer": "Pantazopoulos",
           "assist": null,
-          "side": "pl"
+          "side": "opp"
         },
         {
           "minute": "32'",
           "scorer": "Hammond",
           "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "62'",
-          "scorer": "Scicluna",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "6'",
-          "scorer": "Satpayev",
-          "assist": null,
-          "side": "pl"
+          "side": "opp"
         },
         {
           "minute": "38'",
@@ -1206,34 +1200,34 @@
           "side": "pl"
         },
         {
-          "minute": "66'",
-          "scorer": "Gittens",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "14'",
-          "scorer": "Pantazopoulos",
-          "assist": null,
-          "side": "opp"
-        },
-        {
-          "minute": "32'",
-          "scorer": "Hammond",
-          "assist": null,
-          "side": "opp"
-        },
-        {
-          "minute": "62'",
+          "minute": "61'",
           "scorer": "Scicluna",
           "assist": null,
           "side": "opp"
         },
         {
-          "minute": "78'",
-          "scorer": "Lual",
+          "minute": "66'",
+          "scorer": "Gittens",
+          "assist": "João Pedro",
+          "side": "pl"
+        },
+        {
+          "minute": "80'",
+          "scorer": "João Pedro",
           "assist": null,
-          "side": "opp"
+          "side": "pl"
+        },
+        {
+          "minute": "85'",
+          "scorer": "João Pedro",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "89'",
+          "scorer": "João Pedro",
+          "assist": null,
+          "side": "pl"
         }
       ],
       "lineup": null
@@ -2408,21 +2402,21 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "201'",
-          "scorer": "Copyright",
+          "minute": "29'",
+          "scorer": "Georginio Rutter",
+          "assist": "Diego Gómez",
+          "side": "pl"
+        },
+        {
+          "minute": "40'",
+          "scorer": "Yasin Ayari",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "28'",
-          "scorer": "Fan Event",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "202'",
-          "scorer": "Tour",
-          "assist": null,
+          "minute": "49'",
+          "scorer": "Yasin Ayari",
+          "assist": "Georginio Rutter",
           "side": "pl"
         }
       ],
@@ -2441,7 +2435,32 @@
       "pl_goals": 2,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "41'",
+          "scorer": "Marcus Tavernier",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "57'",
+          "scorer": "Cucho Hernandez",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "60'",
+          "scorer": "Evanilson",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "81'",
+          "scorer": "Pablo Fornals",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2459,14 +2478,14 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "202'",
-          "scorer": "Matches",
+          "minute": "71'",
+          "scorer": "Jayden Meghoma",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "197'",
-          "scorer": "Jan",
+          "minute": "78'",
+          "scorer": "Kaye Furo",
           "assist": null,
           "side": "pl"
         }
@@ -2488,15 +2507,15 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "2'",
-          "scorer": "Joao",
+          "minute": "45'",
+          "scorer": "João Pedro",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "46'",
-          "scorer": "Two",
-          "assist": null,
+          "scorer": "João Pedro",
+          "assist": "Pedro Neto",
           "side": "pl"
         },
         {
@@ -2521,7 +2540,32 @@
       "pl_goals": 3,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "37'",
+          "scorer": "Roberto Fernández",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "69'",
+          "scorer": "Tatsuhiro Sakamoto",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "75'",
+          "scorer": "Josh Eccles",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "84'",
+          "scorer": "Ellis Simms",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2539,10 +2583,28 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "3'",
-          "scorer": "Friendly Games",
+          "minute": "16'",
+          "scorer": "Nikolas Nartey",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "65'",
+          "scorer": "Ramon Hendriks",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "72'",
+          "scorer": "Thierno Barry",
           "assist": null,
           "side": "pl"
+        },
+        {
+          "minute": "90'+1",
+          "scorer": "Badredine Bouanani",
+          "assist": null,
+          "side": "opp"
         }
       ],
       "lineup": null
@@ -2578,20 +2640,20 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "197'",
-          "scorer": "Jan",
+          "minute": null,
+          "scorer": "Leif Davis",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "1'",
-          "scorer": "Venezia Bundesliga",
+          "minute": null,
+          "scorer": "Leif Davis",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "07'",
-          "scorer": "Stuttgart SV",
+          "minute": null,
+          "scorer": "Emersonn",
           "assist": null,
           "side": "pl"
         }
@@ -2614,13 +2676,13 @@
       "goals": [
         {
           "minute": "7'",
-          "scorer": "Calvert-Lewin",
+          "scorer": "Dominic Calvert-Lewin",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "109'",
-          "scorer": "Nmecha",
+          "scorer": "Lukas Nmecha",
           "assist": null,
           "side": "pl"
         }
@@ -2640,7 +2702,20 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "2'",
+          "scorer": "Ibrahim Mbaye",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "32'",
+          "scorer": "Bryan Mbeumo",
+          "assist": "Amad Diallo",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2658,14 +2733,20 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "202'",
-          "scorer": "Aug",
+          "minute": "4'",
+          "scorer": "F. Ugrinic",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "52'",
+          "scorer": "Yoane Wissa",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "08'",
-          "scorer": "Friendly Sat",
+          "minute": "76'",
+          "scorer": "Yoane Wissa",
           "assist": null,
           "side": "pl"
         }
@@ -2714,26 +2795,23 @@
       "venue": null,
       "note": "Behind closed doors",
       "status": "finished",
-      "pl_goals": 1,
-      "opp_goals": 4,
+      "pl_goals": 2,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
-      "lineup": null
-    },
-    {
-      "id": "sun-2026-08-08-39",
-      "date": "2026-08-08",
-      "pl_code": "SUN",
-      "pl_name": "Sunderland",
-      "opponent": "Lens",
-      "pl_home": false,
-      "venue": "Lens",
-      "note": null,
-      "status": "finished",
-      "pl_goals": 1,
-      "opp_goals": 4,
-      "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "66'",
+          "scorer": "Trai Hume",
+          "assist": "Chris Rigg",
+          "side": "pl"
+        },
+        {
+          "minute": "82'",
+          "scorer": "Wilson Isidor",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -2751,8 +2829,14 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "201'",
-          "scorer": "January",
+          "minute": "66'",
+          "scorer": "Alberto Risco",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "70'",
+          "scorer": "Conor Gallagher",
           "assist": null,
           "side": "pl"
         }
@@ -2775,13 +2859,31 @@
       "goals": [
         {
           "minute": "7'",
-          "scorer": "Inacio",
+          "scorer": "Samuele Inacio",
           "assist": null,
-          "side": "pl"
+          "side": "opp"
         },
         {
           "minute": "29'",
-          "scorer": "Karetsas",
+          "scorer": "Konstantinos Karetsas",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "54'",
+          "scorer": "Ethan Nwaneri",
+          "assist": "Christos Tzolis",
+          "side": "pl"
+        },
+        {
+          "minute": "58'",
+          "scorer": "Joane Gaudo",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "69'",
+          "scorer": "Viktor Gyökeres",
           "assist": null,
           "side": "pl"
         }
@@ -2794,7 +2896,7 @@
       "pl_code": "CHE",
       "pl_name": "Chelsea",
       "opponent": "Johor Darul Ta'zim",
-      "pl_home": true,
+      "pl_home": false,
       "venue": "Johor",
       "note": null,
       "status": "finished",
@@ -2803,34 +2905,40 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "3'",
-          "scorer": "Slot",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "2'",
-          "scorer": "Britain Part",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "345'",
-          "scorer": "Travel Partnership",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "3'",
-          "scorer": "Football Johor",
+          "minute": "14'",
+          "scorer": "Arif Aiman",
           "assist": null,
           "side": "opp"
         },
         {
-          "minute": "3'",
-          "scorer": "Johor Draw",
+          "minute": "42'",
+          "scorer": "Liam Delap",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "62'",
+          "scorer": "Liam Delap",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "65'",
+          "scorer": "Óscar Arribas",
           "assist": null,
           "side": "opp"
+        },
+        {
+          "minute": "86'",
+          "scorer": "Bérgson",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "89'",
+          "scorer": "Own Goal",
+          "assist": null,
+          "side": "pl"
         }
       ],
       "lineup": null
@@ -2850,16 +2958,34 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "1'",
-          "scorer": "Ligue",
+          "minute": "16'",
+          "scorer": "Alexander Isak",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "190'",
-          "scorer": "Como",
+          "minute": "29'",
+          "scorer": "Florian Wirtz",
           "assist": null,
           "side": "pl"
+        },
+        {
+          "minute": "44'",
+          "scorer": "Aleksandr Golovin",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "56'",
+          "scorer": "Mika Biereth",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "88'",
+          "scorer": "Paris Brunner",
+          "assist": null,
+          "side": "opp"
         }
       ],
       "lineup": null
@@ -2879,21 +3005,27 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "57'",
-          "scorer": "Brilliant",
+          "minute": "45'",
+          "scorer": "Jorge Dominguez",
           "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "50'",
+          "scorer": "Omar Marmoush",
+          "assist": "Antoine Semenyo",
+          "side": "pl"
+        },
+        {
+          "minute": "53'",
+          "scorer": "Omar Marmoush",
+          "assist": "Antoine Semenyo",
           "side": "pl"
         },
         {
           "minute": "90'",
-          "scorer": "Rayan",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "1'",
-          "scorer": "Inter Milan",
-          "assist": null,
+          "scorer": "Rayan Aït-Nouri",
+          "assist": "Divin Mubama",
           "side": "pl"
         }
       ],
@@ -2916,13 +3048,13 @@
       "lineup": null
     },
     {
-      "id": "lee-2026-08-12-86",
+      "id": "ars-2026-08-12-51",
       "date": "2026-08-12",
-      "pl_code": "LEE",
-      "pl_name": "Leeds United",
-      "opponent": "Man Utd",
+      "pl_code": "ARS",
+      "pl_name": "Arsenal",
+      "opponent": "Como",
       "pl_home": true,
-      "venue": "Dublin",
+      "venue": null,
       "note": null,
       "status": "scheduled",
       "pl_goals": null,
@@ -2932,11 +3064,43 @@
       "lineup": null
     },
     {
-      "id": "mun-2026-08-12-45",
+      "id": "ful-2026-08-12-71",
       "date": "2026-08-12",
-      "pl_code": "MUN",
-      "pl_name": "Man Utd",
-      "opponent": "Leeds",
+      "pl_code": "FUL",
+      "pl_name": "Fulham",
+      "opponent": "Malaga",
+      "pl_home": false,
+      "venue": null,
+      "note": null,
+      "status": "scheduled",
+      "pl_goals": null,
+      "opp_goals": null,
+      "kickoff_time": null,
+      "goals": [],
+      "lineup": null
+    },
+    {
+      "id": "avl-2026-08-12-58",
+      "date": "2026-08-12",
+      "pl_code": "AVL",
+      "pl_name": "Aston Villa",
+      "opponent": "Paris Saint-Germain",
+      "pl_home": false,
+      "venue": "Salzburg",
+      "note": "UEFA Super Cup",
+      "status": "scheduled",
+      "pl_goals": null,
+      "opp_goals": null,
+      "kickoff_time": null,
+      "goals": [],
+      "lineup": null
+    },
+    {
+      "id": "lee-2026-08-12-86",
+      "date": "2026-08-12",
+      "pl_code": "LEE",
+      "pl_name": "Leeds United",
+      "opponent": "Man Utd",
       "pl_home": true,
       "venue": "Dublin",
       "note": null,

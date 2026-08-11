@@ -103,6 +103,31 @@ const BLOCKED_SCORER_NAMES = new Set([
   "images published",
   "catalonia",
   "august",
+  // Parse fragments / English filler mistaken for scorers
+  "matches",
+  "match",
+  "minute",
+  "minutes",
+  "goal",
+  "goals",
+  "scorer",
+  "scorers",
+  "player",
+  "players",
+  "team",
+  "teams",
+  "home",
+  "away",
+  "half",
+  "first",
+  "second",
+  "penalty",
+  "own",
+  "lead",
+  "equaliser",
+  "equalizer",
+  "bees",
+  "jan", // truncated Janelt / month fragment
 ]);
 
 function isClubNameScorer(name: string): boolean {
@@ -120,17 +145,21 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
   if (isClubNameScorer(name)) return false;
   // Possessives / truncated fragments from bad HTML parses ("Kim's", "Villa's").
   if (/['’]s$/i.test(name)) return false;
-  if (/^[A-Z][a-z]+$/.test(name) && name.length <= 10) {
-    // Reject lone nationality/adjective tokens (e.g. "Hungarian" from BBC copy).
+  // Lone first names / short tokens are almost always parse junk (Son/Rodri ok via allow).
+  if (/^[A-Z][a-z]+$/.test(name)) {
     if (
-      /^(Hungarian|Brazilian|Portuguese|Spanish|Turkish|English|French|German|Italian|Basque|Saudi|American)$/i.test(
+      /^(Hungarian|Brazilian|Portuguese|Spanish|Turkish|English|French|German|Italian|Basque|Saudi|American|Matches|Match|Minute|Minutes|Goal|Goals)$/i.test(
         name,
       )
     ) {
       return false;
     }
+    const shortOk = /^(Son|Rodri|Pedro|Neto|Sarr|Furo|Gomez|Gomes|Diaz|Rice|Beto)$/i.test(
+      name,
+    );
+    if (!shortOk && name.length < 5) return false;
   }
-  if (/^(but|when|hosts|the|and|with|after|before|their|moments)\b/i.test(name)) {
+  if (/^(but|when|hosts|the|and|with|after|before|their|moments|matches|match)\b/i.test(name)) {
     return false;
   }
   if (/responded|break when|goal of their|took the lead|opened the scoring/i.test(name)) {

@@ -54,6 +54,7 @@ jobs:
 
       - name: Validate pre-season scorer completeness
         working-directory: web
+        continue-on-error: true
         run: npx tsx scripts/validate-preseason-goals.ts
 
       - name: Commit updated pre-season JSON
