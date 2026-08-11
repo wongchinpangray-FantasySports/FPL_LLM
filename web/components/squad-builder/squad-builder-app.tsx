@@ -82,19 +82,41 @@ function xpOnGw(pr: ProjRow | undefined, gw: number): number | null {
   return null;
 }
 
+export type SquadBuilderInitialImport = {
+  picks: PlannerPickPayload[];
+  captainId: number | null;
+  viceId: number | null;
+  draftIndex: number;
+};
+
 export function SquadBuilderApp({
   teams,
   gwContext,
+  initialImport,
 }: {
   teams: TeamOption[];
   gwContext: GwContext;
+  /** Prefill from recommended-squad / deep link (?ids=&c=&v=). */
+  initialImport?: SquadBuilderInitialImport | null;
 }) {
   const t = useTranslations("squadBuilderApp");
   const fromGw = SQUAD_BUILDER_FROM_GW;
 
   const [horizon, setHorizon] = useState(5);
-  const [draft, setDraft] = useState<SquadBuilderDraftV3>(() =>
-    loadOrCreateDraft(fromGw, 5),
+  const [draft, setDraft] = useState<SquadBuilderDraftV3>(() => {
+    const base = loadOrCreateDraft(fromGw, 5);
+    if (!initialImport?.picks?.length) return base;
+    const withSlot = upsertDraftSlot(base, initialImport.draftIndex, {
+      picks: initialImport.picks,
+      captainId: initialImport.captainId,
+      viceId: initialImport.viceId,
+    });
+    return { ...withSlot, activeDraft: initialImport.draftIndex };
+  });
+  const [importNotice] = useState(() =>
+    initialImport?.picks?.length
+      ? t("importApplied")
+      : null,
   );
   const activeDraft = draft.activeDraft;
   const xptsGw = fromGw;
@@ -102,7 +124,7 @@ export function SquadBuilderApp({
   const [viewMode, setViewMode] = useState<ViewMode>("pitch");
   const [mode, setMode] = useState<Mode>(null);
   const [xiFirst, setXiFirst] = useState<number | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(importNotice);
   const [clubCapAlert, setClubCapAlert] = useState<string | null>(null);
   const [playerProjCache, setPlayerProjCache] = useState<
     Record<string, ProjRow>

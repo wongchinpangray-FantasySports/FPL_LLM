@@ -15,6 +15,18 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     badgeKey: "badgeLive",
   },
   {
+    id: "recommended-squad",
+    href: "/fpl/insights/recommended-squad",
+    tier: "free",
+    phase: 0,
+    status: "live",
+    group: "prep",
+    titleKey: "recommendedSquad.title",
+    navTitleKey: "nav.recommendedSquad",
+    descriptionKey: "recommendedSquad.description",
+    badgeKey: "badgeLive",
+  },
+  {
     id: "best-of-position",
     href: "/fpl/insights/best-of-position",
     tier: "free",
