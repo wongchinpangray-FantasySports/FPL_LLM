@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-11",
+  "updated_at": "2026-08-12",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -2687,7 +2687,67 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "3-4-2-1",
+        "starters": [
+          {
+            "name": "Alex Cairns",
+            "number": 21,
+            "minute_on": null
+          },
+          {
+            "name": "Tarik Muharemovic",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "Joe Rodon",
+            "number": 6,
+            "minute_on": null
+          },
+          {
+            "name": "Sebastiaan Bornauw",
+            "number": 33,
+            "minute_on": null
+          },
+          {
+            "name": "Jayden Bogle",
+            "number": 2,
+            "minute_on": null
+          },
+          {
+            "name": "Ethan Ampadu",
+            "number": 4,
+            "minute_on": null
+          },
+          {
+            "name": "Sean Longstaff",
+            "number": 8,
+            "minute_on": null
+          },
+          {
+            "name": "James Justin",
+            "number": 24,
+            "minute_on": null
+          },
+          {
+            "name": "Daniel James",
+            "number": 7,
+            "minute_on": null
+          },
+          {
+            "name": "Harry Wilson",
+            "number": 17,
+            "minute_on": null
+          },
+          {
+            "name": "Dominic Calvert-Lewin",
+            "number": 9,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "mun-2026-08-08-44",
@@ -2751,7 +2811,67 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-2-3-1",
+        "starters": [
+          {
+            "name": "Lukás Hornícek",
+            "number": 21,
+            "minute_on": null
+          },
+          {
+            "name": "Sven Botman",
+            "number": 4,
+            "minute_on": null
+          },
+          {
+            "name": "Malick Thiaw",
+            "number": 12,
+            "minute_on": null
+          },
+          {
+            "name": "Miodrag Pivas",
+            "number": 48,
+            "minute_on": null
+          },
+          {
+            "name": "Leo Shahar",
+            "number": 51,
+            "minute_on": null
+          },
+          {
+            "name": "Aladji Bamba",
+            "number": 8,
+            "minute_on": null
+          },
+          {
+            "name": "Harvey Barnes",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Anthony Elanga",
+            "number": 19,
+            "minute_on": null
+          },
+          {
+            "name": "Nick Woltemade",
+            "number": 27,
+            "minute_on": null
+          },
+          {
+            "name": "Jacob Ramsey",
+            "number": 41,
+            "minute_on": null
+          },
+          {
+            "name": "William Osula",
+            "number": 10,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "nfo-2026-08-08-23",
