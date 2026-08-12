@@ -234,6 +234,7 @@ export function RecommendedSquadPanel({
             goal,
             excludeIds,
             minDifferentials: style === "differential" ? 6 : undefined,
+            diversitySalt: Date.now(),
           }),
         });
         const data = await res.json();

@@ -22,6 +22,10 @@ const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
 const LEAGUE_CHUNK = 80;
 const DEFAULT_DIFF_MAX_OWN = 10;
 const DEFAULT_MIN_DIFFS = 6;
+/** Max shared players across any two options in a pack (excl. must-includes). */
+const MAX_OPTION_OVERLAP = 8;
+/** How many unlocked picks from prior options to hard-ban by default. */
+const BASE_BAN_COUNT = 9;
 
 export type SquadStyle =
   | "template"
@@ -44,6 +48,11 @@ export type RecommendedSquadConstraints = {
   /** Hint for differential style (default 6). Soft target, not a hard fail. */
   minDifferentials?: number;
   horizon?: number;
+  /**
+   * Changes the pick seed so regenerating with the same chips yields a new pack.
+   * Clients should pass Date.now() (or similar) on each Generate click.
+   */
+  diversitySalt?: number;
 };
 
 export type RecommendedSquadPlayer = {
@@ -330,11 +339,22 @@ export async function loadExcludeChipPlayers(
     }));
 }
 
+/** Take a kind-specific slice so safe/balanced/spicy soft-prefers stay disjoint. */
+function sliceByKind<T>(arr: T[], kind: SquadOptionKind, n: number): T[] {
+  if (arr.length <= n) return [...arr];
+  if (kind === "safe") return arr.slice(0, n);
+  if (kind === "spicy") return arr.slice(Math.max(0, arr.length - n));
+  const start = Math.max(0, Math.floor((arr.length - n) / 2));
+  return arr.slice(start, start + n);
+}
+
 function applyStylePool(
   pool: Cand[],
   style: SquadStyle,
   kind: SquadOptionKind,
   diffMax: number,
+  avoidPreferIds?: Set<number>,
+  diversitySalt = 0,
 ): {
   pool: Cand[];
   softPreferIds: number[];
@@ -344,74 +364,154 @@ function applyStylePool(
   if (kind === "spicy") preferValue = true;
   if (kind === "safe") preferValue = false;
 
+  const avoid = avoidPreferIds ?? new Set<number>();
   const scored = [...pool];
+  const eligible = (c: Cand) => !avoid.has(c.fpl_id);
+
+  /** Widen the candidate band, then salt-pick so regenerations diverge. */
+  const saltPick = (ranked: Cand[], n: number) => {
+    const band = sliceByKind(ranked, kind, Math.min(ranked.length, Math.max(n * 3, n)));
+    if (band.length <= n) return band.map((c) => c.fpl_id);
+    return [...band]
+      .sort((a, b) => {
+        const ja = ((a.fpl_id * 31 + diversitySalt * 17 + OPTION_META[kind].seedSalt) % 10007);
+        const jb = ((b.fpl_id * 31 + diversitySalt * 17 + OPTION_META[kind].seedSalt) % 10007);
+        return jb - ja || b.xp_gw1 - a.xp_gw1;
+      })
+      .slice(0, n)
+      .map((c) => c.fpl_id);
+  };
 
   if (style === "premium") {
     const premiums = [...scored]
-      .filter((c) => c.position !== "GKP" && c.price >= 8)
-      .sort((a, b) => b.price - a.price || b.xp_gw1 - a.xp_gw1)
-      .slice(0, kind === "spicy" ? 4 : 8)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: premiums, preferValue };
+      .filter((c) => eligible(c) && c.position !== "GKP" && c.price >= 7.5)
+      .sort((a, b) => b.price - a.price || b.xp_gw1 - a.xp_gw1);
+    return {
+      pool: scored,
+      softPreferIds: saltPick(premiums, kind === "spicy" ? 6 : 8),
+      preferValue,
+    };
   }
 
   if (style === "differential") {
     const diffs = [...scored]
-      .filter((c) => c.ownership <= diffMax && c.xp_gw1 > 0)
+      .filter((c) => eligible(c) && c.ownership <= diffMax && c.xp_gw1 > 0)
       .sort(
         (a, b) =>
           b.xp_gw1 / Math.max(b.ownership, 0.5) -
             a.xp_gw1 / Math.max(a.ownership, 0.5) || b.xp_gw1 - a.xp_gw1,
-      )
-      .slice(0, kind === "spicy" ? 14 : 10)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: diffs, preferValue: true };
+      );
+    return {
+      pool: scored,
+      softPreferIds: saltPick(diffs, 12),
+      preferValue: true,
+    };
   }
 
   if (style === "budget") {
     const enablers = [...scored]
-      .filter((c) => c.price <= 6.5)
+      .filter((c) => eligible(c) && c.price <= 6.5)
       .sort(
         (a, b) =>
           b.xp_gw1 / Math.max(b.price, 4) - a.xp_gw1 / Math.max(a.price, 4),
-      )
-      .slice(0, 10)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: enablers, preferValue: true };
+      );
+    return {
+      pool: scored,
+      softPreferIds: saltPick(enablers, 10),
+      preferValue: true,
+    };
   }
 
   if (style === "template") {
     const template = [...scored]
-      .filter((c) => c.ownership >= 15)
-      .sort((a, b) => b.ownership - a.ownership || b.xp_gw1 - a.xp_gw1)
-      .slice(0, kind === "safe" ? 12 : 8)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: template, preferValue };
+      .filter((c) => eligible(c) && c.ownership >= 12)
+      .sort((a, b) => b.ownership - a.ownership || b.xp_gw1 - a.xp_gw1);
+    return {
+      pool: scored,
+      softPreferIds: saltPick(template, 10),
+      preferValue,
+    };
   }
 
-  // balanced (+ kind nudges)
   if (kind === "spicy") {
     const diffs = [...scored]
-      .filter((c) => c.ownership <= diffMax && c.xp_gw1 > 0)
+      .filter((c) => eligible(c) && c.ownership <= diffMax + 5 && c.xp_gw1 > 0)
       .sort(
         (a, b) =>
           b.xp_gw1 / Math.max(b.ownership, 0.5) -
             a.xp_gw1 / Math.max(a.ownership, 0.5) || b.xp_gw1 - a.xp_gw1,
-      )
-      .slice(0, 12)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: diffs, preferValue: true };
+      );
+    return {
+      pool: scored,
+      softPreferIds: saltPick(diffs, 12),
+      preferValue: true,
+    };
   }
 
   if (kind === "safe") {
     const highOwn = [...scored]
-      .sort((a, b) => b.ownership - a.ownership || b.xp_gw1 - a.xp_gw1)
-      .slice(0, 8)
-      .map((c) => c.fpl_id);
-    return { pool: scored, softPreferIds: highOwn, preferValue: false };
+      .filter((c) => eligible(c))
+      .sort((a, b) => b.ownership - a.ownership || b.xp_gw1 - a.xp_gw1);
+    return {
+      pool: scored,
+      softPreferIds: saltPick(highOwn, 10),
+      preferValue: false,
+    };
   }
 
-  return { pool: scored, softPreferIds: [], preferValue };
+  const mid = [...scored]
+    .filter((c) => eligible(c) && c.ownership >= 5 && c.ownership <= 40)
+    .sort(
+      (a, b) =>
+        b.xp_gw1 / Math.max(b.price, 4) - a.xp_gw1 / Math.max(a.price, 4) ||
+        b.xp_gw1 - a.xp_gw1,
+    );
+  const fallback = [...scored]
+    .filter((c) => eligible(c))
+    .sort((a, b) => b.xp_gw1 - a.xp_gw1);
+  return {
+    pool: scored,
+    softPreferIds: saltPick(mid.length >= 8 ? mid : fallback, 10),
+    preferValue: true,
+  };
+}
+
+/** Prefer banning expensive / high-xP unlocked names so cores diverge. */
+function pickBanIds(
+  priorSquads: Cand[][],
+  lockedIds: Set<number>,
+  count: number,
+  kind: SquadOptionKind,
+): Set<number> {
+  const score = (c: Cand) => {
+    if (kind === "spicy") {
+      return c.ownership * 2 + c.price + c.xp_gw1 * 0.3;
+    }
+    if (kind === "safe") {
+      return 30 - Math.min(c.ownership, 30) + (10 - Math.min(c.price, 10));
+    }
+    return c.price + c.xp_gw1 * 0.5;
+  };
+
+  const seen = new Map<number, Cand>();
+  for (const squad of priorSquads) {
+    for (const c of squad) {
+      if (lockedIds.has(c.fpl_id)) continue;
+      if (!seen.has(c.fpl_id)) seen.set(c.fpl_id, c);
+    }
+  }
+
+  return new Set(
+    [...seen.values()]
+      .sort((a, b) => score(b) - score(a))
+      .slice(0, Math.max(0, count))
+      .map((c) => c.fpl_id),
+  );
+}
+
+function squadOverlap(a: Cand[], b: Cand[], lockedIds: Set<number>): number {
+  const setB = new Set(b.map((c) => c.fpl_id));
+  return a.filter((c) => setB.has(c.fpl_id) && !lockedIds.has(c.fpl_id)).length;
 }
 
 function buildWhy(
@@ -440,8 +540,8 @@ function buildWhy(
     en.push("Most differential lean — lower ownership, more upside.");
     zh.push("最差分取向 — 更低拥有、更高上行空间。");
   } else {
-    en.push("Best balance of xP, value, and your style chips.");
-    zh.push("在 xP、性价比与你的风格之间取均衡。");
+    en.push("Best balance of xP, value, and your style options.");
+    zh.push("在 xP、性价比与你的风格选项之间取均衡。");
   }
 
   if (style === "premium") {
@@ -669,6 +769,10 @@ function normalizeConstraints(
     differentialMaxOwn,
     minDifferentials,
     horizon,
+    diversitySalt:
+      typeof raw.diversitySalt === "number" && Number.isFinite(raw.diversitySalt)
+        ? Math.floor(raw.diversitySalt) >>> 0
+        : undefined,
   };
 }
 
@@ -695,6 +799,12 @@ export function parseRecommendedConstraints(
     minDifferentials:
       typeof o.minDifferentials === "number" ? o.minDifferentials : undefined,
     horizon: typeof o.horizon === "number" ? o.horizon : undefined,
+    diversitySalt:
+      typeof o.diversitySalt === "number"
+        ? o.diversitySalt
+        : typeof o.diversitySalt === "string" && Number.isFinite(Number(o.diversitySalt))
+          ? Number(o.diversitySalt)
+          : undefined,
   });
 }
 
@@ -740,139 +850,120 @@ export async function buildRecommendedSquadPack(
   const kinds: SquadOptionKind[] = ["safe", "balanced", "spicy"];
   const built: Cand[][] = [];
   const options: RecommendedSquadOption[] = [];
+  const usedSoftPrefer = new Set<number>();
+  const lockedIds = new Set(mustInclude.map((c) => c.fpl_id));
+  const diversitySalt = constraints.diversitySalt ?? 0;
 
   const allIds = workingBase.map((c) => c.fpl_id);
   const fxMap = await nextFixtureForPlayers(allIds);
 
   for (const kind of kinds) {
-    // Diversify: gently ban a few non-locked picks from earlier options.
-    const banIds = new Set<number>();
-    if (built.length > 0) {
-      const prev = built[built.length - 1]!;
-      const unlocked = prev
-        .filter((c) => !mustInclude.some((m) => m.fpl_id === c.fpl_id))
-        .sort((a, b) =>
-          kind === "spicy"
-            ? b.ownership - a.ownership
-            : a.ownership - b.ownership,
-        );
-      for (const c of unlocked.slice(0, kind === "spicy" ? 6 : 4)) {
-        banIds.add(c.fpl_id);
+    let squad: Cand[] | null = null;
+    let lastOverlap = 99;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const banCount = BASE_BAN_COUNT + attempt * 2 + (kind === "spicy" ? 1 : 0);
+      const banIds = pickBanIds(built, lockedIds, banCount, kind);
+      // Also ban soft-prefers already used by earlier options so cores diverge.
+      for (const id of usedSoftPrefer) {
+        if (!lockedIds.has(id) && banIds.size < banCount + 6) banIds.add(id);
       }
-    }
 
-    const workingPool = workingBase.filter((c) => !banIds.has(c.fpl_id));
-    const styled = applyStylePool(
-      workingPool,
-      constraints.style,
-      kind,
-      diffMax,
-    );
-    const seed = hashSeed([
-      constraints.style,
-      constraints.goal ?? "gw1_5",
-      String(OPTION_META[kind].seedSalt),
-      (constraints.excludeIds ?? []).join(","),
-      (constraints.includeIds ?? []).join(","),
-      String(gw),
-      String(horizon),
-      [...banIds].join(","),
-    ]);
+      const workingPool = workingBase.filter((c) => !banIds.has(c.fpl_id));
+      // Keep pool usable — if bans emptied it, fall back.
+      const poolForBuild =
+        workingPool.length >= 40 ? workingPool : workingBase;
 
-    let squad = buildBudgetSquad(
-      styled.pool.map(toBudgetCand),
-      seed,
-      {
-        mustInclude: mustInclude.map(toBudgetCand),
-        softPreferIds: styled.softPreferIds,
-        preferValue: styled.preferValue,
-      },
-    ).map(
-      (b) =>
-        byId.get(b.fpl_id) ?? workingBase.find((c) => c.fpl_id === b.fpl_id)!,
-    );
-
-    // Soft nudge for differential count on spicy / differential style.
-    const wantDiffs =
-      constraints.style === "differential"
-        ? constraints.minDifferentials ?? DEFAULT_MIN_DIFFS
-        : kind === "spicy"
-          ? 5
-          : 0;
-    if (wantDiffs > 0) {
-      squad = nudgeMoreDifferentials(
-        squad,
-        workingPool,
-        wantDiffs,
-        diffMax,
-        mustInclude,
-      );
-    }
-
-    // Spend bank (skip for pure budget style on "safe" to keep enablers).
-    if (!(constraints.style === "budget" && kind === "safe")) {
-      squad = forceSpendUpgrades(
-        squad,
-        workingPool,
-        mustInclude,
-        constraints.style === "differential" || kind === "spicy",
-        diffMax,
-      );
-    }
-
-    // Avoid near-duplicate options: if overlap too high with previous, reseed.
-    const idSet = new Set(squad.map((c) => c.fpl_id));
-    let tooSimilar = false;
-    for (const prev of built) {
-      const overlap = prev.filter((c) => idSet.has(c.fpl_id)).length;
-      if (overlap >= 12) {
-        tooSimilar = true;
-        break;
-      }
-    }
-    if (tooSimilar) {
-      const harderBan = new Set(banIds);
-      for (const prev of built) {
-        for (const c of prev.slice(0, 8)) harderBan.add(c.fpl_id);
-      }
-      const retryPool = workingBase.filter((c) => !harderBan.has(c.fpl_id));
-      const retryStyled = applyStylePool(
-        retryPool,
+      const styled = applyStylePool(
+        poolForBuild,
         constraints.style,
         kind,
         diffMax,
+        usedSoftPrefer,
+        diversitySalt + attempt * 7919,
       );
-      squad = buildBudgetSquad(
-        retryStyled.pool.map(toBudgetCand),
-        seed + 9973 + OPTION_META[kind].seedSalt,
+      const seed = hashSeed([
+        constraints.style,
+        constraints.goal ?? "gw1_5",
+        String(OPTION_META[kind].seedSalt),
+        String(diversitySalt),
+        String(attempt),
+        (constraints.excludeIds ?? []).join(","),
+        (constraints.includeIds ?? []).join(","),
+        String(gw),
+        String(horizon),
+        [...banIds].sort((a, b) => a - b).join(","),
+      ]);
+
+      let candidate = buildBudgetSquad(
+        styled.pool.map(toBudgetCand),
+        seed,
         {
           mustInclude: mustInclude.map(toBudgetCand),
-          softPreferIds: retryStyled.softPreferIds,
-          preferValue: true,
+          softPreferIds: styled.softPreferIds,
+          preferValue: styled.preferValue,
         },
       ).map(
         (b) =>
           byId.get(b.fpl_id) ?? workingBase.find((c) => c.fpl_id === b.fpl_id)!,
       );
-      squad = forceSpendUpgrades(
-        squad,
-        retryPool,
-        mustInclude,
-        constraints.style === "differential" || kind === "spicy",
-        diffMax,
-      );
-    }
 
-    if (squad.length !== 15) {
-      throw new Error(`Incomplete squad for ${kind} (${squad.length}/15).`);
-    }
-
-    // Position counts sanity.
-    for (const pos of POSITIONS) {
-      const n = squad.filter((c) => c.position === pos).length;
-      if (n !== NEED[pos]) {
-        throw new Error(`Bad ${pos} count for ${kind}: ${n}`);
+      const wantDiffs =
+        constraints.style === "differential"
+          ? constraints.minDifferentials ?? DEFAULT_MIN_DIFFS
+          : kind === "spicy"
+            ? 5
+            : 0;
+      if (wantDiffs > 0) {
+        candidate = nudgeMoreDifferentials(
+          candidate,
+          poolForBuild,
+          wantDiffs,
+          diffMax,
+          mustInclude,
+        );
       }
+
+      if (!(constraints.style === "budget" && kind === "safe")) {
+        candidate = forceSpendUpgrades(
+          candidate,
+          poolForBuild,
+          mustInclude,
+          constraints.style === "differential" || kind === "spicy",
+          diffMax,
+        );
+      }
+
+      if (candidate.length !== 15) continue;
+      let badPos = false;
+      for (const pos of POSITIONS) {
+        if (candidate.filter((c) => c.position === pos).length !== NEED[pos]) {
+          badPos = true;
+          break;
+        }
+      }
+      if (badPos) continue;
+
+      let maxOverlap = 0;
+      for (const prev of built) {
+        maxOverlap = Math.max(
+          maxOverlap,
+          squadOverlap(candidate, prev, lockedIds),
+        );
+      }
+      lastOverlap = maxOverlap;
+
+      if (maxOverlap <= MAX_OPTION_OVERLAP || attempt === 4) {
+        squad = candidate;
+        for (const id of styled.softPreferIds) usedSoftPrefer.add(id);
+        break;
+      }
+    }
+
+    if (!squad || squad.length !== 15) {
+      throw new Error(
+        `Could not diversify ${kind} squad (last overlap ${lastOverlap}).`,
+      );
     }
 
     built.push(squad);
