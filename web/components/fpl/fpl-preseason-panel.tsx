@@ -595,14 +595,14 @@ function LeaderboardTable({
   playerLinks: Record<string, number>;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card/60">
+    <div className="rounded-xl border border-border bg-card/60">
       <div className="border-b border-border/60 px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       </div>
       {rows.length === 0 ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">{labels.leaderboardEmpty}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="scroll-table">
           <table className="w-full min-w-[16rem] text-sm">
             <thead>
               <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">

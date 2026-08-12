@@ -351,3 +351,41 @@ html:not(.dark) [class*="hover\\:border-white"]:hover {
 html:not(.dark) [class*="hover\\:bg-white"]:hover {
   background-color: hsl(var(--muted));
 }
+
+/* Scrollable data tables — single scrollport + opaque sticky headers (avoids ghost rows). */
+.scroll-table {
+  position: relative;
+  isolation: isolate;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-table--bordered {
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.scroll-table--viewport {
+  max-height: min(70vh, calc(100vh - 14rem));
+}
+
+.scroll-table table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: hsl(var(--card));
+  box-shadow: 0 1px 0 hsl(var(--border));
+}
+
+.scroll-table table thead th.sticky.left-0 {
+  z-index: 2;
+}
+
+.scroll-table table thead tr {
+  background-color: hsl(var(--card));
+}
+
+.scroll-table--muted table thead th,
+.scroll-table--muted table thead tr {
+  background-color: hsl(var(--muted));
+}

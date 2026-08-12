@@ -192,12 +192,12 @@ export function SetPiecesPanel({
         {sortedGroups.map((group) => (
           <section
             key={group.team}
-            className="overflow-hidden rounded-xl border border-border"
+            className="rounded-xl border border-border"
           >
             <h3 className="border-b border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground">
               {group.team}
             </h3>
-            <div className="overflow-x-auto">
+            <div className="scroll-table">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>{headerRow}</thead>
                 <tbody>

@@ -263,7 +263,7 @@ export function PlannerPlayerInspectSheet({
                   xP ({detail.xp_per_game.toFixed(2)}/{t("inspectPerGwShort")})
                 </span>
               </div>
-              <div className="overflow-x-auto rounded-lg border border-border sm:rounded-xl">
+              <div className="scroll-table scroll-table--bordered sm:rounded-xl">
                 <table className="w-full text-[11px] sm:text-xs">
                   <thead>
                     <tr className="text-left text-[9px] uppercase text-muted-foreground sm:text-[10px]">

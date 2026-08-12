@@ -224,7 +224,7 @@ export function FplHistoricalPlayerModal({
                   {labels.gwBreakdownTitle}
                 </h3>
                 {detail.gameweeks.length ? (
-                  <div className="overflow-x-auto rounded-xl border border-border">
+                  <div className="scroll-table scroll-table--bordered">
                     <table className="w-full min-w-[860px] text-left text-xs">
                       <thead>
                         <tr className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">

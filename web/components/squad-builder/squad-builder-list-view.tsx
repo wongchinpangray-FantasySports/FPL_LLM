@@ -43,8 +43,8 @@ export function SquadBuilderListView({
   const rows = [...picks].sort((a, b) => a.slot - b.slot);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
-      <div className="overflow-x-auto">
+    <div className="rounded-xl border border-border bg-card/50">
+      <div className="scroll-table">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border text-left text-[10px] uppercase tracking-wide text-muted-foreground">

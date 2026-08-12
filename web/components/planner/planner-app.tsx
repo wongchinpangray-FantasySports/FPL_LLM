@@ -1100,7 +1100,7 @@ export function PlannerApp({
         </div>
       )}
 
-      <section className="overflow-x-auto rounded-lg border border-border bg-muted sm:rounded-xl">
+      <section className="scroll-table scroll-table--bordered bg-muted sm:rounded-xl">
         <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="text-left text-[10px] uppercase text-muted-foreground sm:text-xs">

@@ -184,7 +184,7 @@ export function WcXpHeatmap({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+      <div className="scroll-table scroll-table--bordered hidden bg-card md:block">
         <table className="w-full text-xs">
           <thead>
             <tr className="text-left text-[10px] uppercase text-muted-foreground">

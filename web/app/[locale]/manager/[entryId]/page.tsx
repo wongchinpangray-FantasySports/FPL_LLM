@@ -195,7 +195,7 @@ export default async function ManagerEntryPage({
           <h2 className="mb-3 text-sm font-semibold text-foreground">
             {t("pastSeasonsSection")}
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="scroll-table scroll-table--bordered">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[10px] uppercase text-muted-foreground">

@@ -817,7 +817,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
           ) : leaderboard.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noEntries")}</p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="scroll-table scroll-table--bordered">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">

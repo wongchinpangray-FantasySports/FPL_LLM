@@ -328,7 +328,7 @@ export default async function PlayerHubPage({
             GW{fromGw}–{toGw}
           </span>
         </div>
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="scroll-table scroll-table--bordered">
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="text-left text-[10px] uppercase text-muted-foreground">

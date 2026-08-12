@@ -790,7 +790,7 @@ export function FplHistoricalData({
         ) : null}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      <div className="scroll-table scroll-table--bordered bg-card">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">

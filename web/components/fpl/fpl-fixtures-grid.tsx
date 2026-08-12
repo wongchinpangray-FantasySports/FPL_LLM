@@ -354,7 +354,7 @@ export function FplFixturesGrid({
           ))}
         </div>
 
-        <div className="hidden overflow-x-auto rounded-xl border border-border bg-card/50 md:block">
+        <div className="scroll-table scroll-table--bordered hidden bg-card/50 md:block">
           <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-muted-foreground">

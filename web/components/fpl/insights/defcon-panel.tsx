@@ -131,7 +131,7 @@ export function DefconPanel({
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="scroll-table scroll-table--bordered scroll-table--muted">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">

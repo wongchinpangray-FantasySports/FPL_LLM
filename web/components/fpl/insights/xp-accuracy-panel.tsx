@@ -277,7 +277,7 @@ export function XpAccuracyPanel({
           <h3 className="mt-3 text-sm font-semibold text-foreground">
             {labels.positionBreakdown}
           </h3>
-          <div className="mt-2 overflow-x-auto">
+          <div className="scroll-table mt-2">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
@@ -367,7 +367,7 @@ export function XpAccuracyPanel({
       ) : null}
 
       {tab === "byGw" ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="scroll-table scroll-table--bordered scroll-table--muted">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
@@ -468,7 +468,7 @@ export function XpAccuracyPanel({
           <h3 className="text-sm font-semibold text-foreground">
             {labels.missesTitle.replace("{gw}", String(latestGw ?? "—"))}
           </h3>
-          <div className="mt-2 overflow-x-auto rounded-xl border border-border">
+          <div className="scroll-table scroll-table--bordered scroll-table--muted mt-2">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">

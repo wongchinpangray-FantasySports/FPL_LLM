@@ -102,7 +102,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="site-header sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+      <header className="site-header sticky top-0 z-50 border-b border-border bg-background">
         <div className="container flex items-center justify-between gap-3 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button

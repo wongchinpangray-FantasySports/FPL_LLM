@@ -969,7 +969,7 @@ export function PlayersExplorer({
       {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("explorerEmpty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border -mx-1 px-1 sm:mx-0 sm:px-0">
+        <div className="scroll-table scroll-table--bordered scroll-table--muted -mx-1 px-1 sm:mx-0 sm:px-0">
           <table
             className="w-full border-collapse text-left"
             style={{ minWidth: tableMinWidth }}

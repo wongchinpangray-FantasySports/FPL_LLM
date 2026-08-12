@@ -221,7 +221,7 @@ export function ValueBandPanel({
       {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">{labels.empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="scroll-table scroll-table--bordered scroll-table--muted">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>

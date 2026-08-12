@@ -474,7 +474,7 @@ export default async function DashboardPage({
           </div>
           <span className="text-xs text-muted-foreground">{dt("fixturesHint")}</span>
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
+        <div className="scroll-table scroll-table--bordered rounded-2xl bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-muted-foreground">

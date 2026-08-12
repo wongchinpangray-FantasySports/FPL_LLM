@@ -325,7 +325,7 @@ export function FplPlayerPerformanceModal({
                     {labels.emptyGw}
                   </p>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border border-border">
+                  <div className="scroll-table scroll-table--bordered scroll-table--muted">
                     <table className="min-w-full text-left text-xs">
                       <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                         <tr>
@@ -387,7 +387,7 @@ export function FplPlayerPerformanceModal({
                   <h3 className="mb-2 text-sm font-semibold text-foreground">
                     {labels.fixturesTitle}
                   </h3>
-                  <div className="overflow-x-auto rounded-lg border border-border">
+                  <div className="scroll-table scroll-table--bordered scroll-table--muted">
                     <table className="min-w-full text-left text-xs">
                       <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                         <tr>

@@ -745,11 +745,11 @@ function MiniGroupTable({
   };
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
-      <div className="border-b border-border bg-card/80 px-3 py-2.5 text-xs font-semibold text-foreground sm:text-sm">
+    <div className="rounded-xl border border-border bg-card/50">
+      <div className="border-b border-border bg-card px-3 py-2.5 text-xs font-semibold text-foreground sm:text-sm">
         {labels.group} {group.group_letter}
       </div>
-      <div className="overflow-x-auto">
+      <div className="scroll-table">
         <table className="w-full min-w-[17rem] text-left text-[11px] sm:text-xs">
           <thead>
             <tr className="text-muted-foreground">

@@ -188,7 +188,7 @@ export function XpHeatmap({
           </span>
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl">
+      <div className="scroll-table scroll-table--bordered bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] sm:rounded-2xl">
         <table className="w-full text-[11px] sm:text-xs">
           <thead>
             <tr className="text-left text-[9px] uppercase text-muted-foreground sm:text-[10px]">

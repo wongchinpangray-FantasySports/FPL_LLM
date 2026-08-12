@@ -42,13 +42,13 @@ function StandingTable({
   selectedCode: string | null;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+    <div className="rounded-xl border border-border bg-card/50">
       <div className="border-b border-border bg-card px-3 py-2">
         <h3 className="text-sm font-semibold text-foreground">
           {labels.group} {group.group_letter}
         </h3>
       </div>
-      <div className="overflow-x-auto">
+      <div className="scroll-table">
         <table className="w-full min-w-[280px] text-left text-xs">
           <thead>
             <tr className="text-muted-foreground">
@@ -129,7 +129,7 @@ function LeaderboardTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+    <div className="scroll-table scroll-table--bordered bg-card/50">
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="border-b border-border text-muted-foreground">
