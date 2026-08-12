@@ -258,6 +258,49 @@ html.team-themed .home-hub-feature-title {
   background: color-mix(in srgb, var(--team-primary) 8%, transparent);
 }
 
+.home-feature-card {
+  border-color: hsl(var(--border));
+  background: linear-gradient(
+    165deg,
+    hsl(var(--card) / 0.72),
+    hsl(var(--card) / 0.42)
+  );
+}
+
+.home-feature-card-thumb {
+  border-bottom: 1px solid hsl(var(--border) / 0.65);
+  background: hsl(var(--background));
+}
+
+.home-feature-card--accent-emerald {
+  border-color: color-mix(in srgb, #10b981 28%, hsl(var(--border)));
+}
+
+.home-feature-card--accent-indigo {
+  border-color: color-mix(in srgb, #6366f1 28%, hsl(var(--border)));
+}
+
+.home-feature-card--accent-amber {
+  border-color: color-mix(in srgb, #f59e0b 28%, hsl(var(--border)));
+}
+
+.home-feature-card--accent-brand {
+  border-color: color-mix(in srgb, var(--team-primary) 32%, hsl(var(--border)));
+}
+
+.home-feature-card--accent-cyan {
+  border-color: color-mix(in srgb, #06b6d4 28%, hsl(var(--border)));
+}
+
+.home-feature-card--accent-violet {
+  border-color: color-mix(in srgb, #8b5cf6 28%, hsl(var(--border)));
+}
+
+.home-feature-card:hover {
+  border-color: color-mix(in srgb, var(--team-primary) 42%, hsl(var(--border)));
+  box-shadow: 0 8px 28px rgba(var(--team-primary-rgb), 0.1);
+}
+
 .home-hub-snapshot {
   background: linear-gradient(
     135deg,

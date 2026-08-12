@@ -136,6 +136,7 @@
     "fplOpenPlanner": "Scenario planner",
     "fplOpenSquadBuilder": "Squad builder",
     "fplShortcuts": "Quick links",
+    "homeFeaturedTitle": "Featured tools",
     "homeGroupManage": "Your team",
     "homeGroupResearch": "Research",
     "homeGroupTools": "Tools",
@@ -191,7 +192,9 @@
     "exploreHistoricalTitle": "Historical data",
     "exploreHistoricalBody": "Compare per-GW FPL stats across past seasons.",
     "exploreInsightsTitle": "Insights",
-    "exploreRecommendedSquadTitle": "Recommended squad"
+    "exploreInsightsBody": "Set pieces, differentials, price changes, and advanced FPL signals.",
+    "exploreRecommendedSquadTitle": "Recommended squad",
+    "exploreRecommendedSquadBody": "Pre-season GW1 XI built from chips, fixtures, and projected points."
   },
   "entryForm": {
     "label": "Entry ID",

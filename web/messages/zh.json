@@ -136,6 +136,7 @@
     "fplOpenPlanner": "情景规划",
     "fplOpenSquadBuilder": "阵容搭建",
     "fplShortcuts": "快捷入口",
+    "homeFeaturedTitle": "精选功能",
     "homeGroupManage": "我的球队",
     "homeGroupResearch": "数据研究",
     "homeGroupTools": "工具",
@@ -191,7 +192,9 @@
     "exploreHistoricalTitle": "历史数据",
     "exploreHistoricalBody": "跨赛季对比球员逐轮 FPL 表现。",
     "exploreInsightsTitle": "洞察",
-    "exploreRecommendedSquadTitle": "推荐阵容"
+    "exploreInsightsBody": "定位球、差异化、涨跌价与进阶 FPL 信号。",
+    "exploreRecommendedSquadTitle": "推荐阵容",
+    "exploreRecommendedSquadBody": "基于芯片、赛程与预期积分的季前 GW1 首发推荐。"
   },
   "entryForm": {
     "label": "Entry ID",

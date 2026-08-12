@@ -1181,6 +1181,67 @@ function FplSection({
 
 type FeatureLink = { href: string; label: string };
 
+type FeaturedCard = {
+  href: string;
+  title: string;
+  body: string;
+  image: string;
+};
+
+const FEATURED_CARD_ACCENTS = [
+  "home-feature-card--accent-emerald",
+  "home-feature-card--accent-indigo",
+  "home-feature-card--accent-amber",
+  "home-feature-card--accent-brand",
+  "home-feature-card--accent-cyan",
+  "home-feature-card--accent-violet",
+] as const;
+
+function HomeFeaturedCards({
+  title,
+  items,
+}: {
+  title: string;
+  items: FeaturedCard[];
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item, index) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "home-feature-card group flex flex-col overflow-hidden rounded-xl border no-underline transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:shadow-md",
+              FEATURED_CARD_ACCENTS[index % FEATURED_CARD_ACCENTS.length],
+            )}
+          >
+            <div className="home-feature-card-thumb relative aspect-[16/10] w-full overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.image}
+                alt=""
+                className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]"
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1 px-3.5 py-3">
+              <h3 className="text-sm font-semibold text-foreground group-hover:text-brand-accent">
+                {item.title}
+              </h3>
+              <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                {item.body}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function FeatureGroup({
   title,
   items,
@@ -1190,6 +1251,8 @@ function FeatureGroup({
   items: FeatureLink[];
   variant: number;
 }) {
+  if (items.length === 0) return null;
+
   return (
     <section
       className="home-hub-feature-group rounded-xl border"
@@ -1227,16 +1290,10 @@ function HomeFeatureGroups({
     game: string;
     dashboard: string;
     planner: string;
-    squadBuilder: string;
     manager: string;
-    players: string;
     fixtures: string;
     preseason: string;
-    historical: string;
-    mini: string;
     news: string;
-    insights: string;
-    recommendedSquad: string;
   };
 }) {
   const { entryId } = useEntryId();
@@ -1244,24 +1301,17 @@ function HomeFeatureGroups({
   const manage: FeatureLink[] = [
     { href: entryId ? `/dashboard/${entryId}` : "/dashboard", label: labels.dashboard },
     { href: entryId ? `/planner/${entryId}` : "/planner", label: labels.planner },
-    { href: "/squad-builder", label: labels.squadBuilder },
     { href: entryId ? `/manager/${entryId}` : "/manager", label: labels.manager },
   ];
 
   const research: FeatureLink[] = [
-    { href: "/players", label: labels.players },
     { href: "/fpl/fixtures", label: labels.fixtures },
     { href: "/fpl/preseason", label: labels.preseason },
-    { href: "/fpl/historical", label: labels.historical },
   ];
 
-  const tools: FeatureLink[] = [
-    { href: "/fpl/insights/recommended-squad", label: labels.recommendedSquad },
-    { href: "/fpl/insights", label: labels.insights },
-    { href: "/news", label: labels.news },
-  ];
+  const tools: FeatureLink[] = [{ href: "/news", label: labels.news }];
 
-  const game: FeatureLink[] = [{ href: "/mini", label: labels.mini }];
+  const game: FeatureLink[] = [];
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1383,6 +1433,48 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
             <HubChip href="/fpl/fixtures">{t("exploreFixturesTitle")}</HubChip>
           </div>
 
+          <HomeFeaturedCards
+            title={t("homeFeaturedTitle")}
+            items={[
+              {
+                href: "/squad-builder",
+                title: t("fplOpenSquadBuilder"),
+                body: t("exploreSquadBuilderBody"),
+                image: `/home-features/squad-builder.png?v=3`,
+              },
+              {
+                href: "/players",
+                title: t("explorePlayersTitle"),
+                body: t("explorePlayersBody"),
+                image: `/home-features/players.png?v=3`,
+              },
+              {
+                href: "/fpl/historical",
+                title: t("exploreHistoricalTitle"),
+                body: t("exploreHistoricalBody"),
+                image: `/home-features/historical.png?v=3`,
+              },
+              {
+                href: "/fpl/insights/recommended-squad",
+                title: t("exploreRecommendedSquadTitle"),
+                body: t("exploreRecommendedSquadBody"),
+                image: `/home-features/recommended-squad.png?v=3`,
+              },
+              {
+                href: "/fpl/insights",
+                title: t("exploreInsightsTitle"),
+                body: t("exploreInsightsBody"),
+                image: `/home-features/insights.png?v=3`,
+              },
+              {
+                href: "/mini",
+                title: t("exploreMiniTitle"),
+                body: t("exploreMiniBody"),
+                image: `/home-features/mini5.png?v=3`,
+              },
+            ]}
+          />
+
           <HomeFeatureGroups
             labels={{
               manage: t("homeGroupManage"),
@@ -1391,16 +1483,10 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               game: t("homeGroupGame"),
               dashboard: t("fplOpenDashboard"),
               planner: t("fplOpenPlanner"),
-              squadBuilder: t("fplOpenSquadBuilder"),
               manager: t("homeGroupManager"),
-              players: t("explorePlayersTitle"),
               fixtures: t("exploreFixturesTitle"),
               preseason: t("explorePreseasonTitle"),
-              historical: t("exploreHistoricalTitle"),
-              mini: t("exploreMiniTitle"),
               news: t("sidebarNews"),
-              insights: t("exploreInsightsTitle"),
-              recommendedSquad: t("exploreRecommendedSquadTitle"),
             }}
           />
 
