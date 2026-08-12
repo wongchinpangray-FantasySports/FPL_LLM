@@ -1301,7 +1301,11 @@
     "fplNewsTitle": "Unlock FPL daily & X briefings",
     "fplNewsBody": "Create a free account to read AI daily summaries and the day-by-day FPL on X archive.",
     "fplNewsLoading": "Checking your account…",
-    "fplNewsSignInHint": "Sign up or log in to read FPL daily briefings and the FPL on X archive."
+    "fplNewsSignInHint": "Sign up or log in to read FPL daily briefings and the FPL on X archive.",
+    "recommendedSquadTitle": "Unlock Recommended Squad",
+    "recommendedSquadBody": "Create a free account to generate three contrastive GW1 squads from your style options — then open any one in Squad Builder.",
+    "recommendedSquadLoading": "Checking your account…",
+    "recommendedSquadSignInHint": "Sign up or log in to use Recommended Squad."
   },
   "admin": {
     "eyebrow": "Admin",

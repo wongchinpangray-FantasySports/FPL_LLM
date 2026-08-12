@@ -1301,7 +1301,11 @@
     "fplNewsTitle": "解锁 FPL 日报与 X 动态归档",
     "fplNewsBody": "免费注册即可阅读 AI 每日简报与按日归档的 FPL X 动态。",
     "fplNewsLoading": "正在验证账号…",
-    "fplNewsSignInHint": "注册或登录后即可阅读 FPL 日报与 FPL 动态归档。"
+    "fplNewsSignInHint": "注册或登录后即可阅读 FPL 日报与 FPL 动态归档。",
+    "recommendedSquadTitle": "解锁推荐阵容",
+    "recommendedSquadBody": "免费注册即可按风格选项一次生成三套 GW1 对比阵容，并导入阵容构建器微调。",
+    "recommendedSquadLoading": "正在验证账号…",
+    "recommendedSquadSignInHint": "注册或登录后即可使用推荐阵容。"
   },
   "admin": {
     "eyebrow": "管理",
