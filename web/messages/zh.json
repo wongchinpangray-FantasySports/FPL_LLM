@@ -1439,7 +1439,7 @@
     "recommendedSquad": {
       "title": "推荐阵容",
       "description": "选风格与少量限制 —— 一次生成三套 GW1 阵容方案。",
-      "intro": "一次生成、三套对比阵容。选中后可在阵容构建器里微调。改芯片再生成即可换一批。",
+      "intro": "一次生成、三套对比阵容。选中后可在阵容构建器里微调。改选项再生成即可换一批。",
       "stepStyle": "1. 风格",
       "stepExclude": "2. 排除（可选）",
       "stepGoal": "3. 目标",
@@ -1453,7 +1453,7 @@
       "goalRankChase": "冲排名",
       "generate": "生成 3 套阵容",
       "generating": "生成中…",
-      "regenHint": "想换一批？改芯片后再生成。",
+      "regenHint": "想换一批？改选项后再生成。",
       "error": "生成失败。试试减少必选或换一组排除。",
       "resultTitle": "三套方案 · GW{gw} · 未来 {horizon} 轮",
       "metaSpend": "£{spend}m · 余额 £{bank}m",
@@ -1463,7 +1463,7 @@
       "openBuilder": "在阵容构建器打开",
       "whyTitle": "为什么是这套",
       "emptyExclude": "热门球员将显示在此，便于一键排除。",
-      "generatedOnce": "已生成 — 选一套，或改芯片再试。"
+      "generatedOnce": "已生成 — 选一套，或改选项再试。"
     },
     "bestOfPosition": {
       "title": "位置精选",
