@@ -3205,7 +3205,14 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "33'",
+          "scorer": "Myles",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3253,7 +3260,14 @@
       "pl_goals": 1,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "16'",
+          "scorer": "Joshua",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3269,7 +3283,20 @@
       "pl_goals": 1,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "27'",
+          "scorer": "Following",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Harvey Barnes",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
