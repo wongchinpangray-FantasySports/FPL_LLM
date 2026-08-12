@@ -3160,11 +3160,36 @@
       "pl_home": true,
       "venue": "Edinburgh",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "27'",
+          "scorer": "Following",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "34'",
+          "scorer": "Joelinton",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "73'",
+          "scorer": "George",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Harvey Barnes",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3176,9 +3201,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3192,9 +3217,9 @@
       "pl_home": false,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3208,9 +3233,9 @@
       "pl_home": false,
       "venue": "Salzburg",
       "note": "UEFA Super Cup",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3224,9 +3249,9 @@
       "pl_home": true,
       "venue": "Dublin",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3240,9 +3265,9 @@
       "pl_home": true,
       "venue": "Edinburgh",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 3,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3256,9 +3281,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 1,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
