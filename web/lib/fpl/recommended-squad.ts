@@ -693,7 +693,30 @@ function assembleOption(
   );
 
   const meta = OPTION_META[opts.kind];
-  const pick_ids = toPlannerPicks(squadCands).map((p) => p.fpl_id);
+  // Starters first within each position so squad-builder's default
+  // starter slots (3-4-3) pick up the recommended XI where possible.
+  const pick_ids = (() => {
+    const empty = createEmptySquad();
+    const byPos: Record<string, RecommendedSquadPlayer[]> = {
+      GKP: [],
+      DEF: [],
+      MID: [],
+      FWD: [],
+    };
+    for (const p of players) byPos[p.position].push(p);
+    for (const pos of POSITIONS) {
+      byPos[pos].sort(
+        (a, b) =>
+          Number(b.is_starter) - Number(a.is_starter) ||
+          b.xp_gw1 - a.xp_gw1 ||
+          a.price - b.price,
+      );
+    }
+    return empty.map((slot) => {
+      const pos = slot.position ?? "MID";
+      return byPos[pos].shift()?.fpl_id ?? 0;
+    });
+  })();
 
   return {
     kind: opts.kind,

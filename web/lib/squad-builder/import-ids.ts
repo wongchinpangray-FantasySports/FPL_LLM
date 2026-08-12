@@ -43,7 +43,7 @@ export function picksFromBrowsePlayers(
       team_id: p.team_id,
       position: p.position,
       base_price: p.base_price,
-      is_starter: false,
+      is_starter: slot.is_starter,
       is_captain: p.fpl_id === captainId,
       is_vice_captain: p.fpl_id === viceId && p.fpl_id !== captainId,
     };
