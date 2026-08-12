@@ -215,16 +215,15 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
       ) : null}
 
       {!loading && !error ? (
-        <div className="overflow-hidden rounded-xl border border-border">
-          <div className="overflow-x-auto">
+        <div className="relative isolate max-h-[min(70vh,calc(100vh-14rem))] overflow-auto rounded-xl border border-border">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-border bg-card/80 text-xs uppercase text-muted-foreground">
-                  <th className="px-3 py-2.5 font-medium">{t("colEmail")}</th>
-                  <th className="px-3 py-2.5 font-medium">{t("colSignedUp")}</th>
-                  <th className="px-3 py-2.5 font-medium">{t("colLastLogin")}</th>
-                  <th className="px-3 py-2.5 font-medium">{t("colOnboarding")}</th>
-                  <th className="px-3 py-2.5 font-medium">{t("colLogins")}</th>
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-border bg-card text-xs uppercase text-muted-foreground shadow-[0_1px_0_hsl(var(--border))]">
+                  <th className="bg-card px-3 py-2.5 font-medium">{t("colEmail")}</th>
+                  <th className="bg-card px-3 py-2.5 font-medium">{t("colSignedUp")}</th>
+                  <th className="bg-card px-3 py-2.5 font-medium">{t("colLastLogin")}</th>
+                  <th className="bg-card px-3 py-2.5 font-medium">{t("colOnboarding")}</th>
+                  <th className="bg-card px-3 py-2.5 font-medium">{t("colLogins")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,7 +301,6 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                 })}
               </tbody>
             </table>
-          </div>
           {filtered.length === 0 ? (
             <p className="px-3 py-6 text-sm text-muted-foreground">{t("empty")}</p>
           ) : null}
