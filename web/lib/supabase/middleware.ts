@@ -63,7 +63,20 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;
   if (pathname.startsWith("/api/fpl/insights/")) return false;
-  if (pathname.startsWith("/api/fpl/historical/")) return false;
+  // Exact path + nested (UI legacy + autocomplete/detail).
+  if (
+    pathname === "/api/fpl/historical" ||
+    pathname.startsWith("/api/fpl/historical/")
+  ) {
+    return false;
+  }
+  // Versioned public/partner historical API.
+  if (
+    pathname === "/api/historical" ||
+    pathname.startsWith("/api/historical/")
+  ) {
+    return false;
+  }
   if (pathname.startsWith("/api/fpl/")) return true;
   return false;
 }
