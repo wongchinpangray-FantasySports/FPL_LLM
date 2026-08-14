@@ -1467,6 +1467,8 @@
       "metaOwn": "均拥有 {own}% · {diffs} 人 ≤{maxOwn}%",
       "metaXp": "首发 xP {xp}",
       "captain": "队长 {name}",
+      "xiLabel": "首发 XI",
+      "benchLabel": "替补",
       "openBuilder": "在阵容构建器打开",
       "whyTitle": "为什么是这套",
       "emptyExclude": "热门球员将显示在此，便于一键排除。",

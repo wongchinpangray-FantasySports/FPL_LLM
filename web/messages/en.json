@@ -1467,6 +1467,8 @@
       "metaOwn": "Avg own {own}% · {diffs} diffs ≤{maxOwn}%",
       "metaXp": "XI xP {xp}",
       "captain": "C {name}",
+      "xiLabel": "Starting XI",
+      "benchLabel": "Bench",
       "openBuilder": "Open in Squad Builder",
       "whyTitle": "Why this squad",
       "emptyExclude": "Popular names load here for quick exclude.",

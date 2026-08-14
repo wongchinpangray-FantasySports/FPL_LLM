@@ -92,6 +92,36 @@ function goalLabel(
   }
 }
 
+function PlayerRow({
+  player: p,
+  muted,
+}: {
+  player: RecommendedSquadOption["starters"][number];
+  muted?: boolean;
+}) {
+  return (
+    <li
+      className={cn(
+        "flex justify-between gap-2",
+        muted && "text-muted-foreground",
+      )}
+    >
+      <span className="min-w-0 truncate">
+        <span className={muted ? "opacity-70" : "text-muted-foreground"}>
+          {p.position}
+        </span>{" "}
+        <span className={muted ? undefined : "text-foreground/90"}>
+          {p.web_name}
+        </span>
+        {p.is_captain ? " (C)" : p.is_vice ? " (V)" : ""}
+      </span>
+      <span className="shrink-0 tabular-nums text-muted-foreground">
+        £{p.price.toFixed(1)} · {p.ownership.toFixed(0)}%
+      </span>
+    </li>
+  );
+}
+
 function OptionCard({
   option,
   locale,
@@ -105,6 +135,7 @@ function OptionCard({
   const title = locale.startsWith("zh") ? option.label_zh : option.label_en;
   const why = locale.startsWith("zh") ? option.why_zh : option.why_en;
   const xi = option.starters;
+  const bench = option.bench ?? [];
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border bg-card/50 p-4">
@@ -129,20 +160,29 @@ function OptionCard({
         </p>
       </header>
 
-      <ul className="space-y-0.5 text-xs leading-snug text-foreground/90">
-        {xi.map((p) => (
-          <li key={p.fpl_id} className="flex justify-between gap-2">
-            <span className="min-w-0 truncate">
-              <span className="text-muted-foreground">{p.position}</span>{" "}
-              {p.web_name}
-              {p.is_captain ? " (C)" : p.is_vice ? " (V)" : ""}
-            </span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
-              £{p.price.toFixed(1)} · {p.ownership.toFixed(0)}%
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="space-y-2">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {t("recommendedSquad.xiLabel")} · {xi.length}
+        </p>
+        <ul className="space-y-0.5 text-xs leading-snug">
+          {xi.map((p) => (
+            <PlayerRow key={p.fpl_id} player={p} />
+          ))}
+        </ul>
+      </div>
+
+      {bench.length > 0 ? (
+        <div className="space-y-2 border-t border-border/60 pt-2">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {t("recommendedSquad.benchLabel")} · {bench.length}
+          </p>
+          <ul className="space-y-0.5 text-xs leading-snug">
+            {bench.map((p) => (
+              <PlayerRow key={p.fpl_id} player={p} muted />
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="space-y-1">
         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
