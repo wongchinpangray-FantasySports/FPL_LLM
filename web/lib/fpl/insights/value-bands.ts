@@ -40,6 +40,20 @@ export type ValueBandTakeaway = {
   blurb_zh: string;
 };
 
+export type ValueBandCategoryPlayer = {
+  fpl_id: number;
+  web_name: string;
+  team: string;
+  value: number;
+};
+
+export type ValueBandCategoryTop = {
+  kind: "xp" | "defcon" | "attack";
+  label: string;
+  label_zh: string;
+  players: ValueBandCategoryPlayer[];
+};
+
 export type ValueBandAnalysis = {
   position: ValueBandPosition;
   min_price: number;
@@ -48,6 +62,7 @@ export type ValueBandAnalysis = {
   assessed: number;
   rows: ValueBandRow[];
   takeaways: ValueBandTakeaway[];
+  category_tops: ValueBandCategoryTop[];
   generated_at: string;
 };
 
@@ -109,6 +124,33 @@ export type ValueBandPresetId = (typeof VALUE_BAND_PRESETS)[number]["id"];
 export const VALUE_BAND_MIN_DEFCON_MINUTES = 90;
 /** Don't highlight DEFCON options projected for negligible game time. */
 export const VALUE_BAND_MIN_EXPECTED_MINUTES = 30;
+/**
+ * Prior-season (or YTD) minutes floor for "reliable" BoP highlights.
+ * ~13×90' — enough to treat threat / upside as more than a rotation cameo.
+ */
+export const VALUE_BAND_MIN_PRIOR_MINUTES = 1200;
+/** Strong next-fixture minutes projection when prior minutes are thin. */
+export const VALUE_BAND_MIN_ASSURED_EXPECTED_MINUTES = 60;
+
+/** Solid minutes already on the clock (last season / YTD). */
+export function hasReliablePriorMinutes(row: { minutes: number }): boolean {
+  return row.minutes >= VALUE_BAND_MIN_PRIOR_MINUTES;
+}
+
+/**
+ * Prefer players with a meaningful minutes prior, or a strong next-GW
+ * projection when the season sample is still thin (preseason / GW1).
+ * Used for soft demotion on xP / DEFCON lists.
+ */
+export function hasReliablePlayingTime(row: {
+  minutes: number;
+  expected_minutes_next: number | null;
+}): boolean {
+  if (hasReliablePriorMinutes(row)) return true;
+  return (
+    (row.expected_minutes_next ?? 0) >= VALUE_BAND_MIN_ASSURED_EXPECTED_MINUTES
+  );
+}
 
 export function getValueBandPreset(id: string): ValueBandPreset | null {
   return VALUE_BAND_PRESETS.find((p) => p.id === id) ?? null;
@@ -157,14 +199,15 @@ function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
   if (!rows.length) return [];
   const out: ValueBandTakeaway[] = [];
 
-  const topXp = rows[0]!;
+  // Prefer a minutes-reliable xP leader for public blurbs / posters.
+  const topXp = rows.find(hasReliablePriorMinutes) ?? rows[0]!;
   out.push({
     kind: "xp",
     fpl_id: topXp.fpl_id,
     web_name: topXp.web_name,
     team: topXp.team,
-    blurb_en: `${topXp.web_name} leads this band on projected xP (${topXp.xp_total.toFixed(1)}) over the next fixtures.`,
-    blurb_zh: `${topXp.web_name} 在该价位以投影 xP ${topXp.xp_total.toFixed(1)} 领跑。`,
+    blurb_en: `${topXp.web_name} leads this band on projected xP (${topXp.xp_total.toFixed(1)}) among regulars (prior minutes ≥ ${VALUE_BAND_MIN_PRIOR_MINUTES}).`,
+    blurb_zh: `${topXp.web_name} 在出场可靠球员中以投影 xP ${topXp.xp_total.toFixed(1)} 领跑（上季 ≥${VALUE_BAND_MIN_PRIOR_MINUTES} 分钟）。`,
   });
 
   const defcon = [...rows]
@@ -193,6 +236,7 @@ function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
     .filter(
       (r) =>
         ((r.threat ?? 0) > 0 || r.preseason_goals > 0) &&
+        hasReliablePriorMinutes(r) &&
         !out.some((t) => t.fpl_id === r.fpl_id),
     )
     .sort(
@@ -221,6 +265,89 @@ function buildTakeaways(rows: ValueBandRow[]): ValueBandTakeaway[] {
   }
 
   return out.slice(0, 3);
+}
+
+/** Top 3 players per metric for BoP posters / cards. */
+export function buildCategoryTops(rows: ValueBandRow[]): ValueBandCategoryTop[] {
+  if (!rows.length) return [];
+
+  const toPlayer = (
+    r: ValueBandRow,
+    value: number,
+  ): ValueBandCategoryPlayer => ({
+    fpl_id: r.fpl_id,
+    web_name: r.web_name,
+    team: r.team,
+    value,
+  });
+
+  /**
+   * Prefer minutes-reliable players; if fewer than `n`, backfill from the
+   * remainder so posters still fill (with lower-confidence names last).
+   */
+  function pickTop(
+    ordered: ValueBandRow[],
+    valueOf: (r: ValueBandRow) => number,
+    n = 3,
+  ): ValueBandCategoryPlayer[] {
+    const reliable = ordered.filter(hasReliablePlayingTime);
+    const rest = ordered.filter((r) => !hasReliablePlayingTime(r));
+    return [...reliable, ...rest].slice(0, n).map((r) => toPlayer(r, valueOf(r)));
+  }
+
+  // xP rows are already sorted by xp_total desc — prefer prior-minutes
+  // confidence first, then backfill so thin-sample leaders don't vanish.
+  const xpPreferred = rows.filter(hasReliablePriorMinutes);
+  const xpRest = rows.filter((r) => !hasReliablePriorMinutes(r));
+  const xp = [...xpPreferred, ...xpRest]
+    .slice(0, 3)
+    .map((r) => toPlayer(r, r.xp_total));
+
+  const defconOrdered = [...rows]
+    .filter(
+      (r) =>
+        (r.defensive_contribution_per_90 ?? 0) > 0 &&
+        (r.expected_minutes_next ?? 0) >= VALUE_BAND_MIN_EXPECTED_MINUTES,
+    )
+    .sort(
+      (a, b) =>
+        (b.defensive_contribution_per_90 ?? 0) -
+        (a.defensive_contribution_per_90 ?? 0),
+    );
+  const defcon = pickTop(defconOrdered, (r) => r.defensive_contribution_per_90 ?? 0);
+
+  // Threat: prefer prior-minutes confidence, then backfill so thin bands
+  // still show 3 names on posters (same pattern as DEFCON / xP).
+  const attackOrdered = [...rows]
+    .filter((r) => (r.threat ?? 0) > 0)
+    .sort((a, b) => (b.threat ?? 0) - (a.threat ?? 0));
+  const attackPreferred = attackOrdered.filter(hasReliablePriorMinutes);
+  const attackRest = attackOrdered.filter((r) => !hasReliablePriorMinutes(r));
+  const attack = [...attackPreferred, ...attackRest]
+    .slice(0, 3)
+    .map((r) => toPlayer(r, r.threat ?? 0));
+
+  const out: ValueBandCategoryTop[] = [];
+  if (xp.length) {
+    out.push({ kind: "xp", label: "xP", label_zh: "投影 xP", players: xp });
+  }
+  if (defcon.length) {
+    out.push({
+      kind: "defcon",
+      label: "DEFCON",
+      label_zh: "DEFCON/90",
+      players: defcon,
+    });
+  }
+  if (attack.length) {
+    out.push({
+      kind: "attack",
+      label: "THREAT",
+      label_zh: "威胁指数",
+      players: attack,
+    });
+  }
+  return out;
 }
 
 export async function loadValueBandAnalysisRaw(opts: {
@@ -373,6 +500,7 @@ export async function loadValueBandAnalysisRaw(opts: {
     assessed: filtered.length,
     rows,
     takeaways: buildTakeaways(rows),
+    category_tops: buildCategoryTops(rows),
     generated_at: new Date().toISOString(),
   };
 }

@@ -54,13 +54,20 @@ export default async function DifferentialsInsightPage({ params }: Props) {
           horizon={data.horizon}
           maxOwnership={data.maxOwnership}
           labels={{
-            intro: t("differentials.intro"),
+            intro: t("differentials.intro", {
+              own: data.maxOwnership,
+              horizon: data.horizon,
+            }),
             filterPos: t("differentials.filterPos"),
             posAll: t("differentials.posAll"),
             posGkp: t("differentials.posGkp"),
             posDef: t("differentials.posDef"),
             posMid: t("differentials.posMid"),
             posFwd: t("differentials.posFwd"),
+            groupGkp: t("differentials.groupGkp"),
+            groupDef: t("differentials.groupDef"),
+            groupMid: t("differentials.groupMid"),
+            groupFwd: t("differentials.groupFwd"),
             colPlayer: t("differentials.colPlayer"),
             colTeam: t("differentials.colTeam"),
             colPos: t("differentials.colPos"),

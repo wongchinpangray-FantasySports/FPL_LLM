@@ -9,6 +9,9 @@ import {
   type ValueBandPosition,
   type ValueBandPreset,
   type ValueBandTakeaway,
+  type ValueBandCategoryTop,
+  VALUE_BAND_MIN_PRIOR_MINUTES,
+  hasReliablePriorMinutes,
 } from "@/lib/fpl/insights/value-bands";
 import {
   resolveWechatCardSiteUrl,
@@ -32,6 +35,9 @@ export type WechatBopHookData = {
   assessed: number;
   horizon: number;
   takeaways: ValueBandTakeaway[];
+  category_tops: ValueBandCategoryTop[];
+  /** Prior-minutes floor used for poster / highlight reliability. */
+  minutes_floor: number;
   top_player: string | null;
   top_xp: number | null;
   siblings: Array<{ id: string; label: string; href: string }>;
@@ -98,6 +104,9 @@ export function formatWechatBopHookFull(hook: Omit<
     for (const t of hook.takeaways) {
       lines.push(`• ${t.blurb_zh}`);
     }
+    lines.push(
+      `※ 出场门槛：上季 ≥${hook.minutes_floor} 分钟优先（不足时补位填满榜单）`,
+    );
     lines.push("");
   } else if (hook.top_player && hook.top_xp != null) {
     lines.push(
@@ -162,7 +171,12 @@ export async function buildWechatBopHook(opts?: {
   const bandUrl = `${base}${preset.href}`;
   const hubUrl = `${base}${BEST_OF_POSITION_HUB_HREF}`;
 
-  const top = analysis.rows[0] ?? null;
+  const xpCatTop = analysis.category_tops.find((c) => c.kind === "xp")
+    ?.players[0];
+  const topRow =
+    analysis.rows.find(hasReliablePriorMinutes) ?? analysis.rows[0] ?? null;
+  const topPlayer = xpCatTop?.web_name ?? topRow?.web_name ?? null;
+  const topXp = xpCatTop?.value ?? topRow?.xp_total ?? null;
   const siblings = siblingBands(preset).map((p) => ({
     id: p.id,
     label: `£${formatValueBandPrice(p.minPrice)}m ${POS_ZH[p.position]}`,
@@ -179,8 +193,10 @@ export async function buildWechatBopHook(opts?: {
     assessed: analysis.assessed,
     horizon: analysis.horizon,
     takeaways: analysis.takeaways,
-    top_player: top?.web_name ?? null,
-    top_xp: top?.xp_total ?? null,
+    category_tops: analysis.category_tops,
+    minutes_floor: VALUE_BAND_MIN_PRIOR_MINUTES,
+    top_player: topPlayer,
+    top_xp: topXp,
     siblings,
     band_url: bandUrl,
     hub_url: hubUrl,
