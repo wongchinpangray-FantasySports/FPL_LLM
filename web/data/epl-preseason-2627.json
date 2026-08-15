@@ -3455,9 +3455,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3503,9 +3503,9 @@
       "pl_home": true,
       "venue": "Wroclaw",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 4,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3551,9 +3551,9 @@
       "pl_home": true,
       "venue": null,
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -3647,11 +3647,30 @@
       "pl_home": true,
       "venue": null,
       "note": "Behind closed doors",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "29'",
+          "scorer": "FC July",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "4'",
+          "scorer": "Sydney FC",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "1'",
+          "scorer": "Sydney August",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     }
   ]
