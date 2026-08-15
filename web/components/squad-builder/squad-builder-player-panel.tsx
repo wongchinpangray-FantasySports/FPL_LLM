@@ -29,6 +29,14 @@ type TeamOption = { id: number; short_name: string; name: string };
 
 type SortKey = "price" | "points" | "ownership" | "form" | "xpts";
 
+/** "" = no cap; "bank" = remaining budget; otherwise a £m ceiling. */
+type MaxPriceKey = "" | "bank" | string;
+
+const PRICE_STEPS = [
+  4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5, 11.0,
+  12.0, 12.5, 13.0, 14.0, 15.0,
+] as const;
+
 function xpForGw(row: PanelProjRow | undefined, gw: number): number | null {
   if (!row) return null;
   const cell = row.by_gw?.find((c) => c.gw === gw);
@@ -37,6 +45,16 @@ function xpForGw(row: PanelProjRow | undefined, gw: number): number | null {
     return row.xp_next_gw;
   }
   return null;
+}
+
+function resolveMaxPrice(key: MaxPriceKey, bank: number): number | undefined {
+  if (key === "") return undefined;
+  if (key === "bank") {
+    // Round to 1dp so floating bank (e.g. 0.4) still matches FPL prices.
+    return Math.round(Math.max(0, bank) * 10) / 10;
+  }
+  const n = Number(key);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export function SquadBuilderPlayerPanel({
@@ -67,6 +85,7 @@ export function SquadBuilderPlayerPanel({
     search: string;
     positionAll: string;
     clubAll: string;
+    priceAll: string;
     sortPrice: string;
     sortPoints: string;
     sortOwnership: string;
@@ -87,9 +106,11 @@ export function SquadBuilderPlayerPanel({
   const locale = useLocale();
   const [position, setPosition] = useState<string>("");
   const [teamId, setTeamId] = useState<string>("");
+  const [maxPriceKey, setMaxPriceKey] = useState<MaxPriceKey>("");
   const [sort, setSort] = useState<SortKey>("price");
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState<BrowsePlayer[]>([]);
+  const [matchedTotal, setMatchedTotal] = useState(0);
   const [lastSeasonKey, setLastSeasonKey] = useState<string | null>(null);
   const [panelProj, setPanelProj] = useState<Record<string, PanelProjRow>>({});
   const [loading, setLoading] = useState(false);
@@ -105,7 +126,7 @@ export function SquadBuilderPlayerPanel({
     try {
       const params = new URLSearchParams({
         sort: sort === "xpts" ? "price" : sort,
-        limit: "80",
+        limit: "400",
         locale,
       });
       const trimmedQ = q.trim();
@@ -114,28 +135,37 @@ export function SquadBuilderPlayerPanel({
       }
       if (position) params.set("position", position);
       if (teamId) params.set("team_id", teamId);
+      const maxPrice = resolveMaxPrice(maxPriceKey, bank);
+      if (maxPrice != null) params.set("max_price", String(maxPrice));
       const res = await fetch(`/api/squad-builder/players?${params}`, {
         cache: "no-store",
       });
       const data = (await res.json()) as {
         players?: BrowsePlayer[];
+        total?: number;
         lastSeasonKey?: string | null;
         source?: string;
         error?: string;
       };
       if (!res.ok) {
         setPlayers([]);
+        setMatchedTotal(0);
         return;
       }
-      setPlayers(data.players ?? []);
+      const list = data.players ?? [];
+      setPlayers(list);
+      setMatchedTotal(
+        typeof data.total === "number" ? data.total : list.length,
+      );
       setLastSeasonKey(data.lastSeasonKey ?? null);
       setUpdatedAt(Date.now());
     } catch {
       setPlayers([]);
+      setMatchedTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [q, position, teamId, sort, locale]);
+  }, [q, position, teamId, maxPriceKey, bank, sort, locale]);
 
   useEffect(() => {
     const timer = setTimeout(() => void loadPlayers(), 200);
@@ -204,6 +234,7 @@ export function SquadBuilderPlayerPanel({
   };
 
   const showLoading = loading || (projLoading && sortedPlayers.length === 0);
+  const bankRounded = Math.round(Math.max(0, bank) * 10) / 10;
 
   return (
     <aside className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-4 lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)]">
@@ -232,6 +263,14 @@ export function SquadBuilderPlayerPanel({
             {t("panelLastSeasonHint", {
               season: lastSeasonKey,
               next: String(Number(lastSeasonKey) + 1).slice(-2),
+            })}
+          </p>
+        ) : null}
+        {!showLoading && matchedTotal > 0 ? (
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {t("panelResultCount", {
+              shown: sortedPlayers.length,
+              total: matchedTotal,
             })}
           </p>
         ) : null}
@@ -268,19 +307,34 @@ export function SquadBuilderPlayerPanel({
             </option>
           ))}
         </select>
+        <select
+          className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+          value={maxPriceKey}
+          onChange={(e) => setMaxPriceKey(e.target.value as MaxPriceKey)}
+          aria-label={labels.priceAll}
+        >
+          <option value="">{labels.priceAll}</option>
+          <option value="bank">
+            {t("filterPriceBank", { bank: bankRounded.toFixed(1) })}
+          </option>
+          {PRICE_STEPS.map((price) => (
+            <option key={price} value={String(price)}>
+              {t("filterPriceMax", { price: price.toFixed(1) })}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+        >
+          <option value="price">{labels.sortPrice}</option>
+          <option value="points">{labels.sortPoints}</option>
+          <option value="ownership">{labels.sortOwnership}</option>
+          <option value="form">{labels.sortForm}</option>
+          <option value="xpts">{labels.sortXpts}</option>
+        </select>
       </div>
-
-      <select
-        className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-        value={sort}
-        onChange={(e) => setSort(e.target.value as SortKey)}
-      >
-        <option value="price">{labels.sortPrice}</option>
-        <option value="points">{labels.sortPoints}</option>
-        <option value="ownership">{labels.sortOwnership}</option>
-        <option value="form">{labels.sortForm}</option>
-        <option value="xpts">{labels.sortXpts}</option>
-      </select>
 
       <div className="scroll-table min-h-[320px] flex-1 rounded-lg border border-border/60 lg:min-h-0">
         <table className="w-full text-[11px]">

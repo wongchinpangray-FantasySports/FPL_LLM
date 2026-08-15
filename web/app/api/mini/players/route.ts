@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
   try {
     const pool = await getOfficialFplBrowsePlayers();
-    const filtered = filterOfficialFplPlayers(pool, {
+    const { players: filtered } = filterOfficialFplPlayers(pool, {
       q,
       locale,
       position:

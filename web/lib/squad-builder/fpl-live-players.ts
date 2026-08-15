@@ -116,16 +116,25 @@ export function filterOfficialFplPlayers(
     q?: string;
     position?: string;
     teamId?: number;
+    /** Inclusive max price in £m (e.g. 5.5). */
+    maxPrice?: number;
     sort?: SquadBuilderPlayerSort;
     limit?: number;
     locale?: string;
   },
-): FplLiveBrowsePlayer[] {
+): { players: FplLiveBrowsePlayer[]; total: number } {
   const query = sanitizePlayerQuery(opts.q ?? "");
+  const maxPrice =
+    opts.maxPrice != null && Number.isFinite(opts.maxPrice)
+      ? opts.maxPrice
+      : undefined;
   let rows = players.filter((p) => {
     if (query && !matchesSearch(p, query, opts.locale)) return false;
     if (opts.position && p.position !== opts.position) return false;
     if (opts.teamId != null && p.team_id !== opts.teamId) return false;
+    if (maxPrice != null) {
+      if (p.base_price == null || p.base_price > maxPrice + 1e-9) return false;
+    }
     return true;
   });
 
@@ -156,6 +165,7 @@ export function filterOfficialFplPlayers(
     );
   });
 
+  const total = rows.length;
   const limit = opts.limit ?? 80;
-  return rows.slice(0, limit);
+  return { players: rows.slice(0, limit), total };
 }

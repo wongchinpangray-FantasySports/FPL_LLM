@@ -20,8 +20,13 @@ export async function GET(req: Request) {
   const sort = (searchParams.get("sort") ?? "price") as SquadBuilderPlayerSort;
   const limit = Math.min(
     Math.max(Number(searchParams.get("limit") ?? 50) || 50, 10),
-    100,
+    400,
   );
+  const maxPriceRaw = searchParams.get("max_price");
+  const maxPrice =
+    maxPriceRaw != null && maxPriceRaw !== "" && Number.isFinite(Number(maxPriceRaw))
+      ? Number(maxPriceRaw)
+      : undefined;
 
   const q = sanitizePlayerQuery(raw);
   const teamId =
@@ -31,7 +36,7 @@ export async function GET(req: Request) {
 
   try {
     const pool = await getOfficialFplBrowsePlayers();
-    const filtered = filterOfficialFplPlayers(pool, {
+    const { players: filtered, total } = filterOfficialFplPlayers(pool, {
       q: q.length >= minPlayerQueryLength(q) ? q : "",
       locale,
       position:
@@ -39,6 +44,7 @@ export async function GET(req: Request) {
           ? position
           : undefined,
       teamId,
+      maxPrice,
       sort: ["price", "points", "ownership", "form"].includes(sort)
         ? sort
         : "price",
@@ -61,6 +67,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         players,
+        total,
         lastSeasonKey,
         source: "fpl_bootstrap_static",
         fetchedAt: new Date().toISOString(),
