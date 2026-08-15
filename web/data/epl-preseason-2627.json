@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-14",
+  "updated_at": "2026-08-15",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -3190,7 +3190,67 @@
           "side": "opp"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-3-3",
+        "starters": [
+          {
+            "name": "Mark Travers",
+            "number": 12,
+            "minute_on": null
+          },
+          {
+            "name": "Nathan Patterson",
+            "number": 2,
+            "minute_on": null
+          },
+          {
+            "name": "Michael Keane",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "James Tarkowski",
+            "number": 6,
+            "minute_on": null
+          },
+          {
+            "name": "Vitalii Mykolenko",
+            "number": 16,
+            "minute_on": null
+          },
+          {
+            "name": "Kiernan Dewsbury-Hall",
+            "number": 8,
+            "minute_on": null
+          },
+          {
+            "name": "Hayden Hackney",
+            "number": 30,
+            "minute_on": null
+          },
+          {
+            "name": "Harrison Armstrong",
+            "number": 45,
+            "minute_on": null
+          },
+          {
+            "name": "Iliman Ndiaye",
+            "number": 10,
+            "minute_on": null
+          },
+          {
+            "name": "Thierno Barry",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Tyrique George",
+            "number": 19,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "ars-2026-08-12-51",
