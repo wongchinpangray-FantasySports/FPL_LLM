@@ -4,7 +4,6 @@ import type { FixtureProjection } from "@/lib/xp";
 import { projectPlayers, resolveCurrentGw } from "@/lib/xp";
 import { getServerSupabase } from "@/lib/supabase";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function round(n: number, d = 2): number {

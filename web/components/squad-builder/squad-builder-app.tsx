@@ -171,17 +171,28 @@ export function SquadBuilderApp({
       `/api/planner/player-detail?fplId=${inspectFplId}&horizon=${horizon}`,
     )
       .then(async (res) => {
-        const data = (await res.json()) as PlannerPlayerInspectDetail & {
-          error?: string;
-        };
+        const raw = await res.text();
+        let data: (PlannerPlayerInspectDetail & { error?: string }) | null =
+          null;
+        try {
+          data = JSON.parse(raw) as PlannerPlayerInspectDetail & {
+            error?: string;
+          };
+        } catch {
+          throw new Error(
+            res.ok
+              ? t("errPlayerDetailInvalid")
+              : t("errPlayerDetailHttp", { status: res.status }),
+          );
+        }
         if (!res.ok) {
-          throw new Error(data.error ?? `Request failed (${res.status})`);
+          throw new Error(data?.error ?? t("errPlayerDetailHttp", { status: res.status }));
         }
         if (!cancelled) setInspectDetail(data);
       })
       .catch((e: unknown) => {
         if (!cancelled) {
-          setInspectErr(e instanceof Error ? e.message : "Request failed");
+          setInspectErr(e instanceof Error ? e.message : t("errPlayerDetailFailed"));
         }
       })
       .finally(() => {
@@ -190,11 +201,13 @@ export function SquadBuilderApp({
     return () => {
       cancelled = true;
     };
-  }, [inspectFplId, horizon]);
+  }, [inspectFplId, horizon, t]);
 
   const openPlayerInspect = useCallback((fplId: number) => {
+    // XI / captain modes own the pitch tap — don't open inspect mid-action.
+    if (mode != null) return;
     if (fplId > 0) setInspectFplId(fplId);
-  }, []);
+  }, [mode]);
 
   const closePlayerInspect = useCallback(() => {
     setInspectFplId(null);
@@ -686,6 +699,7 @@ export function SquadBuilderApp({
           onClick={() => {
             setMode(mode === "captain" ? null : "captain");
             setXiFirst(null);
+            setInspectFplId(null);
           }}
         >
           {t("modeCaptain")}
@@ -697,6 +711,7 @@ export function SquadBuilderApp({
           onClick={() => {
             setMode(mode === "xi" ? null : "xi");
             setXiFirst(null);
+            setInspectFplId(null);
           }}
         >
           {t("modeXiBench")}
@@ -796,8 +811,8 @@ export function SquadBuilderApp({
               nextGwXpTitle={t("nextGwXpTitle", { gw: xptsGw })}
               benchLabel={t("benchLabel")}
               benchGkAbbrev={t("benchGk")}
-              onInspectPlayer={openPlayerInspect}
-              inspectNameTitle={t("inspectNameHint")}
+              onInspectPlayer={mode == null ? openPlayerInspect : undefined}
+              inspectNameTitle={mode == null ? t("inspectNameHint") : undefined}
             />
           ) : (
             <SquadBuilderListView
@@ -811,8 +826,8 @@ export function SquadBuilderApp({
                 setSelectedSlot(slot);
                 onPickSlot(slot);
               }}
-              onInspectPlayer={openPlayerInspect}
-              inspectNameTitle={t("inspectNameHint")}
+              onInspectPlayer={mode == null ? openPlayerInspect : undefined}
+              inspectNameTitle={mode == null ? t("inspectNameHint") : undefined}
               labels={listLabels}
             />
           )}

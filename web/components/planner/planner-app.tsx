@@ -237,17 +237,32 @@ export function PlannerApp({
       `/api/planner/player-detail?fplId=${inspectCtx.fplId}&horizon=${horizon}`,
     )
       .then(async (res) => {
-        const data = (await res.json()) as PlannerPlayerInspectDetail & {
-          error?: string;
-        };
+        const raw = await res.text();
+        let data: (PlannerPlayerInspectDetail & { error?: string }) | null =
+          null;
+        try {
+          data = JSON.parse(raw) as PlannerPlayerInspectDetail & {
+            error?: string;
+          };
+        } catch {
+          throw new Error(
+            res.ok
+              ? "Player detail returned an unexpected response."
+              : `Could not load player detail (${res.status}).`,
+          );
+        }
         if (!res.ok) {
-          throw new Error(data.error ?? `Request failed (${res.status})`);
+          throw new Error(
+            data?.error ?? `Could not load player detail (${res.status}).`,
+          );
         }
         if (!cancelled) setInspectDetail(data);
       })
       .catch((e: unknown) => {
         if (!cancelled) {
-          setInspectErr(e instanceof Error ? e.message : "Request failed");
+          setInspectErr(
+            e instanceof Error ? e.message : "Could not load player detail.",
+          );
         }
       })
       .finally(() => {
