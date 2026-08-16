@@ -3603,6 +3603,18 @@
           "scorer": "UTC",
           "assist": null,
           "side": "pl"
+        },
+        {
+          "minute": "24'",
+          "scorer": "Weather Menu",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "0'",
+          "scorer": "PM UTC",
+          "assist": null,
+          "side": "pl"
         }
       ],
       "lineup": null
