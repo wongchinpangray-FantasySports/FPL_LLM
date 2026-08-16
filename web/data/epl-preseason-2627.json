@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-15",
+  "updated_at": "2026-08-16",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -3443,7 +3443,26 @@
       "pl_goals": 7,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "4'",
+          "scorer": "Londoners",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "15'",
+          "scorer": "London Sport",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Schade",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3459,7 +3478,14 @@
       "pl_goals": 1,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "1'",
+          "scorer": "Venezia Bundesliga",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
