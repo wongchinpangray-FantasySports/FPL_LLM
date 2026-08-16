@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isNextProductionBuild } from "@/lib/next-build";
+import { sanitizeUtf16 } from "@/lib/utf16-safe";
 import { isCacheOnlyDataRuntime } from "@/lib/worker-runtime";
 import {
   fetchWcNewsItems,
@@ -17,10 +18,19 @@ function cacheHasPlNews(items: WcNewsItem[]): boolean {
 let memCache: { at: number; items: WcNewsItem[]; fetched_at: string } | null =
   null;
 
+function sanitizeNewsText(value: string | null | undefined): string {
+  return sanitizeUtf16(value ?? "");
+}
+
 function normalizeItem(raw: WcNewsItem): WcNewsItem {
   return {
     ...raw,
-    image_url: raw.image_url ?? null,
+    id: sanitizeNewsText(raw.id),
+    title: sanitizeNewsText(raw.title),
+    url: sanitizeNewsText(raw.url),
+    summary: sanitizeNewsText(raw.summary),
+    image_url: raw.image_url ? sanitizeNewsText(raw.image_url) : null,
+    outlet: sanitizeNewsText(raw.outlet),
     category: raw.category ?? "trending",
   };
 }
@@ -80,11 +90,16 @@ export async function loadWcNewsFromDb(): Promise<{
 export async function saveWcNewsToDb(items: WcNewsItem[]): Promise<string> {
   const supa = getServerSupabase();
   const fetched_at = new Date().toISOString();
-  const { error } = await supa.from("wc_news_cache").upsert({
-    id: CACHE_ID,
-    items,
-    fetched_at,
-  });
+  // Round-trip through JSON after UTF-16 sanitize so PostgREST never sees
+  // lone surrogates (PGRST102) or undefined keys from optional fields.
+  const payload = JSON.parse(
+    JSON.stringify({
+      id: CACHE_ID,
+      items: items.map(normalizeItem),
+      fetched_at,
+    }),
+  ) as { id: string; items: WcNewsItem[]; fetched_at: string };
+  const { error } = await supa.from("wc_news_cache").upsert(payload);
   if (error) throw new Error(error.message);
   return fetched_at;
 }

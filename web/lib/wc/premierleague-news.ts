@@ -1,3 +1,4 @@
+import { safeTruncate } from "@/lib/utf16-safe";
 import type { NewsCategory, WcNewsItem } from "@/lib/wc/news-feeds";
 
 const PL_API = "https://api.premierleague.com";
@@ -79,7 +80,10 @@ function mapPlArticle(article: PlArticle): WcNewsItem | null {
   if (article.type !== "text" || !article.title?.trim()) return null;
 
   const category = categorizePlArticle(article);
-  const summary = (article.description ?? article.summary ?? "").trim().slice(0, 400);
+  const summary = safeTruncate(
+    (article.description ?? article.summary ?? "").trim(),
+    400,
+  );
   let published_at: string | null = null;
   if (article.date) {
     const ts = Date.parse(article.date);

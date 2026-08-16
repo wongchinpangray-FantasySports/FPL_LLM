@@ -1,3 +1,4 @@
+import { safeTruncate } from "@/lib/utf16-safe";
 import type { NewsCategory, WcNewsItem } from "@/lib/wc/news-feeds";
 
 const FEED_ID = "fpl-x";
@@ -331,7 +332,7 @@ function parseRssItems(xml: string): Array<{
       extractTag(block, "description") ||
       extractTag(block, "summary") ||
       extractTag(block, "content");
-    const summary = stripHtml(rawDesc).slice(0, 400);
+    const summary = safeTruncate(stripHtml(rawDesc), 400);
 
     const pubRaw =
       extractTag(block, "pubDate") ||
