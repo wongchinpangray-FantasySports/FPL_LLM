@@ -3609,9 +3609,9 @@
       "pl_home": true,
       "venue": "Anfield",
       "note": null,
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 0,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
