@@ -162,6 +162,25 @@ export const KNOWN_PRESEASON_REPORT_URLS: Record<string, string[]> = {
   "avl-2026-08-07-56": [
     "https://www.skysports.com/football/bayern-munich-vs-aston-villa/report/555764",
   ],
+  "eve-2026-08-12-18": [
+    "https://www.bbc.com/sport/football/articles/cddjpm4z526o",
+    "https://www.skysports.com/football/newcastle-united-vs-everton/report/568648",
+    "https://hayters.com/everton-v-newcastle-live-updates-from-pre-season-friendly/",
+  ],
+  "new-2026-08-12-31": [
+    "https://www.bbc.com/sport/football/articles/cddjpm4z526o",
+    "https://www.skysports.com/football/newcastle-united-vs-everton/report/568648",
+  ],
+  "ars-2026-08-16-50": [
+    "https://www.skysports.com/football/arsenal-vs-manchester-city/report/568900",
+    "https://www.arsenal.com/news",
+  ],
+  "tot-2026-08-15-101": [
+    "https://www.tottenhamhotspur.com/news/",
+  ],
+  "tot-2026-08-16-102": [
+    "https://www.tottenhamhotspur.com/news/",
+  ],
 };
 
 export function getKnownPreseasonReportUrls(

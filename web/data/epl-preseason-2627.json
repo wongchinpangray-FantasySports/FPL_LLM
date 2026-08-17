@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-16",
+  "updated_at": "2026-08-17",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -696,6 +696,41 @@
       }
     },
     {
+      "id": "ars-2026-07-25-46",
+      "date": "2026-07-25",
+      "pl_code": "ARS",
+      "pl_name": "Arsenal",
+      "opponent": "MK Dons",
+      "pl_home": true,
+      "venue": null,
+      "note": "Behind closed doors",
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "10'",
+          "scorer": "Reiss Nelson",
+          "assist": "Christos Tzolis",
+          "side": "pl"
+        },
+        {
+          "minute": "39'",
+          "scorer": "Ethan Nwaneri",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Ceadach O'Neill",
+          "assist": "Demiane Agustien",
+          "side": "pl"
+        }
+      ],
+      "lineup": null
+    },
+    {
       "id": "avl-2026-07-25-52",
       "date": "2026-07-25",
       "pl_code": "AVL",
@@ -776,9 +811,9 @@
       "pl_home": true,
       "venue": null,
       "note": "Behind closed doors",
-      "status": "scheduled",
-      "pl_goals": null,
-      "opp_goals": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
       "lineup": null
@@ -967,13 +1002,13 @@
       "goals": [
         {
           "minute": "",
-          "scorer": "Federico Chiesa",
+          "scorer": "Enzo Le Fée",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "",
-          "scorer": "Kieran Morrison",
+          "scorer": "Timur Tutierov",
           "assist": null,
           "side": "pl"
         }
@@ -2289,6 +2324,53 @@
       "lineup": null
     },
     {
+      "id": "bre-2026-08-05-61",
+      "date": "2026-08-05",
+      "pl_code": "BRE",
+      "pl_name": "Brentford",
+      "opponent": "Wycombe",
+      "pl_home": true,
+      "venue": null,
+      "note": "Behind closed doors",
+      "status": "finished",
+      "pl_goals": 4,
+      "opp_goals": 1,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Mikkel Damsgaard",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Rico Henry",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Callum Wilson",
+          "assist": "Jaidon Anthony",
+          "side": "pl"
+        },
+        {
+          "minute": "89'",
+          "scorer": "Keane Lewis-Potter",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Emre Tezgel",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
+      "lineup": null
+    },
+    {
       "id": "che-2026-08-05-66",
       "date": "2026-08-05",
       "pl_code": "CHE",
@@ -3152,6 +3234,52 @@
       "lineup": null
     },
     {
+      "id": "ars-2026-08-12-51",
+      "date": "2026-08-12",
+      "pl_code": "ARS",
+      "pl_name": "Arsenal",
+      "opponent": "Como",
+      "pl_home": true,
+      "venue": null,
+      "note": null,
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 1,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "33'",
+          "scorer": "Myles",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
+      "lineup": null
+    },
+    {
+      "id": "avl-2026-08-12-58",
+      "date": "2026-08-12",
+      "pl_code": "AVL",
+      "pl_name": "Aston Villa",
+      "opponent": "Paris Saint-Germain",
+      "pl_home": false,
+      "venue": "Salzburg",
+      "note": "UEFA Super Cup",
+      "status": "finished",
+      "pl_goals": 1,
+      "opp_goals": 2,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Jaden Madjo",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
+      "lineup": null
+    },
+    {
       "id": "eve-2026-08-12-18",
       "date": "2026-08-12",
       "pl_code": "EVE",
@@ -3167,24 +3295,24 @@
       "goals": [
         {
           "minute": "27'",
-          "scorer": "Following",
+          "scorer": "Thierno Barry",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "34'",
-          "scorer": "Joelinton",
+          "minute": "36'",
+          "scorer": "Iliman Ndiaye",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "73'",
-          "scorer": "George",
+          "scorer": "Tyrique George",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "",
+          "minute": "85'",
           "scorer": "Harvey Barnes",
           "assist": null,
           "side": "opp"
@@ -3253,29 +3381,6 @@
       }
     },
     {
-      "id": "ars-2026-08-12-51",
-      "date": "2026-08-12",
-      "pl_code": "ARS",
-      "pl_name": "Arsenal",
-      "opponent": "Como",
-      "pl_home": true,
-      "venue": null,
-      "note": null,
-      "status": "finished",
-      "pl_goals": 1,
-      "opp_goals": 1,
-      "kickoff_time": null,
-      "goals": [
-        {
-          "minute": "33'",
-          "scorer": "Myles",
-          "assist": null,
-          "side": "pl"
-        }
-      ],
-      "lineup": null
-    },
-    {
       "id": "ful-2026-08-12-71",
       "date": "2026-08-12",
       "pl_code": "FUL",
@@ -3288,23 +3393,20 @@
       "pl_goals": 2,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
-      "lineup": null
-    },
-    {
-      "id": "avl-2026-08-12-58",
-      "date": "2026-08-12",
-      "pl_code": "AVL",
-      "pl_name": "Aston Villa",
-      "opponent": "Paris Saint-Germain",
-      "pl_home": false,
-      "venue": "Salzburg",
-      "note": "UEFA Super Cup",
-      "status": "finished",
-      "pl_goals": 1,
-      "opp_goals": 2,
-      "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Ryan Sessegnon",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Alex Iwobi",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3345,14 +3447,26 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "27'",
-          "scorer": "Following",
+          "minute": "85'",
+          "scorer": "Harvey Barnes",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "",
-          "scorer": "Harvey Barnes",
+          "minute": "27'",
+          "scorer": "Thierno Barry",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "36'",
+          "scorer": "Iliman Ndiaye",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "73'",
+          "scorer": "Tyrique George",
           "assist": null,
           "side": "opp"
         }
@@ -3372,7 +3486,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "4'",
+          "scorer": "Dan Ndoye",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "90'",
+          "scorer": "Arnaud Kalimuendo",
+          "assist": "Luca Netz",
+          "side": "pl"
+        },
+        {
+          "minute": "32'",
+          "scorer": "Patrik Schick",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3388,7 +3521,20 @@
       "pl_goals": 2,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "12'",
+          "scorer": "Ellis Simms",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "33'",
+          "scorer": "Loum Tchaouna",
+          "assist": null,
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3404,7 +3550,26 @@
       "pl_goals": 1,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "69'",
+          "scorer": "John McGinn",
+          "assist": "Emiliano Buendia",
+          "side": "pl"
+        },
+        {
+          "minute": "32'",
+          "scorer": "Tim Kleindienst",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "35'",
+          "scorer": "Tim Kleindienst",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3422,9 +3587,9 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "1'",
-          "scorer": "Venezia Bundesliga",
-          "assist": null,
+          "minute": "59'",
+          "scorer": "Jack Hinshelwood",
+          "assist": "Mats Wieffer",
           "side": "pl"
         }
       ],
@@ -3445,20 +3610,79 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "4'",
-          "scorer": "Londoners",
+          "minute": "2'",
+          "scorer": "Kevin Schade",
+          "assist": "Nathan Collins",
+          "side": "pl"
+        },
+        {
+          "minute": "12'",
+          "scorer": "Mamadou Sangare",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "15'",
-          "scorer": "London Sport",
+          "minute": "40'",
+          "scorer": "Igor Thiago",
+          "assist": "Kevin Schade",
+          "side": "pl"
+        },
+        {
+          "minute": "52'",
+          "scorer": "Dango Ouattara",
+          "assist": "Michael Kayode",
+          "side": "pl"
+        },
+        {
+          "minute": "57'",
+          "scorer": "Keane Lewis-Potter",
+          "assist": "Kevin Schade",
+          "side": "pl"
+        },
+        {
+          "minute": "68'",
+          "scorer": "Igor Thiago",
+          "assist": "Mathias Jensen",
+          "side": "pl"
+        },
+        {
+          "minute": "70'",
+          "scorer": "Kevin Schade",
+          "assist": "Igor Thiago",
+          "side": "pl"
+        }
+      ],
+      "lineup": null
+    },
+    {
+      "id": "che-2026-08-15-69",
+      "date": "2026-08-15",
+      "pl_code": "CHE",
+      "pl_name": "Chelsea",
+      "opponent": "Real Sociedad",
+      "pl_home": true,
+      "venue": "Stamford Bridge",
+      "note": null,
+      "status": "finished",
+      "pl_goals": 3,
+      "opp_goals": 1,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "10'",
+          "scorer": "Morgan Rogers",
           "assist": null,
           "side": "pl"
         },
         {
           "minute": "",
-          "scorer": "Schade",
+          "scorer": "João Pedro",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "João Pedro",
           "assist": null,
           "side": "pl"
         }
@@ -3480,9 +3704,9 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "1'",
-          "scorer": "Venezia Bundesliga",
-          "assist": null,
+          "minute": "67'",
+          "scorer": "Timothy Castagne",
+          "assist": "Alex Iwobi",
           "side": "pl"
         }
       ],
@@ -3517,7 +3741,44 @@
       "pl_goals": 4,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "16'",
+          "scorer": "Jack Clarke",
+          "assist": "Leif Davis",
+          "side": "pl"
+        },
+        {
+          "minute": "41'",
+          "scorer": "Emersonn",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "45'",
+          "scorer": "Dara O'Shea",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "78'",
+          "scorer": "Kasey McAteer",
+          "assist": "Anis Mehmeti",
+          "side": "pl"
+        },
+        {
+          "minute": "9'",
+          "scorer": "Zeno Van den Bosch",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "53'",
+          "scorer": "Josip Juranovic",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3533,7 +3794,44 @@
       "pl_goals": 2,
       "opp_goals": 4,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "2'",
+          "scorer": "Harry Maguire",
+          "assist": "Bruno Fernandes",
+          "side": "pl"
+        },
+        {
+          "minute": "51'",
+          "scorer": "Patrick Dorgu",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "37'",
+          "scorer": "Samuel Chukwueze",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "57'",
+          "scorer": "Alphadjo Cisse",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "68'",
+          "scorer": "Goncalo Ramos",
+          "assist": "Samuel Chukwueze",
+          "side": "opp"
+        },
+        {
+          "minute": "71'",
+          "scorer": "Ruben Loftus-Cheek",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3549,7 +3847,26 @@
       "pl_goals": 1,
       "opp_goals": 2,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "44'",
+          "scorer": "Malick Thiaw",
+          "assist": "Anthony Elanga",
+          "side": "pl"
+        },
+        {
+          "minute": "1'",
+          "scorer": "Ibrahim Maza",
+          "assist": null,
+          "side": "opp"
+        },
+        {
+          "minute": "82'",
+          "scorer": "Victor Boniface",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3565,7 +3882,26 @@
       "pl_goals": 2,
       "opp_goals": 1,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "61'",
+          "scorer": "Brian Brobbey",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "70'",
+          "scorer": "Trai Hume",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "32'",
+          "scorer": "Esteban Lepaul",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3581,7 +3917,26 @@
       "pl_goals": 3,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "35'",
+          "scorer": "Richarlison",
+          "assist": "Andrew Robertson",
+          "side": "pl"
+        },
+        {
+          "minute": "59'",
+          "scorer": "Mikey Moore",
+          "assist": "Mathys Tel",
+          "side": "pl"
+        },
+        {
+          "minute": "80'",
+          "scorer": "Mikey Moore",
+          "assist": "Mathys Tel",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3599,20 +3954,20 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "0'",
-          "scorer": "UTC",
-          "assist": null,
+          "minute": "1'",
+          "scorer": "Riccardo Calafiori",
+          "assist": "Myles Lewis-Skelly",
           "side": "pl"
         },
         {
-          "minute": "24'",
-          "scorer": "Weather Menu",
-          "assist": null,
+          "minute": "28'",
+          "scorer": "Kai Havertz",
+          "assist": "Christos Tzolis",
           "side": "pl"
         },
         {
-          "minute": "0'",
-          "scorer": "PM UTC",
+          "minute": "48'",
+          "scorer": "Martin Odegaard",
           "assist": null,
           "side": "pl"
         }
@@ -3627,12 +3982,41 @@
       "opponent": "Como",
       "pl_home": true,
       "venue": "Anfield",
-      "note": null,
+      "note": "Behind closed doors",
       "status": "finished",
       "pl_goals": 0,
       "opp_goals": 0,
       "kickoff_time": null,
       "goals": [],
+      "lineup": null
+    },
+    {
+      "id": "liv-2026-08-16-92",
+      "date": "2026-08-16",
+      "pl_code": "LIV",
+      "pl_name": "Liverpool",
+      "opponent": "Como",
+      "pl_home": true,
+      "venue": "Anfield",
+      "note": null,
+      "status": "finished",
+      "pl_goals": 2,
+      "opp_goals": 0,
+      "kickoff_time": null,
+      "goals": [
+        {
+          "minute": "23'",
+          "scorer": "Cody Gakpo",
+          "assist": "Jeremie Frimpong",
+          "side": "pl"
+        },
+        {
+          "minute": "44'",
+          "scorer": "Jeremy Jacquet",
+          "assist": "Cody Gakpo",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3666,10 +4050,16 @@
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "25'",
-          "scorer": "Gateshead Published",
+          "minute": "43'",
+          "scorer": "William Osula",
           "assist": null,
           "side": "pl"
+        },
+        {
+          "minute": "69'",
+          "scorer": "Gessime Yassine",
+          "assist": null,
+          "side": "opp"
         }
       ],
       "lineup": null
@@ -3687,7 +4077,20 @@
       "pl_goals": 2,
       "opp_goals": 0,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "Chris Wood",
+          "assist": null,
+          "side": "pl"
+        },
+        {
+          "minute": "",
+          "scorer": "Luca Netz",
+          "assist": "Nicolas Dominguez",
+          "side": "pl"
+        }
+      ],
       "lineup": null
     },
     {
@@ -3700,25 +4103,19 @@
       "venue": null,
       "note": "Behind closed doors",
       "status": "finished",
-      "pl_goals": 3,
-      "opp_goals": 0,
+      "pl_goals": 2,
+      "opp_goals": 2,
       "kickoff_time": null,
       "goals": [
         {
-          "minute": "29'",
-          "scorer": "FC July",
+          "minute": "",
+          "scorer": "Ben Davies",
           "assist": null,
           "side": "pl"
         },
         {
-          "minute": "4'",
-          "scorer": "Sydney FC",
-          "assist": null,
-          "side": "pl"
-        },
-        {
-          "minute": "1'",
-          "scorer": "Sydney August",
+          "minute": "",
+          "scorer": "Williams-Barnett",
           "assist": null,
           "side": "pl"
         }

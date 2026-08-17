@@ -128,6 +128,25 @@ const BLOCKED_SCORER_NAMES = new Set([
   "equalizer",
   "bees",
   "jan", // truncated Janelt / month fragment
+  // Narrative / timeline fragments mistaken for scorers (Sky live blogs)
+  "following",
+  "after",
+  "then",
+  "later",
+  "before",
+  "when",
+  "while",
+  "despite",
+  "however",
+  "with",
+  "from",
+  "during",
+  "having",
+  "making",
+  "taking",
+  "putting",
+  "getting",
+  "youngster",
 ]);
 
 function isClubNameScorer(name: string): boolean {
@@ -141,28 +160,45 @@ function isClubNameScorer(name: string): boolean {
 }
 
 function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
-  if (name.length < 3 || name.length > 32) return false;
+  if (name.length < 3 || name.length > 40) return false;
   if (isClubNameScorer(name)) return false;
   // Possessives / truncated fragments from bad HTML parses ("Kim's", "Villa's").
   if (/['’]s$/i.test(name)) return false;
   // Lone first names / short tokens are almost always parse junk (Son/Rodri ok via allow).
   if (/^[A-Z][a-z]+$/.test(name)) {
     if (
-      /^(Hungarian|Brazilian|Portuguese|Spanish|Turkish|English|French|German|Italian|Basque|Saudi|American|Matches|Match|Minute|Minutes|Goal|Goals)$/i.test(
+      /^(Hungarian|Brazilian|Portuguese|Spanish|Turkish|English|French|German|Italian|Basque|Saudi|American|Matches|Match|Minute|Minutes|Goal|Goals|Following|After|Then|Later|Before|When|While|Despite|However|With|From|During|Having|Making|Taking|Putting|Getting|Youngster)$/i.test(
         name,
       )
     ) {
       return false;
     }
-    const shortOk = /^(Son|Rodri|Pedro|Neto|Sarr|Furo|Gomez|Gomes|Diaz|Rice|Beto)$/i.test(
+    const shortOk = /^(Son|Rodri|Pedro|Neto|Sarr|Furo|Gomez|Gomes|Diaz|Rice|Beto|Enzo|Isak|Wirtz)$/i.test(
       name,
     );
+    // Reject very short single tokens; allow surnames (Richarlison, Semenyo, …).
+    // Also reject common truncated given names that Sky timelines mis-capture.
     if (!shortOk && name.length < 5) return false;
+    if (
+      /^(George|James|John|Paul|David|Thomas|Daniel|Michael|Andrew|Robert|Steven|Kevin|Brian|Jason|Justin|Jordan|Marcus|Nathan|Oliver|Harry|Jack|Luke|Lewis|Scott|Craig|Derek|Frank|Henry|Isaac|Jacob|Peter|Simon|Aaron|Adam|Alan)$/i.test(
+        name,
+      )
+    ) {
+      return false;
+    }
   }
-  if (/^(but|when|hosts|the|and|with|after|before|their|moments|matches|match)\b/i.test(name)) {
+  if (/^(but|when|hosts|the|and|with|after|before|their|moments|matches|match|following)\b/i.test(name)) {
     return false;
   }
   if (/responded|break when|goal of their|took the lead|opened the scoring/i.test(name)) {
+    return false;
+  }
+  // CMS / nav chrome that leaks into scraped "scorers"
+  if (
+    /\b(Published|Previous|Next|Subscribe|Advertisement|Cookie|Images|Share|Related|Updated|Latest|Thursday|Monday|Tuesday|Wednesday|Friday|Saturday|Sunday)\b/i.test(
+      name,
+    )
+  ) {
     return false;
   }
   if (/\(\d+\)$/.test(name)) return false;
@@ -179,7 +215,7 @@ function isValidScorerName(name: string, match?: PreseasonMatchRef): boolean {
     if (opponentNamesMatch(name, match.opponent)) return false;
     if (opponentNamesMatch(name, match.pl_name)) return false;
   }
-  return /^\p{Lu}\p{L}*(?:['’\-]\p{L}+)*(?:\s+\p{Lu}\p{L}*(?:['’\-]\p{L}+)*){0,3}$/u.test(
+  return /^\p{Lu}\p{L}*(?:['’\-]\p{L}+)*(?:\s+(?:van|de|den|der|la|le|da|di|dos|das|del|della|du|st\.?|san)?\s*\p{Lu}\p{L}*(?:['’\-]\p{L}+)*){0,4}$/iu.test(
     name,
   );
 }
@@ -303,19 +339,24 @@ function parseGoalsFromListPhrase(text: string, match: PreseasonMatchRef): Prese
 function parseSkyTimelineGoals(text: string, match: PreseasonMatchRef): PreseasonGoal[] {
   const out: PreseasonGoal[] = [];
   const colonPattern =
-    /(\d{1,3}):\s*GOAL!\s*(?:Youngster\s+)?([A-Z][a-zA-Z'’\-]+)\b/gi;
+    /(\d{1,3}):\s*GOAL!\s*(?:Youngster\s+)?([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\b/gi;
 
   for (const m of text.matchAll(colonPattern)) {
+    if (/^(Following|After|Then|Later|Before|When|While|Despite|However|With|From)$/i.test(m[2])) {
+      continue;
+    }
     pushGoal(out, m[2], match, `${m[1]}'`);
   }
 
   // Sky live blogs often use "53 - GOAL! Mbeumo converts…" (dash, not colon).
   const dashPattern =
-    /(\d{1,3})\s*-\s*GOAL!\s*(?:[^.!?\n]{0,160}?)(?:\b([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\s+(?:converts|scores|finished|slot|fired|drilled|swept|tapped|added|equalised|levelled|opened|doubled|sealed|grabbed|netted|buried|headed|volleyed|blasted|curled|slotted|powered|found the net|made it)|(?:Youngster\s+)?([A-Z][a-zA-Z'’\-]+))\b/gi;
+    /(\d{1,3})\s*-\s*GOAL!\s*(?:[^.!?\n]{0,160}?)(?:\b([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)\s+(?:converts|scores|finished|slot|fired|drilled|swept|tapped|added|equalised|levelled|opened|doubled|sealed|grabbed|netted|buried|headed|volleyed|blasted|curled|slotted|powered|found the net|made it)|(?:Youngster\s+)?([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?))\b/gi;
 
   for (const m of text.matchAll(dashPattern)) {
     const name = m[2] ?? m[3];
-    if (!name || /^(GOAL|SUB|POST|WIDE)$/i.test(name)) continue;
+    if (!name || /^(GOAL|SUB|POST|WIDE|Following|After|Then|Later|Before|When|While)$/i.test(name)) {
+      continue;
+    }
     pushGoal(out, name.replace(/'s$/i, ""), match, `${m[1]}'`);
   }
 
@@ -323,6 +364,13 @@ function parseSkyTimelineGoals(text: string, match: PreseasonMatchRef): Preseaso
     /(\d{1,3})\s*-\s*GOAL!\s*([A-Z][a-zA-Z'’\-]+(?:\s+[A-Z][a-zA-Z'’\-]+)?)'s\b/gi;
   for (const m of text.matchAll(possessivePattern)) {
     pushGoal(out, m[2], match, `${m[1]}'`);
+  }
+
+  // Sky sidebar: "T Barry (27' 27th minute)" / "I Ndiaye (36' 36th minute pen)"
+  const initialSurname =
+    /\b([A-Z])\.?\s+([A-Z][a-zA-Z'’\-]+)\s+\((\d{1,3})'\s*(?:\d{1,3}(?:st|nd|rd|th)\s+minute)?/g;
+  for (const m of text.matchAll(initialSurname)) {
+    pushGoal(out, `${m[1]}. ${m[2]}`, match, `${m[3]}'`);
   }
   return out;
 }
@@ -715,6 +763,33 @@ function parseBbcPreseasonArticle(
   }
   if (/Harvey Barnes/i.test(plain) && opponentNamesMatch("Newcastle", match.pl_name)) {
     pushGoal(out, "Harvey Barnes", match, "78'", null, "pl");
+  }
+
+  // Everton 3-1 Newcastle (Murrayfield) — avoid Sky timeline junk ("Following"/"Joelinton").
+  const eveNew =
+    (opponentNamesMatch("Newcastle", match.opponent) &&
+      opponentNamesMatch("Everton", match.pl_name)) ||
+    (opponentNamesMatch("Everton", match.opponent) &&
+      opponentNamesMatch("Newcastle", match.pl_name));
+  if (
+    eveNew &&
+    /Iliman Ndiaye/i.test(plain) &&
+    /Thierno Barry/i.test(plain) &&
+    /Tyrique George|George put Everton|George's/i.test(plain)
+  ) {
+    if (opponentNamesMatch("Everton", match.pl_name)) {
+      pushGoal(out, "Thierno Barry", match, "27'", null, "pl");
+      pushGoal(out, "Iliman Ndiaye", match, "36'", null, "pl");
+      pushGoal(out, "Tyrique George", match, "73'", null, "pl");
+      if (/Harvey Barnes/i.test(plain)) {
+        pushGoal(out, "Harvey Barnes", match, "85'", null, "opp");
+      }
+    } else {
+      pushGoal(out, "Harvey Barnes", match, "85'", null, "pl");
+      pushGoal(out, "Thierno Barry", match, "27'", null, "opp");
+      pushGoal(out, "Iliman Ndiaye", match, "36'", null, "opp");
+      pushGoal(out, "Tyrique George", match, "73'", null, "opp");
+    }
   }
   return fitGoalsToScore(out, match);
 }

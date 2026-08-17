@@ -398,7 +398,10 @@ export function needsPlScorerBackfill(
   if (match.status !== "finished") return false;
   if (match.pl_goals == null || match.opp_goals == null) return false;
   if (match.pl_goals + match.opp_goals === 0) return false;
-  const plListed = (match.goals ?? []).filter((g) => g.side === "pl").length;
+  if (preseasonGoalsHaveInvalidRows(match)) return true;
+  const plListed = (match.goals ?? []).filter(
+    (g) => g.side === "pl" && isPlausiblePreseasonScorerName(g.scorer, match),
+  ).length;
   return plListed < match.pl_goals;
 }
 

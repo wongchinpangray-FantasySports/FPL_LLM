@@ -57,14 +57,60 @@ export type PreseasonClubSummary = {
   lost: number;
   gf: number;
   ga: number;
+  /** Chronological finished results (oldest → newest). */
+  form: Array<"W" | "D" | "L">;
+  upcomingCount: number;
   lastMatch: PreseasonMatch | null;
+  topScorers: Array<{ name: string; count: number }>;
+  topAssists: Array<{ name: string; count: number }>;
+  /** All friendlies for this club, chronological. */
+  matches: PreseasonMatch[];
 };
+
+function resultLetter(m: PreseasonMatch): "W" | "D" | "L" | null {
+  if (m.status !== "finished") return null;
+  if (m.pl_goals == null || m.opp_goals == null) return null;
+  if (m.pl_goals > m.opp_goals) return "W";
+  if (m.pl_goals < m.opp_goals) return "L";
+  return "D";
+}
+
+function topStatRows(
+  matches: PreseasonMatch[],
+  kind: "scorer" | "assist",
+  limit = 8,
+): Array<{ name: string; count: number }> {
+  const map = new Map<string, { name: string; count: number }>();
+  for (const m of matches) {
+    if (m.status !== "finished") continue;
+    for (const g of m.goals ?? []) {
+      if (g.side !== "pl") continue;
+      const raw = kind === "scorer" ? g.scorer : g.assist;
+      if (!raw?.trim()) continue;
+      const name = raw.trim();
+      const key = normPreseasonPlayerName(name);
+      const prev = map.get(key);
+      if (prev) {
+        prev.count += 1;
+        if (name.length > prev.name.length) prev.name = name;
+      } else {
+        map.set(key, { name, count: 1 });
+      }
+    }
+  }
+  return [...map.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
 
 export function buildPreseasonClubSummaries(
   clubs: PreseasonClubGroup[],
 ): PreseasonClubSummary[] {
   return clubs
     .map((group) => {
+      const chronological = [...group.matches].sort((a, b) =>
+        a.date.localeCompare(b.date),
+      );
       let played = 0;
       let won = 0;
       let drawn = 0;
@@ -72,19 +118,24 @@ export function buildPreseasonClubSummaries(
       let gf = 0;
       let ga = 0;
       let lastMatch: PreseasonMatch | null = null;
+      const form: Array<"W" | "D" | "L"> = [];
+      let upcomingCount = 0;
 
-      for (const m of group.matches) {
-        if (m.status !== "finished") continue;
+      for (const m of chronological) {
+        if (m.status === "scheduled") {
+          upcomingCount += 1;
+          continue;
+        }
         if (m.pl_goals == null || m.opp_goals == null) continue;
         played += 1;
         gf += m.pl_goals;
         ga += m.opp_goals;
-        if (m.pl_goals > m.opp_goals) won += 1;
-        else if (m.pl_goals < m.opp_goals) lost += 1;
-        else drawn += 1;
-        if (!lastMatch || m.date.localeCompare(lastMatch.date) > 0) {
-          lastMatch = m;
-        }
+        const letter = resultLetter(m);
+        if (letter === "W") won += 1;
+        else if (letter === "L") lost += 1;
+        else if (letter === "D") drawn += 1;
+        if (letter) form.push(letter);
+        lastMatch = m;
       }
 
       return {
@@ -96,15 +147,22 @@ export function buildPreseasonClubSummaries(
         lost,
         gf,
         ga,
+        form,
+        upcomingCount,
         lastMatch,
+        topScorers: topStatRows(chronological, "scorer"),
+        topAssists: topStatRows(chronological, "assist"),
+        matches: chronological,
       };
     })
-    .filter((s) => s.played > 0)
+    .filter((s) => s.played > 0 || s.upcomingCount > 0 || s.matches.length > 0)
     .sort((a, b) => {
       const pts = (s: PreseasonClubSummary) => s.won * 3 + s.drawn;
       const d = pts(b) - pts(a);
       if (d !== 0) return d;
-      return b.gf - b.ga - (a.gf - a.ga);
+      const gd = b.gf - b.ga - (a.gf - a.ga);
+      if (gd !== 0) return gd;
+      return a.name.localeCompare(b.name);
     });
 }
 
@@ -218,7 +276,6 @@ export function splitPreseasonMatches(matches: PreseasonMatch[]): {
 export function formatPreseasonDate(date: string, locale: string): string {
   try {
     return new Intl.DateTimeFormat(locale, {
-      weekday: "short",
       month: "short",
       day: "numeric",
     }).format(new Date(`${date}T12:00:00`));

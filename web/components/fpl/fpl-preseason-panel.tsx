@@ -41,7 +41,16 @@ type Labels = {
   leaderboardPlayer: string;
   leaderboardClub: string;
   leaderboardEmpty: string;
+  leaderboardHint: string;
   clubSummaryTitle: string;
+  clubDigestTitle: string;
+  clubDigestHint: string;
+  formLabel: string;
+  homeShort: string;
+  awayShort: string;
+  scheduledShort: string;
+  topScorersShort: string;
+  topAssistsShort: string;
   lastResult: string;
   expandAll: string;
   collapseAll: string;
@@ -587,24 +596,32 @@ function LeaderboardTable({
   statLabel,
   labels,
   playerLinks,
+  limit = 25,
 }: {
   title: string;
   rows: PreseasonLeaderboardRow[];
   statLabel: string;
   labels: Pick<Labels, "leaderboardPlayer" | "leaderboardClub" | "leaderboardEmpty">;
   playerLinks: Record<string, number>;
+  limit?: number;
 }) {
+  const visible = rows.slice(0, limit);
   return (
     <div className="rounded-xl border border-border bg-card/60">
-      <div className="border-b border-border/60 px-4 py-3">
+      <div className="flex items-baseline justify-between gap-2 border-b border-border/60 px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {rows.length > 0 ? (
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {Math.min(limit, rows.length)}/{rows.length}
+          </span>
+        ) : null}
       </div>
-      {rows.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">{labels.leaderboardEmpty}</p>
       ) : (
-        <div className="scroll-table">
+        <div className="scroll-table max-h-[28rem]">
           <table className="w-full min-w-[16rem] text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-card">
               <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="w-8 px-3 py-2 font-semibold">#</th>
                 <th className="px-3 py-2 font-semibold">{labels.leaderboardPlayer}</th>
@@ -613,7 +630,7 @@ function LeaderboardTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => (
+              {visible.map((row, i) => (
                 <tr
                   key={row.key}
                   className="border-b border-border/40 last:border-b-0 hover:bg-muted/20"
@@ -658,6 +675,7 @@ function PreseasonLeaderboards({
     | "leaderboardPlayer"
     | "leaderboardClub"
     | "leaderboardEmpty"
+    | "leaderboardHint"
   >;
   playerLinks: Record<string, number>;
 }) {
@@ -669,21 +687,31 @@ function PreseasonLeaderboards({
   if (scorers.length === 0 && assists.length === 0) return null;
 
   return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <LeaderboardTable
-        title={labels.scorersTitle}
-        rows={scorers}
-        statLabel="G"
-        labels={labels}
-        playerLinks={playerLinks}
-      />
-      <LeaderboardTable
-        title={labels.assistsTitle}
-        rows={assists}
-        statLabel="A"
-        labels={labels}
-        playerLinks={playerLinks}
-      />
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">
+          {labels.scorersTitle} · {labels.assistsTitle}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">{labels.leaderboardHint}</p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <LeaderboardTable
+          title={labels.scorersTitle}
+          rows={scorers}
+          statLabel="G"
+          labels={labels}
+          playerLinks={playerLinks}
+          limit={25}
+        />
+        <LeaderboardTable
+          title={labels.assistsTitle}
+          rows={assists}
+          statLabel="A"
+          labels={labels}
+          playerLinks={playerLinks}
+          limit={25}
+        />
+      </div>
     </section>
   );
 }
@@ -805,6 +833,271 @@ function formatClubGoals(s: PreseasonClubSummary, locale: string): string {
   return `${s.gf}–${s.ga} GF/GA`;
 }
 
+function FormPills({ form }: { form: Array<"W" | "D" | "L"> }) {
+  if (form.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-0.5">
+      {form.map((letter, i) => (
+        <span
+          key={`${letter}-${i}`}
+          className={cn(
+            "inline-flex h-5 min-w-5 items-center justify-center rounded px-1 text-[10px] font-bold tabular-nums",
+            letter === "W" && "bg-emerald-500/20 text-emerald-400",
+            letter === "D" && "bg-muted text-muted-foreground",
+            letter === "L" && "bg-rose-500/20 text-rose-400",
+          )}
+        >
+          {letter}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function DigestMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="min-w-0 rounded-lg bg-background/40 px-2 py-1.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-0.5 truncate text-xs font-semibold tabular-nums",
+          accent ? "text-brand-accent" : "text-foreground",
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DigestStatColumn({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: Array<{ name: string; count: number }>;
+  empty: boolean;
+}) {
+  if (empty) return null;
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
+        {title}
+      </p>
+      <ul className="space-y-0.5">
+        {rows.slice(0, 5).map((r) => (
+          <li
+            key={`${title}-${r.name}`}
+            className="flex items-baseline justify-between gap-2 text-[11px]"
+          >
+            <span className="min-w-0 truncate text-muted-foreground">{r.name}</span>
+            <span className="shrink-0 tabular-nums font-semibold text-foreground">
+              {r.count}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ClubDigestCard({
+  summary,
+  locale,
+  labels,
+  selected,
+  onSelect,
+}: {
+  summary: PreseasonClubSummary;
+  locale: string;
+  labels: Pick<
+    Labels,
+    | "vs"
+    | "formLabel"
+    | "homeShort"
+    | "awayShort"
+    | "scheduledShort"
+    | "topScorersShort"
+    | "topAssistsShort"
+  >;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const badge = getFplTeamBadgeStyle(summary.code);
+  const zh = locale.startsWith("zh");
+  const hasGa =
+    summary.topScorers.length > 0 || summary.topAssists.length > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "flex w-full flex-col gap-3 rounded-xl border p-3 text-left transition-colors",
+        selected
+          ? "border-brand-accent/40 bg-brand-accent/10"
+          : "border-border bg-card/60 hover:bg-muted/30",
+      )}
+      style={{
+        backgroundImage: `linear-gradient(145deg, ${badge.rowTint} 0%, transparent 55%)`,
+      }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <ClubTag code={summary.code} />
+          <span className="truncate text-sm font-semibold text-foreground">
+            {summary.name}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {labels.formLabel}
+          </span>
+          <FormPills form={summary.form} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        <DigestMetric
+          label={zh ? "场次" : "Played"}
+          value={`${summary.played}P`}
+        />
+        <DigestMetric
+          label={zh ? "胜-平-负" : "W-D-L"}
+          value={formatClubRecord(summary, locale)}
+        />
+        <DigestMetric
+          label={zh ? "进 / 失" : "GF / GA"}
+          value={zh ? `${summary.gf} / ${summary.ga}` : `${summary.gf}–${summary.ga}`}
+          accent
+        />
+      </div>
+
+      {hasGa ? (
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-background/25 px-2.5 py-2">
+          <DigestStatColumn
+            title={labels.topScorersShort}
+            rows={summary.topScorers}
+            empty={summary.topScorers.length === 0}
+          />
+          <DigestStatColumn
+            title={labels.topAssistsShort}
+            rows={summary.topAssists}
+            empty={summary.topAssists.length === 0}
+          />
+        </div>
+      ) : null}
+
+      <ul className="flex flex-col gap-0 divide-y divide-border/50 overflow-hidden rounded-lg border border-border/60 bg-background/25">
+        {summary.matches.map((m) => {
+          const score = formatPreseasonScore(m);
+          const ha = m.pl_home ? labels.homeShort : labels.awayShort;
+          const plScorers = (m.goals ?? [])
+            .filter((g) => g.side === "pl" && g.scorer)
+            .map((g) => g.scorer);
+          return (
+            <li key={m.id} className="px-2.5 py-2">
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="w-[3.4rem] shrink-0 tabular-nums text-muted-foreground">
+                  {formatPreseasonDate(m.date, locale)}
+                </span>
+                <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded bg-muted/60 px-1 text-[10px] font-semibold text-muted-foreground">
+                  {ha}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-foreground">
+                  {preseasonOpponentLabel(m)}
+                </span>
+                <span
+                  className={cn(
+                    "shrink-0 tabular-nums font-semibold",
+                    score ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {score ?? labels.scheduledShort}
+                </span>
+              </div>
+              {plScorers.length > 0 ? (
+                <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                  {plScorers.join(" · ")}
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </button>
+  );
+}
+
+function ClubDigestGrid({
+  summaries,
+  locale,
+  labels,
+  selectedClub,
+  onSelectClub,
+}: {
+  summaries: PreseasonClubSummary[];
+  locale: string;
+  labels: Pick<
+    Labels,
+    | "clubDigestTitle"
+    | "clubDigestHint"
+    | "vs"
+    | "formLabel"
+    | "homeShort"
+    | "awayShort"
+    | "scheduledShort"
+    | "topScorersShort"
+    | "topAssistsShort"
+  >;
+  selectedClub: string;
+  onSelectClub: (code: string) => void;
+}) {
+  if (summaries.length === 0) return null;
+  const visible =
+    selectedClub === "all"
+      ? summaries
+      : summaries.filter((s) => s.code === selectedClub);
+
+  return (
+    <section>
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold text-foreground">
+          {labels.clubDigestTitle}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {labels.clubDigestHint}
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {visible.map((s) => (
+          <ClubDigestCard
+            key={s.code}
+            summary={s}
+            locale={locale}
+            labels={labels}
+            selected={selectedClub === s.code}
+            onSelect={() =>
+              onSelectClub(selectedClub === s.code ? "all" : s.code)
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ClubSummaryStrip({
   summaries,
   locale,
@@ -866,6 +1159,9 @@ function ClubSummaryStrip({
               <p className="tabular-nums text-brand-accent">
                 {formatClubGoals(s, locale)}
               </p>
+              <div className="mt-1">
+                <FormPills form={s.form} />
+              </div>
               {s.lastMatch && lastScore ? (
                 <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
                   {labels.lastResult}: {formatPreseasonDate(s.lastMatch.date, locale)} {lastScore}
@@ -1043,14 +1339,6 @@ export function FplPreseasonPanel({
         labels={labels}
       />
 
-      <ClubSummaryStrip
-        summaries={summaries}
-        locale={locale}
-        labels={labels}
-        selectedClub={clubFilter}
-        onSelectClub={setClubFilter}
-      />
-
       {selectedClubGroup ? (
         <ClubScorerAssistSummary
           club={selectedClubGroup}
@@ -1064,6 +1352,22 @@ export function FplPreseasonPanel({
           playerLinks={playerLinks}
         />
       )}
+
+      <ClubSummaryStrip
+        summaries={summaries}
+        locale={locale}
+        labels={labels}
+        selectedClub={clubFilter}
+        onSelectClub={setClubFilter}
+      />
+
+      <ClubDigestGrid
+        summaries={summaries}
+        locale={locale}
+        labels={labels}
+        selectedClub={clubFilter}
+        onSelectClub={setClubFilter}
+      />
 
       <PreseasonToolbar
         labels={labels}

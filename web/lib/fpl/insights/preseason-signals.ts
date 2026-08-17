@@ -4,6 +4,7 @@ import {
   normPreseasonPlayerName,
   type PreseasonMatch,
 } from "@/lib/fpl/preseason";
+import { isPlausiblePreseasonScorerName } from "@/lib/fpl/preseason-report-goals";
 import { loadPreseasonFplPlayerIndex } from "@/lib/fpl/preseason-fpl-players";
 
 export type PreseasonSignalRow = {
@@ -87,6 +88,9 @@ function processPreseasonMatch(
 ): void {
   for (const goal of match.goals ?? []) {
     if (!goal.scorer) continue;
+    // Insights / WeChat cards are PL-squad signals only.
+    if (goal.side === "opp") continue;
+    if (!isPlausiblePreseasonScorerName(goal.scorer, match)) continue;
     const key = playerKey(goal.scorer, match.pl_code);
     const row = rows.get(key) ?? {
       key,
@@ -103,7 +107,7 @@ function processPreseasonMatch(
     row.goals += 1;
     rows.set(key, row);
 
-    if (goal.assist) {
+    if (goal.assist && isPlausiblePreseasonScorerName(goal.assist, match)) {
       const aKey = playerKey(goal.assist, match.pl_code);
       const aRow = rows.get(aKey) ?? {
         key: aKey,
@@ -184,12 +188,15 @@ export async function loadPreseasonSignalsForMatchDate(matchDate: string): Promi
   for (const match of bundle.matches) {
     if (match.status !== "finished" || match.date !== matchDate) continue;
     if (match.pl_goals != null && match.opp_goals != null) {
-      dayMatches.push({
-        pl_name: match.pl_name,
-        opponent: match.opponent,
-        pl_goals: match.pl_goals,
-        opp_goals: match.opp_goals,
-      });
+      const dedupeKey = `${match.pl_name}|${match.opponent}|${match.pl_goals}-${match.opp_goals}`;
+      if (!dayMatches.some((m) => `${m.pl_name}|${m.opponent}|${m.pl_goals}-${m.opp_goals}` === dedupeKey)) {
+        dayMatches.push({
+          pl_name: match.pl_name,
+          opponent: match.opponent,
+          pl_goals: match.pl_goals,
+          opp_goals: match.opp_goals,
+        });
+      }
     }
     processPreseasonMatch(rows, match);
   }
