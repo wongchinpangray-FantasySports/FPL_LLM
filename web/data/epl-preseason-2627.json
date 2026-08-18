@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-17",
+  "updated_at": "2026-08-18",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -4051,7 +4051,14 @@
       "pl_goals": 0,
       "opp_goals": 3,
       "kickoff_time": null,
-      "goals": [],
+      "goals": [
+        {
+          "minute": "",
+          "scorer": "who",
+          "assist": null,
+          "side": "opp"
+        }
+      ],
       "lineup": null
     },
     {
