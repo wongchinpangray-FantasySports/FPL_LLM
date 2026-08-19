@@ -47,6 +47,139 @@ function emptyDraftSlot(): DraftSlotState {
   };
 }
 
+export function createEmptyDraft(horizon: number): SquadBuilderDraftV3 {
+  const drafts: Record<string, DraftSlotState> = {};
+  for (let i = 1; i <= SQUAD_BUILDER_DRAFT_COUNT; i++) {
+    drafts[String(i)] = emptyDraftSlot();
+  }
+  return {
+    version: 3,
+    activeDraft: 1,
+    horizon,
+    drafts,
+  };
+}
+
+export function isSquadBuilderDraftV3(value: unknown): value is SquadBuilderDraftV3 {
+  if (!value || typeof value !== "object") return false;
+  const d = value as Partial<SquadBuilderDraftV3>;
+  return d.version === 3 && !!d.drafts && typeof d.drafts === "object";
+}
+
+export function normalizeDraftV3(
+  draft: SquadBuilderDraftV3,
+  horizonFallback = 5,
+): SquadBuilderDraftV3 {
+  const drafts: Record<string, DraftSlotState> = {};
+  for (let i = 1; i <= SQUAD_BUILDER_DRAFT_COUNT; i++) {
+    const hit = draft.drafts[String(i)];
+    drafts[String(i)] = hit
+      ? {
+          picks: clonePicks(normalizeEmptySquadFormation(hit.picks ?? createEmptySquad())),
+          captainId: hit.captainId ?? null,
+          viceId: hit.viceId ?? null,
+        }
+      : emptyDraftSlot();
+  }
+  return {
+    version: 3,
+    activeDraft: clampDraftIndex(draft.activeDraft ?? 1),
+    horizon:
+      typeof draft.horizon === "number" && Number.isFinite(draft.horizon)
+        ? Math.min(8, Math.max(1, Math.floor(draft.horizon)))
+        : horizonFallback,
+    drafts,
+  };
+}
+
+/** True if any comparison slot has at least one selected player. */
+export function draftHasFilledPicks(draft: SquadBuilderDraftV3): boolean {
+  for (const slot of Object.values(draft.drafts ?? {})) {
+    if (filledPicks(slot.picks ?? []).length > 0) return true;
+  }
+  return false;
+}
+
+async function putAccountDraft(draft: SquadBuilderDraftV3): Promise<boolean> {
+  try {
+    const res = await fetch("/api/squad-builder/draft", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draft }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchAccountDraft(): Promise<{
+  draft: SquadBuilderDraftV3 | null;
+  updated_at: string | null;
+} | null> {
+  try {
+    const res = await fetch("/api/squad-builder/draft", { cache: "no-store" });
+    if (res.status === 401 || res.status === 503) return null;
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      draft?: unknown;
+      updated_at?: string | null;
+    };
+    if (!isSquadBuilderDraftV3(data.draft)) {
+      return { draft: null, updated_at: null };
+    }
+    return {
+      draft: normalizeDraftV3(data.draft),
+      updated_at: data.updated_at ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Persist to account; also mirrors to localStorage as a cache. */
+export async function saveDraftToAccount(
+  draft: SquadBuilderDraftV3,
+): Promise<boolean> {
+  saveDraftV2(draft);
+  return putAccountDraft(draft);
+}
+
+/**
+ * Resolve what to show after login:
+ * - Prefer account draft when it has players
+ * - Else keep local draft and upload it to the account (migration)
+ * - Else empty
+ */
+export async function hydrateDraftFromAccount(
+  fromGw: number,
+  horizon: number,
+): Promise<SquadBuilderDraftV3> {
+  const local = loadOrCreateDraft(fromGw, horizon);
+  const remote = await fetchAccountDraft();
+
+  if (remote?.draft && draftHasFilledPicks(remote.draft)) {
+    const merged = normalizeDraftV3({ ...remote.draft, horizon });
+    saveDraftV2(merged);
+    return merged;
+  }
+
+  if (draftHasFilledPicks(local)) {
+    const normalized = normalizeDraftV3({ ...local, horizon });
+    saveDraftV2(normalized);
+    void putAccountDraft(normalized);
+    return normalized;
+  }
+
+  if (remote?.draft) {
+    const merged = normalizeDraftV3({ ...remote.draft, horizon });
+    saveDraftV2(merged);
+    return merged;
+  }
+
+  return normalizeDraftV3({ ...local, horizon });
+}
+
 function loadV1(): PlannerPickPayload[] | null {
   if (typeof window === "undefined") return null;
   try {

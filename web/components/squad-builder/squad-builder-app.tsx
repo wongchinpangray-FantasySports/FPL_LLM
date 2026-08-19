@@ -28,10 +28,12 @@ import {
 } from "@/components/squad-builder/squad-builder-player-panel";
 import { SquadBuilderStatsBar } from "@/components/squad-builder/squad-builder-stats-bar";
 import {
+  createEmptyDraft,
   draftHorizonXpt,
   draftSlotRange,
-  loadOrCreateDraft,
+  hydrateDraftFromAccount,
   resolveDraftSlot,
+  saveDraftToAccount,
   saveDraftV2,
   upsertDraftSlot,
   type DraftSlotState,
@@ -103,21 +105,12 @@ export function SquadBuilderApp({
   const fromGw = SQUAD_BUILDER_FROM_GW;
 
   const [horizon, setHorizon] = useState(5);
-  const [draft, setDraft] = useState<SquadBuilderDraftV3>(() => {
-    const base = loadOrCreateDraft(fromGw, 5);
-    if (!initialImport?.picks?.length) return base;
-    const withSlot = upsertDraftSlot(base, initialImport.draftIndex, {
-      picks: initialImport.picks,
-      captainId: initialImport.captainId,
-      viceId: initialImport.viceId,
-    });
-    return { ...withSlot, activeDraft: initialImport.draftIndex };
-  });
-  const [importNotice] = useState(() =>
-    initialImport?.picks?.length
-      ? t("importApplied")
-      : null,
+  const [draft, setDraft] = useState<SquadBuilderDraftV3>(() =>
+    createEmptyDraft(5),
   );
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
   const activeDraft = draft.activeDraft;
   const xptsGw = fromGw;
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
@@ -152,9 +145,45 @@ export function SquadBuilderApp({
     setSelectedSlot((cur) => cur ?? firstEmptySlot(picks));
   }, [activeDraft, picks]);
 
+  // Load account draft (fallback: local cache) once on mount — avoids SSR empty overwrite.
   useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      let next = await hydrateDraftFromAccount(fromGw, 5);
+      if (initialImport?.picks?.length) {
+        next = {
+          ...upsertDraftSlot(next, initialImport.draftIndex, {
+            picks: initialImport.picks,
+            captainId: initialImport.captainId,
+            viceId: initialImport.viceId,
+          }),
+          activeDraft: initialImport.draftIndex,
+        };
+        if (!cancelled) {
+          setImportNotice(t("importApplied"));
+          setNotice(t("importApplied"));
+        }
+      }
+      if (cancelled) return;
+      setHorizon(next.horizon || 5);
+      setDraft(next);
+      setDraftHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once on mount
+  }, []);
+
+  // Mirror to localStorage + debounced account sync after hydration.
+  useEffect(() => {
+    if (!draftHydrated) return;
     saveDraftV2({ ...draft, horizon });
-  }, [draft, horizon]);
+    const timer = window.setTimeout(() => {
+      void saveDraftToAccount({ ...draft, horizon });
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [draft, horizon, draftHydrated]);
 
   useEffect(() => {
     if (inspectFplId == null) {
@@ -744,13 +773,17 @@ export function SquadBuilderApp({
           type="button"
           variant="secondary"
           size="sm"
-          disabled={!squadValid}
+          disabled={!squadValid || savingDraft || !draftHydrated}
           onClick={() => {
-            saveDraftV2({ ...draft, horizon });
-            setNotice(t("draftSaved"));
+            void (async () => {
+              setSavingDraft(true);
+              const ok = await saveDraftToAccount({ ...draft, horizon });
+              setSavingDraft(false);
+              setNotice(ok ? t("draftSavedAccount") : t("draftSavedLocalOnly"));
+            })();
           }}
         >
-          {t("saveSquad")}
+          {savingDraft ? t("savingSquad") : t("saveSquad")}
         </Button>
         <Button
           type="button"
