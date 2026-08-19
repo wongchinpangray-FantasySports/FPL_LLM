@@ -113,27 +113,32 @@ async function putAccountDraft(draft: SquadBuilderDraftV3): Promise<boolean> {
   }
 }
 
-export async function fetchAccountDraft(): Promise<{
-  draft: SquadBuilderDraftV3 | null;
-  updated_at: string | null;
-} | null> {
+export type AccountDraftFetch =
+  | { status: "ok"; draft: SquadBuilderDraftV3 | null; updated_at: string | null }
+  | { status: "unauthorized" }
+  | { status: "unavailable" }
+  | { status: "error" };
+
+export async function fetchAccountDraft(): Promise<AccountDraftFetch> {
   try {
     const res = await fetch("/api/squad-builder/draft", { cache: "no-store" });
-    if (res.status === 401 || res.status === 503) return null;
-    if (!res.ok) return null;
+    if (res.status === 401) return { status: "unauthorized" };
+    if (res.status === 503) return { status: "unavailable" };
+    if (!res.ok) return { status: "error" };
     const data = (await res.json()) as {
       draft?: unknown;
       updated_at?: string | null;
     };
     if (!isSquadBuilderDraftV3(data.draft)) {
-      return { draft: null, updated_at: null };
+      return { status: "ok", draft: null, updated_at: null };
     }
     return {
+      status: "ok",
       draft: normalizeDraftV3(data.draft),
       updated_at: data.updated_at ?? null,
     };
   } catch {
-    return null;
+    return { status: "error" };
   }
 }
 
@@ -150,15 +155,22 @@ export async function saveDraftToAccount(
  * - Prefer account draft when it has players
  * - Else keep local draft and upload it to the account (migration)
  * - Else empty
+ *
+ * Does not upload when the account fetch was unauthorized/unavailable, so a
+ * premature empty client state cannot wipe a saved account draft.
  */
 export async function hydrateDraftFromAccount(
   fromGw: number,
   horizon: number,
 ): Promise<SquadBuilderDraftV3> {
-  const local = loadOrCreateDraft(fromGw, horizon);
+  const local = normalizeDraftV3(loadOrCreateDraft(fromGw, horizon), horizon);
   const remote = await fetchAccountDraft();
 
-  if (remote?.draft && draftHasFilledPicks(remote.draft)) {
+  if (remote.status !== "ok") {
+    return local;
+  }
+
+  if (remote.draft && draftHasFilledPicks(remote.draft)) {
     const merged = normalizeDraftV3({ ...remote.draft, horizon });
     saveDraftV2(merged);
     return merged;
@@ -171,13 +183,13 @@ export async function hydrateDraftFromAccount(
     return normalized;
   }
 
-  if (remote?.draft) {
+  if (remote.draft) {
     const merged = normalizeDraftV3({ ...remote.draft, horizon });
     saveDraftV2(merged);
     return merged;
   }
 
-  return normalizeDraftV3({ ...local, horizon });
+  return local;
 }
 
 function loadV1(): PlannerPickPayload[] | null {

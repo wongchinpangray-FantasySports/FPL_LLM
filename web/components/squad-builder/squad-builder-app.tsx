@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/components/auth/auth-provider";
 import { PitchView, type PlannerGwStripCell } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import {
@@ -29,9 +30,11 @@ import {
 import { SquadBuilderStatsBar } from "@/components/squad-builder/squad-builder-stats-bar";
 import {
   createEmptyDraft,
+  draftHasFilledPicks,
   draftHorizonXpt,
   draftSlotRange,
   hydrateDraftFromAccount,
+  loadOrCreateDraft,
   resolveDraftSlot,
   saveDraftToAccount,
   saveDraftV2,
@@ -102,6 +105,7 @@ export function SquadBuilderApp({
   initialImport?: SquadBuilderInitialImport | null;
 }) {
   const t = useTranslations("squadBuilderApp");
+  const { user, loading: authLoading } = useAuth();
   const fromGw = SQUAD_BUILDER_FROM_GW;
 
   const [horizon, setHorizon] = useState(5);
@@ -132,6 +136,7 @@ export function SquadBuilderApp({
     useState<PlannerPlayerInspectDetail | null>(null);
   const [inspectLoading, setInspectLoading] = useState(false);
   const [inspectErr, setInspectErr] = useState<string | null>(null);
+  const autoProjectedRef = useRef(false);
 
   const slotState = useMemo(
     () => resolveDraftSlot(draft, activeDraft),
@@ -145,9 +150,20 @@ export function SquadBuilderApp({
     setSelectedSlot((cur) => cur ?? firstEmptySlot(picks));
   }, [activeDraft, picks]);
 
-  // Load account draft (fallback: local cache) once on mount — avoids SSR empty overwrite.
+  // Paint any local cache immediately (don't wait on auth/network).
   useEffect(() => {
+    const local = loadOrCreateDraft(fromGw, 5);
+    if (!draftHasFilledPicks(local)) return;
+    setHorizon(local.horizon || 5);
+    setDraft(local);
+  }, [fromGw]);
+
+  // Load account draft once auth is ready — avoids 401 → empty overwrite races.
+  useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
+    setDraftHydrated(false);
+    autoProjectedRef.current = false;
     void (async () => {
       let next = await hydrateDraftFromAccount(fromGw, 5);
       if (initialImport?.picks?.length) {
@@ -172,18 +188,19 @@ export function SquadBuilderApp({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once on mount
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-hydrate on auth identity only
+  }, [authLoading, user?.id, fromGw]);
 
   // Mirror to localStorage + debounced account sync after hydration.
   useEffect(() => {
     if (!draftHydrated) return;
     saveDraftV2({ ...draft, horizon });
+    if (!user) return;
     const timer = window.setTimeout(() => {
       void saveDraftToAccount({ ...draft, horizon });
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [draft, horizon, draftHydrated]);
+  }, [draft, horizon, draftHydrated, user]);
 
   useEffect(() => {
     if (inspectFplId == null) {
@@ -406,6 +423,13 @@ export function SquadBuilderApp({
       setProjLoading(false);
     }
   }, [canProject, projectionIds, fromGw, horizon, t]);
+
+  // After a saved squad is restored, compute xPts automatically (no manual click).
+  useEffect(() => {
+    if (!draftHydrated || !canProject || autoProjectedRef.current) return;
+    autoProjectedRef.current = true;
+    void runProject();
+  }, [draftHydrated, canProject, runProject]);
 
   function fixCaptainVice(next: PlannerPickPayload[]) {
     let nextCaptain = captainId;
