@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "source": "https://www.premierleague.com/en/news/4606700/premier-league-clubs-2026-pre-season-fixtures-and-results",
-  "updated_at": "2026-08-18",
+  "updated_at": "2026-08-19",
   "matches": [
     {
       "id": "cov-2026-07-11-1",
@@ -1536,7 +1536,137 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": null,
+        "starters": [
+          {
+            "name": "Dubravka",
+            "number": null
+          },
+          {
+            "name": "Tye Hall",
+            "number": null
+          },
+          {
+            "name": "Hardy",
+            "number": null
+          },
+          {
+            "name": "Davies",
+            "number": null
+          },
+          {
+            "name": "Kyerematen",
+            "number": null
+          },
+          {
+            "name": "Gray",
+            "number": null
+          },
+          {
+            "name": "Bergvall",
+            "number": null
+          },
+          {
+            "name": "Gallagher",
+            "number": null
+          },
+          {
+            "name": "Solomon",
+            "number": null
+          },
+          {
+            "name": "Richarlison",
+            "number": null
+          },
+          {
+            "name": "Tyrese Hall",
+            "number": null
+          }
+        ],
+        "subs": [
+          {
+            "name": "Robertson",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "Tingey",
+            "number": null,
+            "minute_on": 78
+          },
+          {
+            "name": "Takai",
+            "number": null,
+            "minute_on": 46
+          },
+          {
+            "name": "Byrne",
+            "number": null,
+            "minute_on": 78
+          },
+          {
+            "name": "Donley",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "Tonali",
+            "number": null,
+            "minute_on": 46
+          },
+          {
+            "name": "Melia",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "Yang",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "Scarlett",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "Williams-Barnett",
+            "number": null,
+            "minute_on": 46
+          },
+          {
+            "name": "Dyer",
+            "number": null,
+            "minute_on": 78
+          },
+          {
+            "name": "Lancaster",
+            "number": null,
+            "minute_on": 74
+          },
+          {
+            "name": "Alfaro",
+            "number": null,
+            "minute_on": 78
+          },
+          {
+            "name": "Toure",
+            "number": null,
+            "minute_on": 65
+          },
+          {
+            "name": "France",
+            "number": null,
+            "minute_on": 74
+          },
+          {
+            "name": "Lacey",
+            "number": null,
+            "minute_on": 65
+          }
+        ]
+      }
     },
     {
       "id": "bou-2026-07-30-59",
@@ -3449,7 +3579,67 @@
           "side": "pl"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "3-4-2-1",
+        "starters": [
+          {
+            "name": "James Trafford",
+            "number": 1,
+            "minute_on": null
+          },
+          {
+            "name": "Tarik Muharemovic",
+            "number": 5,
+            "minute_on": null
+          },
+          {
+            "name": "Jaka Bijol",
+            "number": 15,
+            "minute_on": null
+          },
+          {
+            "name": "Sebastiaan Bornauw",
+            "number": 33,
+            "minute_on": null
+          },
+          {
+            "name": "Jayden Bogle",
+            "number": 2,
+            "minute_on": null
+          },
+          {
+            "name": "Sean Longstaff",
+            "number": 8,
+            "minute_on": null
+          },
+          {
+            "name": "Ao Tanaka",
+            "number": 22,
+            "minute_on": null
+          },
+          {
+            "name": "Rhys Chadwick",
+            "number": 47,
+            "minute_on": null
+          },
+          {
+            "name": "Daniel James",
+            "number": 7,
+            "minute_on": null
+          },
+          {
+            "name": "Brenden Aaronson",
+            "number": 11,
+            "minute_on": null
+          },
+          {
+            "name": "Lukas Nmecha",
+            "number": 14,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "new-2026-08-12-31",
@@ -3490,7 +3680,67 @@
           "side": "opp"
         }
       ],
-      "lineup": null
+      "lineup": {
+        "formation": "4-2-3-1",
+        "starters": [
+          {
+            "name": "Lukás Hornícek",
+            "number": 21,
+            "minute_on": null
+          },
+          {
+            "name": "Lewis Hall",
+            "number": 3,
+            "minute_on": null
+          },
+          {
+            "name": "Sven Botman",
+            "number": 4,
+            "minute_on": null
+          },
+          {
+            "name": "Malick Thiaw",
+            "number": 12,
+            "minute_on": null
+          },
+          {
+            "name": "Leo Shahar",
+            "number": 51,
+            "minute_on": null
+          },
+          {
+            "name": "Joelinton Cássio Apolinário de Lira",
+            "number": 7,
+            "minute_on": null
+          },
+          {
+            "name": "Aladji Bamba",
+            "number": 8,
+            "minute_on": null
+          },
+          {
+            "name": "Yoane Wissa",
+            "number": 9,
+            "minute_on": null
+          },
+          {
+            "name": "Bazoumana Touré",
+            "number": 17,
+            "minute_on": null
+          },
+          {
+            "name": "Anthony Elanga",
+            "number": 19,
+            "minute_on": null
+          },
+          {
+            "name": "William Osula",
+            "number": 10,
+            "minute_on": null
+          }
+        ],
+        "subs": []
+      }
     },
     {
       "id": "nfo-2026-08-12-25",
