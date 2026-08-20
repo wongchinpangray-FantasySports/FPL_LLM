@@ -1,3 +1,5 @@
+"use client";
+
 import { rewriteHtmlImagesToProxy, sanitizeScoutHtml } from "@/lib/scout/html";
 
 export function ScoutArticleBody({

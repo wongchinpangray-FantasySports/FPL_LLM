@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { ScoutImage, ScoutSeries } from "@/lib/scout/types";
 
 const ALLOWED_TAGS = new Set([
@@ -229,8 +228,21 @@ export function excerptFromHtml(html: string, max = 220): string {
   return `${text.slice(0, max).replace(/\s+\S*$/, "")}…`;
 }
 
+/** Sync fingerprint (no node:crypto — this module is imported by client components). */
 export function hashContent(parts: string[]): string {
-  return createHash("sha256").update(parts.join("\n")).digest("hex").slice(0, 40);
+  const input = parts.join("\n");
+  let h1 = 2166136261;
+  let h2 = 2166136261 ^ 0x9e3779b9;
+  for (let i = 0; i < input.length; i++) {
+    const c = input.charCodeAt(i);
+    h1 ^= c;
+    h1 = Math.imul(h1, 16777619);
+    h2 ^= c + ((i & 0xff) << 8);
+    h2 = Math.imul(h2, 16777619);
+  }
+  const a = (h1 >>> 0).toString(16).padStart(8, "0");
+  const b = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `${a}${b}${a}${b}${a}`.slice(0, 40);
 }
 
 export function slugFromSourceUrl(url: string, guid: string): string {
