@@ -7,6 +7,7 @@ import {
   type NewsCategory,
   type WcNewsItem,
 } from "@/lib/wc/news-feeds";
+import { isRetiredFplKolItem } from "@/lib/fpl/fpl-x-feed";
 
 const CACHE_ID = "global";
 const CACHE_MS = 20 * 60 * 1000;
@@ -39,6 +40,17 @@ function withoutWorldCupNews(items: WcNewsItem[]): WcNewsItem[] {
   return items.filter((i) => i.category !== "worldcup");
 }
 
+/** Drop retired FPL creator syndication and KOL X rows (cached rows may still exist). */
+function withoutFplCreatorFeeds(items: WcNewsItem[]): WcNewsItem[] {
+  return items.filter((i) => {
+    if (i.category === "creators" || i.feed_id.startsWith("fpl-creator-")) {
+      return false;
+    }
+    if (i.feed_id === "fpl-x" && isRetiredFplKolItem(i)) return false;
+    return true;
+  });
+}
+
 function filterItems(
   items: WcNewsItem[],
   opts: {
@@ -47,9 +59,9 @@ function filterItems(
     category?: NewsCategory | "ALL";
   },
 ): WcNewsItem[] {
-  if (opts.category === "worldcup") return [];
+  if (opts.category === "worldcup" || opts.category === "creators") return [];
 
-  let out = withoutWorldCupNews(items.map(normalizeItem));
+  let out = withoutFplCreatorFeeds(withoutWorldCupNews(items.map(normalizeItem)));
   if (opts.category && opts.category !== "ALL") {
     if (opts.category === "trending") {
       out = [...out].sort((a, b) => {

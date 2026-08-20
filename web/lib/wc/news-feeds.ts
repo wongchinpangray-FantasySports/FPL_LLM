@@ -641,19 +641,17 @@ export async function fetchWcNewsItems(opts?: {
 
   const { fetchPremierLeagueNewsItems } = await import("@/lib/wc/premierleague-news");
   const { fetchFplXTweets } = await import("@/lib/fpl/fpl-x-feed");
-  const { fetchFplCreatorsItems } = await import("@/lib/fpl/fpl-creators-feed");
-  const [plItems, fplTweetItems, creatorItems] = await Promise.all([
+  // FPL creator RSS/YouTube syndication disabled (FFS partnership exclusivity).
+  const [plItems, fplTweetItems] = await Promise.all([
     fetchPremierLeagueNewsItems({ limit: 35 }).catch(() => [] as WcNewsItem[]),
     fetchFplXTweets({
       limit: 45,
       cachedItems: opts?.cachedFplXItems,
     }).catch(() => [] as WcNewsItem[]),
-    fetchFplCreatorsItems({ limit: 48 }).catch(() => [] as WcNewsItem[]),
   ]);
   const plBudget = Math.min(plItems.length, 35);
   const fplTweetBudget = Math.min(fplTweetItems.length, 45);
-  const creatorBudget = Math.min(creatorItems.length, 48);
-  const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget - creatorBudget);
+  const rssLimit = Math.max(20, limit - plBudget - fplTweetBudget);
 
   const batches = await mapWithConcurrency(ACTIVE_NEWS_FEEDS, async (feed) => {
       const xml = await fetchFeedXml(feed.url);
@@ -720,7 +718,6 @@ export async function fetchWcNewsItems(opts?: {
   for (const item of [
     ...plItems,
     ...fplTweetItems,
-    ...creatorItems,
     ...rssMerged.slice(0, rssLimit),
   ]) {
     const key = dedupeKey(item.title, item.url);

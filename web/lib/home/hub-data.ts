@@ -7,7 +7,7 @@ import type { WcMatchRow } from "@/lib/wc/fifa-rounds";
 import { isWcMatchFinished } from "@/lib/wc/fifa-rounds";
 import { getWcNewsForApi } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
-import { filterFplXThisWeek, sortFplXItems } from "@/lib/fpl/fpl-x-feed";
+import { filterFplXThisWeek, isRetiredFplKolItem, sortFplXItems } from "@/lib/fpl/fpl-x-feed";
 import {
   loadFplXDigestFromDb,
   londonDigestDateIso,
@@ -165,6 +165,7 @@ function pickFplTweets(sources: WcNewsItem[][], limit = 8): WcNewsItem[] {
   for (const items of sources) {
     for (const item of items) {
       if (item.feed_id !== "fpl-x") continue;
+      if (isRetiredFplKolItem(item)) continue;
       if (seen.has(item.id)) continue;
       seen.add(item.id);
       out.push(item);

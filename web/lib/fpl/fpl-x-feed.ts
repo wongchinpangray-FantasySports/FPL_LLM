@@ -11,21 +11,13 @@ const FETCH_HEADERS: Record<string, string> = {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 };
 
-/** Curated X accounts — official + FPL community + PL beat journalists. */
+/** Curated X accounts — official + FFScout partner + PL beat journalists.
+ * FPL community KOLs / content-creator accounts removed for FFS exclusivity.
+ */
 const FPL_X_ACCOUNTS = [
   { handle: "FantasyPremierLeague", outlet: "FPL Official", alwaysInclude: true },
   { handle: "OfficialFPL", outlet: "FPL Official", alwaysInclude: true },
-  { handle: "BenCrellin", outlet: "Ben Crellin", alwaysInclude: false },
-  { handle: "FFScout", outlet: "FFScout", alwaysInclude: false },
-  { handle: "FPLGeneral", outlet: "FPL General", alwaysInclude: false },
-  { handle: "FPLFocal", outlet: "FPL Focal", alwaysInclude: false },
-  { handle: "LetsTalk_FPL", outlet: "Let's Talk FPL", alwaysInclude: false },
-  { handle: "Always_182", outlet: "Always182", alwaysInclude: false },
-  { handle: "FPLMate", outlet: "FPL Mate", alwaysInclude: false },
-  { handle: "AllAboutFPL", outlet: "All About FPL", alwaysInclude: false },
-  { handle: "FPLFamily", outlet: "FPL Family", alwaysInclude: false },
-  { handle: "FPLHints", outlet: "FPL Hints", alwaysInclude: false },
-  { handle: "TotalFPL", outlet: "Total FPL", alwaysInclude: false },
+  { handle: "FFScout", outlet: "FFScout", alwaysInclude: true },
   { handle: "PremierInjury", outlet: "Premier Injuries", alwaysInclude: false },
   { handle: "PhysioRoom", outlet: "PhysioRoom", alwaysInclude: false },
   { handle: "FootballInjuries", outlet: "Football Injuries", alwaysInclude: false },
@@ -218,6 +210,18 @@ const FPL_X_ACCOUNTS = [
     digestTier: "club",
   },
 ] as const;
+
+/** Outlets retired for FFS exclusivity (still may appear in old cache rows). */
+const RETIRED_FPL_KOL_OUTLET_RE =
+  /ben\s*crellin|fpl\s*general|fpl\s*focal|let'?s\s*talk\s*fpl|always\s*182|fpl\s*mate|all\s*about\s*fpl|fpl\s*family|fpl\s*hints|total\s*fpl|fantasy\s*football\s*hub|fpl\s*harry/i;
+
+export function isRetiredFplKolItem(item: {
+  outlet?: string | null;
+  title?: string | null;
+}): boolean {
+  const text = `${item.outlet ?? ""} ${item.title ?? ""}`;
+  return RETIRED_FPL_KOL_OUTLET_RE.test(text);
+}
 
 export type FplXAccount = (typeof FPL_X_ACCOUNTS)[number];
 
@@ -776,7 +780,7 @@ function dedupeFplTweets(items: WcNewsItem[]): WcNewsItem[] {
 }
 
 function finalizeFplXFeed(items: WcNewsItem[], limit: number): WcNewsItem[] {
-  const deduped = dedupeFplTweets(items);
+  const deduped = dedupeFplTweets(items).filter((item) => !isRetiredFplKolItem(item));
   const thisWeek = deduped.filter((item) => isFplXWithinWeek(item.published_at));
   const pool =
     thisWeek.length >= Math.min(8, limit) ? thisWeek : deduped;

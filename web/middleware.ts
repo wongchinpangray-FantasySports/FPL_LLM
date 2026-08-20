@@ -9,6 +9,7 @@ import {
   isProtectedPath,
 } from "./lib/supabase/middleware";
 import { stripLocalePrefix } from "./i18n/routing";
+import { localePath } from "./lib/auth/auth-path";
 import { isAdminEmail } from "./lib/auth/admin";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -48,6 +49,17 @@ export async function middleware(request: NextRequest) {
     // Drop stale EN locale cookie so next-intl does not keep preferring English.
     res.cookies.set("NEXT_LOCALE", "zh", { path: "/" });
     return res;
+  }
+
+  // Retired FPL creators archive (FFS partnership exclusivity).
+  const pathNoLocale = stripLocalePrefix(pathname);
+  if (
+    pathNoLocale === "/news/fpl-creators" ||
+    pathNoLocale.startsWith("/news/fpl-creators/")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = localePath("zh", "/news");
+    return NextResponse.redirect(url, 308);
   }
 
   if (pathname === "/auth/callback") {
