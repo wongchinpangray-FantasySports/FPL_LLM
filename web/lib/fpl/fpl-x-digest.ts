@@ -3,6 +3,7 @@ import { DEFAULT_MODEL, getGenAI } from "@/lib/llm";
 import { getServerSupabase } from "@/lib/supabase";
 import { loadWcNewsFromDb } from "@/lib/wc/news-store";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
+import { isRetiredFplKolItem } from "@/lib/fpl/fpl-x-feed";
 
 export const FPL_DIGEST_TZ = "Europe/London";
 export const FPL_DIGEST_WINDOW_HOURS = 48;
@@ -110,14 +111,68 @@ function digestSourcePriority(s: FplXDigestSource): number {
   if (CLUB_BEAT_JOURNALIST_RE.test(s.outlet)) return 85;
   if (s.kind === "tweet") {
     if (/fpl official/i.test(s.outlet)) return 75;
-    if (/ffscout|fpl hints|ben crellin|premier injuries|physioroom/i.test(s.outlet)) {
-      return 50;
+    if (/ffscout|premier injuries|physioroom|football injuries/i.test(s.outlet)) {
+      return 55;
     }
     return 40;
   }
   if (/ffscout/i.test(s.outlet)) return 42;
   if (/bbc sport|the guardian|sky sports|athletic/i.test(s.outlet)) return 32;
   return 28;
+}
+
+/** Drop retired FPL KOL / creator sources (and their citation lines in summaries). */
+export function filterAllowedDigestSources(
+  sources: FplXDigestSource[],
+): FplXDigestSource[] {
+  return sources.filter(
+    (s) =>
+      !isRetiredFplKolItem({
+        outlet: s.outlet,
+        title: s.text,
+        text: s.text,
+        url: s.url,
+      }),
+  );
+}
+
+function stripRetiredKolSummarySection(summary: string): string {
+  // Remove whole "## FPL community" (or similar) sections from old digests.
+  return summary.replace(
+    /(?:^|\n)##\s*[^\n]*(?:community|创作者|KOL|content creator)[^\n]*\n[\s\S]*?(?=(?:\n##\s)|$)/gi,
+    "\n",
+  );
+}
+
+export function stripRetiredKolFromDigestSummary(summary: string): string {
+  const withoutSection = stripRetiredKolSummarySection(summary);
+  const lines = withoutSection.split("\n");
+  const kept = lines.filter((line) => {
+    if (!line.trim()) return true;
+    return !isRetiredFplKolItem({
+      outlet: line,
+      title: line,
+      text: line,
+    });
+  });
+  return kept
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function sanitizeFplDigestRecord<T extends FplXDigestRecord>(
+  record: T,
+): T {
+  const source_items = filterAllowedDigestSources(record.source_items ?? []);
+  return {
+    ...record,
+    source_items,
+    summary_en: stripRetiredKolFromDigestSummary(record.summary_en ?? ""),
+    summary_zh: record.summary_zh
+      ? stripRetiredKolFromDigestSummary(record.summary_zh)
+      : null,
+  };
 }
 
 /** Google News RSS when X syndication is empty/rate-limited. */
@@ -260,6 +315,7 @@ export async function collectFplXDigestSources(opts?: {
 
   for (const item of [...embeds, ...liveTweets, ...journalistTweets]) {
     if (item.feed_id !== "fpl-x") continue;
+    if (isRetiredFplKolItem(item)) continue;
     if (inWindow(item.published_at, startMs, endMs)) {
       sources.push(mapNewsItemToSource(item, "tweet"));
     }
@@ -268,6 +324,7 @@ export async function collectFplXDigestSources(opts?: {
   const cached = await loadWcNewsFromDb();
   for (const item of cached.items) {
     if (item.feed_id !== "fpl-x" && item.feed_id !== "pl-official") continue;
+    if (isRetiredFplKolItem(item)) continue;
     const text = `${item.title} ${item.summary}`;
     if (item.feed_id === "pl-official" && !FPL_HEADLINE_RE.test(text)) continue;
     if (!inWindow(item.published_at, startMs, endMs)) continue;
@@ -307,7 +364,7 @@ export async function collectFplXDigestSources(opts?: {
   }
 
   return {
-    sources: dedupeSources(sources),
+    sources: dedupeSources(filterAllowedDigestSources(sources)),
     window_start,
     window_end,
   };
@@ -344,6 +401,132 @@ function formatSourcesBlock(sources: FplXDigestSource[]): string {
     .join("\n\n");
 }
 
+function titleCaseToken(token: string): string {
+  if (!token) return token;
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+}
+
+const TRANSFER_SLUG_STOP = new Set([
+  "man",
+  "utd",
+  "united",
+  "manchester",
+  "city",
+  "liverpool",
+  "arsenal",
+  "chelsea",
+  "tottenham",
+  "spurs",
+  "newcastle",
+  "brighton",
+  "west",
+  "ham",
+  "transfer",
+  "transfers",
+  "news",
+  "deal",
+  "sign",
+  "signs",
+  "signed",
+  "signing",
+  "from",
+  "with",
+  "for",
+  "the",
+  "and",
+  "on",
+  "to",
+  "of",
+  "a",
+  "an",
+  "u",
+  "turn",
+  "concrete",
+  "strong",
+  "likely",
+  "chances",
+  "chance",
+  "football365",
+  "exclusive",
+  "here",
+  "we",
+  "go",
+  "confirms",
+  "confirm",
+  "romano",
+  "fabrizio",
+  "ornstein",
+  "latest",
+  "update",
+  "reveals",
+  "reveal",
+  "verdict",
+  "percentage",
+  "close",
+  "completion",
+  "ineos",
+  "loan",
+  "buy",
+  "permanent",
+  "free",
+  "option",
+  "clause",
+  "after",
+  "before",
+  "as",
+  "is",
+  "are",
+  "be",
+  "being",
+  "has",
+  "have",
+  "his",
+  "her",
+  "their",
+  "new",
+  "html",
+  "htm",
+  "article",
+  "articles",
+]);
+
+/** Best-effort player name from transfer headline URL / text. */
+function extractPlayerNameFromTransferSource(
+  source: FplXDigestSource,
+): string | null {
+  const fromText = source.text.match(
+    /\b((?:Marcus|Ronald|Ousmane|Bruno|Takehiro|Pep|Manor|Darwin|Alexander|João|Joao|Anan|Shea|James|Trevor|Bradley|Elliot)\s+[A-Z][\p{L}'’\-]+)\b/u,
+  );
+  if (fromText?.[1]) return fromText[1];
+
+  try {
+    const parsed = new URL(source.url);
+    if (/news\.google\.|google\.com\/rss|t\.co\//i.test(parsed.hostname + parsed.pathname)) {
+      return null;
+    }
+    const path = decodeURIComponent(parsed.pathname);
+    const slug = path.split("/").filter(Boolean).pop() ?? "";
+    if (!/[a-z]{3,}-[a-z]{3,}/i.test(slug)) return null;
+    const tokens = slug
+      .toLowerCase()
+      .replace(/\.(html?|php|aspx)$/i, "")
+      .split(/[-_]+/)
+      .filter(
+        (t) =>
+          t.length > 2 &&
+          !TRANSFER_SLUG_STOP.has(t) &&
+          !/^\d+$/.test(t) &&
+          /^[a-z]+$/i.test(t),
+      );
+    if (tokens.length >= 2) {
+      return `${titleCaseToken(tokens[0]!)} ${titleCaseToken(tokens[1]!)}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 function templateDigest(
   digestDate: string,
   sources: FplXDigestSource[],
@@ -352,14 +535,17 @@ function templateDigest(
   const journalists = sources.filter(
     (s) =>
       s.kind === "tweet" &&
-      /bbc|ornstein|romano|joyce|pearce|stone|slater|bascombe|king|mokbel|burt|mcgrath|whitwell|kilpatrick|watts|lee|crafton|dorsett|ashton|cross|hughes|ogden|thomas|ames|lawton|steinberg/i.test(
+      /bbc|ornstein|romano|joyce|pearce|stone|slater|bascombe|king|mokbel|burt|mcgrath|whitwell|kilpatrick|watts|lee|crafton|dorsett|ashton|cross|hughes|ogden|thomas|ames|lawton|steinberg|ffscout|skykaveh|kaveh/i.test(
         s.outlet,
       ),
   );
   const headlines = sources.filter((s) => s.kind === "headline");
-  const community = sources.filter(
+  const partnerTweets = sources.filter(
     (s) =>
       s.kind === "tweet" &&
+      /ffscout|premier injuries|physioroom|football injuries|premier league|sky sports/i.test(
+        s.outlet,
+      ) &&
       !/fpl official|officialfpl/i.test(s.outlet) &&
       !journalists.includes(s),
   );
@@ -373,7 +559,7 @@ function templateDigest(
     sections.push(`## Official FPL\n${bullets.join("\n")}`);
   }
 
-  const injuryLineup = [...journalists, ...headlines].filter((s) =>
+  const injuryLineup = [...journalists, ...headlines, ...partnerTweets].filter((s) =>
     /injur|doubtful|ruled out|line-?up|team news|fitness|scan|sidelined|starting|bench|press conference/i.test(
       s.text,
     ),
@@ -385,24 +571,57 @@ function templateDigest(
     sections.push(`## Injuries & team news\n${bullets.join("\n")}`);
   }
 
-  const transfers = [...journalists, ...headlines, ...community].filter((s) =>
-    /transfer|sign(?:ing|ed|s)?|loan|bid|deal|here we go|agreed|medical|target/i.test(
+  const transfers = [...journalists, ...headlines, ...partnerTweets].filter((s) => {
+    if (
+      /\bBezos\b|minority (?:stake|share)|ownership|takeover|investment talks?|£?\d+(?:\.\d+)?bn (?:deal|investment)|Mourinho|Netflix|Detention Facilities|Mshale|Transfer Bomba/i.test(
+        s.text,
+      )
+    ) {
+      return false;
+    }
+    return /transfer|sign(?:ing|ed|s)?|loan|bid|deal|here we go|agreed|medical|target|finalis(?:e|ing)|agree(?:d|s)? deal|close in on/i.test(
       s.text,
-    ),
-  );
+    );
+  });
   if (transfers.length) {
-    const bullets = transfers
-      .slice(0, 8)
-      .map((s) => `- ${s.text.slice(0, 200)} (${s.outlet})`);
-    sections.push(`## Transfers\n${bullets.join("\n")}`);
+    const scored = transfers.map((s) => {
+      const named = extractPlayerNameFromTransferSource(s);
+      const hasName =
+        !!named ||
+        /Chalobah|Barcola|Khalaili|Charles|Solomon|Araujo|Page|Summerville|Tonali|Trafford/i.test(
+          s.text,
+        ) ||
+        /\b[A-Z][a-zà-öø-ÿ]+(?:\s+[A-Z][a-zà-öø-ÿ'’-]+){1,2}\b/.test(s.text);
+      const confirmed =
+        /here we go|agreed (?:a )?deal|agree(?:s|d)? (?:a )?deal|finalis|signed|medical|completed|close in on/i.test(
+          s.text,
+        );
+      const vagueBoost = /transfer boost|everything signed|door .closed./i.test(
+        s.text,
+      );
+      const score =
+        (confirmed && hasName ? 5 : 0) +
+        (hasName ? 3 : 0) +
+        (/ornstein|romano/i.test(s.outlet) ? 2 : 0) -
+        (vagueBoost && !hasName ? 6 : 0);
+      return { s, named, score };
+    });
+    scored.sort((a, b) => b.score - a.score);
+    const bullets = scored
+      .filter((row) => row.score > 0)
+      .slice(0, 10)
+      .map(({ s, named }) => {
+        const text = s.text.slice(0, 200).trim();
+        const withName =
+          named && !new RegExp(named.replace(/\s+/g, "\\s+"), "i").test(text)
+            ? `${named}: ${text}`
+            : text;
+        return `- ${withName} (${s.outlet})`;
+      });
+    if (bullets.length) sections.push(`## Transfers\n${bullets.join("\n")}`);
   }
 
-  if (community.length) {
-    const bullets = community
-      .slice(0, 5)
-      .map((s) => `- ${s.text.slice(0, 180)} (${s.outlet})`);
-    sections.push(`## FPL community\n${bullets.join("\n")}`);
-  }
+  // Intentionally no "FPL community" / KOL section (FFS exclusivity).
 
   if (!sections.length) {
     return `## Quiet day\n- No major FPL or Premier League updates in the past ${FPL_DIGEST_WINDOW_HOURS} hours (${digestDate}). Check back after the next sync.`;
@@ -422,7 +641,7 @@ export async function translateDigestSummaryToZh(
     const prompt = `将以下 FPL（Fantasy Premier League）每日简报翻译成简体中文 Markdown。
 
 规则：
-- 保留 ## 板块标题结构；可使用：## 伤病与阵容、## 转会、## FPL 社区、## 官方 FPL
+- 保留 ## 板块标题结构；可使用：## 伤病与阵容、## 转会、## 官方 FPL（不要使用「FPL 社区」或创作者栏目）
 - 保留每条末尾的来源标注（括号内的 @账号 或媒体名）
 - 不得增删事实；仅翻译
 - 「伤病与阵容」条目中不要写俱乐部名称，也不要在球员名后用括号标注俱乐部
@@ -516,10 +735,8 @@ ${facts}
 ## 转会
 - 最多 8 条：具体人名/俱乐部 + 来源
 
-## FPL 社区
-- 最多 5 条（仅在有价值时写）
-
 规则：
+- 不要写「FPL 社区」或任何 FPL 创作者/KOL 栏目；素材仅限官方、FFScout、记者与主流媒体
 - 全文 ≤${FPL_DIGEST_SUMMARY_MAX_CHARS_ZH} 字，每条要点一行，信息密度高，可写得更完整
 - 每条末尾标注来源（@账号 或媒体名）
 - 无内容的板块整段省略
@@ -544,10 +761,8 @@ Format (Markdown — follow exactly):
 ## Transfers
 - up to 8 bullets: named players/clubs + source
 
-## FPL community
-- up to 5 bullets (only if genuinely useful)
-
 Rules:
+- Do **not** include an "FPL community" section or any FPL creator/KOL outlets — sources are official FPL, FFScout, journalists, and major media only
 - ≤${FPL_DIGEST_SUMMARY_MAX_WORDS} words total; one fact per bullet; high information density; fuller detail is welcome
 - End each bullet with the source (@handle or outlet)
 - Omit entire sections with no supporting sources
@@ -619,7 +834,7 @@ async function loadCachedDigestFallback(
       source_fingerprint?: string;
     };
     if (raw.source_fingerprint !== fingerprint) return null;
-    return { ...raw, source: "cache" };
+    return sanitizeFplDigestRecord({ ...raw, source: "cache" });
   } catch {
     return null;
   }
@@ -690,7 +905,7 @@ export async function getOrCreateFplXDigest(opts?: {
     : await translateDigestSummaryToZh(summaryEn, digestDate);
 
   const generated_at = new Date().toISOString();
-  const record: FplXDigestRecord = {
+  const record: FplXDigestRecord = sanitizeFplDigestRecord({
     digest_date: digestDate,
     window_start,
     window_end,
@@ -701,7 +916,7 @@ export async function getOrCreateFplXDigest(opts?: {
     model: usedGemini ? DEFAULT_MODEL : null,
     generated_at,
     source: usedGemini ? "gemini" : "template",
-  };
+  });
 
   await saveDigest(record);
   return record;
@@ -728,7 +943,7 @@ export async function loadFplXDigestFromDb(
       .maybeSingle();
     if (fbErr || !fb?.items) return null;
     const raw = fb.items as Omit<FplXDigestRecord, "source">;
-    return { ...raw, source: "cache" };
+    return sanitizeFplDigestRecord({ ...raw, source: "cache" });
   } catch {
     return null;
   }
@@ -749,7 +964,7 @@ function rowToFplXDigestRecord(
 ): FplXDigestRecord {
   const summaryJson =
     (data.summary_json as Record<string, string | null> | null) ?? {};
-  return {
+  return sanitizeFplDigestRecord({
     digest_date: (digestDate ?? data.digest_date) as string,
     window_start: data.window_start as string,
     window_end: data.window_end as string,
@@ -760,7 +975,7 @@ function rowToFplXDigestRecord(
     model: (data.model as string | null) ?? null,
     generated_at: data.generated_at as string,
     source: "cache",
-  };
+  });
 }
 
 export async function listArchivedFplXDigests(opts?: {
@@ -799,7 +1014,10 @@ export async function listArchivedFplXDigests(opts?: {
     for (const row of fb ?? []) {
       const raw = row.items as Omit<FplXDigestRecord, "source">;
       if (!raw?.digest_date || raw.digest_date >= beforeDate) continue;
-      const record: FplXDigestRecord = { ...raw, source: "cache" };
+      const record: FplXDigestRecord = sanitizeFplDigestRecord({
+        ...raw,
+        source: "cache",
+      });
       out.push({ ...record, summary: pickDigestSummary(record, locale) });
       if (out.length >= limit) break;
     }

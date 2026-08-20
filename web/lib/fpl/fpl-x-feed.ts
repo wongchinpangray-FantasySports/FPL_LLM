@@ -211,15 +211,26 @@ const FPL_X_ACCOUNTS = [
   },
 ] as const;
 
-/** Outlets retired for FFS exclusivity (still may appear in old cache rows). */
+/** Outlets / handles retired for FFS exclusivity (cache + old digests may still contain them). */
 const RETIRED_FPL_KOL_OUTLET_RE =
-  /ben\s*crellin|fpl\s*general|fpl\s*focal|let'?s\s*talk\s*fpl|always\s*182|fpl\s*mate|all\s*about\s*fpl|fpl\s*family|fpl\s*hints|total\s*fpl|fantasy\s*football\s*hub|fpl\s*harry/i;
+  /ben\s*crellin|@bencrellin|fpl\s*general|@fplgeneral|fpl\s*focal|@fplfocal|let'?s\s*talk\s*_?fpl|@letstalk_fpl|always\s*_?182|@always_182|fpl\s*mate|@fplmate|all\s*about\s*fpl|@allaboutfpl|fpl\s*family|@fplfamily|fpl\s*hints|@fplhints|total\s*fpl|@totalfpl|fantasy\s*football\s*hub|ff\s*hub|@ffhub|fpl\s*harry|@fplharry|fpl\s*review|fantasy\s*football\s*fix|live\s*fpl|fpl\s*statistics|fpl\s*blackbox|fpl\s*lemon|fpl\s*canuck|planet\s*fpl|fpl\s*wire|coach\s*smarter|fpl\s*show|fpl\s*community|fpl\s*tom\b|@fpltom/i;
 
 export function isRetiredFplKolItem(item: {
   outlet?: string | null;
   title?: string | null;
+  summary?: string | null;
+  text?: string | null;
+  url?: string | null;
 }): boolean {
-  const text = `${item.outlet ?? ""} ${item.title ?? ""}`;
+  const text = [
+    item.outlet,
+    item.title,
+    item.summary,
+    item.text,
+    item.url,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return RETIRED_FPL_KOL_OUTLET_RE.test(text);
 }
 

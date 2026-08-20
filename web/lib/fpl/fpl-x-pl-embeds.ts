@@ -1,8 +1,8 @@
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import {
-  isFplRelevantTweet,
   isFplXWithinWeek,
   resolveFplXAccount,
+  isRetiredFplKolItem,
 } from "@/lib/fpl/fpl-x-feed";
 
 const PL_API = "https://api.premierleague.com";
@@ -91,7 +91,11 @@ function parseTweetEmbedsFromBody(
     if (!text) continue;
 
     const account = resolveFplXAccount(handle);
-    if (!account && !isFplRelevantTweet(text)) continue;
+    // FFS exclusivity: only allow curated accounts (official / Scout / journalists).
+    if (!account) continue;
+    if (isRetiredFplKolItem({ outlet: account.outlet, title: text, url: handle })) {
+      continue;
+    }
 
     const published_at =
       parseBlockquoteDate(block) ?? parseTweetDate(article.date ?? null);
@@ -103,7 +107,7 @@ function parseTweetEmbedsFromBody(
       summary: text,
       image_url: article.imageUrl?.trim() || null,
       published_at,
-      outlet: account?.outlet ?? `@${handle}`,
+      outlet: account.outlet,
       region: "UK",
       lang: "en",
       feed_id: FEED_ID,
