@@ -13,9 +13,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  for (const locale of ["en", "zh"]) {
-    revalidatePath(`/${locale}/fpl/preseason`);
-  }
+  // Chinese-only public site (`as-needed` → unprefixed `/fpl/preseason`).
+  revalidatePath("/fpl/preseason");
+  revalidatePath("/zh/fpl/preseason");
 
   return NextResponse.json({ revalidated: true, at: new Date().toISOString() });
 }

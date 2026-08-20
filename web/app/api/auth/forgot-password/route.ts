@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     }
 
     const locale =
-      body.locale && routing.locales.includes(body.locale as "en" | "zh")
+      body.locale &&
+      (routing.locales as readonly string[]).includes(body.locale)
         ? body.locale
         : routing.defaultLocale;
     const resetPath = localePath(locale, "/auth/reset-password");

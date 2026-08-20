@@ -11,6 +11,9 @@ export function LanguageSwitcher() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
 
+  // Site is Chinese-only (FFS SEO); hide the switcher when a single locale is live.
+  if (routing.locales.length <= 1) return null;
+
   return (
     <div className="flex flex-wrap items-center gap-1 text-xs">
       <span className="text-muted-foreground">{t("label")}</span>
@@ -27,7 +30,7 @@ export function LanguageSwitcher() {
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {loc === "en" ? t("en") : t("zh")}
+          {loc === "zh" ? t("zh") : t("en")}
         </button>
       ))}
     </div>

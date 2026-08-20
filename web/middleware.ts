@@ -39,6 +39,17 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiRoute = pathname.startsWith("/api/");
 
+  // Chinese-only site: permanently send legacy English URLs to the ZH equivalent.
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    const url = request.nextUrl.clone();
+    url.pathname =
+      pathname === "/en" ? "/" : pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+    const res = NextResponse.redirect(url, 308);
+    // Drop stale EN locale cookie so next-intl does not keep preferring English.
+    res.cookies.set("NEXT_LOCALE", "zh", { path: "/" });
+    return res;
+  }
+
   if (pathname === "/auth/callback") {
     return NextResponse.next();
   }

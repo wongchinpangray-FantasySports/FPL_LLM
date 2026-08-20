@@ -9,10 +9,10 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-/** Root metadata fallback; `[locale]/layout` overrides per language. */
+/** Root metadata fallback; `[locale]/layout` overrides. Site is Chinese-only. */
 export const metadata: Metadata = {
-  title: "Faleague The Football Hub",
-  description: "World Cup live, FPL tools, global football news, and AI.",
+  title: "Faleague 足球智汇",
+  description: "世界杯直播、FPL 工具、足球资讯与 AI 助手。",
 };
 
 export default function RootLayout({
