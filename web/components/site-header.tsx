@@ -229,6 +229,11 @@ export function SiteHeader() {
                   }
                 />
                 <MenuLink
+                  href="/scout"
+                  label={t("newsScout")}
+                  active={pathname === "/scout" || pathname.startsWith("/scout/")}
+                />
+                <MenuLink
                   href="/news/fpl-x"
                   label={t("newsFplX")}
                   active={pathname.startsWith("/news/fpl-x")}

@@ -28,11 +28,17 @@
     "generate:gw1-draft": "tsx scripts/generate-gw1-draft.ts",
     "render:gw1-draft": "node scripts/render-gw1-draft.mjs",
     "gw1:daily": "tsx scripts/generate-gw1-draft.ts --png",
+    "contest:decide-test": "tsx scripts/contest-decide-self-test.ts",
     "notify:value-band": "tsx scripts/notify-value-band.ts",
     "notify:value-band:dry": "tsx scripts/notify-value-band.ts --dry-run",
     "render:xhs-recommended-squad": "node scripts/render-xhs-recommended-squad.mjs",
+    "build:xhs-preseason-results": "tsx scripts/build-xhs-preseason-results.ts",
+    "render:xhs-preseason-results": "node scripts/render-xhs-preseason-results.mjs",
+    "xhs:preseason-results": "tsx scripts/build-xhs-preseason-results.ts && node scripts/render-xhs-preseason-results.mjs",
     "notify:recommended-squad": "tsx scripts/notify-recommended-squad.ts",
-    "notify:recommended-squad:dry": "tsx scripts/notify-recommended-squad.ts --dry-run"
+    "notify:recommended-squad:dry": "tsx scripts/notify-recommended-squad.ts --dry-run",
+    "sync:scout": "tsx scripts/sync-scout-articles.ts",
+    "test:scout": "tsx scripts/scout-self-test.ts"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

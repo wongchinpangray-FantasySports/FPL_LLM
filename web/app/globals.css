@@ -432,3 +432,60 @@ html:not(.dark) [class*="hover\\:bg-white"]:hover {
 .scroll-table--muted table thead tr {
   background-color: hsl(var(--muted));
 }
+
+.scout-article-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: hsl(var(--foreground) / 0.92);
+}
+
+.scout-article-body p,
+.scout-article-body li {
+  margin-bottom: 0.75rem;
+}
+
+.scout-article-body h2,
+.scout-article-body h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.scout-article-body img {
+  display: block;
+  width: 100%;
+  max-height: 28rem;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  object-fit: contain;
+  background: hsl(var(--muted));
+}
+
+.scout-article-body a {
+  color: var(--brand-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.scout-article-body table {
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.8rem;
+  border-collapse: collapse;
+}
+
+.scout-article-body th,
+.scout-article-body td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+}
+
+.scout-article-body blockquote {
+  margin: 1rem 0;
+  border-left: 3px solid var(--brand-accent);
+  padding-left: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
