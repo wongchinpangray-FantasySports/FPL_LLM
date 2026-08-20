@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { ScoutArticleBody } from "@/components/scout/scout-article-body";
+import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type {
   ScoutArticle,
   ScoutArticleListItem,
@@ -40,6 +41,7 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
   const [ingesting, setIngesting] = useState(false);
   const [preview, setPreview] = useState<ScoutArticle | null>(null);
   const [query, setQuery] = useState("");
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,8 +100,11 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
 
   async function openPreview(id: string) {
     setBusyId(id);
+    setError(null);
     try {
-      const res = await fetch(`/api/admin/scout/articles/${id}`);
+      const res = await fetch(`/api/admin/scout/articles/${id}`, {
+        cache: "no-store",
+      });
       const data = (await res.json()) as {
         article?: ScoutArticle;
         error?: string;
@@ -112,6 +117,11 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
       setBusyId(null);
     }
   }
+
+  useEffect(() => {
+    if (!preview) return;
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [preview]);
 
   async function ingest() {
     setIngesting(true);
@@ -225,7 +235,13 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
             </thead>
             <tbody>
               {filtered.map((item) => (
-                <tr key={item.id} className="border-t border-border/60">
+                <tr
+                  key={item.id}
+                  className={cn(
+                    "border-t border-border/60",
+                    preview?.id === item.id && "bg-brand-accent/5",
+                  )}
+                >
                   <td className="px-3 py-2.5">
                     <div className="flex gap-3">
                       <NewsThumb
@@ -237,13 +253,15 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
                         <button
                           type="button"
                           onClick={() => void openPreview(item.id)}
-                          className="text-left font-medium text-foreground hover:text-brand-accent"
+                          className="block w-full cursor-pointer text-left"
                         >
-                          {item.title_zh || item.title_en}
+                          <span className="block font-medium text-foreground hover:text-brand-accent">
+                            {item.title_zh || item.title_en}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground hover:text-brand-accent">
+                            {item.title_en}
+                          </span>
                         </button>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.title_en}
-                        </p>
                         {item.translation_error ? (
                           <p className="text-[11px] text-rose-300">
                             {t("translationFailed")}
@@ -272,6 +290,14 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busyId === item.id}
+                        onClick={() => void openPreview(item.id)}
+                        className="rounded-md border border-border px-2 py-1 text-[11px] disabled:opacity-50"
+                      >
+                        {t("preview")}
+                      </button>
                       {item.status !== "published" ? (
                         <button
                           type="button"
@@ -316,7 +342,10 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
       )}
 
       {preview ? (
-        <div className="rounded-xl border border-border bg-card/40 p-4">
+        <div
+          ref={previewRef}
+          className="scroll-mt-4 rounded-xl border border-border bg-card/40 p-4"
+        >
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase text-muted-foreground">
@@ -325,6 +354,9 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
               <h3 className="text-lg font-semibold">
                 {preview.title_zh || preview.title_en}
               </h3>
+              {preview.title_zh && preview.title_en !== preview.title_zh ? (
+                <p className="text-sm text-muted-foreground">{preview.title_en}</p>
+              ) : null}
             </div>
             <div className="flex gap-2">
               <button
@@ -343,6 +375,17 @@ export function AdminScoutArticlesPanel({ locale }: { locale: string }) {
               </button>
             </div>
           </div>
+          {preview.hero_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={
+                proxiedNewsImageUrl(preview.hero_image_url) ??
+                preview.hero_image_url
+              }
+              alt=""
+              className="mb-4 max-h-[18rem] w-full rounded-lg object-cover"
+            />
+          ) : null}
           {preview.body_html_zh || preview.body_html_en ? (
             <ScoutArticleBody
               html={preview.body_html_zh || preview.body_html_en || ""}

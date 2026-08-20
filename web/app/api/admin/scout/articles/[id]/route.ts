@@ -13,7 +13,10 @@ export async function GET(_req: NextRequest, { params }: Props) {
     if (!article) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    return NextResponse.json({ article });
+    return NextResponse.json(
+      { article },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (e) {
     const status =
       e instanceof Error && "status" in e && typeof e.status === "number"
