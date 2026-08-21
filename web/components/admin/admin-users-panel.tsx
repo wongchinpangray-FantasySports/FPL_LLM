@@ -123,6 +123,7 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [clearingId, setClearingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -141,6 +142,38 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
       setLoading(false);
     }
   }, [t]);
+
+  const clearEntryId = useCallback(
+    async (user: AdminUserRow) => {
+      if (!user.fpl_entry_id) return;
+      const ok = window.confirm(
+        t("clearEntryConfirm", {
+          email: user.email ?? user.id.slice(0, 8),
+          id: user.fpl_entry_id,
+        }),
+      );
+      if (!ok) return;
+      setClearingId(user.id);
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/fpl-entry`, {
+          method: "DELETE",
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? t("clearEntryFailed"));
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, fpl_entry_id: null } : u,
+          ),
+        );
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("clearEntryFailed"));
+      } finally {
+        setClearingId(null);
+      }
+    },
+    [t],
+  );
 
   useEffect(() => {
     void load();
@@ -286,9 +319,23 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                       {expanded ? (
                         <tr key={`${user.id}-detail`} className="bg-card/30">
                           <td colSpan={5} className="px-3 py-4">
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              {t("onboardingAnswers")}
-                            </p>
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                {t("onboardingAnswers")}
+                              </p>
+                              {user.fpl_entry_id ? (
+                                <button
+                                  type="button"
+                                  disabled={clearingId === user.id}
+                                  onClick={() => void clearEntryId(user)}
+                                  className="rounded-lg border border-rose-500/40 px-2.5 py-1 text-xs font-medium text-rose-200 hover:bg-rose-500/10 disabled:opacity-50"
+                                >
+                                  {clearingId === user.id
+                                    ? t("clearEntryClearing")
+                                    : t("clearEntry")}
+                                </button>
+                              ) : null}
+                            </div>
                             <OnboardingDetails
                               user={user}
                               labels={detailLabels}

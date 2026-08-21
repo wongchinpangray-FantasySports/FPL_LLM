@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { useEntryId } from "@/components/entry-id-context";
+import { FplEntryConfirmField } from "@/components/fpl/fpl-entry-confirm-field";
+import type { FplEntryPreview } from "@/lib/fpl/entry-preview";
 
 type Props = {
   initialEntryId?: number | null;
@@ -18,16 +20,26 @@ export function FplEntryLinkForm({ initialEntryId, onSaved }: Props) {
   const [value, setValue] = useState(
     initialEntryId != null ? String(initialEntryId) : "",
   );
+  const [confirmed, setConfirmed] = useState<FplEntryPreview | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<number | null>(initialEntryId ?? null);
 
+  const parsed = Number(value.trim());
+  const unchangedLinked =
+    saved != null &&
+    Number.isFinite(parsed) &&
+    parsed === saved &&
+    confirmed == null;
+  const canSave =
+    confirmed != null && confirmed.entry_id === parsed && parsed > 0;
+
   async function save() {
-    const n = Number(value.trim());
-    if (!Number.isFinite(n) || n <= 0) {
-      setError(t("fplEntryInvalid"));
+    if (!canSave || confirmed == null) {
+      setError(t("fplEntryConfirmRequired"));
       return;
     }
+    const n = confirmed.entry_id;
     setSaving(true);
     setError(null);
     try {
@@ -36,7 +48,10 @@ export function FplEntryLinkForm({ initialEntryId, onSaved }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fpl_entry_id: n }),
       });
-      const data = (await res.json()) as { error?: string; fpl_entry_id?: number };
+      const data = (await res.json()) as {
+        error?: string;
+        fpl_entry_id?: number;
+      };
       if (!res.ok) throw new Error(data.error ?? t("fplEntrySaveFailed"));
       setSaved(n);
       setEntryId(String(n));
@@ -51,27 +66,54 @@ export function FplEntryLinkForm({ initialEntryId, onSaved }: Props) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-medium text-foreground">
-        {t("fplEntry")}
-      </label>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        {t("fplEntryHint")}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <input
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={t("fplEntryPlaceholder")}
-          className="min-w-[10rem] flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
-        />
-        <Button type="button" size="sm" disabled={saving} onClick={() => void save()}>
+      <FplEntryConfirmField
+        value={value}
+        onChange={(next) => {
+          setValue(next);
+          if (saved != null && next.trim() !== String(saved)) {
+            setSaved(null);
+          }
+        }}
+        confirmed={confirmed}
+        onConfirmedChange={(preview) => {
+          setConfirmed(preview);
+          setError(null);
+        }}
+        labels={{
+          label: t("fplEntry"),
+          hint: t("fplEntryHint"),
+          placeholder: t("fplEntryPlaceholder"),
+          lookup: t("fplEntryLookup"),
+          lookingUp: t("fplEntryLookingUp"),
+          confirmPrompt: t("fplEntryConfirmPrompt"),
+          confirmed: t("fplEntryConfirmYes"),
+          change: t("fplEntryChange"),
+          invalid: t("fplEntryInvalid"),
+          notFound: t("fplEntryNotFound"),
+          lookupFailed: t("fplEntryLookupFailed"),
+          teamLabel: t("fplEntryTeam"),
+          managerLabel: t("fplEntryManager"),
+        }}
+      />
+      {unchangedLinked ? (
+        <p className="text-xs text-brand-accent">
+          {t("fplEntryLinked", { id: saved })}
+        </p>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          disabled={saving || !canSave}
+          onClick={() => void save()}
+        >
           {saving ? t("fplEntrySaving") : t("fplEntrySave")}
         </Button>
-      </div>
-      {saved != null ? (
-        <p className="text-xs text-brand-accent">{t("fplEntryLinked", { id: saved })}</p>
+      )}
+      {saved != null && confirmed?.entry_id === saved ? (
+        <p className="text-xs text-brand-accent">
+          {t("fplEntryLinked", { id: saved })}
+          {confirmed.team_name ? ` · ${confirmed.team_name}` : ""}
+        </p>
       ) : null}
       {error ? <p className="text-xs text-rose-300">{error}</p> : null}
     </div>

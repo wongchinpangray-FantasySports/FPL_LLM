@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { upsertFplClubPreference } from "@/lib/auth/fpl-club-preference";
+import {
+  isFplEntryUniqueViolation,
+  validateFplEntryExists,
+} from "@/lib/auth/fpl-access";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +35,25 @@ export async function POST(req: Request) {
     const admin = getServerSupabase();
     const now = new Date().toISOString();
 
+    let entryId: number | null = null;
+    if (body.fpl_entry_id != null && !body.skip) {
+      const raw = Number(body.fpl_entry_id);
+      if (!Number.isFinite(raw) || raw <= 0) {
+        return NextResponse.json(
+          { error: "Valid FPL Entry ID required" },
+          { status: 400 },
+        );
+      }
+      entryId = Math.trunc(raw);
+      await validateFplEntryExists(entryId);
+    }
+
     const profileUpdate: Record<string, unknown> = {
       id: userId,
       updated_at: now,
     };
     if (body.display_name != null) profileUpdate.display_name = body.display_name;
-    if (body.fpl_entry_id != null) profileUpdate.fpl_entry_id = body.fpl_entry_id;
+    if (entryId != null) profileUpdate.fpl_entry_id = entryId;
     if (body.skip || body.favorite_leagues != null) {
       profileUpdate.onboarding_completed_at = now;
     }
@@ -44,7 +61,18 @@ export async function POST(req: Request) {
     const { error: profileErr } = await admin
       .from("profiles")
       .upsert(profileUpdate);
-    if (profileErr) throw new Error(profileErr.message);
+    if (profileErr) {
+      if (isFplEntryUniqueViolation(profileErr.message)) {
+        return NextResponse.json(
+          {
+            error:
+              "This Entry ID is already linked to another Faleague account.",
+          },
+          { status: 409 },
+        );
+      }
+      throw new Error(profileErr.message);
+    }
 
     if (!body.skip) {
       if (body.fpl_team_short_name?.trim()) {
@@ -99,6 +127,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, onboarding_completed_at: now });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Onboarding failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = /404|not found/i.test(message) ? 404 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

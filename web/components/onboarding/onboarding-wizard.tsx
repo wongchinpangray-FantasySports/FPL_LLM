@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useEntryId } from "@/components/entry-id-context";
+import { FplEntryConfirmField } from "@/components/fpl/fpl-entry-confirm-field";
+import type { FplEntryPreview } from "@/lib/fpl/entry-preview";
 import { cn } from "@/lib/utils";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 
@@ -45,6 +47,9 @@ export function OnboardingWizard() {
   const [followedWc, setFollowedWc] = useState<WcHit[]>([]);
   const [playerQ, setPlayerQ] = useState("");
   const [entryId, setEntryIdLocal] = useState("");
+  const [entryPreview, setEntryPreview] = useState<FplEntryPreview | null>(
+    null,
+  );
 
   useEffect(() => {
     void fetch("/api/account/onboarding-options")
@@ -81,8 +86,22 @@ export function OnboardingWizard() {
     setError(null);
     try {
       const parsedEntry = entryId.trim();
+      if (!skip && parsedEntry) {
+        if (!/^\d+$/.test(parsedEntry)) {
+          throw new Error(t("entryInvalid"));
+        }
+        if (!entryPreview || entryPreview.entry_id !== Number(parsedEntry)) {
+          throw new Error(t("entryConfirmRequired"));
+        }
+      }
+
       const fplEntry =
-        parsedEntry && /^\d+$/.test(parsedEntry) ? Number(parsedEntry) : null;
+        !skip &&
+        parsedEntry &&
+        /^\d+$/.test(parsedEntry) &&
+        entryPreview?.entry_id === Number(parsedEntry)
+          ? Number(parsedEntry)
+          : null;
 
       const res = await fetch("/api/account/onboarding", {
         method: "POST",
@@ -269,12 +288,27 @@ export function OnboardingWizard() {
           <>
             <h2 className="text-lg font-semibold text-foreground">{t("stepEntry")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{t("stepEntryHint")}</p>
-            <Input
+            <FplEntryConfirmField
               className="mt-4"
-              inputMode="numeric"
-              placeholder={t("entryPlaceholder")}
+              optional
               value={entryId}
-              onChange={(e) => setEntryIdLocal(e.target.value)}
+              onChange={setEntryIdLocal}
+              confirmed={entryPreview}
+              onConfirmedChange={setEntryPreview}
+              labels={{
+                placeholder: t("entryPlaceholder"),
+                lookup: t("entryLookup"),
+                lookingUp: t("entryLookingUp"),
+                confirmPrompt: t("entryConfirmPrompt"),
+                confirmed: t("entryConfirmYes"),
+                change: t("entryChange"),
+                invalid: t("entryInvalid"),
+                notFound: t("entryNotFound"),
+                lookupFailed: t("entryLookupFailed"),
+                teamLabel: t("entryTeam"),
+                managerLabel: t("entryManager"),
+                optionalEmptyHint: t("entryOptionalHint"),
+              }}
             />
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">{t("stepRegions")}</p>
