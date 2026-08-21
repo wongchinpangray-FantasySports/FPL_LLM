@@ -124,6 +124,8 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [clearingId, setClearingId] = useState<string | null>(null);
+  const [settingId, setSettingId] = useState<string | null>(null);
+  const [entryDrafts, setEntryDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -166,6 +168,7 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
             u.id === user.id ? { ...u, fpl_entry_id: null } : u,
           ),
         );
+        setEntryDrafts((prev) => ({ ...prev, [user.id]: "" }));
       } catch (e) {
         setError(e instanceof Error ? e.message : t("clearEntryFailed"));
       } finally {
@@ -173,6 +176,84 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
       }
     },
     [t],
+  );
+
+  const setEntryId = useCallback(
+    async (user: AdminUserRow, force = false) => {
+      const raw = (entryDrafts[user.id] ?? String(user.fpl_entry_id ?? "")).trim();
+      const n = Number(raw);
+      if (!/^\d+$/.test(raw) || !Number.isFinite(n) || n <= 0) {
+        setError(t("setEntryInvalid"));
+        return;
+      }
+
+      let previewLine = "—";
+      try {
+        const look = await fetch(
+          `/api/fpl/entry-preview?entryId=${encodeURIComponent(raw)}`,
+        );
+        const lookData = (await look.json()) as {
+          preview?: { team_name: string; manager_name: string };
+        };
+        if (look.ok && lookData.preview) {
+          previewLine = `${lookData.preview.team_name} · ${lookData.preview.manager_name}`;
+        }
+      } catch {
+        /* confirm without preview if lookup fails */
+      }
+
+      if (!force) {
+        const ok = window.confirm(
+          t("setEntryConfirm", {
+            email: user.email ?? user.id.slice(0, 8),
+            id: n,
+            team: previewLine,
+          }),
+        );
+        if (!ok) return;
+      }
+
+      setSettingId(user.id);
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/fpl-entry`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fpl_entry_id: n, force }),
+        });
+        const data = (await res.json()) as {
+          error?: string;
+          fpl_entry_id?: number | null;
+          conflict_user_id?: string;
+        };
+
+        if (res.status === 409 && data.conflict_user_id && !force) {
+          const steal = window.confirm(
+            `${data.error ?? t("setEntryConflict")}\n\n${t("setEntryForceConfirm")}`,
+          );
+          if (!steal) return;
+          setSettingId(null);
+          await setEntryId(user, true);
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.error ?? t("setEntryFailed"));
+
+        setUsers((prev) =>
+          prev.map((u) => {
+            if (u.id === user.id) return { ...u, fpl_entry_id: n };
+            if (force && u.fpl_entry_id === n) return { ...u, fpl_entry_id: null };
+            return u;
+          }),
+        );
+        setEntryDrafts((prev) => ({ ...prev, [user.id]: String(n) }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("setEntryFailed"));
+      } finally {
+        setSettingId(null);
+      }
+    },
+    [entryDrafts, t],
   );
 
   useEffect(() => {
@@ -319,22 +400,52 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                       {expanded ? (
                         <tr key={`${user.id}-detail`} className="bg-card/30">
                           <td colSpan={5} className="px-3 py-4">
-                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 {t("onboardingAnswers")}
                               </p>
-                              {user.fpl_entry_id ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={
+                                    entryDrafts[user.id] ??
+                                    (user.fpl_entry_id != null
+                                      ? String(user.fpl_entry_id)
+                                      : "")
+                                  }
+                                  onChange={(e) =>
+                                    setEntryDrafts((prev) => ({
+                                      ...prev,
+                                      [user.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder={t("setEntryPlaceholder")}
+                                  className="w-28 rounded-lg border border-border bg-popover px-2 py-1 text-xs text-foreground"
+                                />
                                 <button
                                   type="button"
-                                  disabled={clearingId === user.id}
-                                  onClick={() => void clearEntryId(user)}
-                                  className="rounded-lg border border-rose-500/40 px-2.5 py-1 text-xs font-medium text-rose-200 hover:bg-rose-500/10 disabled:opacity-50"
+                                  disabled={settingId === user.id}
+                                  onClick={() => void setEntryId(user)}
+                                  className="rounded-lg border border-brand-accent/40 px-2.5 py-1 text-xs font-medium text-brand-accent hover:bg-brand-accent/10 disabled:opacity-50"
                                 >
-                                  {clearingId === user.id
-                                    ? t("clearEntryClearing")
-                                    : t("clearEntry")}
+                                  {settingId === user.id
+                                    ? t("setEntrySaving")
+                                    : t("setEntry")}
                                 </button>
-                              ) : null}
+                                {user.fpl_entry_id ? (
+                                  <button
+                                    type="button"
+                                    disabled={clearingId === user.id}
+                                    onClick={() => void clearEntryId(user)}
+                                    className="rounded-lg border border-rose-500/40 px-2.5 py-1 text-xs font-medium text-rose-200 hover:bg-rose-500/10 disabled:opacity-50"
+                                  >
+                                    {clearingId === user.id
+                                      ? t("clearEntryClearing")
+                                      : t("clearEntry")}
+                                  </button>
+                                ) : null}
+                              </div>
                             </div>
                             <OnboardingDetails
                               user={user}

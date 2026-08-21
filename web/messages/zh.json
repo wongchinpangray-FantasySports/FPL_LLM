@@ -1379,7 +1379,15 @@
     "clearEntry": "清除 Entry ID",
     "clearEntryClearing": "清除中…",
     "clearEntryConfirm": "确定清除 {email} 的 FPL Entry #{id}？用户可之后重新关联。",
-    "clearEntryFailed": "无法清除 Entry ID。"
+    "clearEntryFailed": "无法清除 Entry ID。",
+    "setEntry": "设置 Entry ID",
+    "setEntrySaving": "设置中…",
+    "setEntryPlaceholder": "Entry ID",
+    "setEntryInvalid": "请输入有效的数字 Entry ID。",
+    "setEntryConfirm": "将 {email} 关联到 Entry #{id}？\n{team}",
+    "setEntryFailed": "无法设置 Entry ID。",
+    "setEntryConflict": "该 Entry ID 已绑定其他账户。",
+    "setEntryForceConfirm": "是否强制改绑到此用户？（会先解绑原账户）"
   },
   "newsIndex": {
     "title": "新闻",

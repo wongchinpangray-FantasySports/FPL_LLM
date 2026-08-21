@@ -1379,7 +1379,15 @@
     "clearEntry": "Clear Entry ID",
     "clearEntryClearing": "Clearing…",
     "clearEntryConfirm": "Clear FPL Entry #{id} from {email}? They can re-link later.",
-    "clearEntryFailed": "Could not clear Entry ID."
+    "clearEntryFailed": "Could not clear Entry ID.",
+    "setEntry": "Set Entry ID",
+    "setEntrySaving": "Saving…",
+    "setEntryPlaceholder": "Entry ID",
+    "setEntryInvalid": "Enter a valid numeric Entry ID.",
+    "setEntryConfirm": "Link {email} to Entry #{id}?\n{team}",
+    "setEntryFailed": "Could not set Entry ID.",
+    "setEntryConflict": "This Entry ID is already linked to another account.",
+    "setEntryForceConfirm": "Force reassign to this user? (Unlinks the other account first.)"
   },
   "newsIndex": {
     "title": "News",
