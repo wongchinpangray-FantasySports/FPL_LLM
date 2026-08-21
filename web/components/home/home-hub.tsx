@@ -10,6 +10,7 @@ import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HomeGuestLanding } from "@/components/home/home-guest-landing";
+import { DeadlineCountdown } from "@/components/home/deadline-countdown";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
@@ -1402,10 +1403,25 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           <span className="home-hub-deadline-label text-sm font-semibold">
             {t("todayFpl")} · {t("todayFplGw", { gw: String(hub.today.fpl.gw) })}
           </span>
-          <span className="text-sm text-foreground/90">
-            {hub.today.fpl.deadline
-              ? fmtDeadline(hub.today.fpl.deadline, locale)
-              : t("todayEmpty")}
+          <span className="flex flex-col items-end gap-0.5 text-sm sm:flex-row sm:items-center sm:gap-3">
+            {hub.today.fpl.deadline ? (
+              <>
+                <DeadlineCountdown
+                  deadlineIso={hub.today.fpl.deadline}
+                  labels={{
+                    remainingWithDays: t("deadlineCountdownDays"),
+                    remaining: t("deadlineCountdown"),
+                    passed: t("deadlinePassed"),
+                  }}
+                  className="text-base sm:text-lg"
+                />
+                <span className="text-xs text-muted-foreground sm:text-sm">
+                  {fmtDeadline(hub.today.fpl.deadline, locale)}
+                </span>
+              </>
+            ) : (
+              <span className="text-foreground/90">{t("todayEmpty")}</span>
+            )}
           </span>
         </Link>
       ) : null}
