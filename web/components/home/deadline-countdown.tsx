@@ -1,59 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-
-export type DeadlineCountdownLabels = {
-  /** e.g. "{d}d {h}:{m}:{s}" or Chinese "{d}天 {h}:{m}:{s}" */
-  remainingWithDays: string;
-  /** e.g. "{h}:{m}:{s}" */
-  remaining: string;
-  passed: string;
-};
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function formatRemaining(
-  ms: number,
-  labels: DeadlineCountdownLabels,
-): string {
-  const totalSec = Math.floor(ms / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hours = Math.floor((totalSec % 86400) / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const secs = totalSec % 60;
-  const h = pad2(hours);
-  const m = pad2(mins);
-  const s = pad2(secs);
-  if (days > 0) {
-    return labels.remainingWithDays
-      .replace("{d}", String(days))
-      .replace("{h}", h)
-      .replace("{m}", m)
-      .replace("{s}", s);
-  }
-  return labels.remaining
-    .replace("{h}", h)
-    .replace("{m}", m)
-    .replace("{s}", s);
-}
-
 type Props = {
   deadlineIso: string;
-  labels: DeadlineCountdownLabels;
   className?: string;
 };
 
 /**
  * Live FPL deadline countdown. Ticks every second while the tab is visible.
  */
-export function DeadlineCountdown({
-  deadlineIso,
-  labels,
-  className,
-}: Props) {
+export function DeadlineCountdown({ deadlineIso, className }: Props) {
+  const t = useTranslations("home");
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -78,6 +42,25 @@ export function DeadlineCountdown({
   const urgent = !passed && remaining < 60 * 60 * 1000;
   const critical = !passed && remaining < 15 * 60 * 1000;
 
+  let label = t("deadlinePassed");
+  if (!passed) {
+    const totalSec = Math.floor(remaining / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    const values = {
+      d: days,
+      h: pad2(hours),
+      m: pad2(mins),
+      s: pad2(secs),
+    };
+    label =
+      days > 0
+        ? t("deadlineCountdownDays", values)
+        : t("deadlineCountdown", values);
+  }
+
   return (
     <span
       className={cn(
@@ -90,9 +73,7 @@ export function DeadlineCountdown({
       )}
       aria-live="polite"
     >
-      {passed
-        ? labels.passed
-        : formatRemaining(remaining, labels)}
+      {label}
     </span>
   );
 }

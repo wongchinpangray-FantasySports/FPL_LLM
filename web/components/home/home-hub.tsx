@@ -1408,11 +1408,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               <>
                 <DeadlineCountdown
                   deadlineIso={hub.today.fpl.deadline}
-                  labels={{
-                    remainingWithDays: t("deadlineCountdownDays"),
-                    remaining: t("deadlineCountdown"),
-                    passed: t("deadlinePassed"),
-                  }}
                   className="text-base sm:text-lg"
                 />
                 <span className="text-xs text-muted-foreground sm:text-sm">
