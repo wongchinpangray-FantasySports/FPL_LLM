@@ -5,6 +5,7 @@ import { ScoutArticleBody } from "@/components/scout/scout-article-body";
 import { ScoutCta } from "@/components/scout/scout-cta";
 import { ScoutPageview } from "@/components/scout/scout-pageview";
 import { getScoutArticleBySlug } from "@/lib/scout/store";
+import { displayScoutBody, displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import { Link } from "@/i18n/navigation";
 
@@ -16,8 +17,8 @@ export async function generateMetadata({ params }: Props) {
   try {
     const article = await getScoutArticleBySlug(params.slug);
     if (!article) return {};
-    const title = article.title_zh || article.title_en;
-    const description = article.excerpt_zh || article.excerpt_en || title;
+    const title = displayScoutTitle(article);
+    const description = displayScoutExcerpt(article) || title;
     return { title, description };
   } catch {
     return {};
@@ -35,7 +36,7 @@ export default async function ScoutArticlePage({ params }: Props) {
   if (!article) notFound();
 
   const t = await getTranslations({ locale: params.locale, namespace: "scout" });
-  const body = article.body_html_zh || article.body_html_en;
+  const body = displayScoutBody(article);
   if (!body) notFound();
 
   const published = article.source_published_at
@@ -53,7 +54,7 @@ export default async function ScoutArticlePage({ params }: Props) {
             {t("partner")}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            {article.title_zh || article.title_en}
+            {displayScoutTitle(article)}
           </h1>
           <p className="text-sm text-muted-foreground">
             {published ? `${published} · ` : ""}

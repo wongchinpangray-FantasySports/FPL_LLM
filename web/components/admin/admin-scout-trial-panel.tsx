@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { ScoutChannel, ScoutTrialStats } from "@/lib/scout/types";
+import { displayScoutTitle } from "@/lib/scout/zh-status";
 
 type Range = "month" | "previous" | "trial";
 
@@ -163,7 +164,7 @@ export function AdminScoutTrialPanel({ locale }: { locale: string }) {
                 {stats.articles.slice(0, 30).map((row) => (
                   <tr key={row.article_id} className="border-t border-border/60">
                     <td className="px-3 py-2">
-                      <p className="font-medium">{row.title_zh || row.title_en}</p>
+                      <p className="font-medium">{displayScoutTitle(row)}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {row.status} · {row.slug}
                       </p>

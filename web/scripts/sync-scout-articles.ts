@@ -22,19 +22,24 @@ async function main() {
   const pages = flagNum("pages", 1);
   const limit = flagNum("limit", 40);
   const force = process.argv.includes("--force");
+  const translate = process.argv.includes("--translate");
   const url = flagStr("url");
   const result = await ingestScoutArticles({
     pages,
     limit: url ? 1 : limit,
-    forceTranslate: force,
+    translate,
+    force,
     urls: url ? [url] : undefined,
   });
   console.log(
     JSON.stringify(
       {
         ...result,
+        translate,
         ffs_session_cookie: hasFfsSessionCookie(),
-        note: "New rows stay pending. Publish from /admin (Scout articles tab).",
+        note: translate
+          ? "Gemini ran because --translate was passed. Rows stay pending."
+          : "Collect-only: English upserted, Chinese left empty. Rows stay pending. Publish from /admin.",
       },
       null,
       2,

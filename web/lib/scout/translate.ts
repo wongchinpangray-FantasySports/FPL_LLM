@@ -1,5 +1,7 @@
 import { DEFAULT_MODEL, getGenAI } from "@/lib/llm";
 
+/** Opt-in Gemini. Default ingest is collect-only; Ray queues Cursor from /admin. */
+
 const CHUNK_CHARS = 10_000;
 
 export type ScoutTranslation = {

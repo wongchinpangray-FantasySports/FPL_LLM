@@ -2,6 +2,7 @@ import { Link } from "@/i18n/navigation";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsSubNav } from "@/components/news/news-sub-nav";
 import type { ScoutArticleListItem } from "@/lib/scout/types";
+import { displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 
 function fmtDate(iso: string | null, locale: string): string {
   if (!iso) return "";
@@ -69,11 +70,11 @@ export function ScoutArticleList({
                     ) : null}
                   </div>
                   <h2 className="text-base font-semibold leading-snug text-foreground">
-                    {item.title_zh || item.title_en}
+                    {displayScoutTitle(item)}
                   </h2>
-                  {item.excerpt_zh || item.excerpt_en ? (
+                  {displayScoutExcerpt(item) ? (
                     <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                      {item.excerpt_zh || item.excerpt_en}
+                      {displayScoutExcerpt(item)}
                     </p>
                   ) : null}
                   <p className="mt-2 text-xs font-medium text-brand-accent">

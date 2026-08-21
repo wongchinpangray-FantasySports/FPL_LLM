@@ -58,6 +58,7 @@ export type ScoutArticle = {
   status: ScoutArticleStatus;
   source_published_at: string | null;
   translated_at: string | null;
+  translate_requested_at: string | null;
   pushed_at: string | null;
   translation_model: string | null;
   translation_error: string | null;

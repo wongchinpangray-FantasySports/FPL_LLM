@@ -12,7 +12,7 @@ import type {
 } from "@/lib/scout/types";
 
 const LIST_COLUMNS =
-  "id,slug,source_guid,source_url,title_en,title_zh,excerpt_en,excerpt_zh,author,categories,series,hero_image_url,images,content_hash,status,source_published_at,translated_at,pushed_at,translation_model,translation_error,created_at,updated_at";
+  "id,slug,source_guid,source_url,title_en,title_zh,excerpt_en,excerpt_zh,author,categories,series,hero_image_url,images,content_hash,status,source_published_at,translated_at,translate_requested_at,pushed_at,translation_model,translation_error,created_at,updated_at";
 
 function sanitizeText(value: string | null | undefined): string {
   return sanitizeUtf16(value ?? "");
@@ -59,6 +59,7 @@ function asArticle(row: Record<string, unknown>): ScoutArticle {
     status: (row.status as ScoutArticleStatus) || "pending",
     source_published_at: (row.source_published_at as string | null) ?? null,
     translated_at: (row.translated_at as string | null) ?? null,
+    translate_requested_at: (row.translate_requested_at as string | null) ?? null,
     pushed_at: (row.pushed_at as string | null) ?? null,
     translation_model: (row.translation_model as string | null) ?? null,
     translation_error: (row.translation_error as string | null) ?? null,
@@ -93,6 +94,8 @@ export type ScoutUpsertInput = {
   translation_error: string | null;
   source_published_at: string | null;
   translated_at: string | null;
+  /** When true, leave existing Chinese columns untouched on update. */
+  preserveZh?: boolean;
 };
 
 export async function listScoutArticles(opts?: {
@@ -173,15 +176,14 @@ export async function upsertScoutIngest(
 ): Promise<{ id: string; status: ScoutArticleStatus; created: boolean }> {
   const existing = await getScoutArticleByGuid(input.source_guid);
   const now = new Date().toISOString();
+  const preserveZh = Boolean(input.preserveZh && existing);
   const payload = JSON.parse(
     JSON.stringify({
       slug: existing?.slug || input.slug,
       source_guid: input.source_guid,
       source_url: input.source_url,
       title_en: sanitizeText(input.title_en),
-      title_zh: sanitizeText(input.title_zh),
       excerpt_en: input.excerpt_en ? sanitizeText(input.excerpt_en) : null,
-      excerpt_zh: input.excerpt_zh ? sanitizeText(input.excerpt_zh) : null,
       author: input.author ? sanitizeText(input.author) : null,
       categories: input.categories.map((c) => sanitizeText(c)),
       series: input.series,
@@ -192,15 +194,23 @@ export async function upsertScoutIngest(
       body_html_en: input.body_html_en
         ? sanitizeText(input.body_html_en)
         : null,
-      body_html_zh: input.body_html_zh
-        ? sanitizeText(input.body_html_zh)
-        : null,
       content_hash: input.content_hash,
-      translation_model: input.translation_model,
-      translation_error: input.translation_error,
       source_published_at: input.source_published_at,
-      translated_at: input.translated_at,
       updated_at: now,
+      ...(preserveZh
+        ? { translation_error: input.translation_error }
+        : {
+            title_zh: sanitizeText(input.title_zh),
+            excerpt_zh: input.excerpt_zh
+              ? sanitizeText(input.excerpt_zh)
+              : null,
+            body_html_zh: input.body_html_zh
+              ? sanitizeText(input.body_html_zh)
+              : null,
+            translation_model: input.translation_model,
+            translation_error: input.translation_error,
+            translated_at: input.translated_at,
+          }),
     }),
   ) as Record<string, unknown>;
 
@@ -218,6 +228,14 @@ export async function upsertScoutIngest(
     .from("scout_articles")
     .insert({
       ...payload,
+      title_zh: sanitizeText(input.title_zh),
+      excerpt_zh: input.excerpt_zh ? sanitizeText(input.excerpt_zh) : null,
+      body_html_zh: input.body_html_zh
+        ? sanitizeText(input.body_html_zh)
+        : null,
+      translation_model: input.translation_model,
+      translation_error: input.translation_error,
+      translated_at: input.translated_at,
       status: "pending",
       created_at: now,
     })
@@ -229,6 +247,43 @@ export async function upsertScoutIngest(
     status: (data.status as ScoutArticleStatus) || "pending",
     created: true,
   };
+}
+
+export async function setScoutTranslateRequested(
+  ids: string[],
+  requested: boolean,
+): Promise<number> {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  if (!unique.length) return 0;
+  const now = new Date().toISOString();
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("scout_articles")
+    .update({
+      translate_requested_at: requested ? now : null,
+      updated_at: now,
+    })
+    .in("id", unique)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return (data ?? []).length;
+}
+
+export async function listScoutTranslateQueue(opts?: {
+  slugs?: string[];
+}): Promise<ScoutArticle[]> {
+  const supa = getServerSupabase();
+  let q = supa
+    .from("scout_articles")
+    .select("*")
+    .order("translate_requested_at", { ascending: true, nullsFirst: false })
+    .limit(80);
+  const slugs = (opts?.slugs ?? []).map((s) => s.trim()).filter(Boolean);
+  if (slugs.length) q = q.in("slug", slugs);
+  else q = q.not("translate_requested_at", "is", null);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map(asArticle);
 }
 
 export async function setScoutArticleStatus(

@@ -5,11 +5,9 @@ import {
   getScoutArticleById,
   listScoutArticles,
   setScoutArticleStatus,
+  setScoutTranslateRequested,
 } from "@/lib/scout/store";
 import { isScoutStatus } from "@/lib/scout/types";
-import { translateScoutArticle } from "@/lib/scout/translate";
-import { getServerSupabase } from "@/lib/supabase";
-import { excerptFromHtml, sanitizeScoutHtml } from "@/lib/scout/html";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +33,28 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     await requireAdminUser();
-    const body = (await req.json()) as { id?: string; status?: string };
+    const body = (await req.json()) as {
+      id?: string;
+      ids?: string[];
+      status?: string;
+      translate_requested?: boolean;
+    };
+
+    if (typeof body.translate_requested === "boolean") {
+      const ids = [
+        ...(body.ids ?? []),
+        ...(body.id ? [body.id] : []),
+      ].filter(Boolean);
+      if (!ids.length) {
+        return NextResponse.json({ error: "Missing ids" }, { status: 400 });
+      }
+      const updated = await setScoutTranslateRequested(
+        ids,
+        body.translate_requested,
+      );
+      return NextResponse.json({ ok: true, updated });
+    }
+
     if (!body.id || !body.status || !isScoutStatus(body.status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
@@ -60,6 +79,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => ({}))) as {
       action?: string;
       id?: string;
+      ids?: string[];
       pages?: number;
       limit?: number;
     };
@@ -68,42 +88,45 @@ export async function POST(req: NextRequest) {
       const result = await ingestScoutArticles({
         pages: body.pages ?? 1,
         limit: body.limit,
+        translate: false,
       });
       return NextResponse.json(result);
     }
 
-    if (body.action === "retranslate") {
-      if (!body.id) {
+    if (
+      body.action === "request-translate" ||
+      body.action === "retranslate"
+    ) {
+      const ids = [
+        ...(body.ids ?? []),
+        ...(body.id ? [body.id] : []),
+      ].filter(Boolean);
+      if (!ids.length) {
         return NextResponse.json({ error: "Missing id" }, { status: 400 });
       }
-      const article = await getScoutArticleById(body.id);
-      if (!article?.body_html_en) {
-        return NextResponse.json({ error: "No English body" }, { status: 400 });
+      if (body.id) {
+        const article = await getScoutArticleById(body.id);
+        if (!article) {
+          return NextResponse.json({ error: "Not found" }, { status: 404 });
+        }
+        if (!article.body_html_en) {
+          return NextResponse.json({ error: "No English body" }, { status: 400 });
+        }
       }
-      const { html } = sanitizeScoutHtml(article.body_html_en, {
-        baseUrl: article.source_url,
-      });
-      const zh = await translateScoutArticle({
-        title_en: article.title_en,
-        excerpt_en: article.excerpt_en ?? "",
-        body_html_en: html,
-      });
-      const now = new Date().toISOString();
-      const supa = getServerSupabase();
-      const { error } = await supa
-        .from("scout_articles")
-        .update({
-          title_zh: zh.title_zh,
-          excerpt_zh: zh.excerpt_zh || excerptFromHtml(zh.body_html_zh),
-          body_html_zh: zh.body_html_zh,
-          translation_model: zh.model,
-          translation_error: null,
-          translated_at: now,
-          updated_at: now,
-        })
-        .eq("id", article.id);
-      if (error) throw new Error(error.message);
-      return NextResponse.json({ ok: true });
+      const updated = await setScoutTranslateRequested(ids, true);
+      return NextResponse.json({ ok: true, updated });
+    }
+
+    if (body.action === "cancel-translate") {
+      const ids = [
+        ...(body.ids ?? []),
+        ...(body.id ? [body.id] : []),
+      ].filter(Boolean);
+      if (!ids.length) {
+        return NextResponse.json({ error: "Missing id" }, { status: 400 });
+      }
+      const updated = await setScoutTranslateRequested(ids, false);
+      return NextResponse.json({ ok: true, updated });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

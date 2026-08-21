@@ -38,6 +38,8 @@
     "notify:recommended-squad": "tsx scripts/notify-recommended-squad.ts",
     "notify:recommended-squad:dry": "tsx scripts/notify-recommended-squad.ts --dry-run",
     "sync:scout": "tsx scripts/sync-scout-articles.ts",
+    "scout:queue": "tsx scripts/write-scout-zh-batch.ts --requested",
+    "scout:write-zh": "tsx scripts/write-scout-zh-batch.ts --apply",
     "test:scout": "tsx scripts/scout-self-test.ts"
   },
   "dependencies": {

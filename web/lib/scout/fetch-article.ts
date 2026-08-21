@@ -88,6 +88,21 @@ export function isTruncatedScoutTeaser(html: string): boolean {
   return stripLen(stripScoutPaywallBanner(after)) < TEASER_AFTER_PAYWALL_CHARS;
 }
 
+/** Keep a stored full English body when the new fetch is clearly a shorter teaser. */
+export function isShorterTeaserVsExisting(
+  nextHtml: string,
+  existingHtml: string | null | undefined,
+  nextTruncated = false,
+): boolean {
+  if (!existingHtml) return false;
+  const existingLen = existingHtml.length;
+  const nextLen = nextHtml.length;
+  if (existingLen < 2000) return false;
+  if (nextLen >= existingLen) return false;
+  if (nextTruncated && nextLen < existingLen * 0.9) return true;
+  return nextLen < existingLen * 0.55;
+}
+
 export function stripLen(html: string): number {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
 }

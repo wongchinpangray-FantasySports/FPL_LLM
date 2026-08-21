@@ -2031,7 +2031,7 @@
     "pageTitle": "Admin",
     "tabArticles": "Scout articles",
     "tabTrial": "FFS trial",
-    "articlesSummary": "Ingested translations stay pending until you publish. Only Publish sends a piece to /scout.",
+    "articlesSummary": "Ingest collects English only. Rows stay pending — never auto-translated or published. Tick articles, click Request Cursor translation, then tell Cursor in chat: translate requested Scout articles.",
     "trialSummary": "China trial tracking: published views, outbound Premium / Team Rater / original clicks, and a Chris monthly draft.",
     "status": {
       "pending": "Pending",
@@ -2042,11 +2042,11 @@
     "searchArticles": "Search titles…",
     "refresh": "Refresh",
     "ingestNow": "Pull latest RSS",
-    "ingesting": "Fetching and translating…",
+    "ingesting": "Collecting English…",
     "loadError": "Could not load articles.",
     "updateError": "Could not update status.",
     "ingestError": "Ingest failed. Workers may time out — use local or GitHub Action: npm run sync:scout",
-    "translateError": "Retranslate failed.",
+    "queueError": "Could not update the translation queue.",
     "loadingArticles": "Loading articles…",
     "emptyArticles": "No articles in this tab.",
     "colArticle": "Article",
@@ -2058,9 +2058,22 @@
     "hide": "Hide",
     "preview": "Preview",
     "closePreview": "Close preview",
-    "retranslate": "Retranslate",
+    "requestCursorTranslate": "Request Cursor translation",
+    "cancelTranslateRequest": "Cancel request",
+    "selectAll": "Select all",
+    "selectedCount": "{n} selected",
+    "cursorQueueHint": "After requesting, tell Cursor in chat: translate requested Scout articles. The agent dumps the queue and writes Simplified Chinese — it still will not publish.",
+    "previewEnglishOnly": "Showing English. Empty ZH, or ZH that is an English copy, is not counted as translated.",
+    "zhFilter": {
+      "all": "All translation states"
+    },
+    "zhBadge": {
+      "english_only": "English only",
+      "requested": "Translation requested",
+      "translated": "Has Chinese",
+      "failed": "Translation failed"
+    },
     "noBody": "No body yet.",
-    "translationFailed": "Translation failed — you can still preview English and retry.",
     "range": {
       "month": "This month",
       "previous": "Last month",

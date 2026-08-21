@@ -2031,7 +2031,7 @@
     "pageTitle": "管理",
     "tabArticles": "Scout 文章",
     "tabTrial": "FFS 试验",
-    "articlesSummary": "同步进来的译文默认待审。只有你点「发布」后才会出现在 /scout。",
+    "articlesSummary": "RSS 只收集英文，默认待审、不会自动翻译或发布。勾选后点「请求 Cursor 翻译」，再在 Cursor 对话里说 translate requested Scout articles。",
     "trialSummary": "中国试验追踪：已发布文章浏览、跳转 Scout Premium / Team Rater / 原文，以及给 Chris 的月报草稿。",
     "status": {
       "pending": "待审",
@@ -2042,11 +2042,11 @@
     "searchArticles": "搜索标题…",
     "refresh": "刷新",
     "ingestNow": "拉取最新 RSS",
-    "ingesting": "正在拉取并翻译…",
+    "ingesting": "正在收集英文…",
     "loadError": "无法加载文章。",
     "updateError": "无法更新状态。",
     "ingestError": "拉取失败。Worker 可能超时，请改用本地或 GitHub Action：npm run sync:scout",
-    "translateError": "重译失败。",
+    "queueError": "无法更新翻译队列。",
     "loadingArticles": "加载文章中…",
     "emptyArticles": "这一栏没有文章。",
     "colArticle": "文章",
@@ -2058,9 +2058,22 @@
     "hide": "隐藏",
     "preview": "预览",
     "closePreview": "关闭预览",
-    "retranslate": "重新翻译",
+    "requestCursorTranslate": "请求 Cursor 翻译",
+    "cancelTranslateRequest": "取消请求",
+    "selectAll": "全选",
+    "selectedCount": "已选 {n} 篇",
+    "cursorQueueHint": "请求之后，在 Cursor 对话里说：translate requested Scout articles。Agent 会读取队列、写简体中文，仍不会自动发布。",
+    "previewEnglishOnly": "预览为英文原文（中文栏是空的，或只是英文副本，不算已翻译）。",
+    "zhFilter": {
+      "all": "全部译文状态"
+    },
+    "zhBadge": {
+      "english_only": "仅英文",
+      "requested": "已请求翻译",
+      "translated": "已有中文",
+      "failed": "翻译失败"
+    },
     "noBody": "暂无正文。",
-    "translationFailed": "翻译失败，仍可预览英文并重试。",
     "range": {
       "month": "本月",
       "previous": "上月",

@@ -16,11 +16,18 @@ import {
   articleSlugFromUrl,
   buildFfsFetchHeaders,
   hasFfsSessionCookie,
+  isShorterTeaserVsExisting,
   isTruncatedScoutTeaser,
   normalizeFfsCookieHeader,
   stripScoutPaywallBanner,
   wpPostsBySlugUrl,
 } from "../lib/scout/fetch-article";
+import {
+  displayScoutTitle,
+  hasRealScoutZh,
+  isPlaceholderZh,
+  scoutTranslateBadge,
+} from "../lib/scout/zh-status";
 
 function testExtractSectionEntryContent() {
   const html = `
@@ -61,6 +68,12 @@ function testFfsFetchHelpers() {
     "Haaland and João Pedro analysis. ".repeat(80) +
     "</p><table><tr><td>Verbruggen</td></tr></table>";
   assert.equal(isTruncatedScoutTeaser(full), false);
+
+  const longEn = "<p>" + "Haaland analysis. ".repeat(200) + "</p>";
+  const shortTeaser = "<p>Intro only</p>";
+  assert.equal(isShorterTeaserVsExisting(shortTeaser, longEn, true), true);
+  assert.equal(isShorterTeaserVsExisting(longEn, shortTeaser, false), false);
+  assert.equal(isShorterTeaserVsExisting(longEn, longEn, false), false);
 
   const prev = process.env.FFS_SESSION_COOKIE;
   const prevAuth = process.env.FFS_AUTH_COOKIE;
@@ -173,10 +186,49 @@ function testGoAndScorecard() {
   assert.equal(hashContent(["a"]).length, 40);
 }
 
+function testZhStatus() {
+  const copied = {
+    title_en: "Leeds team guide",
+    title_zh: "Leeds team guide",
+    body_html_en: "<p>Hello</p>",
+    body_html_zh: "<p>Hello</p>",
+    translation_error: "429 Too Many Requests",
+    translate_requested_at: null,
+  };
+  assert.equal(isPlaceholderZh(copied), true);
+  assert.equal(hasRealScoutZh(copied), false);
+  assert.equal(scoutTranslateBadge(copied), "failed");
+  assert.equal(displayScoutTitle(copied), "Leeds team guide");
+
+  const empty = {
+    title_en: "Leeds team guide",
+    title_zh: "",
+    body_html_zh: null,
+    translate_requested_at: null,
+    translation_error: null,
+  };
+  assert.equal(scoutTranslateBadge(empty), "english_only");
+
+  const queued = { ...empty, translate_requested_at: "2026-08-21T00:00:00Z" };
+  assert.equal(scoutTranslateBadge(queued), "requested");
+
+  const real = {
+    title_en: "Leeds team guide",
+    title_zh: "利兹联球队指南",
+    body_html_zh: "<p>哈兰德本轮值得考虑。</p>",
+    translate_requested_at: null,
+    translation_error: null,
+  };
+  assert.equal(hasRealScoutZh(real), true);
+  assert.equal(scoutTranslateBadge(real), "translated");
+  assert.equal(displayScoutTitle(real), "利兹联球队指南");
+}
+
 testExtractSectionEntryContent();
 testFfsFetchHelpers();
 testSanitize();
 testSlugAndSeries();
 testRssParse();
 testGoAndScorecard();
-console.log("scout-self-test: ok (pending-by-default, no auto-publish)");
+testZhStatus();
+console.log("scout-self-test: ok (collect-only ingest, Cursor queue, no auto-publish)");
