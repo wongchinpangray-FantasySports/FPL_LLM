@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE FPL Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 36px 36px 28px;
+        display: flex; flex-direction: column;
+      }
+      .bg {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 70% 50% at 10% 0%, rgba(0,255,135,0.16), transparent 50%),
+          radial-gradient(ellipse 60% 40% at 100% 20%, rgba(55,0,60,0.25), transparent 45%),
+          linear-gradient(180deg, #0f0c16 0%, #0b0a0f 100%);
+      }
+      .pitch-stripe {
+        position: absolute; inset: 0; opacity: 0.08; pointer-events: none;
+        background: repeating-linear-gradient(90deg, #145c32 0 56px, #114f2b 56px 112px);
+      }
+      .wm {
+        position: absolute; right: -10px; top: 280px;
+        font-family: Inter, sans-serif; font-size: 160px; font-weight: 900;
+        letter-spacing: -0.08em; color: rgba(255,255,255,0.03);
+        pointer-events: none;
+      }
+      .content {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; height: 100%; min-height: 0;
+      }
+      .top {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .brand { font-family: Inter, sans-serif; font-size: 30px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow {
+        margin-top: 6px; font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.16em; text-transform: uppercase; color: #00ff87;
+      }
+      .page-meta { text-align: right; }
+      .page-num {
+        font-family: Inter, sans-serif; font-size: 42px; font-weight: 900; letter-spacing: -0.04em;
+      }
+      .page-total { font-size: 14px; font-weight: 700; color: rgba(244,244,245,0.45); letter-spacing: 0.1em; }
+
+      .hero { margin-bottom: 18px; }
+      h1 {
+        font-size: 46px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.12;
+      }
+      h1 .accent { color: #00ff87; }
+      .sub {
+        margin-top: 8px; font-size: 18px; line-height: 1.4; color: rgba(244,244,245,0.65); font-weight: 600;
+      }
+
+      .main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+      .bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+      .bullets li {
+        display: grid; grid-template-columns: 10px 1fr; gap: 12px; align-items: start;
+        font-size: 19px; line-height: 1.42; color: #e4e4e7; font-weight: 600;
+      }
+      .bullets li::before {
+        content: ""; width: 8px; height: 8px; border-radius: 50%;
+        background: #00ff87; margin-top: 10px;
+        box-shadow: 0 0 10px rgba(0,255,135,0.5);
+      }
+
+      .steps {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px;
+      }
+      .step {
+        border-radius: 16px; padding: 16px 14px;
+        background: rgba(0,255,135,0.08); border: 1px solid rgba(0,255,135,0.25);
+        text-align: center;
+      }
+      .step-n {
+        font-family: Inter, sans-serif; font-size: 28px; font-weight: 900; color: #00ff87;
+      }
+      .step-title { margin-top: 4px; font-size: 16px; font-weight: 800; color: #fff; }
+      .step-body { margin-top: 4px; font-size: 13px; color: rgba(244,244,245,0.55); line-height: 1.35; }
+
+      .table-wrap {
+        flex: 1; min-height: 0; overflow: hidden;
+        border-radius: 18px; border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(11,10,15,0.72);
+      }
+      table { width: 100%; border-collapse: collapse; font-size: 16px; }
+      thead th {
+        text-align: left; padding: 12px 16px;
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.12em; text-transform: uppercase; color: #00ff87;
+        background: rgba(0,255,135,0.08); border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      tbody td {
+        padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: #ddd9ea; font-weight: 600;
+      }
+      tbody td:last-child {
+        text-align: right; font-family: Inter, sans-serif; font-weight: 800; color: #00ff87;
+        white-space: nowrap;
+      }
+      tbody tr:last-child td { border-bottom: none; }
+
+      .chips { display: flex; flex-direction: column; gap: 10px; }
+      .chip-row {
+        display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: center;
+        padding: 14px 16px; border-radius: 14px;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      }
+      .chip-label {
+        font-family: Inter, sans-serif; font-size: 15px; font-weight: 900; color: #00ff87;
+      }
+      .chip-desc { font-size: 16px; line-height: 1.35; color: #e4e4e7; font-weight: 600; }
+
+      .cover-badge {
+        align-self: flex-start; margin-bottom: 14px;
+        padding: 8px 14px; border-radius: 999px;
+        background: rgba(55,0,60,0.7); border: 1px solid rgba(0,255,135,0.3);
+        font-size: 14px; font-weight: 800; color: #00ff87; letter-spacing: 0.08em;
+      }
+      .cover-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+      .cover-hero h1 { font-size: 56px; }
+      .cover-hero .sub { font-size: 22px; max-width: 820px; }
+
+      .cta-box {
+        margin-top: auto; padding: 22px 24px; border-radius: 20px;
+        background: linear-gradient(135deg, rgba(0,255,135,0.18), rgba(0,255,135,0.06));
+        border: 1px solid rgba(0,255,135,0.35);
+        text-align: center;
+      }
+      .cta-box .cta-text {
+        font-size: 26px; font-weight: 900; color: #00ff87; letter-spacing: -0.02em;
+      }
+      .cta-box .cta-url {
+        margin-top: 6px; font-family: Inter, sans-serif; font-size: 18px; font-weight: 700;
+        color: rgba(244,244,245,0.7);
+      }
+
+      .footer {
+        margin-top: 14px; padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-between; align-items: center;
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 700;
+        color: rgba(244,244,245,0.45);
+      }
+      .footer strong { color: #00ff87; font-weight: 800; }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function bulletsHtml(items) {
+        if (!items?.length) return "";
+        return `<ul class="bullets">${items.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
+      }
+      function tableHtml(rows) {
+        if (!rows?.length) return "";
+        return `<div class="table-wrap"><table>
+          <thead><tr><th>项目</th><th>积分</th></tr></thead>
+          <tbody>${rows.map((r) => `<tr><td>${esc(r.action)}</td><td>${esc(r.points)}</td></tr>`).join("")}</tbody>
+        </table></div>`;
+      }
+      function chipsHtml(chips) {
+        if (!chips?.length) return "";
+        return `<div class="chips">${chips.map((c) =>
+          `<div class="chip-row"><div class="chip-label">${esc(c.label)}</div><div class="chip-desc">${esc(c.desc)}</div></div>`
+        ).join("")}</div>`;
+      }
+      function stepsHtml(steps) {
+        if (!steps?.length) return "";
+        return `<div class="steps">${steps.map((s) =>
+          `<div class="step"><div class="step-n">${esc(s.n)}</div><div class="step-title">${esc(s.title)}</div><div class="step-body">${esc(s.body)}</div></div>`
+        ).join("")}</div>`;
+      }
+      function render(data) {
+        const isCover = data.kind === "cover";
+        const isCta = data.kind === "cta";
+        const title = data.titleHtml || esc(data.title);
+        const pageLabel = `${String(data.page).padStart(2, "0")} / ${String(data.total).padStart(2, "0")}`;
+
+        let body = "";
+        if (isCover) {
+          body = `
+            <div class="cover-badge">OFFICIAL RULES · 中文整理</div>
+            <div class="cover-hero">
+              <h1>${title}</h1>
+              <div class="sub">${esc(data.subtitle)}</div>
+              ${bulletsHtml(data.bullets)}
+            </div>`;
+        } else if (isCta) {
+          body = `
+            ${bulletsHtml(data.bullets)}
+            <div class="cta-box">
+              <div class="cta-text">${esc(data.cta)}</div>
+              <div class="cta-url">${esc(data.url)}</div>
+            </div>`;
+        } else {
+          body = `
+            ${stepsHtml(data.steps)}
+            ${bulletsHtml(data.bullets)}
+            ${tableHtml(data.table)}
+            ${chipsHtml(data.chips)}`;
+        }
+
+        document.getElementById("root").innerHTML = `
+          <div class="bg"></div>
+          ${isCover ? '<div class="pitch-stripe"></div>' : ""}
+          <div class="wm">FPL</div>
+          <div class="content">
+            <div class="top">
+              <div>
+                <div class="brand">FA<span>LEAGUE</span></div>
+                <div class="eyebrow">${esc(data.eyebrow)}</div>
+              </div>
+              <div class="page-meta">
+                <div class="page-num">${pageLabel}</div>
+                <div class="page-total">SWIPE →</div>
+              </div>
+            </div>
+            <div class="hero">
+              <h1>${title}</h1>
+              ${data.subtitle && !isCover ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
+            </div>
+            <div class="main">${body}</div>
+            <div class="footer">
+              <span><strong>FPL</strong> 新手上手指南</span>
+              <span>faleague-ai.com/fpl/guide</span>
+            </div>
+          </div>`;
+      }
+      if (window.__DATA__) render(window.__DATA__);
+    </script>
+  </body>
+</html>

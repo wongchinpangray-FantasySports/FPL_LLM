@@ -72,6 +72,12 @@ export function FplHub() {
           description={t("preseasonLinkBody")}
         />
         <HubTile
+          href="/fpl/guide"
+          title={t("guideLinkTitle")}
+          description={t("guideLinkBody")}
+          accent
+        />
+        <HubTile
           href="/fpl/insights/recommended-squad"
           title={t("recommendedSquadLinkTitle")}
           description={t("recommendedSquadLinkBody")}
