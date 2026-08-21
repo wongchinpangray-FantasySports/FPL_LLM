@@ -10,6 +10,7 @@ import type { WcNewsItem } from "@/lib/wc/news-feeds";
 
 /** Soft card gradients — distinct tints, readable in light and dark themes. */
 const FEATURE_GRADIENTS = [
+  "border-brand-accent/30 bg-gradient-to-br from-brand-accent/18 via-card/55 to-card/35 hover:border-brand-accent/45",
   "border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-card/55 to-card/35 hover:border-emerald-400/40",
   "border-sky-500/25 bg-gradient-to-br from-sky-500/15 via-card/55 to-card/35 hover:border-sky-400/40",
   "border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card/55 to-card/35 hover:border-violet-400/40",
@@ -102,6 +103,11 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
   const t = useTranslations("home");
 
   const features = [
+    {
+      title: t("guestGuideTitle"),
+      body: t("guestGuideBody"),
+      href: "/fpl/guide",
+    },
     {
       title: t("guestPreseasonTitle"),
       body: t("guestPreseasonBody"),

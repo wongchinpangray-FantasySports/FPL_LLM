@@ -36,7 +36,6 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
       "打开 fantasy.premierleague.com → 点击 Register 注册。",
       "填写邮箱、密码与 Manager Name（经理昵称），到邮箱完成验证。",
       "登录后创建 Team Name（你的 Fantasy 队名，可稍后修改）。",
-      "首次选队前可无限次免费调整；第一个 GW Deadline 前务必提交最终阵容。",
     ],
   },
   {
@@ -48,7 +47,7 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
       "阵容结构固定：2 门将 · 5 后卫 · 5 中场 · 3 前锋。",
       "总身价不得超过 £100.0m；顶部预算条实时显示剩余金额。",
       "同一英超俱乐部最多选 3 名球员。",
-      "选满 15 人后点击 Submit / Enter 提交；GW1 截止前可反复修改。",
+      "选满 15 人后点击 Submit / Enter 提交。",
     ],
     note: "球员价格在赛季开始后随转会市场热度波动；季前选队期间价格不变。",
   },
@@ -61,8 +60,6 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
       "阵型必须满足：1 门将 · 至少 3 后卫 · 至少 2 中场 · 至少 1 前锋（常见 3-5-2、4-4-2、4-3-3 等）。",
       "点球员设置 Captain (C) 与 Vice Captain (V)；队长积分 ×2，若队长未出场则自动换为副队长。",
       "若队长与副队长均未出场，则本轮无人享受双倍积分。",
-      "替补席按优先级排序：1 号 GK → 2 号 DEF → 3 号 MID → 4 号 FWD。",
-      "首发球员若未「出场」（未上场或未拿到黄/红牌），同位置替补按顺序自动顶上，且不能破坏阵型规则。",
     ],
   },
   {
@@ -173,15 +170,26 @@ export type GuidePosterPage = {
   steps?: { n: string; title: string; body: string }[];
   cta?: string;
   url?: string;
+  partner?: {
+    kicker: string;
+    title: string;
+    titleHtml?: string;
+    intro: string;
+    bullets?: string[];
+    cta: string;
+    url: string;
+  };
   kind: "cover" | "content" | "cta";
 };
 
 export function buildGuidePosterPages(date: string): GuidePosterPage[] {
+  const TOTAL = 8;
+  const s = FPL_BEGINNER_GUIDE_SECTIONS;
   return [
     {
       kind: "cover",
       page: 1,
-      total: 8,
+      total: TOTAL,
       eyebrow: "FPL BEGINNER GUIDE · 2026/27",
       title: "完整 FPL 新手上手指南",
       titleHtml: '完整 <span class="accent">FPL</span> 新手上手指南',
@@ -197,11 +205,11 @@ export function buildGuidePosterPages(date: string): GuidePosterPage[] {
     {
       kind: "content",
       page: 2,
-      total: 8,
+      total: TOTAL,
       eyebrow: "01 · WHAT IS FPL",
       title: "FPL 是什么？",
       titleHtml: '<span class="accent">FPL</span> 是什么？',
-      bullets: FPL_BEGINNER_GUIDE_SECTIONS[0].bullets,
+      bullets: s[0].bullets.slice(0, 3),
       steps: [
         { n: "£100m", title: "预算", body: "选 15 名英超球员" },
         { n: "11+4", title: "每轮", body: "11 首发 + 4 替补" },
@@ -211,64 +219,58 @@ export function buildGuidePosterPages(date: string): GuidePosterPage[] {
     {
       kind: "content",
       page: 3,
-      total: 8,
+      total: TOTAL,
       eyebrow: "02 · REGISTER & SQUAD",
       title: "注册 + 选 15 人",
       titleHtml: '注册 + <span class="accent">选 15 人</span>',
-      bullets: [
-        ...FPL_BEGINNER_GUIDE_SECTIONS[1].bullets.slice(0, 3),
-        ...FPL_BEGINNER_GUIDE_SECTIONS[2].bullets,
-      ],
+      bullets: [...s[1].bullets, ...s[2].bullets],
     },
     {
       kind: "content",
       page: 4,
-      total: 8,
+      total: TOTAL,
       eyebrow: "03 · STARTING XI",
       title: "首发 · 队长 · 替补",
       titleHtml: '首发 · 队长 · <span class="accent">替补</span>',
-      bullets: FPL_BEGINNER_GUIDE_SECTIONS[3].bullets,
+      bullets: s[3].bullets,
     },
     {
       kind: "content",
       page: 5,
-      total: 8,
+      total: TOTAL,
       eyebrow: "04 · DEADLINE & TRANSFERS",
       title: "Deadline 与转会",
       titleHtml: '<span class="accent">Deadline</span> 与转会',
-      bullets: [
-        ...FPL_BEGINNER_GUIDE_SECTIONS[4].bullets.slice(0, 3),
-        ...FPL_BEGINNER_GUIDE_SECTIONS[5].bullets,
-      ],
+      bullets: [...s[4].bullets, ...s[5].bullets],
     },
     {
       kind: "content",
       page: 6,
-      total: 8,
+      total: TOTAL,
       eyebrow: "05 · SCORING",
       title: "积分怎么算？",
       titleHtml: '积分<span class="accent">怎么算</span>？',
       subtitle: "官方 Classic Scoring 核心项",
-      table: FPL_BEGINNER_GUIDE_SECTIONS[6].table?.slice(0, 14),
+      table: s[6].table?.slice(0, 11),
     },
     {
       kind: "content",
       page: 7,
-      total: 8,
+      total: TOTAL,
       eyebrow: "06 · CHIPS",
       title: "四枚芯片",
       titleHtml: '四枚<span class="accent">芯片</span>',
       subtitle: "每轮只能用 1 枚 · 上下半场各一套",
-      chips: (FPL_BEGINNER_GUIDE_SECTIONS[7].table ?? []).map((r) => ({
+      chips: (s[7].table ?? []).map((r) => ({
         label: r.action,
         desc: r.points,
       })),
-      bullets: FPL_BEGINNER_GUIDE_SECTIONS[7].bullets.slice(0, 3),
+      bullets: s[7].bullets.slice(0, 2),
     },
     {
       kind: "cta",
       page: 8,
-      total: 8,
+      total: TOTAL,
       eyebrow: "START PLAYING",
       title: "准备好上场了吗？",
       titleHtml: '准备好<span class="accent">上场</span>了吗？',
@@ -278,8 +280,17 @@ export function buildGuidePosterPages(date: string): GuidePosterPage[] {
         "③ 每轮 Deadline 前调整首发与队长",
         "④ 来 FALEAGUE 看赛程、xP 与推荐阵容",
       ],
-      cta: "打开完整指南 →",
+      cta: "打开 FALEAGUE 完整指南 →",
       url: "faleague-ai.com/fpl/guide",
+      partner: {
+        kicker: "PARTNER · FF SCOUT",
+        title: "Fantasy Football Scout",
+        titleHtml: 'Fantasy Football <span class="accent">Scout</span>',
+        intro:
+          "英国资深 FPL 数据与资讯平台：GW 球队新闻、球员推荐，以及 Stats Centre、Fixture Ticker 等决策工具。",
+        cta: "访问 FF Scout →",
+        url: "fantasyfootballscout.co.uk",
+      },
     },
   ];
 }
@@ -303,8 +314,10 @@ export function buildGuidePosterCaption(date: string): string {
     "👉 https://faleague-ai.com/fpl/guide",
     "",
     "工具推荐：",
+    "· FALEAGUE 完整指南 → faleague-ai.com/fpl/guide",
     "· 推荐阵容 → faleague-ai.com/zh/fpl/insights/recommended-squad",
     "· 阵容构建器 → faleague-ai.com/zh/squad-builder",
+    "· FF Scout → fantasyfootballscout.co.uk",
     "",
     "#FPL #FantasyPremierLeague #英超 #范特西足球 #新手指南 #FPL教程 #FALEAGUE #GW1",
   ].join("\n");

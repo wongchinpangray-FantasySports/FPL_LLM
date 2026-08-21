@@ -36,6 +36,8 @@ function NavLink({
 
 function isFplPath(pathname: string): boolean {
   return (
+    pathname === "/fpl" ||
+    pathname.startsWith("/fpl/") ||
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/") ||
     pathname === "/manager" ||
@@ -73,6 +75,7 @@ export function SiteNav() {
   }, [pathname]);
 
   const fplLinks = [
+    { href: "/fpl/guide", label: t("guide"), active: pathname.startsWith("/fpl/guide") },
     { href: dashboardHref, label: t("dashboard"), active: pathname === "/dashboard" || pathname.startsWith("/dashboard/") },
     { href: managerHref, label: t("manager"), active: pathname === "/manager" || pathname.startsWith("/manager/") },
     { href: plannerHref, label: t("planner"), active: pathname === "/planner" || pathname.startsWith("/planner/") },

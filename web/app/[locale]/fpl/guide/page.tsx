@@ -25,6 +25,7 @@ export default async function FplGuidePage({ params }: Props) {
       title={t("title")}
       description={t("description")}
       width="6xl"
+      className="[&_header_h1]:text-2xl [&_header_h1]:sm:text-3xl [&_header_p]:text-base [&_header_p]:leading-relaxed"
     >
       <FplBeginnerGuide
         labels={{
@@ -38,6 +39,10 @@ export default async function FplGuidePage({ params }: Props) {
           squadBuilderBody: t("squadBuilderBody"),
           fixtures: t("fixtures"),
           fixturesBody: t("fixturesBody"),
+          ffScout: t("ffScout"),
+          ffScoutBody: t("ffScoutBody"),
+          ffScoutNote: t("ffScoutNote"),
+          ffScoutScoutLink: t("ffScoutScoutLink"),
           tableAction: t("tableAction"),
           tablePoints: t("tablePoints"),
           note: t("note"),

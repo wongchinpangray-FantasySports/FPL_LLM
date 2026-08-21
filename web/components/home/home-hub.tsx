@@ -1294,6 +1294,7 @@ function HomeFeatureGroups({
     manager: string;
     fixtures: string;
     preseason: string;
+    guide: string;
     news: string;
   };
 }) {
@@ -1306,6 +1307,7 @@ function HomeFeatureGroups({
   ];
 
   const research: FeatureLink[] = [
+    { href: "/fpl/guide", label: labels.guide },
     { href: "/fpl/fixtures", label: labels.fixtures },
     { href: "/fpl/preseason", label: labels.preseason },
   ];
@@ -1438,6 +1440,9 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           />
 
           <div className="flex flex-wrap gap-2">
+            <HubChip href="/fpl/guide" variant="accent">
+              {t("exploreGuideTitle")}
+            </HubChip>
             <HubChip href="/fpl/preseason" variant="accent">
               {t("explorePreseasonTitle")}
             </HubChip>
@@ -1497,6 +1502,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               manager: t("homeGroupManager"),
               fixtures: t("exploreFixturesTitle"),
               preseason: t("explorePreseasonTitle"),
+              guide: t("exploreGuideTitle"),
               news: t("sidebarNews"),
             }}
           />

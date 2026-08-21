@@ -11,6 +11,7 @@ import { FplEntryConfirmField } from "@/components/fpl/fpl-entry-confirm-field";
 import type { FplEntryPreview } from "@/lib/fpl/entry-preview";
 import { cn } from "@/lib/utils";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
+import { OnboardingGuidePrompt } from "@/components/onboarding/onboarding-guide-prompt";
 
 type Options = {
   fpl_teams: { id: number; name: string; short_name: string }[];
@@ -28,13 +29,14 @@ export function OnboardingWizard() {
   const t = useTranslations("onboarding");
   const locale = useLocale();
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { refresh, profile } = useAuth();
   const { setEntryId } = useEntryId();
 
   const [step, setStep] = useState(0);
   const [options, setOptions] = useState<Options | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guidePromptOpen, setGuidePromptOpen] = useState(false);
 
   const [nationalTeam, setNationalTeam] = useState("");
   const [leagues, setLeagues] = useState<string[]>(["epl"]);
@@ -84,6 +86,7 @@ export function OnboardingWizard() {
   async function finish(skip = false) {
     setLoading(true);
     setError(null);
+    const isFirstCompletion = !profile?.onboarding_completed_at;
     try {
       const parsedEntry = entryId.trim();
       if (!skip && parsedEntry) {
@@ -123,7 +126,11 @@ export function OnboardingWizard() {
 
       if (fplEntry) setEntryId(String(fplEntry));
       await refresh();
-      router.push("/");
+      if (isFirstCompletion) {
+        setGuidePromptOpen(true);
+      } else {
+        router.push("/");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("saveError"));
     } finally {
@@ -148,7 +155,8 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
+    <>
+      <div className="mx-auto max-w-xl">
       <div className="mb-6 flex gap-1">
         {Array.from({ length: STEPS }, (_, i) => (
           <div
@@ -367,6 +375,11 @@ export function OnboardingWizard() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+      <OnboardingGuidePrompt
+        open={guidePromptOpen}
+        onDismiss={() => setGuidePromptOpen(false)}
+      />
+    </>
   );
 }

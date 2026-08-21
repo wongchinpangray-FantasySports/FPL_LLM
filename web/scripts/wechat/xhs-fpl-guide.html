@@ -46,71 +46,81 @@
       }
       .top {
         display: flex; justify-content: space-between; align-items: flex-start;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
       }
-      .brand { font-family: Inter, sans-serif; font-size: 30px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand { font-family: Inter, sans-serif; font-size: 32px; font-weight: 900; letter-spacing: -0.04em; }
       .brand span { color: #00ff87; }
       .eyebrow {
-        margin-top: 6px; font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        margin-top: 6px; font-family: Inter, sans-serif; font-size: 13px; font-weight: 800;
         letter-spacing: 0.16em; text-transform: uppercase; color: #00ff87;
       }
       .page-meta { text-align: right; }
       .page-num {
-        font-family: Inter, sans-serif; font-size: 42px; font-weight: 900; letter-spacing: -0.04em;
+        font-family: Inter, sans-serif; font-size: 44px; font-weight: 900; letter-spacing: -0.04em;
       }
-      .page-total { font-size: 14px; font-weight: 700; color: rgba(244,244,245,0.45); letter-spacing: 0.1em; }
+      .page-total { font-size: 15px; font-weight: 700; color: rgba(244,244,245,0.45); letter-spacing: 0.1em; }
 
-      .hero { margin-bottom: 18px; }
+      .hero {
+        margin-bottom: 0;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
       h1 {
-        font-size: 46px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.12;
+        font-size: 52px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.12;
       }
       h1 .accent { color: #00ff87; }
       .sub {
-        margin-top: 8px; font-size: 18px; line-height: 1.4; color: rgba(244,244,245,0.65); font-weight: 600;
+        margin-top: 10px; font-size: 21px; line-height: 1.4; color: rgba(244,244,245,0.65); font-weight: 600;
       }
 
-      .main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+      .main {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column; gap: 12px;
+        padding-top: 28px;
+      }
 
-      .bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+      .bullets { list-style: none; display: flex; flex-direction: column; gap: 18px; }
+      .bullets.dense { gap: 14px; }
       .bullets li {
-        display: grid; grid-template-columns: 10px 1fr; gap: 12px; align-items: start;
-        font-size: 19px; line-height: 1.42; color: #e4e4e7; font-weight: 600;
+        display: grid; grid-template-columns: 12px 1fr; gap: 16px; align-items: start;
+        font-size: 24px; line-height: 1.46; color: #e4e4e7; font-weight: 600;
       }
       .bullets li::before {
-        content: ""; width: 8px; height: 8px; border-radius: 50%;
-        background: #00ff87; margin-top: 10px;
+        content: ""; width: 10px; height: 10px; border-radius: 50%;
+        background: #00ff87; margin-top: 13px;
         box-shadow: 0 0 10px rgba(0,255,135,0.5);
       }
 
       .steps {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+        margin-bottom: 8px;
       }
       .step {
-        border-radius: 16px; padding: 16px 14px;
+        border-radius: 16px; padding: 18px 14px;
         background: rgba(0,255,135,0.08); border: 1px solid rgba(0,255,135,0.25);
         text-align: center;
       }
       .step-n {
-        font-family: Inter, sans-serif; font-size: 28px; font-weight: 900; color: #00ff87;
+        font-family: Inter, sans-serif; font-size: 32px; font-weight: 900; color: #00ff87;
       }
-      .step-title { margin-top: 4px; font-size: 16px; font-weight: 800; color: #fff; }
-      .step-body { margin-top: 4px; font-size: 13px; color: rgba(244,244,245,0.55); line-height: 1.35; }
+      .step-title { margin-top: 4px; font-size: 18px; font-weight: 800; color: #fff; }
+      .step-body { margin-top: 4px; font-size: 15px; color: rgba(244,244,245,0.55); line-height: 1.35; }
 
       .table-wrap {
         flex: 1; min-height: 0; overflow: hidden;
         border-radius: 18px; border: 1px solid rgba(255,255,255,0.12);
         background: rgba(11,10,15,0.72);
       }
-      table { width: 100%; border-collapse: collapse; font-size: 16px; }
+      table { width: 100%; border-collapse: collapse; font-size: 20px; }
       thead th {
-        text-align: left; padding: 12px 16px;
-        font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        text-align: left; padding: 11px 16px;
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 800;
         letter-spacing: 0.12em; text-transform: uppercase; color: #00ff87;
         background: rgba(0,255,135,0.08); border-bottom: 1px solid rgba(255,255,255,0.1);
       }
       tbody td {
-        padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
-        color: #ddd9ea; font-weight: 600;
+        padding: 9px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: #ddd9ea; font-weight: 600; line-height: 1.32;
       }
       tbody td:last-child {
         text-align: right; font-family: Inter, sans-serif; font-weight: 800; color: #00ff87;
@@ -118,29 +128,83 @@
       }
       tbody tr:last-child td { border-bottom: none; }
 
-      .chips { display: flex; flex-direction: column; gap: 10px; }
+      .chips { display: flex; flex-direction: column; gap: 12px; }
       .chip-row {
-        display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: center;
-        padding: 14px 16px; border-radius: 14px;
+        display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: center;
+        padding: 16px 18px; border-radius: 14px;
         background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
       }
       .chip-label {
-        font-family: Inter, sans-serif; font-size: 15px; font-weight: 900; color: #00ff87;
+        font-family: Inter, sans-serif; font-size: 17px; font-weight: 900; color: #00ff87;
       }
-      .chip-desc { font-size: 16px; line-height: 1.35; color: #e4e4e7; font-weight: 600; }
+      .chip-desc { font-size: 20px; line-height: 1.32; color: #e4e4e7; font-weight: 600; }
 
       .cover-badge {
         align-self: flex-start; margin-bottom: 14px;
         padding: 8px 14px; border-radius: 999px;
         background: rgba(55,0,60,0.7); border: 1px solid rgba(0,255,135,0.3);
-        font-size: 14px; font-weight: 800; color: #00ff87; letter-spacing: 0.08em;
+        font-size: 15px; font-weight: 800; color: #00ff87; letter-spacing: 0.08em;
       }
-      .cover-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-      .cover-hero h1 { font-size: 56px; }
-      .cover-hero .sub { font-size: 22px; max-width: 820px; }
+      .cover-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 8px; }
+      .cover-hero h1 { font-size: 62px; margin-bottom: 4px; }
+      .cover-hero .sub { font-size: 24px; max-width: 820px; margin-bottom: 0; }
+      .cover-hero .bullets { margin-top: 32px; }
+
+      .cover-layout .main { padding-top: 20px; }
+
+      .cta-page .hero { padding-bottom: 14px; }
+      .cta-page .hero h1 { font-size: 44px; }
+      .cta-page .main { padding-top: 16px; gap: 8px; }
+      .cta-page .bullets li { font-size: 21px; }
+      .cta-page .bullets { gap: 12px; }
+
+      .cta-stack {
+        margin-top: auto;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+
+      .partner-panel {
+        padding: 16px 18px 14px;
+        border-radius: 18px;
+        background: rgba(55, 0, 60, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      .partner-kicker {
+        font-family: Inter, sans-serif;
+        font-size: 12px; font-weight: 800; letter-spacing: 0.14em;
+        color: #00ff87;
+      }
+      .partner-title {
+        margin-top: 6px;
+        font-size: 24px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.15;
+      }
+      .partner-title .accent { color: #00ff87; }
+      .partner-intro {
+        margin-top: 8px;
+        font-size: 17px; line-height: 1.42; font-weight: 600;
+        color: rgba(244, 244, 245, 0.72);
+      }
+      .partner-panel .bullets {
+        margin-top: 10px; gap: 8px;
+      }
+      .partner-panel .bullets li {
+        font-size: 16px; line-height: 1.35;
+      }
+      .partner-panel .bullets li::before {
+        width: 8px; height: 8px; margin-top: 8px;
+      }
+      .cta-box.secondary {
+        margin-top: 12px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+        border-color: rgba(255,255,255,0.18);
+      }
+      .cta-box.secondary .cta-text {
+        font-size: 24px; color: #fff;
+      }
 
       .cta-box {
-        margin-top: auto; padding: 22px 24px; border-radius: 20px;
+        padding: 18px 22px; border-radius: 20px;
         background: linear-gradient(135deg, rgba(0,255,135,0.18), rgba(0,255,135,0.06));
         border: 1px solid rgba(0,255,135,0.35);
         text-align: center;
@@ -148,16 +212,17 @@
       .cta-box .cta-text {
         font-size: 26px; font-weight: 900; color: #00ff87; letter-spacing: -0.02em;
       }
+      .cta-page .cta-box .cta-text { font-size: 24px; }
       .cta-box .cta-url {
-        margin-top: 6px; font-family: Inter, sans-serif; font-size: 18px; font-weight: 700;
+        margin-top: 6px; font-family: Inter, sans-serif; font-size: 20px; font-weight: 700;
         color: rgba(244,244,245,0.7);
       }
 
       .footer {
-        margin-top: 14px; padding-top: 12px;
+        margin-top: 12px; padding-top: 12px;
         border-top: 1px solid rgba(255,255,255,0.1);
         display: flex; justify-content: space-between; align-items: center;
-        font-family: Inter, sans-serif; font-size: 14px; font-weight: 700;
+        font-family: Inter, sans-serif; font-size: 16px; font-weight: 700;
         color: rgba(244,244,245,0.45);
       }
       .footer strong { color: #00ff87; font-weight: 800; }
@@ -171,9 +236,10 @@
           .replace(/&/g, "&amp;").replace(/</g, "&lt;")
           .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       }
-      function bulletsHtml(items) {
+      function bulletsHtml(items, dense) {
         if (!items?.length) return "";
-        return `<ul class="bullets">${items.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
+        const cls = dense ? "bullets dense" : "bullets";
+        return `<ul class="${cls}">${items.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
       }
       function tableHtml(rows) {
         if (!rows?.length) return "";
@@ -194,12 +260,27 @@
           `<div class="step"><div class="step-n">${esc(s.n)}</div><div class="step-title">${esc(s.title)}</div><div class="step-body">${esc(s.body)}</div></div>`
         ).join("")}</div>`;
       }
+      function partnerHtml(partner) {
+        if (!partner) return "";
+        const title = partner.titleHtml || esc(partner.title);
+        return `<div class="partner-panel">
+          <div class="partner-kicker">${esc(partner.kicker)}</div>
+          <div class="partner-title">${title}</div>
+          <div class="partner-intro">${esc(partner.intro)}</div>
+          ${bulletsHtml(partner.bullets, true)}
+          <div class="cta-box secondary">
+            <div class="cta-text">${esc(partner.cta)}</div>
+            <div class="cta-url">${esc(partner.url)}</div>
+          </div>
+        </div>`;
+      }
       function render(data) {
         const isCover = data.kind === "cover";
         const isCta = data.kind === "cta";
         const title = data.titleHtml || esc(data.title);
         const pageLabel = `${String(data.page).padStart(2, "0")} / ${String(data.total).padStart(2, "0")}`;
 
+        const denseBullets = (data.bullets?.length ?? 0) >= 8;
         let body = "";
         if (isCover) {
           body = `
@@ -207,19 +288,22 @@
             <div class="cover-hero">
               <h1>${title}</h1>
               <div class="sub">${esc(data.subtitle)}</div>
-              ${bulletsHtml(data.bullets)}
+              ${bulletsHtml(data.bullets, false)}
             </div>`;
         } else if (isCta) {
           body = `
-            ${bulletsHtml(data.bullets)}
-            <div class="cta-box">
-              <div class="cta-text">${esc(data.cta)}</div>
-              <div class="cta-url">${esc(data.url)}</div>
+            ${bulletsHtml(data.bullets, false)}
+            <div class="cta-stack">
+              <div class="cta-box">
+                <div class="cta-text">${esc(data.cta)}</div>
+                <div class="cta-url">${esc(data.url)}</div>
+              </div>
+              ${partnerHtml(data.partner)}
             </div>`;
         } else {
           body = `
             ${stepsHtml(data.steps)}
-            ${bulletsHtml(data.bullets)}
+            ${bulletsHtml(data.bullets, denseBullets)}
             ${tableHtml(data.table)}
             ${chipsHtml(data.chips)}`;
         }
@@ -228,7 +312,7 @@
           <div class="bg"></div>
           ${isCover ? '<div class="pitch-stripe"></div>' : ""}
           <div class="wm">FPL</div>
-          <div class="content">
+          <div class="content ${isCover ? "cover-layout" : ""}${isCta ? " cta-page" : ""}">
             <div class="top">
               <div>
                 <div class="brand">FA<span>LEAGUE</span></div>
@@ -239,10 +323,14 @@
                 <div class="page-total">SWIPE →</div>
               </div>
             </div>
-            <div class="hero">
+            ${
+              isCover
+                ? ""
+                : `<div class="hero">
               <h1>${title}</h1>
-              ${data.subtitle && !isCover ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
-            </div>
+              ${data.subtitle ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
+            </div>`
+            }
             <div class="main">${body}</div>
             <div class="footer">
               <span><strong>FPL</strong> 新手上手指南</span>

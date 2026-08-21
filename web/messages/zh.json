@@ -21,6 +21,7 @@
     "insights": "洞察",
     "recommendedSquad": "推荐阵容",
     "mini": "五人赛",
+    "guide": "新手指南",
     "worldcup": "世界杯",
     "worldcupCentre": "赛事中心",
     "news": "新闻",
@@ -177,6 +178,8 @@
     "guestLogin": "登录",
     "guestBrowseFpl": "无需登录，先浏览 FPL 功能",
     "guestBrowsePreseason": "查看全部英超俱乐部季前赛",
+    "guestGuideTitle": "FPL 新手上手指南",
+    "guestGuideBody": "从注册、选队到积分与芯片 —— 官方规则中文整理，无需登录即可阅读。",
     "guestPreseasonTitle": "季前友谊赛",
     "guestPreseasonBody": "每支英超球队的比分、进球者与俱乐部战绩。",
     "guestFeature1Title": "组建阵容",
@@ -191,6 +194,8 @@
     "guestNewsAll": "全部新闻",
     "explorePreseasonTitle": "季前赛",
     "explorePreseasonBody": "各英超俱乐部夏季友谊赛赛程与比分。",
+    "exploreGuideTitle": "新手上手指南",
+    "exploreGuideBody": "完整 FPL 规则：注册、选队、转会、积分与芯片。",
     "exploreFixturesTitle": "赛程与难度",
     "exploreSquadBuilderBody": "从零组建 15 人阵容，并查看每轮预期积分 (xPt)。",
     "exploreHistoricalTitle": "历史数据",
@@ -1233,7 +1238,18 @@
     "next": "下一步",
     "skipAll": "暂时跳过",
     "finish": "完成",
-    "saving": "保存中…"
+    "saving": "保存中…",
+    "guidePrompt": {
+      "eyebrow": "FPL 新手指南",
+      "title": "要不要先看一遍 FPL 规则？",
+      "body": "如果你刚接触 Fantasy Premier League，我们整理了一份完整中文指南，从注册、选队到积分与芯片，一篇搞懂。",
+      "benefit1": "官方规则中文整理，可搜索可复制",
+      "benefit2": "注册、选队、Deadline、积分与芯片全覆盖",
+      "benefit3": "随时在 FPL 页面找到入口",
+      "readGuide": "打开新手指南",
+      "later": "稍后再说",
+      "close": "关闭"
+    }
   },
   "inbox": {
     "title": "收件箱",
@@ -1954,7 +1970,11 @@
     "squadBuilder": "阵容构建器",
     "squadBuilderBody": "可视化选队，查看 xP 与赛程。",
     "fixtures": "赛程",
-    "fixturesBody": "GW1–38 全赛季对阵与 FDR。"
+    "fixturesBody": "GW1–38 全赛季对阵与 FDR。",
+    "ffScout": "FF Scout",
+    "ffScoutBody": "英国资深 FPL 数据与资讯：统计、伤病、球队前瞻与决策工具。",
+    "ffScoutNote": "FALEAGUE 与 FF Scout 为合作伙伴。本站",
+    "ffScoutScoutLink": "Scout 中文精选"
   },
   "fplHistorical": {
     "backFpl": "← FPL",
