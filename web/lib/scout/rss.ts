@@ -41,9 +41,9 @@ export function parseScoutRss(xml: string): ScoutRssItem[] {
     const guid =
       stripTags(extractTag(block, "guid")) ||
       url.replace(/\/+$/, "").split("?")[0]!;
+    const contentHtml = extractTag(block, "content:encoded").trim();
     const excerpt = stripTags(
-      extractTag(block, "content:encoded") ||
-        extractTag(block, "description"),
+      contentHtml || extractTag(block, "description"),
     ).slice(0, 400);
     const author =
       stripTags(extractTag(block, "dc:creator") || extractTag(block, "author")) ||
@@ -62,6 +62,7 @@ export function parseScoutRss(xml: string): ScoutRssItem[] {
       author,
       published_at,
       categories: extractCategories(block),
+      content_html: contentHtml || null,
     });
   }
   return items;

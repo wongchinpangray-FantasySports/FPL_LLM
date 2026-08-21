@@ -12,6 +12,15 @@ import { eventTypeForGoTarget, resolveGoDestination } from "../lib/scout/links";
 import { buildChrisScorecard } from "../lib/scout/scorecard";
 import { isScoutStatus } from "../lib/scout/types";
 import type { ScoutTrialStats } from "../lib/scout/types";
+import {
+  articleSlugFromUrl,
+  buildFfsFetchHeaders,
+  hasFfsSessionCookie,
+  isTruncatedScoutTeaser,
+  normalizeFfsCookieHeader,
+  stripScoutPaywallBanner,
+  wpPostsBySlugUrl,
+} from "../lib/scout/fetch-article";
 
 function testExtractSectionEntryContent() {
   const html = `
@@ -24,6 +33,48 @@ function testExtractSectionEntryContent() {
   const inner = extractHtmlByClass(html, "entry-content");
   assert.ok(inner && inner.includes("Leeds team guide body"));
   assert.equal(extractHtmlByClass("<div class='entry-content'><p>Hi</p></div>", "entry-content")?.includes("Hi"), true);
+}
+
+function testFfsFetchHelpers() {
+  const url =
+    "https://www.fantasyfootballscout.co.uk/2026/08/20/the-scout-squad-our-top-picks-for-fpl-gameweek-1-2";
+  assert.equal(
+    articleSlugFromUrl(url),
+    "the-scout-squad-our-top-picks-for-fpl-gameweek-1-2",
+  );
+  assert.match(
+    wpPostsBySlugUrl(url) ?? "",
+    /wp-json\/wp\/v2\/posts\?slug=the-scout-squad-our-top-picks-for-fpl-gameweek-1-2/,
+  );
+  assert.equal(
+    normalizeFfsCookieHeader("Cookie: wordpress_logged_in_x=abc"),
+    "wordpress_logged_in_x=abc",
+  );
+
+  const teaser = `<p>Intro</p><p>The rest of this article below is completely free to read but requires a Fantasy Football Scout user account for access – you can get yours at no cost here</p><figure><img src="https://cdn.fantasyfootballscout.co.uk/x.jpg"></figure>`;
+  assert.equal(isTruncatedScoutTeaser(teaser), true);
+  assert.equal(stripScoutPaywallBanner(teaser).includes("requires a Fantasy"), false);
+
+  const full =
+    teaser +
+    "<p>" +
+    "Haaland and João Pedro analysis. ".repeat(80) +
+    "</p><table><tr><td>Verbruggen</td></tr></table>";
+  assert.equal(isTruncatedScoutTeaser(full), false);
+
+  const prev = process.env.FFS_SESSION_COOKIE;
+  const prevAuth = process.env.FFS_AUTH_COOKIE;
+  delete process.env.FFS_SESSION_COOKIE;
+  delete process.env.FFS_AUTH_COOKIE;
+  assert.equal(hasFfsSessionCookie(), false);
+  assert.equal(buildFfsFetchHeaders().Cookie, undefined);
+  process.env.FFS_SESSION_COOKIE = "wordpress_logged_in_test=abc";
+  assert.equal(hasFfsSessionCookie(), true);
+  assert.equal(buildFfsFetchHeaders().Cookie, "wordpress_logged_in_test=abc");
+  if (prev === undefined) delete process.env.FFS_SESSION_COOKIE;
+  else process.env.FFS_SESSION_COOKIE = prev;
+  if (prevAuth === undefined) delete process.env.FFS_AUTH_COOKIE;
+  else process.env.FFS_AUTH_COOKIE = prevAuth;
 }
 
 function testSanitize() {
@@ -123,6 +174,7 @@ function testGoAndScorecard() {
 }
 
 testExtractSectionEntryContent();
+testFfsFetchHelpers();
 testSanitize();
 testSlugAndSeries();
 testRssParse();

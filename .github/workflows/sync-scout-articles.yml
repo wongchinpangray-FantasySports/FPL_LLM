@@ -18,6 +18,10 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Optional logged-in FFS Cookie header (wordpress_logged_in_*). Needed for
+      # full member-gated HTML. Leave unset to ingest free teasers only.
+      FFS_SESSION_COOKIE: ${{ secrets.FFS_SESSION_COOKIE }}
+      FFS_AUTH_COOKIE: ${{ secrets.FFS_AUTH_COOKIE }}
     steps:
       - uses: actions/checkout@v4
 

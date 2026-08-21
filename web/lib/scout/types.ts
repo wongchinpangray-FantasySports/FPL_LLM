@@ -78,6 +78,8 @@ export type ScoutRssItem = {
   author: string | null;
   published_at: string | null;
   categories: string[];
+  /** Full HTML from RSS content:encoded when the feed includes it. */
+  content_html?: string | null;
 };
 
 export type ScoutEventInput = {

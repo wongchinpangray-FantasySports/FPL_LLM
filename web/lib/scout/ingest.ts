@@ -1,4 +1,8 @@
-import { fetchScoutArticleHtml } from "@/lib/scout/fetch-article";
+import {
+  fetchScoutArticleHtml,
+  hasFfsSessionCookie,
+  scoutRssItemFromWpUrl,
+} from "@/lib/scout/fetch-article";
 import {
   collectImageUrls,
   excerptFromHtml,
@@ -22,6 +26,8 @@ export type ScoutIngestResult = {
   skipped: number;
   translated: number;
   failed: number;
+  truncated: number;
+  authenticated: boolean;
   errors: string[];
 };
 
@@ -32,6 +38,7 @@ function sleep(ms: number): Promise<void> {
 type IngestOutcome = {
   outcome: "created" | "updated" | "skipped";
   translationError: string | null;
+  truncated: boolean;
 };
 
 async function ingestOne(
@@ -39,7 +46,9 @@ async function ingestOne(
   opts: { forceTranslate: boolean },
 ): Promise<IngestOutcome> {
   const existing = await getScoutArticleByGuid(item.guid);
-  const fetched = await fetchScoutArticleHtml(item.url);
+  const fetched = await fetchScoutArticleHtml(item.url, {
+    rssContentHtml: item.content_html,
+  });
   if (!fetched) {
     throw new Error(`Could not extract article HTML: ${item.url}`);
   }
@@ -63,7 +72,11 @@ async function ingestOne(
     existing.body_html_zh &&
     !existing.translation_error;
   if (unchanged && !opts.forceTranslate) {
-    return { outcome: "skipped", translationError: null };
+    return {
+      outcome: "skipped",
+      translationError: null,
+      truncated: fetched.truncated,
+    };
   }
 
   let title_zh = existing?.title_zh || item.title;
@@ -139,22 +152,62 @@ async function ingestOne(
     return {
       outcome: result.created ? "created" : "updated",
       translationError: translation_error,
+      truncated: fetched.truncated,
     };
   }
   return {
     outcome: result.created ? "created" : "updated",
     translationError: null,
+    truncated: fetched.truncated,
   };
+}
+
+function normUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "").split("?")[0]!.toLowerCase();
 }
 
 export async function ingestScoutArticles(opts?: {
   pages?: number;
   limit?: number;
   forceTranslate?: boolean;
+  urls?: string[];
 }): Promise<ScoutIngestResult> {
   const pages = opts?.pages ?? 1;
   const forceTranslate = opts?.forceTranslate ?? false;
-  const items = await fetchScoutRssItems(pages);
+  const wanted = (opts?.urls ?? [])
+    .map(normUrl)
+    .filter(Boolean);
+  const wantedSet = new Set(wanted);
+
+  let items = await fetchScoutRssItems(pages);
+  if (wantedSet.size) {
+    const fromRss = items.filter(
+      (item) => wantedSet.has(normUrl(item.url)) || wantedSet.has(normUrl(item.guid)),
+    );
+    const missing = wanted.filter(
+      (u) =>
+        !fromRss.some(
+          (item) => normUrl(item.url) === u || normUrl(item.guid) === u,
+        ),
+    );
+    const extras: ScoutRssItem[] = [];
+    for (const url of missing) {
+      const fromWp = await scoutRssItemFromWpUrl(url);
+      extras.push(
+        fromWp ?? {
+          title: url,
+          url,
+          guid: url,
+          excerpt: "",
+          author: null,
+          published_at: null,
+          categories: [],
+        },
+      );
+    }
+    items = [...fromRss, ...extras];
+  }
+
   const sliced = items.slice(0, opts?.limit ?? items.length);
 
   const result: ScoutIngestResult = {
@@ -164,15 +217,18 @@ export async function ingestScoutArticles(opts?: {
     skipped: 0,
     translated: 0,
     failed: 0,
+    truncated: 0,
+    authenticated: hasFfsSessionCookie(),
     errors: [],
   };
 
   for (const item of sliced) {
     try {
-      const { outcome, translationError } = await ingestOne(item, {
+      const { outcome, translationError, truncated } = await ingestOne(item, {
         forceTranslate,
       });
       result[outcome] += 1;
+      if (truncated) result.truncated += 1;
       if (translationError) {
         result.failed += 1;
         result.errors.push(`${item.title}: ${translationError}`);
