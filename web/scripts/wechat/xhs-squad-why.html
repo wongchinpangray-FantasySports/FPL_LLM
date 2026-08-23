@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE Squad Why</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        width: 1080px; height: 1440px; overflow: hidden;
+        padding: 36px 36px 28px;
+        display: flex; flex-direction: column;
+        background:
+          radial-gradient(ellipse 80% 50% at 8% -12%, rgba(0,255,135,0.16), transparent 55%),
+          #0b0a0f;
+      }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+      .brand { font-family: Inter, sans-serif; font-size: 36px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow {
+        margin-top: 5px; font-family: Inter, sans-serif; font-size: 15px; font-weight: 800;
+        letter-spacing: 0.18em; text-transform: uppercase; color: #00ff87;
+      }
+      .date {
+        font-family: Inter, sans-serif; font-size: 42px; font-weight: 900;
+        letter-spacing: -0.04em; text-align: right;
+      }
+      .date small {
+        display: block; margin-top: 2px; font-size: 16px; letter-spacing: 0.14em;
+        color: rgba(244,244,245,0.45); font-weight: 600;
+      }
+      h1 {
+        font-size: 40px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.15;
+      }
+      h1 .accent { color: #00ff87; }
+      .sub { margin: 8px 0 10px; font-size: 19px; color: rgba(244,244,245,0.6); }
+      .board {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .group {
+        display: flex; flex-direction: column; gap: 0;
+        border-top: 1px solid rgba(0,255,135,0.22);
+      }
+      .group-label {
+        font-family: Inter, sans-serif;
+        font-size: 11px; font-weight: 800; letter-spacing: 0.16em;
+        color: #00ff87; padding: 7px 0 3px;
+      }
+      .row {
+        padding: 8px 0 9px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+      .row.cap { background: linear-gradient(90deg, rgba(0,255,135,0.08), transparent 70%); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; }
+      .idline {
+        display: flex; align-items: baseline; gap: 10px;
+        margin-bottom: 4px; min-width: 0;
+        flex-wrap: wrap;
+      }
+      .name { font-size: 18px; font-weight: 800; white-space: nowrap; }
+      .name .tag {
+        display: inline-block; margin-left: 5px;
+        font-family: Inter, sans-serif; font-size: 10px; font-weight: 900;
+        color: #0b0a0f; background: #00ff87;
+        border-radius: 999px; padding: 1px 6px; vertical-align: 2px;
+      }
+      .name .tag.v { background: rgba(244,244,245,0.82); }
+      .meta {
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 700;
+        color: rgba(244,244,245,0.48); letter-spacing: 0.02em;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .meta .sep { color: rgba(244,244,245,0.28); margin: 0 1px; }
+      .meta .xp { color: #00ff87; }
+      .blurb {
+        font-size: 15.5px; font-weight: 400; line-height: 1.42;
+        color: rgba(244,244,245,0.82);
+      }
+      .footer { margin-top: 20px; flex-shrink: 0; }
+      .cta-bar {
+        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        padding: 18px 22px; border-radius: 16px; background: #00ff87; color: #0b0a0f;
+      }
+      .cta-bar .cta { font-size: 24px; font-weight: 900; }
+      .cta-bar .url { font-family: Inter, sans-serif; font-size: 16px; font-weight: 700; opacity: 0.75; }
+
+      .board.cards {
+        flex: 1 1 auto;
+        min-height: 0;
+        gap: 10px;
+        justify-content: space-evenly;
+      }
+      .board.cards .group {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex; flex-direction: column; gap: 12px;
+        justify-content: space-evenly;
+        border-top: 0;
+      }
+      .board.cards .group-label {
+        padding: 2px 0 6px;
+        flex-shrink: 0;
+        font-size: 24px;
+        letter-spacing: 0.14em;
+      }
+      .card {
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 168px 1fr;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+      }
+      .card.cap {
+        border-color: rgba(0,255,135,0.35);
+        background: linear-gradient(105deg, rgba(0,255,135,0.12), rgba(255,255,255,0.03));
+      }
+      .pic {
+        width: 156px;
+        height: 156px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 40%, #1c2620 0%, #101412 75%);
+        align-self: center;
+        border: 1px solid rgba(255,255,255,0.08);
+        display: grid;
+        place-items: center;
+      }
+      .pic img,
+      .pic img.shirt {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        padding: 8px;
+        display: block;
+        transform: none;
+      }
+      .card-body {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+      }
+      .card .idline { margin-bottom: 3px; }
+      .card .name { font-size: 22px; }
+      .card .meta { font-size: 13px; }
+      .card .blurb {
+        font-size: 19px; font-weight: 400; line-height: 1.38;
+        color: rgba(244,244,245,0.88);
+      }
+      .legend {
+        display: flex; align-items: center; gap: 12px;
+        margin: 0 0 16px;
+        font-size: 19px; font-weight: 500; color: rgba(244,244,245,0.62);
+      }
+      .legend .swatches { display: flex; gap: 6px; }
+      .legend i {
+        display: block; width: 22px; height: 14px; border-radius: 4px;
+      }
+      .legend i.d1 { background: linear-gradient(180deg, rgba(52,211,153,0.9), rgba(4,120,87,0.35)); }
+      .legend i.d2 { background: linear-gradient(180deg, rgba(0,255,135,0.85), rgba(0,200,106,0.3)); }
+      .legend i.d3 { background: linear-gradient(180deg, rgba(148,163,184,0.85), rgba(100,116,139,0.3)); }
+      .legend i.d4 { background: linear-gradient(180deg, rgba(251,146,60,0.9), rgba(194,65,12,0.35)); }
+      .legend i.d5 { background: linear-gradient(180deg, rgba(248,113,113,0.9), rgba(153,27,27,0.4)); }
+      .gws {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .gw {
+        text-align: center;
+        padding: 10px 4px 11px;
+        border-radius: 12px;
+        color: #f4f4f5;
+      }
+      .gw .n {
+        font-family: Inter, sans-serif;
+        font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
+        color: rgba(244,244,245,0.55);
+      }
+      .gw .opp {
+        margin-top: 3px;
+        font-family: Inter, sans-serif;
+        font-size: 15px; font-weight: 800;
+        white-space: nowrap;
+      }
+      .gw .xp {
+        margin-top: 6px;
+        font-family: Inter, sans-serif;
+        font-size: 18px; font-weight: 800;
+        color: #00ff87;
+      }
+      .gw.fdr-1 {
+        background: linear-gradient(180deg, rgba(52,211,153,0.38), rgba(4,120,87,0.12));
+        border: 1px solid rgba(52,211,153,0.4);
+      }
+      .gw.fdr-2 {
+        background: linear-gradient(180deg, rgba(0,255,135,0.32), rgba(0,200,106,0.10));
+        border: 1px solid rgba(0,255,135,0.38);
+      }
+      .gw.fdr-3 {
+        background: linear-gradient(180deg, rgba(148,163,184,0.28), rgba(100,116,139,0.10));
+        border: 1px solid rgba(148,163,184,0.32);
+      }
+      .gw.fdr-4 {
+        background: linear-gradient(180deg, rgba(251,146,60,0.36), rgba(194,65,12,0.12));
+        border: 1px solid rgba(251,146,60,0.4);
+      }
+      .gw.fdr-5 {
+        background: linear-gradient(180deg, rgba(248,113,113,0.38), rgba(153,27,27,0.14));
+        border: 1px solid rgba(248,113,113,0.4);
+      }
+      .gw.fdr-none {
+        background: linear-gradient(180deg, rgba(63,63,70,0.35), rgba(39,39,42,0.12));
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function stamp(iso) {
+        const [yyyy, mm, dd] = String(iso || "2026-08-14").split("-");
+        return { yyyy, mmdd: `${mm}.${dd}` };
+      }
+      function fmt(v, d = 1) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n.toFixed(d) : "—";
+      }
+      function tagHtml(p) {
+        if (p.is_captain) return '<span class="tag">C</span>';
+        if (p.is_vice) return '<span class="tag v">V</span>';
+        return "";
+      }
+      function metaHtml(p) {
+        const sep = '<span class="sep">/</span>';
+        return `${esc(p.position)} · ${esc(p.team_short || "")}${sep}£${fmt(p.price)}${sep}${fmt(p.selected_by_percent)}%${sep}<span class="xp">xP ${fmt(p.xp_total)}</span>${sep}${esc(p.fixture || "—")}`;
+      }
+      function fdrClass(n) {
+        const f = Math.round(Number(n));
+        if (f >= 1 && f <= 5) return `fdr-${f}`;
+        return "fdr-none";
+      }
+      function gwCells(p) {
+        const byGw = new Map();
+        for (const f of p.gw_run || []) {
+          if (!byGw.has(f.gw)) byGw.set(f.gw, []);
+          byGw.get(f.gw).push(f);
+        }
+        return [1, 2, 3, 4, 5].map((gw) => {
+          const fx = byGw.get(gw) || [];
+          if (!fx.length) {
+            return { gw, opp: "—", fdr: null, fdrLabel: "—", xp: "—" };
+          }
+          const opp = fx
+            .map((f) => `${f.opp} · ${f.home ? "H" : "A"}`)
+            .join("/");
+          const xp = fx.reduce((s, f) => s + (Number(f.xp) || 0), 0);
+          const fdrs = fx.map((f) => f.fdr).filter((n) => n != null);
+          const hardest = fdrs.length ? Math.max(...fdrs.map((n) => Math.round(n))) : null;
+          const fdrLabel = fdrs.length ? fdrs.map((n) => Math.round(n)).join("/") : "—";
+          return { gw, opp, fdr: hardest, fdrLabel, xp: fmt(xp) };
+        });
+      }
+      function picHtml(p) {
+        // Prefer official FPL club shirts (not headshots) on why posters.
+        const shirt = p.shirt_url || p.photo_url || "";
+        return `<div class="pic"><img class="shirt" src="${esc(shirt)}" alt="" onerror="this.style.display='none'" /></div>`;
+      }
+      function rowHtml(p) {
+        return `<div class="row ${p.is_captain ? "cap" : ""}">
+          <div class="idline">
+            <span class="name">${esc(p.web_name)}${tagHtml(p)}</span>
+            <span class="meta">${metaHtml(p)}</span>
+          </div>
+          <p class="blurb">${esc(p.why)}</p>
+        </div>`;
+      }
+      function cardHtml(p) {
+        const cells = gwCells(p).map((c) => `
+          <div class="gw ${fdrClass(c.fdr)}">
+            <div class="n">GW${c.gw}</div>
+            <div class="opp">${esc(c.opp)}</div>
+            <div class="xp">${esc(c.xp)}</div>
+          </div>`).join("");
+        return `<article class="card ${p.is_captain ? "cap" : ""}">
+          ${picHtml(p)}
+          <div class="card-body">
+            <div class="idline">
+              <span class="name">${esc(p.web_name)}${tagHtml(p)}</span>
+              <span class="meta">${metaHtml(p)}</span>
+            </div>
+            <p class="blurb">${esc(p.why)}</p>
+            <div class="gws">${cells}</div>
+          </div>
+        </article>`;
+      }
+      function groupHtml(label, players, card) {
+        if (!players.length) return "";
+        const rows = players.map((p) => (card ? cardHtml(p) : rowHtml(p))).join("");
+        const flex = card ? ` style="flex:${players.length} 1 0"` : "";
+        return `<section class="group"${flex}>
+          <div class="group-label">${esc(label)}</div>
+          ${rows}
+        </section>`;
+      }
+      function headerHtml(data, d) {
+        const legend = data.layout === "cards"
+          ? `<div class="legend">
+              <span class="swatches"><i class="d1"></i><i class="d2"></i><i class="d3"></i><i class="d4"></i><i class="d5"></i></span>
+              FDR 绿易 → 红难　·　数字 = 该轮 xP
+            </div>`
+          : "";
+        return `<div class="top">
+            <div>
+              <div class="brand">FA<span>LEAGUE</span></div>
+              <div class="eyebrow">${esc(data.eyebrow || "PLAYER WHY")}</div>
+            </div>
+            <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+          </div>
+          <h1>${data.titleHtml || esc(data.title)}</h1>
+          <p class="sub">${esc(data.subtitle)}</p>
+          ${legend}`;
+      }
+      function footerHtml(data) {
+        return `<div class="footer">
+            <div class="cta-bar">
+              <div class="cta">${esc(data.cta || "打开推荐阵容 →")}</div>
+              <div class="url">${esc(data.url || "faleague-ai.com/zh/fpl/insights/recommended-squad")}</div>
+            </div>
+          </div>`;
+      }
+      function render(data) {
+        const d = stamp(data.date);
+        if (data.layout === "cards") {
+          const groups = (data.groups || [])
+            .map((g) => groupHtml(g.label, g.players || [], true))
+            .join("");
+          document.getElementById("root").innerHTML = `
+            ${headerHtml(data, d)}
+            <div class="board cards">${groups}</div>
+            ${footerHtml(data)}`;
+          return;
+        }
+        const xi = data.starters || [];
+        const bench = data.bench || [];
+        document.getElementById("root").innerHTML = `
+          ${headerHtml(data, d)}
+          <div class="board">
+            ${groupHtml("GKP", xi.filter((p) => p.position === "GKP"), false)}
+            ${groupHtml("DEF", xi.filter((p) => p.position === "DEF"), false)}
+            ${groupHtml("MID", xi.filter((p) => p.position === "MID"), false)}
+            ${groupHtml("FWD", xi.filter((p) => p.position === "FWD"), false)}
+            ${bench.length ? groupHtml("BENCH", bench, false) : ""}
+          </div>
+          ${footerHtml(data)}`;
+      }
+      if (window.__SQUAD__) render(window.__SQUAD__);
+    </script>
+  </body>
+</html>

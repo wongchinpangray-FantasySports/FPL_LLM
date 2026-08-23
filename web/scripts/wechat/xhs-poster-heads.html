@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE XHS Heads</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 52px 48px 44px;
+        display: flex; flex-direction: column;
+        background:
+          radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0,255,135,0.2), transparent 55%),
+          radial-gradient(ellipse 60% 45% at 100% 15%, rgba(0,255,135,0.08), transparent 50%),
+          #0b0a0f;
+      }
+      .content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
+      .brand { font-family: Inter, sans-serif; font-size: 32px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow { margin-top: 8px; font-family: Inter, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #00ff87; }
+      .date { font-family: Inter, sans-serif; font-size: 42px; font-weight: 900; letter-spacing: -0.04em; text-align: right; }
+      .date small { display: block; margin-top: 2px; font-size: 16px; letter-spacing: 0.14em; color: rgba(244,244,245,0.45); font-weight: 600; }
+
+      .hero-faces {
+        display: flex; align-items: flex-end; gap: 0;
+        margin: 8px 0 28px;
+        min-height: 220px;
+      }
+      .face {
+        position: relative;
+        width: 210px; height: 210px;
+        margin-left: -28px;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 3px solid #0b0a0f;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+        background: #18181b;
+      }
+      .face:first-child { margin-left: 0; }
+      .face.hero {
+        width: 250px; height: 250px;
+        border-color: #00ff87;
+        z-index: 3;
+      }
+      .face:nth-child(2) { z-index: 2; }
+      .face:nth-child(3) { z-index: 1; }
+      .face img {
+        width: 100%; height: 100%;
+        object-fit: cover; object-position: center top;
+        background: #1a1a1f;
+      }
+      .face img.shirt {
+        object-fit: contain;
+        object-position: center;
+        padding: 18px;
+        background: linear-gradient(160deg, #1a2420, #0f1210);
+      }
+      .thumb img.shirt {
+        object-fit: contain;
+        object-position: center;
+        padding: 10px;
+        background: linear-gradient(160deg, #1a2420, #0f1210);
+      }
+      .face .tag {
+        position: absolute; left: 10px; bottom: 10px;
+        padding: 6px 10px; border-radius: 999px;
+        background: rgba(11,10,15,0.82);
+        border: 1px solid rgba(0,255,135,0.35);
+        font-size: 15px; font-weight: 800; color: #00ff87;
+      }
+      .face .fallback {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: Inter, sans-serif; font-size: 56px; font-weight: 900;
+        color: #00ff87; background: linear-gradient(145deg, #1a2420, #0f1210);
+      }
+
+      h1 {
+        font-size: 48px; font-weight: 900; line-height: 1.18; letter-spacing: -0.03em;
+        margin-bottom: 12px; max-width: 980px;
+      }
+      h1 .accent { color: #00ff87; }
+      .sub { font-size: 22px; line-height: 1.4; color: rgba(244,244,245,0.65); margin-bottom: 22px; }
+      .rule { width: 72px; height: 5px; background: #00ff87; border-radius: 999px; margin-bottom: 8px; }
+
+      .stories { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+      .story {
+        display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center;
+        padding: 14px 16px; border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+      }
+      .story.hot {
+        border-color: rgba(0,255,135,0.35);
+        background: linear-gradient(105deg, rgba(0,255,135,0.14), rgba(0,255,135,0.03));
+      }
+      .thumb {
+        width: 96px; height: 96px; border-radius: 18px; overflow: hidden;
+        background: #18181b; flex-shrink: 0;
+      }
+      .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+      .thumb .fallback {
+        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        font-family: Inter, sans-serif; font-size: 28px; font-weight: 900; color: #00ff87;
+      }
+      .label { font-size: 15px; font-weight: 800; letter-spacing: 0.1em; color: rgba(244,244,245,0.45); margin-bottom: 4px; }
+      .story.hot .label { color: #00ff87; }
+      .lead { font-size: 26px; font-weight: 800; line-height: 1.25; }
+      .detail { margin-top: 4px; font-size: 20px; color: rgba(244,244,245,0.58); line-height: 1.35; }
+
+      /* BoP categories */
+      .bop-hero-compact {
+        margin-bottom: 18px; padding: 20px 22px; border-radius: 22px;
+        border: 1px solid rgba(0,255,135,0.3);
+        background: linear-gradient(105deg, rgba(0,255,135,0.12), rgba(255,255,255,0.02));
+      }
+      .bop-hero-compact .price {
+        font-family: Inter, sans-serif; font-size: 72px; font-weight: 900;
+        letter-spacing: -0.08em; line-height: 0.9; color: #00ff87; display: inline;
+      }
+      .bop-hero-compact .pos {
+        display: inline; font-size: 28px; font-weight: 900; margin-left: 10px;
+      }
+      .bop-hero-compact .disclaimer {
+        margin-top: 8px; font-size: 14px; font-weight: 700;
+        color: rgba(0,255,135,0.75);
+      }
+      .cat-board { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+      .cat-row {
+        display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center;
+        padding: 12px 14px; border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      }
+      .cat-row.xp {
+        border-color: rgba(0,255,135,0.35);
+        background: linear-gradient(105deg, rgba(0,255,135,0.14), transparent);
+      }
+      .cat-meta .lab {
+        font-family: Inter, sans-serif; font-size: 17px; font-weight: 900;
+        letter-spacing: 0.08em; color: #00ff87;
+      }
+      .cat-meta .sub { margin: 4px 0 0; font-size: 12px; color: rgba(244,244,245,0.45); }
+      .cat-players { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .cat-player { text-align: center; }
+      .cat-player .shot {
+        width: 72px; height: 72px; margin: 0 auto 6px; border-radius: 50%;
+        overflow: hidden; border: 2px solid rgba(255,255,255,0.12); background: #18181b;
+      }
+      .cat-row.xp .cat-player:first-child .shot { border-color: #00ff87; }
+      .cat-player .shot img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+      .cat-player .shot img.shirt {
+        object-fit: contain; padding: 8px;
+        background: linear-gradient(160deg, #1a2420, #0f1210);
+      }
+      .cat-player .shot .fallback {
+        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        font-family: Inter, sans-serif; font-size: 20px; font-weight: 900; color: #00ff87;
+      }
+      .cat-player .nm { font-size: 15px; font-weight: 900; }
+      .cat-player .tm { font-size: 11px; color: rgba(244,244,245,0.45); font-weight: 600; }
+      .cat-player .st {
+        margin-top: 4px; font-family: Inter, sans-serif; font-size: 18px; font-weight: 900; color: #00ff87;
+      }
+
+      .footer { margin-top: auto; padding-top: 20px; }
+      .cta-bar {
+        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        padding: 20px 26px; border-radius: 18px; background: #00ff87; color: #0b0a0f;
+      }
+      .cta-bar .cta { font-size: 24px; font-weight: 900; }
+      .cta-bar .url { font-family: Inter, sans-serif; font-size: 17px; font-weight: 700; opacity: 0.75; }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function faceHtml(face, cls = "") {
+        const initials = esc((face.name || "?").slice(0, 2).toUpperCase());
+        const shirtCls = face.photo_kind === "shirt" ? "shirt" : "";
+        const img = face.photo
+          ? `<img class="${shirtCls}" src="${esc(face.photo)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+             <div class="fallback" style="display:none">${initials}</div>`
+          : `<div class="fallback">${initials}</div>`;
+        return `<div class="face ${cls}">${img}${face.tag ? `<div class="tag">${esc(face.tag)}</div>` : ""}</div>`;
+      }
+      function thumbHtml(face) {
+        const initials = esc((face?.name || "?").slice(0, 2).toUpperCase());
+        const shirtCls = face?.photo_kind === "shirt" ? "shirt" : "";
+        if (!face?.photo) return `<div class="thumb"><div class="fallback">${initials}</div></div>`;
+        return `<div class="thumb">
+          <img class="${shirtCls}" src="${esc(face.photo)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div class="fallback" style="display:none">${initials}</div>
+        </div>`;
+      }
+      function stamp(date) {
+        const m = String(date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? { mmdd: `${m[2]}.${m[3]}`, yyyy: m[1] } : { mmdd: date || "", yyyy: "" };
+      }
+      function renderDaily(data) {
+        const d = stamp(data.date);
+        const faces = (data.faces || []).map((f, i) => faceHtml(f, i === 0 ? "hero" : "")).join("");
+        const stories = (data.stories || []).map((s) => `
+          <article class="story ${s.hot ? "hot" : ""}">
+            ${thumbHtml(s.face)}
+            <div>
+              <div class="label">${esc(s.label)}</div>
+              <div class="lead">${esc(s.lead)}</div>
+              ${s.detail ? `<div class="detail">${esc(s.detail)}</div>` : ""}
+            </div>
+          </article>`).join("");
+        return `
+          <div class="content">
+            <div class="top">
+              <div><div class="brand">FA<span>LEAGUE</span></div><div class="eyebrow">${esc(data.eyebrow)}</div></div>
+              <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+            </div>
+            <div class="hero-faces">${faces}</div>
+            <h1>${data.titleHtml || esc(data.title)}</h1>
+            <p class="sub">${esc(data.subtitle)}</p>
+            <div class="rule"></div>
+            <div class="stories">${stories}</div>
+            <div class="footer"><div class="cta-bar"><div class="cta">${esc(data.cta)}</div><div class="url">${esc(data.url)}</div></div></div>
+          </div>`;
+      }
+      function renderBop(data) {
+        const d = stamp(data.date);
+        const cats = data.categories?.length ? data.categories : [];
+        const rows = cats.map((cat) => {
+          const players = (cat.players || []).slice(0, 3).map((p) => {
+            const initials = esc((p.name || "?").slice(0, 2).toUpperCase());
+            const shirtCls = (p.photo_kind || "shirt") === "shirt" ? "shirt" : "";
+            const img = p.photo
+              ? `<img class="${shirtCls}" src="${esc(p.photo)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="fallback" style="display:none">${initials}</div>`
+              : `<div class="fallback">${initials}</div>`;
+            return `<div class="cat-player">
+              <div class="shot">${img}</div>
+              <div class="nm">${esc(p.name)}</div>
+              <div class="tm">${esc(p.team)}</div>
+              <div class="st">${esc(p.value)}</div>
+            </div>`;
+          }).join("");
+          return `<section class="cat-row ${esc(cat.kind || "")}">
+            <div class="cat-meta"><div class="lab">${esc(cat.label)}</div><div class="sub">${esc(cat.label_zh || "")}</div></div>
+            <div class="cat-players">${players}</div>
+          </section>`;
+        }).join("");
+        return `
+          <div class="content">
+            <div class="top">
+              <div><div class="brand">FA<span>LEAGUE</span></div><div class="eyebrow">${esc(data.eyebrow)}</div></div>
+              <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+            </div>
+            <div class="bop-hero-compact">
+              <div class="price">£${esc(data.price)}</div><div class="pos">${esc(data.position)}</div>
+              <h1 style="font-size:34px;margin:10px 0 6px">${esc(data.title)}</h1>
+              <p class="sub" style="margin:0">${esc(data.subtitle)}</p>
+              ${data.disclaimer ? `<p class="disclaimer">${esc(data.disclaimer)}</p>` : ""}
+            </div>
+            <div class="cat-board">${rows}</div>
+            <div class="footer"><div class="cta-bar"><div class="cta">${esc(data.cta)}</div><div class="url">${esc(data.urlShort || data.url)}</div></div></div>
+          </div>`;
+      }
+      function render(data) {
+        document.getElementById("root").innerHTML =
+          data.kind === "bop" ? renderBop(data) : renderDaily(data);
+      }
+      if (window.__POSTER__) render(window.__POSTER__);
+    </script>
+  </body>
+</html>

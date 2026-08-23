@@ -35,7 +35,11 @@ import { MiniMissionPanel } from "@/components/mini/mini-mission-panel";
 import { MiniBadges } from "@/components/mini/mini-badges";
 import { MiniShareCard } from "@/components/mini/mini-share-card";
 import { MiniLeaguesPanel } from "@/components/mini/mini-leagues-panel";
+import { MiniSquadInspectModal } from "@/components/mini/mini-squad-inspect-modal";
+import { formatLondonDateLabel } from "@/lib/mini/matchday";
 import type { MiniBadgeId } from "@/lib/mini/badges";
+import type { MiniBadgeEventRow } from "@/lib/mini/badge-events";
+import type { NextFixtureOpponent } from "@/lib/xp";
 import {
   evaluateMission,
   isDifferentialPick,
@@ -75,11 +79,30 @@ type LeaderboardRow = {
   entry_id: number;
   entry_name: string | null;
   total_points: number;
+  yesterday_points: number | null;
+  captain_fpl_id: number;
+  vice_fpl_id: number;
   captain_name: string | null;
   differential_captain?: boolean;
   differential_bonus?: number;
   picks: MiniPickStored[];
+  gw_points_by_fpl_id?: Record<number, number>;
+  breakdown?: {
+    player_id: number;
+    base_points: number;
+    captain_bonus: number;
+    scored_points: number;
+  }[];
   updated_at: string;
+};
+
+type BadgesLadderRow = {
+  rank: number;
+  profile_id: string;
+  entry_id: number | null;
+  entry_name: string | null;
+  badge_count: number;
+  unique_badges: number;
 };
 
 type SeasonRow = {
@@ -90,7 +113,7 @@ type SeasonRow = {
   gws_played: number;
 };
 
-type TabId = "pick" | "leaderboard" | "season" | "social";
+type TabId = "pick" | "leaderboard" | "season" | "badges" | "social";
 
 const EMPTY_SLOTS: (PlayerHit | null)[] = Array.from(
   { length: MINI_SLOT_COUNT },
@@ -133,6 +156,11 @@ function formatDeadline(iso: string | null, locale: string): string {
   }
 }
 
+function formatMiniFixture(n: NextFixtureOpponent | null | undefined): string | null {
+  if (!n?.opp_short) return null;
+  return `${n.opp_short} (${n.home ? "H" : "A"})`;
+}
+
 function readLocal(key: string): string {
   if (typeof window === "undefined") return "";
   try {
@@ -172,8 +200,12 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const [lbMeta, setLbMeta] = useState<{
     submission_gw: number | null;
     submission_open: boolean;
+    next_refresh_at: string | null;
+    yesterday_date: string | null;
+    yesterday_has_scores: boolean;
   } | null>(null);
   const [lbLoading, setLbLoading] = useState(true);
+  const [inspectRow, setInspectRow] = useState<LeaderboardRow | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("pick");
   const [templates, setTemplates] = useState<MiniTemplatePayload[]>([]);
   const [hotPicks, setHotPicks] = useState<MiniHotPickRow[]>([]);
@@ -184,10 +216,16 @@ export function MiniGameApp({ locale }: { locale: string }) {
     {},
   );
   const [badges, setBadges] = useState<MiniBadgeId[]>([]);
+  const [badgeEvents, setBadgeEvents] = useState<MiniBadgeEventRow[]>([]);
   const [badgeFlash, setBadgeFlash] = useState<MiniBadgeId[]>([]);
   const [usedTemplate, setUsedTemplate] = useState(false);
   const [seasonRows, setSeasonRows] = useState<SeasonRow[]>([]);
   const [seasonLoading, setSeasonLoading] = useState(false);
+  const [badgesLadder, setBadgesLadder] = useState<BadgesLadderRow[]>([]);
+  const [badgesLoading, setBadgesLoading] = useState(false);
+  const [fixtureByFplId, setFixtureByFplId] = useState<
+    Record<number, string | null>
+  >({});
 
   const picks = useMemo(() => slotsToPicks(slots), [slots]);
   const submissionOpen = Boolean(ctx?.submission_open);
@@ -253,12 +291,17 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const loadLeaderboard = useCallback(async () => {
     setLbLoading(true);
     try {
-      const res = await fetch("/api/mini/leaderboard");
+      const res = await fetch("/api/mini/leaderboard", {
+        cache: "no-store",
+      });
       const data = (await res.json()) as {
         rows?: LeaderboardRow[];
         gw?: number;
         submission_gw?: number | null;
         submission_open?: boolean;
+        next_refresh_at?: string | null;
+        yesterday_date?: string | null;
+        yesterday_has_scores?: boolean;
       };
       if (res.ok) {
         setLeaderboard(data.rows ?? []);
@@ -266,6 +309,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
         setLbMeta({
           submission_gw: data.submission_gw ?? null,
           submission_open: Boolean(data.submission_open),
+          next_refresh_at: data.next_refresh_at ?? null,
+          yesterday_date: data.yesterday_date ?? null,
+          yesterday_has_scores: Boolean(data.yesterday_has_scores),
         });
       }
     } finally {
@@ -275,8 +321,8 @@ export function MiniGameApp({ locale }: { locale: string }) {
 
   const loadExtras = useCallback(async () => {
     const [tplRes, hotRes] = await Promise.all([
-      fetch("/api/mini/templates"),
-      fetch("/api/mini/hot-picks"),
+      fetch("/api/mini/templates", { cache: "no-store" }),
+      fetch("/api/mini/hot-picks", { cache: "no-store" }),
     ]);
     if (tplRes.ok) {
       const data = (await tplRes.json()) as { templates?: MiniTemplatePayload[] };
@@ -308,6 +354,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
         nickname?: string;
         fpl_entry_id?: number | null;
         badges?: MiniBadgeId[];
+        badge_events?: MiniBadgeEventRow[];
       } | null;
     };
     if (!data.profile) return;
@@ -318,6 +365,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
     }
     if (profile.fpl_entry_id) {
       setEntryInput(String(profile.fpl_entry_id));
+    }
+    if (profile.badge_events) {
+      setBadgeEvents(profile.badge_events);
     }
     setBadges((prev) => {
       const merged = Array.from(
@@ -338,6 +388,21 @@ export function MiniGameApp({ locale }: { locale: string }) {
       }
     } finally {
       setSeasonLoading(false);
+    }
+  }, []);
+
+  const loadBadgesLeaderboard = useCallback(async () => {
+    setBadgesLoading(true);
+    try {
+      const res = await fetch("/api/mini/badges-leaderboard", {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { rows?: BadgesLadderRow[] };
+        setBadgesLadder(data.rows ?? []);
+      }
+    } finally {
+      setBadgesLoading(false);
     }
   }, []);
 
@@ -385,18 +450,93 @@ export function MiniGameApp({ locale }: { locale: string }) {
   }, [profileId, loadProfile]);
 
   useEffect(() => {
-    if (!ctx || ctx.scoring_finished) return;
-    const id = window.setInterval(() => void loadLeaderboard(), 45_000);
-    return () => window.clearInterval(id);
-  }, [ctx, loadLeaderboard]);
+    if (ctx?.scoring_finished || !lbMeta?.next_refresh_at) return;
+    const ms = new Date(lbMeta.next_refresh_at).getTime() - Date.now();
+    if (ms <= 0) {
+      void loadLeaderboard();
+      return;
+    }
+    const id = window.setTimeout(() => void loadLeaderboard(), ms + 500);
+    return () => window.clearTimeout(id);
+  }, [ctx?.scoring_finished, lbMeta?.next_refresh_at, loadLeaderboard]);
+
+  const yesterdayLabel = useMemo(() => {
+    if (!lbMeta?.yesterday_date) return null;
+    return formatLondonDateLabel(lbMeta.yesterday_date, locale);
+  }, [lbMeta?.yesterday_date, locale]);
 
   useEffect(() => {
     if (effectiveEntryId != null) void loadExistingEntry(effectiveEntryId);
   }, [effectiveEntryId, loadExistingEntry, ctx?.submission_gw]);
 
   useEffect(() => {
+    if (activeTab === "leaderboard") void loadLeaderboard();
+  }, [activeTab, loadLeaderboard]);
+
+  useEffect(() => {
     if (activeTab === "season") void loadSeason();
   }, [activeTab, loadSeason]);
+
+  useEffect(() => {
+    if (activeTab === "badges") void loadBadgesLeaderboard();
+  }, [activeTab, loadBadgesLeaderboard]);
+
+  const myBadgeRank = useMemo(() => {
+    if (!profileId) return null;
+    return badgesLadder.find((r) => r.profile_id === profileId) ?? null;
+  }, [badgesLadder, profileId]);
+
+  const pickIdsKey = useMemo(
+    () =>
+      picks
+        .map((p) => p.fpl_id)
+        .sort((a, b) => a - b)
+        .join(","),
+    [picks],
+  );
+
+  const fixtureFromGw = useMemo(() => {
+    if (ctx?.submission_open && ctx.submission_gw != null) {
+      return ctx.submission_gw;
+    }
+    return ctx?.scoring_gw ?? null;
+  }, [ctx?.submission_open, ctx?.submission_gw, ctx?.scoring_gw]);
+
+  useEffect(() => {
+    if (!pickIdsKey || fixtureFromGw == null) {
+      setFixtureByFplId({});
+      return;
+    }
+    const ids = pickIdsKey.split(",").map(Number).filter((n) => n > 0);
+    if (ids.length === 0) {
+      setFixtureByFplId({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/planner/next-fixtures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playerIds: ids, fromGw: fixtureFromGw }),
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          nextByFplId?: Record<string, NextFixtureOpponent | null>;
+        };
+        const next: Record<number, string | null> = {};
+        for (const id of ids) {
+          next[id] = formatMiniFixture(data.nextByFplId?.[String(id)]);
+        }
+        if (!cancelled) setFixtureByFplId(next);
+      } catch {
+        if (!cancelled) setFixtureByFplId({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pickIdsKey, fixtureFromGw]);
 
   const posCounts = useMemo(
     () => countMiniByPosition(picks.map(toPickInput)),
@@ -607,6 +747,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
     { id: "pick", label: t("tabPick") },
     { id: "leaderboard", label: t("tabLeaderboard") },
     { id: "season", label: t("tabSeason") },
+    { id: "badges", label: t("tabBadges") },
     { id: "social", label: t("tabSocial") },
   ];
 
@@ -726,6 +867,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
               viceId={viceId}
               activeSlot={pickerSlot}
               disabled={!submissionOpen}
+              fixtureByFplId={fixtureByFplId}
               slotGkLabel={t("slotGk")}
               slotOutLabel={t("slotOut")}
               captainLabel={t("captain")}
@@ -778,7 +920,12 @@ export function MiniGameApp({ locale }: { locale: string }) {
             captainId={captainId}
           />
 
-          <MiniBadges unlocked={badges} highlight={badgeFlash} />
+          <MiniBadges
+            unlocked={badges}
+            highlight={badgeFlash}
+            events={badgeEvents}
+            showHistory
+          />
         </div>
       ) : null}
 
@@ -788,12 +935,22 @@ export function MiniGameApp({ locale }: { locale: string }) {
             <div className="text-sm text-muted-foreground">
               <p>
                 {t("leaderboardGw", { gw: lbGw ?? "—" })}
-                {!ctx?.scoring_finished ? (
+                {leaderboard.length > 0 ? (
+                  <span className="ml-2 text-xs text-foreground/70">
+                    {t("leaderboardCount", { n: leaderboard.length })}
+                  </span>
+                ) : null}
+                {!ctx?.scoring_finished && lbMeta?.next_refresh_at ? (
                   <span className="ml-2 text-xs text-brand-accent">
-                    {t("liveRefresh")}
+                    {t("matchdayRefresh")}
                   </span>
                 ) : null}
               </p>
+              {lbMeta?.yesterday_has_scores && yesterdayLabel ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("yesterdayPointsHint", { date: yesterdayLabel })}
+                </p>
+              ) : null}
               {lbMeta?.submission_open &&
               lbMeta.submission_gw != null &&
               lbGw != null &&
@@ -824,6 +981,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
                     <th className="px-3 py-2">{t("colRank")}</th>
                     <th className="px-3 py-2">{t("colEntry")}</th>
                     <th className="px-3 py-2">{t("colPoints")}</th>
+                    {lbMeta?.yesterday_has_scores ? (
+                      <th className="px-3 py-2">{t("colYesterday")}</th>
+                    ) : null}
                     <th className="px-3 py-2">{t("colCaptain")}</th>
                     <th className="px-3 py-2">{t("colSquad")}</th>
                   </tr>
@@ -855,11 +1015,22 @@ export function MiniGameApp({ locale }: { locale: string }) {
                           </span>
                         ) : null}
                       </td>
+                      {lbMeta?.yesterday_has_scores ? (
+                        <td className="px-3 py-2 tabular-nums text-foreground/80">
+                          {row.yesterday_points ?? 0}
+                        </td>
+                      ) : null}
                       <td className="px-3 py-2 text-foreground/70">
                         {row.captain_name ?? "—"}
                       </td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {row.picks.map((p) => p.web_name ?? p.fpl_id).join(", ")}
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-accent/90"
+                          onClick={() => setInspectRow(row)}
+                        >
+                          {t("viewSquad")}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -903,6 +1074,86 @@ export function MiniGameApp({ locale }: { locale: string }) {
         </div>
       ) : null}
 
+      {activeTab === "badges" ? (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t("badgesLeaderboardTitle")}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {t("badgesLeaderboardHint")}
+            </p>
+          </div>
+
+          <MiniBadges
+            unlocked={badges}
+            events={badgeEvents}
+            showHistory
+          />
+
+          {myBadgeRank ? (
+            <p className="text-sm text-foreground/80">
+              {t("badgesYourRank", {
+                rank: myBadgeRank.rank,
+                count: myBadgeRank.badge_count,
+              })}
+            </p>
+          ) : null}
+
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => void loadBadgesLeaderboard()}
+            >
+              {t("refresh")}
+            </Button>
+          </div>
+
+          {badgesLoading && badgesLadder.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
+          ) : badgesLadder.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("badgesLeaderboardEmpty")}</p>
+          ) : (
+            <div className="scroll-table scroll-table--bordered">
+              <table className="w-full min-w-[420px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-card text-xs uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2">{t("colRank")}</th>
+                    <th className="px-3 py-2">{t("colEntry")}</th>
+                    <th className="px-3 py-2">{t("colBadgeCount")}</th>
+                    <th className="px-3 py-2">{t("colUniqueBadges")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {badgesLadder.map((row) => (
+                    <tr
+                      key={row.profile_id}
+                      className={cn(
+                        "border-b border-border/60 hover:bg-card/50",
+                        profileId === row.profile_id && "bg-brand-accent/5",
+                      )}
+                    >
+                      <td className="px-3 py-2 font-medium">{row.rank}</td>
+                      <td className="px-3 py-2">
+                        {row.entry_name ?? `#${row.entry_id}`}
+                      </td>
+                      <td className="px-3 py-2 font-semibold tabular-nums text-brand-accent">
+                        {row.badge_count}
+                      </td>
+                      <td className="px-3 py-2 tabular-nums text-muted-foreground">
+                        {row.unique_badges}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : null}
+
       {activeTab === "social" ? (
         <MiniLeaguesPanel profileId={profileId} onBadge={absorbBadges} />
       ) : null}
@@ -942,6 +1193,13 @@ export function MiniGameApp({ locale }: { locale: string }) {
             expected_assists: p.expected_assists ?? null,
           });
         }}
+      />
+
+      <MiniSquadInspectModal
+        open={inspectRow != null}
+        row={inspectRow}
+        gw={lbGw}
+        onClose={() => setInspectRow(null)}
       />
 
       <MiniModal

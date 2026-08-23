@@ -21,16 +21,19 @@ export async function generateMetadata({
 }: {
   params: { locale: string; entryId: string };
 }) {
-  const entryId = Number(params.entryId);
+  const { locale, entryId: raw } = params;
+  const t = await getTranslations({ locale, namespace: "managerPage" });
+  const label = t("eyebrow");
+  const entryId = Number(raw);
   if (!Number.isFinite(entryId) || entryId <= 0) {
-    return { title: "Manager · FALEAGUE AI" };
+    return { title: `${label} · FALEAGUE AI` };
   }
   try {
     const entry = await fplGet<FplEntry>(`/entry/${entryId}/`);
-    const label = entry.name?.trim() || `#${entryId}`;
-    return { title: `${label} · Manager · FALEAGUE AI` };
+    const name = entry.name?.trim() || `#${entryId}`;
+    return { title: `${name} · ${label} · FALEAGUE AI` };
   } catch {
-    return { title: "Manager · FALEAGUE AI" };
+    return { title: `${label} · FALEAGUE AI` };
   }
 }
 

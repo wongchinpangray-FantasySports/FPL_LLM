@@ -1001,7 +1001,7 @@ export function PlannerApp({
             {t("resetFpl")}
           </Button>
         </div>
-        <div className="grid gap-5 sm:gap-6 lg:grid-cols-2 lg:gap-8">
+        <div className="grid gap-5 sm:gap-6 xl:grid-cols-2 xl:gap-8">
           <PitchView
             title={t("pitchYourFpl")}
             caption={t("pitchYourFplCaption")}
@@ -1016,6 +1016,8 @@ export function PlannerApp({
             nextGwXpTitle={pitchCardXpTitle}
             interactive
             onPickSlot={handleBaselineInspect}
+            appearance="showcase"
+            gkAtTop
           />
           <PitchView
             ref={scenarioPitchRef}
@@ -1053,6 +1055,8 @@ export function PlannerApp({
             reorderSelectedSlot={xiBenchMode ? xiFirst : null}
             interactive
             onPickSlot={handlePlanningInteraction}
+            appearance="showcase"
+            gkAtTop
           />
         </div>
       </section>

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
+import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { mergeBadges, type MiniBadgeId } from "@/lib/mini/badges";
+import { getProfileBadgeEvents } from "@/lib/mini/badge-events";
 import {
   guestEntryIdFromProfileId,
   isValidNickname,
@@ -19,28 +21,66 @@ interface ProfileBody {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const profileId = searchParams.get("profile_id")?.trim();
-  if (!profileId) {
-    return NextResponse.json({ error: "profile_id required" }, { status: 400 });
+  const fplEntryIdRaw = searchParams.get("fpl_entry_id")?.trim();
+  const seasonParam = searchParams.get("season")?.trim();
+
+  if (!profileId && !fplEntryIdRaw) {
+    return NextResponse.json(
+      { error: "profile_id or fpl_entry_id required" },
+      { status: 400 },
+    );
   }
+
   const supa = getServerSupabase();
-  const { data, error } = await supa
+  let q = supa
     .from("mini_profiles")
-    .select("id,nickname,fpl_entry_id,badges,updated_at")
-    .eq("id", profileId)
-    .maybeSingle();
+    .select("id,nickname,fpl_entry_id,badges,updated_at");
+
+  if (profileId) {
+    q = q.eq("id", profileId);
+  } else {
+    const fplEntryId = Number(fplEntryIdRaw);
+    if (!Number.isInteger(fplEntryId) || fplEntryId <= 0) {
+      return NextResponse.json({ error: "Invalid fpl_entry_id" }, { status: 400 });
+    }
+    q = q.eq("fpl_entry_id", fplEntryId);
+  }
+
+  const { data, error } = await q.maybeSingle();
   if (error) {
     if (/schema cache|does not exist|Could not find/i.test(error.message)) {
       return NextResponse.json({ profile: null, needs_migration: true });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  if (!data) {
+    return NextResponse.json({ profile: null });
+  }
+
+  const season = seasonParam || (await getCurrentFplSeason());
+  let badgeEvents: Awaited<ReturnType<typeof getProfileBadgeEvents>> = [];
+  try {
+    badgeEvents = await getProfileBadgeEvents(supa, data.id as string, season);
+  } catch {
+    badgeEvents = [];
+  }
+
+  const badgeCount = badgeEvents.length;
+  const badgesEarned = mergeBadges(
+    (data.badges as string[] | null) ?? [],
+    badgeEvents.map((e) => e.badge_id),
+  );
+
   return NextResponse.json({
-    profile: data
-      ? {
-          ...data,
-          guest_entry_id: guestEntryIdFromProfileId(data.id as string),
-        }
-      : null,
+    profile: {
+      ...data,
+      badges: badgesEarned,
+      guest_entry_id: guestEntryIdFromProfileId(data.id as string),
+      badge_count: badgeCount,
+      badge_events: badgeEvents,
+      season,
+    },
   });
 }
 

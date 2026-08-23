@@ -162,7 +162,7 @@ export function SiteHeader() {
             <nav className="flex flex-1 flex-col overflow-y-auto p-3" aria-label={t("ariaMain")}>
               <MenuLink href="/" label={t("home")} active={isHomePath(pathname)} />
 
-              <MenuSection title={t("menuSectionTeam")}>
+              <MenuSection title={t("menuSectionSquad")}>
                 <MenuLink
                   href={dashboardHref}
                   label={t("dashboard")}
@@ -176,7 +176,9 @@ export function SiteHeader() {
                 <MenuLink
                   href="/squad-builder"
                   label={t("squadBuilder")}
-                  active={pathname === "/squad-builder" || pathname.startsWith("/squad-builder/")}
+                  active={
+                    pathname === "/squad-builder" || pathname.startsWith("/squad-builder/")
+                  }
                 />
                 <MenuLink
                   href={managerHref}
@@ -185,12 +187,20 @@ export function SiteHeader() {
                 />
               </MenuSection>
 
-              <MenuSection title={t("menuSectionResearch")}>
+              <MenuSection title={t("menuSectionTools")}>
                 <MenuLink
-                  href="/players"
-                  label={t("players")}
-                  active={pathname === "/players" || pathname.startsWith("/player/")}
+                  href="/fpl/insights/recommended-squad"
+                  label={t("recommendedSquad")}
+                  active={pathname.startsWith("/fpl/insights/recommended-squad")}
                 />
+                <MenuLink
+                  href="/fpl/guide"
+                  label={t("guide")}
+                  active={pathname === "/fpl/guide" || pathname.startsWith("/fpl/guide/")}
+                />
+              </MenuSection>
+
+              <MenuSection title={t("menuSectionStat")}>
                 <MenuLink
                   href="/fpl/insights"
                   label={t("insights")}
@@ -203,6 +213,11 @@ export function SiteHeader() {
                   }
                 />
                 <MenuLink
+                  href="/players"
+                  label={t("players")}
+                  active={pathname === "/players" || pathname.startsWith("/player/")}
+                />
+                <MenuLink
                   href="/fpl/fixtures"
                   label={t("fixtures")}
                   active={pathname === "/fpl/fixtures" || pathname.startsWith("/fpl/fixtures/")}
@@ -212,26 +227,34 @@ export function SiteHeader() {
                   label={t("preseason")}
                   active={pathname === "/fpl/preseason" || pathname.startsWith("/fpl/preseason/")}
                 />
+                <MenuLink
+                  href="/fpl/historical"
+                  label={t("historical")}
+                  active={pathname === "/fpl/historical" || pathname.startsWith("/fpl/historical/")}
+                />
               </MenuSection>
 
-              <MenuSection title={t("menuSectionTools")}>
-                <MenuLink
-                  href="/fpl/insights/recommended-squad"
-                  label={t("recommendedSquad")}
-                  active={pathname.startsWith("/fpl/insights/recommended-squad")}
-                />
+              <MenuSection title={t("menuSectionArticles")}>
                 <MenuLink
                   href="/news"
                   label={t("news")}
                   active={
                     pathname === "/news" ||
-                    (pathname.startsWith("/news") && !pathname.startsWith("/news/fpl-x"))
+                    (pathname.startsWith("/news") &&
+                      !pathname.startsWith("/news/fpl-x") &&
+                      !pathname.startsWith("/news/fpl-daily"))
                   }
                 />
                 <MenuLink
                   href="/scout"
                   label={t("newsScout")}
                   active={pathname === "/scout" || pathname.startsWith("/scout/")}
+                />
+                <MenuLink
+                  href="/news/fpl-daily"
+                  label={t("newsFplDaily")}
+                  active={pathname.startsWith("/news/fpl-daily")}
+                  gated
                 />
                 <MenuLink
                   href="/news/fpl-x"

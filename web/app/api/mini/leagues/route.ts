@@ -3,6 +3,7 @@ import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { buildSeasonLadder } from "@/lib/mini/season-ladder";
 import { mergeBadges } from "@/lib/mini/badges";
+import { recordMiniBadgeEvents } from "@/lib/mini/badge-events";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +140,16 @@ export async function POST(req: Request) {
           .from("mini_profiles")
           .update({ badges, updated_at: new Date().toISOString() })
           .eq("id", profileId);
+        try {
+          await recordMiniBadgeEvents(supa, {
+            profileId,
+            season,
+            gw: null,
+            badgeIds: ["league_joiner"],
+          });
+        } catch {
+          /* optional */
+        }
         return NextResponse.json({
           league,
           newly_unlocked: ["league_joiner"],
@@ -180,6 +191,16 @@ export async function POST(req: Request) {
       .from("mini_profiles")
       .update({ badges, updated_at: new Date().toISOString() })
       .eq("id", profileId);
+    try {
+      await recordMiniBadgeEvents(supa, {
+        profileId,
+        season,
+        gw: null,
+        badgeIds: ["league_joiner"],
+      });
+    } catch {
+      /* optional */
+    }
     return NextResponse.json({
       league,
       newly_unlocked: ["league_joiner"],

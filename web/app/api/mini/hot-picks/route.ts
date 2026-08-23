@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const gw =
       gwParam != null && gwParam !== ""
         ? Number(gwParam)
-        : (ctx.submission_gw ?? ctx.scoring_gw);
+        : ctx.scoring_gw;
     if (!Number.isInteger(gw) || gw < 1) {
       return NextResponse.json({ error: "Invalid gw" }, { status: 400 });
     }

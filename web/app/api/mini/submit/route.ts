@@ -12,6 +12,7 @@ import {
 } from "@/lib/mini/player-stats";
 import type { MiniPickStored } from "@/lib/mini/types";
 import { mergeBadges, type MiniBadgeId } from "@/lib/mini/badges";
+import { recordMiniBadgeEvents } from "@/lib/mini/badge-events";
 import { getMiniHotPicks } from "@/lib/mini/hot-picks";
 import {
   evaluateMission,
@@ -207,6 +208,16 @@ export async function POST(req: Request) {
       );
       if (profErr && !/schema cache|does not exist|Could not find/i.test(profErr.message)) {
         return NextResponse.json({ error: profErr.message }, { status: 500 });
+      }
+      try {
+        await recordMiniBadgeEvents(supa, {
+          profileId,
+          season: gwMeta.season,
+          gw: gwMeta.gw,
+          badgeIds: unlock,
+        });
+      } catch {
+        // Badge events optional until migration applied
       }
     }
   }

@@ -1,3 +1,5 @@
+import { FPL_TEAM_CODES } from "@/lib/fpl/fpl-team-codes";
+
 export type TeamTheme = {
   /** Main kit / badge background colour */
   primary: string;
@@ -102,8 +104,87 @@ export type FplBadgeStyle = {
 };
 
 export function getFplTeamTheme(shortName: string | null | undefined): TeamTheme {
-  if (!shortName) return DEFAULT_THEME;
-  return FPL_THEMES[shortName.toUpperCase()] ?? DEFAULT_THEME;
+  const key = resolveFplClubShort(shortName);
+  if (!key) return DEFAULT_THEME;
+  return FPL_THEMES[key] ?? DEFAULT_THEME;
+}
+
+/** Normalize club short code or full name (e.g. "Man City") → "MCI". */
+export function resolveFplClubShort(
+  team: string | null | undefined,
+): string | null {
+  if (!team) return null;
+  const raw = team.trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
+  if (FPL_THEMES[upper]) return upper;
+
+  for (const [short, theme] of Object.entries(FPL_THEMES)) {
+    if (theme.label.toUpperCase() === upper) return short;
+  }
+
+  for (const t of FPL_TEAM_CODES) {
+    if (t.short_name.toUpperCase() === upper) return t.short_name.toUpperCase();
+    if (t.name.toUpperCase() === upper) return t.short_name.toUpperCase();
+  }
+
+  return null;
+}
+
+/** FPL CDN shirt `code` keyed by club short name (from `fpl-team-codes.json`). */
+const FPL_SHIRT_CODES: Record<string, number> = Object.fromEntries(
+  FPL_TEAM_CODES.filter((t) => t.short_name && t.code).map((t) => [
+    t.short_name.toUpperCase(),
+    Number(t.code),
+  ]),
+);
+
+export function getFplShirtCode(
+  shortName: string | null | undefined,
+): number | null {
+  const key = resolveFplClubShort(shortName);
+  if (!key) return null;
+  const n = FPL_SHIRT_CODES[key];
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Official FPL kit image (66px webp). GK kits use the `_1` suffix. */
+export function getFplShirtUrl(
+  shortName: string | null | undefined,
+  position?: string | null,
+): string | null {
+  const code = getFplShirtCode(shortName);
+  if (code == null) return null;
+  const gk = position === "GKP" || position === "GK" ? "_1" : "";
+  return `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${code}${gk}-66.webp`;
+}
+
+export type PitchCardKitStyle = {
+  background: string;
+  borderColor: string;
+  topBar: string;
+  nameClass: string;
+  mutedClass: string;
+};
+
+/** Compact pitch-card chrome tinted with club kit colours. */
+export function getPitchCardKitStyle(
+  shortName: string | null | undefined,
+): PitchCardKitStyle | null {
+  const key = resolveFplClubShort(shortName);
+  if (!key || !FPL_THEMES[key]) return null;
+  const t = FPL_THEMES[key];
+  const lightKit = hexLuminance(t.primary) > 0.72;
+  const wash = lightKit ? t.secondary : t.primary;
+  return {
+    background: `linear-gradient(165deg, color-mix(in srgb, ${wash} 55%, transparent) 0%, color-mix(in srgb, ${wash} 18%, #0b1418) 48%, rgba(8, 12, 16, 0.94) 100%)`,
+    borderColor: lightKit
+      ? `color-mix(in srgb, ${t.secondary} 55%, transparent)`
+      : `color-mix(in srgb, ${t.primary} 60%, transparent)`,
+    topBar: `linear-gradient(90deg, ${t.primary} 0%, ${t.secondary} 55%, ${t.primary} 100%)`,
+    nameClass: "text-white",
+    mutedClass: "text-white/70",
+  };
 }
 
 function hexLuminance(hex: string): number {

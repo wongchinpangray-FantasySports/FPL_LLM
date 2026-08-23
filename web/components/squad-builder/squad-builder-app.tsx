@@ -871,6 +871,8 @@ export function SquadBuilderApp({
               benchGkAbbrev={t("benchGk")}
               onInspectPlayer={mode == null ? openPlayerInspect : undefined}
               inspectNameTitle={mode == null ? t("inspectNameHint") : undefined}
+              appearance="showcase"
+              gkAtTop
             />
           ) : (
             <SquadBuilderListView

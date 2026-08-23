@@ -1,7 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { forwardRef, type ReactNode } from "react";
+import { getFplShirtUrl } from "@/lib/team-themes";
+import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
+import { forwardRef, useState, type ReactNode } from "react";
 import type { PlannerPickPayload } from "./types";
 
 export type PlannerGwStripCell = { gw: number; opp: string; xp: number };
@@ -22,7 +24,7 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
   if (shown.length === 0) return null;
   return (
     <div
-      className="mt-0.5 w-full border-t border-border pt-0.5"
+      className="mt-0.5 w-full border-t border-white/15 pt-0.5"
       title={shown
         .map((c) => `GW${c.gw} ${c.opp} ${stripXpLabel(c.xp)} xP`)
         .join(" · ")}
@@ -38,11 +40,11 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
             key={`${c.gw}-${c.opp}`}
             className="flex min-w-0 flex-col items-center justify-start gap-px leading-none"
           >
-            <span className="text-[5px] font-medium text-muted-foreground sm:text-[6px]">
+            <span className="text-[5px] font-medium text-white/55 sm:text-[6px]">
               {c.gw}
             </span>
             <span
-              className="max-w-full truncate text-[5px] text-muted-foreground sm:text-[6px]"
+              className="max-w-full truncate text-[5px] text-white/70 sm:text-[6px]"
               title={`GW${c.gw} ${c.opp}`}
             >
               {c.opp}
@@ -57,6 +59,58 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
   );
 }
 
+export type PitchPriceBadge = {
+  status: PriceForecastStatus;
+  cost_change_event: number;
+  progress: number;
+};
+
+function pitchPriceTextTone(
+  badge: PitchPriceBadge | undefined,
+): string {
+  if (!badge) return "text-white/70";
+
+  const changed = Math.abs(badge.cost_change_event) >= 0.05;
+  if (changed) {
+    return badge.cost_change_event > 0
+      ? "font-semibold text-emerald-300"
+      : "font-semibold text-red-300";
+  }
+
+  switch (badge.status) {
+    case "likely_rise":
+      return "font-semibold text-emerald-300";
+    case "watch_rise":
+      return "font-medium text-emerald-400/95";
+    case "likely_fall":
+      return "font-semibold text-red-300";
+    case "watch_fall":
+      return "font-medium text-red-400/95";
+    default:
+      return "text-white/70";
+  }
+}
+
+function pitchPriceArrow(badge: PitchPriceBadge | undefined): "↑" | "↓" | null {
+  if (!badge) return null;
+  const changed = Math.abs(badge.cost_change_event) >= 0.05;
+  if (
+    badge.status === "likely_rise" ||
+    badge.status === "watch_rise" ||
+    (changed && badge.cost_change_event > 0)
+  ) {
+    return "↑";
+  }
+  if (
+    badge.status === "likely_fall" ||
+    badge.status === "watch_fall" ||
+    (changed && badge.cost_change_event < 0)
+  ) {
+    return "↓";
+  }
+  return null;
+}
+
 function PlayerChip({
   p,
   captainId,
@@ -68,6 +122,9 @@ function PlayerChip({
   gwStrip,
   nextGwXpByFplId,
   nextGwXpTitle,
+  priceBadge,
+  priceBadgeLabel,
+  priceAlreadyChangedLabel,
   onClick,
   onInspectPlayer,
   inspectNameTitle,
@@ -86,6 +143,9 @@ function PlayerChip({
   /** When set and no GW strip, show next-GW xP (values may include captain ×2) instead of £ */
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
+  priceBadge?: PitchPriceBadge;
+  priceBadgeLabel?: string;
+  priceAlreadyChangedLabel?: string | null;
   onClick?: () => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
@@ -93,6 +153,9 @@ function PlayerChip({
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
   const isEmpty = p.fpl_id <= 0;
+  const shirtUrl = !isEmpty ? getFplShirtUrl(p.team, p.position) : null;
+  const [shirtFailed, setShirtFailed] = useState(false);
+  const showShirt = Boolean(shirtUrl && !shirtFailed);
 
   const hasStrip = gwStrip != null && gwStrip.length > 0;
   /** Match horizon totals: starter captain earns double in each GW on the strip. */
@@ -115,76 +178,124 @@ function PlayerChip({
     nextGwXpByFplId != null &&
     nextXp !== undefined &&
     Number.isFinite(nextXp);
+  const showPrice = !showNextXp && !isEmpty;
+  const priceTrendTitle = [priceBadgeLabel, priceAlreadyChangedLabel]
+    .filter(Boolean)
+    .join(" · ");
+  const priceArrow = showPrice ? pitchPriceArrow(priceBadge) : null;
+  const priceTone = showPrice ? pitchPriceTextTone(priceBadge) : "text-white/70";
 
   const inner = (
     <>
-      {!isEmpty && onInspectPlayer ? (
-        <button
-          type="button"
-          title={inspectNameTitle}
-          className="w-full truncate text-left text-[8px] font-semibold leading-tight text-foreground underline decoration-brand-accent/35 underline-offset-2 hover:text-brand-accent sm:text-[10px]"
-          onClick={(e) => {
-            e.stopPropagation();
-            onInspectPlayer(p.fpl_id);
-          }}
+      {showShirt ? (
+        <img
+          src={shirtUrl!}
+          alt=""
+          width={66}
+          height={87}
+          loading="lazy"
+          decoding="async"
+          className="mx-auto h-12 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)] sm:h-14"
+          onError={() => setShirtFailed(true)}
+        />
+      ) : !isEmpty ? (
+        <div
+          aria-hidden
+          className="mx-auto flex h-12 w-9 items-center justify-center rounded-sm bg-black/40 text-[10px] font-bold text-white/50 sm:h-14 sm:w-10"
         >
-          {p.web_name ?? `#${p.fpl_id}`}
-        </button>
-      ) : (
-        <div className="truncate text-[8px] font-semibold leading-tight text-foreground sm:text-[10px]">
-          {p.web_name ?? `#${p.fpl_id}`}
+          ?
         </div>
-      )}
-      {hasStrip && gwStripForDisplay ? (
-        <GwStripRow cells={gwStripForDisplay} />
-      ) : (
-        <div className="truncate text-[7px] text-muted-foreground sm:text-[9px]">
-          {cardSubline ??
-            (isEmpty ? (p.position ?? "–") : (p.team ?? "–"))}
-        </div>
-      )}
-      <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
-        <span
-          className={cn(
-            "text-[7px] tabular-nums sm:text-[9px]",
-            showNextXp
-              ? "font-semibold text-brand-accent/95"
-              : "text-muted-foreground",
+      ) : null}
+      <div
+        className={cn(
+          "mt-0.5 w-full min-w-0 rounded-sm px-0.5 py-0.5",
+          !isEmpty && "bg-black/55 backdrop-blur-[2px]",
+        )}
+      >
+        {!isEmpty && onInspectPlayer ? (
+          <button
+            type="button"
+            title={inspectNameTitle}
+            className="w-full truncate text-center text-[8px] font-semibold leading-tight text-white underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-accent sm:text-[10px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              onInspectPlayer(p.fpl_id);
+            }}
+          >
+            {p.web_name ?? `#${p.fpl_id}`}
+          </button>
+        ) : (
+          <div className="truncate text-center text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
+            {isEmpty ? (p.web_name ?? "–") : (p.web_name ?? `#${p.fpl_id}`)}
+          </div>
+        )}
+        {hasStrip && gwStripForDisplay ? (
+          <GwStripRow cells={gwStripForDisplay} />
+        ) : (
+          <div className="truncate text-center text-[7px] text-white/70 sm:text-[9px]">
+            {cardSubline ??
+              (isEmpty ? (p.position ?? "–") : (p.team ?? "–"))}
+          </div>
+        )}
+        <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
+          <span
+            className={cn(
+              "inline-flex items-center gap-px tabular-nums",
+              showNextXp
+                ? "text-[7px] font-semibold text-brand-accent/95 sm:text-[9px]"
+                : showPrice
+                  ? cn("text-[8px] sm:text-[10px]", priceTone)
+                  : "text-[7px] text-white/70 sm:text-[9px]",
+            )}
+            title={
+              showNextXp
+                ? nextGwXpTitle
+                : showPrice && priceTrendTitle
+                  ? priceTrendTitle
+                  : undefined
+            }
+          >
+            {isEmpty
+              ? "–"
+              : showNextXp && nextXp != null && Number.isFinite(nextXp)
+                ? nextXp.toFixed(1)
+                : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
+            {priceArrow ? (
+              <span aria-hidden className="font-bold leading-none">
+                {priceArrow}
+              </span>
+            ) : null}
+          </span>
+          {isC && (
+            <span className="rounded bg-brand-accent/30 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
+              C
+            </span>
           )}
-          title={showNextXp ? nextGwXpTitle : undefined}
-        >
-          {isEmpty
-            ? "–"
-            : showNextXp && nextXp != null && Number.isFinite(nextXp)
-              ? nextXp.toFixed(1)
-              : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
-        </span>
-        {isC && (
-          <span className="rounded bg-brand-accent/25 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
-            C
-          </span>
-        )}
-        {isV && !isC && (
-          <span className="rounded bg-white/15 px-0.5 text-[7px] text-foreground/70 sm:px-1 sm:text-[8px]">
-            V
-          </span>
-        )}
+          {isV && !isC && (
+            <span className="rounded bg-white/15 px-0.5 text-[7px] text-white/80 sm:px-1 sm:text-[8px]">
+              V
+            </span>
+          )}
+        </div>
       </div>
     </>
   );
 
   const cls = cn(
-    "min-w-[44px] max-w-[min(22vw,68px)] shrink rounded-md border px-0.5 py-0.5 text-center shadow-sm transition-colors sm:min-w-[72px] sm:max-w-[100px] sm:rounded-lg sm:px-1.5 sm:py-1.5",
+    "flex min-w-[48px] max-w-[min(24vw,76px)] shrink flex-col items-center text-center transition-[filter,transform] sm:min-w-[76px] sm:max-w-[108px]",
     hasStrip &&
-      "min-w-[52px] max-w-[min(28vw,88px)] sm:min-w-[88px] sm:max-w-[118px]",
+      "min-w-[56px] max-w-[min(30vw,96px)] sm:min-w-[92px] sm:max-w-[124px]",
     isEmpty
-      ? "border-dashed border-white/25 bg-black/35 backdrop-blur-[2px]"
-      : "border-border bg-input backdrop-blur-sm",
+      ? "rounded-md border border-dashed border-white/25 bg-black/30 px-0.5 py-1.5 backdrop-blur-[2px]"
+      : "border-0 bg-transparent p-0 shadow-none",
     highlight &&
-      "ring-2 ring-amber-400 ring-offset-1 ring-offset-emerald-950 shadow-[0_0_12px_rgba(251,191,36,0.25)] sm:ring-offset-2",
+      "rounded-md ring-2 ring-amber-400 ring-offset-1 ring-offset-emerald-950 sm:ring-offset-2",
     selectedForReorder &&
-      "ring-2 ring-sky-400 ring-offset-1 ring-offset-emerald-950 sm:ring-offset-2 z-[1]",
-    interactive && "hover:border-brand-accent/50 hover:bg-black/55 cursor-pointer",
+      "z-[1] rounded-md ring-2 ring-sky-400 ring-offset-1 ring-offset-emerald-950 sm:ring-offset-2",
+    interactive && !isEmpty && "cursor-pointer hover:brightness-110",
+    interactive &&
+      isEmpty &&
+      "cursor-pointer hover:border-brand-accent/50 hover:bg-black/45",
   );
 
   if (interactive && onClick && onInspectPlayer) {
@@ -228,6 +339,9 @@ function Line({
   gwForecastByFplId,
   nextGwXpByFplId,
   nextGwXpTitle,
+  priceBadgeByFplId,
+  priceBadgeLabelByFplId,
+  priceAlreadyChangedByFplId,
   onPickSlot,
   onInspectPlayer,
   inspectNameTitle,
@@ -242,6 +356,9 @@ function Line({
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
+  priceBadgeByFplId?: Record<number, PitchPriceBadge>;
+  priceBadgeLabelByFplId?: Record<number, string>;
+  priceAlreadyChangedByFplId?: Record<number, string | null>;
   onPickSlot?: (slot: number) => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
@@ -249,10 +366,10 @@ function Line({
   if (players.length === 0) return null;
   const sorted = sortBySlot(players);
   return (
-    <div className="flex min-h-[36px] flex-1 items-center justify-center gap-0.5 px-0 sm:min-h-[52px] sm:gap-1.5 sm:px-1">
+    <div className="flex min-h-[56px] flex-1 items-center justify-center gap-1 px-0 sm:min-h-[72px] sm:gap-2 sm:px-1">
       {sorted.map((p) => (
         <PlayerChip
-          key={p.slot}
+          key={`${p.slot}-${p.fpl_id}`}
           p={p}
           captainId={captainId}
           viceId={viceId}
@@ -263,6 +380,9 @@ function Line({
           gwStrip={gwForecastByFplId?.[p.fpl_id]}
           nextGwXpByFplId={nextGwXpByFplId}
           nextGwXpTitle={nextGwXpTitle}
+          priceBadge={priceBadgeByFplId?.[p.fpl_id]}
+          priceBadgeLabel={priceBadgeLabelByFplId?.[p.fpl_id]}
+          priceAlreadyChangedLabel={priceAlreadyChangedByFplId?.[p.fpl_id]}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
           onInspectPlayer={onInspectPlayer}
           inspectNameTitle={inspectNameTitle}
@@ -272,7 +392,13 @@ function Line({
   );
 }
 
-function PitchMarkings({ gkAtTop }: { gkAtTop: boolean }) {
+function PitchMarkings({
+  gkAtTop,
+  showcase = false,
+}: {
+  gkAtTop: boolean;
+  showcase?: boolean;
+}) {
   const boxSide = gkAtTop ? "top" : "bottom";
   const farSide = gkAtTop ? "bottom" : "top";
   const boxPos =
@@ -283,16 +409,39 @@ function PitchMarkings({ gkAtTop }: { gkAtTop: boolean }) {
     farSide === "bottom"
       ? "bottom-[38%] sm:bottom-[36%]"
       : "top-[38%] sm:top-[36%]";
+  const line = showcase ? "border-white/35" : "border-white/25";
+  const soft = showcase ? "border-white/28" : "border-white/20";
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-2 rounded-sm border border-white/25 sm:inset-3" />
-      <div className="pointer-events-none absolute left-2 right-2 top-1/2 h-px -translate-y-1/2 bg-white/25 sm:left-3 sm:right-3" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[24%] w-[20%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35" />
       <div
         className={cn(
-          "pointer-events-none absolute left-1/2 h-[18%] w-[42%] -translate-x-1/2 border border-white/20",
+          "pointer-events-none absolute inset-2 rounded-sm border sm:inset-3",
+          line,
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-2 right-2 top-1/2 h-px -translate-y-1/2 sm:left-3 sm:right-3",
+          showcase ? "bg-white/35" : "bg-white/25",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 top-1/2 h-[24%] w-[20%] -translate-x-1/2 -translate-y-1/2 rounded-full border",
+          line,
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full",
+          showcase ? "bg-white/50 shadow-[0_0_10px_rgba(255,255,255,0.35)]" : "bg-white/35",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 h-[18%] w-[42%] -translate-x-1/2 border",
+          soft,
           boxPos,
           "border-b-0 sm:border-b-0",
           boxSide === "bottom" ? "rounded-t-sm" : "rounded-b-sm border-t-0",
@@ -339,6 +488,12 @@ export type PitchViewProps = {
   /** Click player name to open FPL performance detail */
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
+  /** Richer grass / markings for dashboard showcase */
+  appearance?: "default" | "showcase";
+  /** Price trend badges (dashboard squad overview) */
+  priceBadgeByFplId?: Record<number, PitchPriceBadge>;
+  priceBadgeLabelByFplId?: Record<number, string>;
+  priceAlreadyChangedByFplId?: Record<number, string | null>;
 };
 
 export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
@@ -363,6 +518,10 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       titleAction,
       onInspectPlayer,
       inspectNameTitle,
+      appearance = "default",
+      priceBadgeByFplId,
+      priceBadgeLabelByFplId,
+      priceAlreadyChangedByFplId,
     },
     ref,
   ) {
@@ -376,6 +535,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
     const defs = starters.filter((p) => p.position === "DEF");
     const mids = starters.filter((p) => p.position === "MID");
     const fwds = starters.filter((p) => p.position === "FWD");
+    const showcase = appearance === "showcase";
 
     return (
       <div ref={ref} className="flex flex-col gap-2">
@@ -391,17 +551,36 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           ) : null}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-emerald-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)] sm:rounded-2xl">
+        <div
+          className={cn(
+            "overflow-hidden rounded-xl border sm:rounded-2xl",
+            showcase
+              ? "border-emerald-500/35 shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              : "border-emerald-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+          )}
+        >
           <div
-            className="relative aspect-[5/2.55] flex flex-col justify-between px-1 py-1.5 sm:aspect-[5/3.1] sm:px-2 sm:py-3"
+            className={cn(
+              "relative flex flex-col justify-between gap-0.5 px-1 py-2 sm:gap-1 sm:px-2 sm:py-3",
+              // Content-driven height so large kit shirts are not clipped.
+              showcase
+                ? "min-h-[380px] sm:min-h-[460px]"
+                : "min-h-[360px] sm:min-h-[440px]",
+            )}
             style={{
-              backgroundImage: [
-                "repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12%)",
-                "linear-gradient(to bottom, rgb(5 70 55), rgb(4 58 48), rgb(5 70 55))",
-              ].join(", "),
+              backgroundImage: showcase
+                ? [
+                    "radial-gradient(ellipse 80% 55% at 50% 42%, rgba(52,211,153,0.14), transparent 70%)",
+                    "repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12) 11%, rgba(255,255,255,0.045) 11%, rgba(255,255,255,0.045) 22%)",
+                    "linear-gradient(160deg, rgb(6 95 72), rgb(4 62 50) 45%, rgb(5 78 62))",
+                  ].join(", ")
+                : [
+                    "repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12%)",
+                    "linear-gradient(to bottom, rgb(5 70 55), rgb(4 58 48), rgb(5 70 55))",
+                  ].join(", "),
             }}
           >
-            <PitchMarkings gkAtTop={gkAtTop} />
+            <PitchMarkings gkAtTop={gkAtTop} showcase={showcase} />
 
             {/* XI rows: FWD → MID → DEF → GK (bottom) when gkAtTop=false. */}
             {(gkAtTop
@@ -430,6 +609,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                 gwForecastByFplId={gwForecastByFplId}
                 nextGwXpByFplId={nextGwXpByFplId}
                 nextGwXpTitle={nextGwXpTitle}
+                priceBadgeByFplId={priceBadgeByFplId}
+                priceBadgeLabelByFplId={priceBadgeLabelByFplId}
+                priceAlreadyChangedByFplId={priceAlreadyChangedByFplId}
                 onPickSlot={onPickSlot}
                 onInspectPlayer={onInspectPlayer}
                 inspectNameTitle={inspectNameTitle}
@@ -438,7 +620,14 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           </div>
 
           {/* Bench */}
-          <div className="border-t border-white/10 bg-black/40 px-1 py-1 sm:px-2 sm:py-2">
+          <div
+            className={cn(
+              "border-t px-1 py-1 sm:px-2 sm:py-2",
+              showcase
+                ? "border-emerald-400/15 bg-gradient-to-b from-black/50 to-black/70"
+                : "border-white/10 bg-black/40",
+            )}
+          >
             <div className="mb-0.5 text-[9px] uppercase tracking-wide text-muted-foreground sm:mb-1 sm:text-[10px]">
               {benchLabel}
             </div>
@@ -448,12 +637,12 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           */}
             <div className="grid grid-cols-4 items-end justify-items-center gap-0.5 sm:gap-2">
               {benchGk.length > 0 ? (
-                <div className="flex w-full max-w-[min(22vw,68px)] flex-col items-center justify-self-center gap-0.5 sm:max-w-[100px]">
+                <div className="flex w-full max-w-[min(24vw,76px)] flex-col items-center justify-self-center gap-0.5 sm:max-w-[108px]">
                   <span className="text-[8px] uppercase tracking-wide text-muted-foreground/80 sm:text-[9px]">
                     {benchGkAbbrev}
                   </span>
                   <PlayerChip
-                    key={benchGk[0].slot}
+                    key={`${benchGk[0].slot}-${benchGk[0].fpl_id}`}
                     p={benchGk[0]}
                     captainId={captainId}
                     viceId={viceId}
@@ -466,6 +655,11 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     gwStrip={gwForecastByFplId?.[benchGk[0].fpl_id]}
                     nextGwXpByFplId={nextGwXpByFplId}
                     nextGwXpTitle={nextGwXpTitle}
+                    priceBadge={priceBadgeByFplId?.[benchGk[0].fpl_id]}
+                    priceBadgeLabel={priceBadgeLabelByFplId?.[benchGk[0].fpl_id]}
+                    priceAlreadyChangedLabel={
+                      priceAlreadyChangedByFplId?.[benchGk[0].fpl_id]
+                    }
                     onClick={
                       onPickSlot
                         ? () => onPickSlot(benchGk[0].slot)
@@ -478,8 +672,8 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
               ) : null}
               {benchOutfield.map((p) => (
                 <div
-                  key={p.slot}
-                  className="flex w-full max-w-[min(22vw,68px)] flex-col items-center justify-self-center sm:max-w-[100px]"
+                  key={`${p.slot}-${p.fpl_id}`}
+                  className="flex w-full max-w-[min(24vw,76px)] flex-col items-center justify-self-center sm:max-w-[108px]"
                 >
                   <PlayerChip
                     p={p}
@@ -492,6 +686,11 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     gwStrip={gwForecastByFplId?.[p.fpl_id]}
                     nextGwXpByFplId={nextGwXpByFplId}
                     nextGwXpTitle={nextGwXpTitle}
+                    priceBadge={priceBadgeByFplId?.[p.fpl_id]}
+                    priceBadgeLabel={priceBadgeLabelByFplId?.[p.fpl_id]}
+                    priceAlreadyChangedLabel={
+                      priceAlreadyChangedByFplId?.[p.fpl_id]
+                    }
                     onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
                     onInspectPlayer={onInspectPlayer}
                     inspectNameTitle={inspectNameTitle}

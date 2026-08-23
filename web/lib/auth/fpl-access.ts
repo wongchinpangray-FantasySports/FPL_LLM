@@ -34,7 +34,7 @@ export async function validateFplEntryExists(entryId: number): Promise<FplEntry>
   return fplGet<FplEntry>(`/entry/${entryId}/`);
 }
 
-/** Signed-in user must own this Entry ID in `profiles.fpl_entry_id`. */
+/** Signed-in user with a linked default; may read any valid public Entry ID. */
 export async function requireFplEntryAccess(entryId: number): Promise<{
   userId: string;
   profile: UserProfile;
@@ -47,12 +47,13 @@ export async function requireFplEntryAccess(entryId: number): Promise<{
       403,
     );
   }
-  if (profile.fpl_entry_id !== entryId) {
-    throw new FplAccessError(
-      "This Entry ID is not linked to your account.",
-      403,
-    );
+
+  try {
+    await validateFplEntryExists(entryId);
+  } catch {
+    throw new FplAccessError("Entry ID not found on Fantasy Premier League.", 404);
   }
+
   return { userId: user.id, profile };
 }
 

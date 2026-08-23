@@ -7,12 +7,29 @@ import {
   PlayerShotMap,
   type PlayerShotMapLabels,
 } from "@/components/player/player-shot-map";
+import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import type { PlayerShotMapData } from "@/lib/fpl/understat-shots";
+import type { PlayerGwHistoryRow } from "@/lib/player-gw-history";
+import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
+import { getFplTeamBadgeStyle, getFplTeamTheme } from "@/lib/team-themes";
+
+export type PlayerPriceForecastBrief = {
+  gw: number;
+  source: "live" | "db";
+  transfers_in: number;
+  transfers_out: number;
+  net_transfers: number;
+  progress: number;
+  status: PriceForecastStatus;
+  cost_change_event: number;
+  threshold: number;
+};
 
 export type PlayerPerformanceProfile = {
   fpl_id: number;
   display_name: string;
   team: string | null;
+  team_short?: string | null;
   position: string | null;
   price: number | null;
   form: number | null;
@@ -20,7 +37,9 @@ export type PlayerPerformanceProfile = {
   status: string | null;
   chance_of_playing: number | null;
   news: string | null;
+  season_label?: string | null;
   season: {
+    source?: "live" | "db";
     total_points: number | null;
     minutes: number | null;
     goals: number | null;
@@ -67,8 +86,15 @@ export type PlayerPerformanceProfile = {
     expected_assists: number;
     defensive_contribution: number;
     ict_index: number;
+    defcon_points?: number;
+    fixture?: {
+      opp: string;
+      home: boolean;
+      fdr: number | null;
+    } | null;
   }>;
   shot_map?: PlayerShotMapData | null;
+  price_forecast?: PlayerPriceForecastBrief | null;
 };
 
 export type PlayerPerformanceModalLabels = {
@@ -84,6 +110,7 @@ export type PlayerPerformanceModalLabels = {
   valueXm: string;
   news: string;
   seasonSection: string;
+  seasonLive: string;
   totalPts: string;
   minutes: string;
   goalsAssists: string;
@@ -96,16 +123,124 @@ export type PlayerPerformanceModalLabels = {
   fixturesTitle: string;
   colGw: string;
   colOpp: string;
+  colPlayedMins: string;
   colMins: string;
   colPts: string;
   colXp: string;
+  colDcPts: string;
   emptyGw: string;
   shotMap?: PlayerShotMapLabels;
+  priceForecast?: {
+    title: string;
+    netTransfers: string;
+    transfersInOut: string;
+    progress: string;
+    status: string;
+    alreadyUp: string;
+    alreadyDown: string;
+    statusLikelyRise: string;
+    statusWatchRise: string;
+    statusLikelyFall: string;
+    statusWatchFall: string;
+    statusStable: string;
+  };
 };
 
 function fmtNum(v: number | null | undefined, d = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return v.toFixed(d);
+}
+
+function fmtTransferInt(v: number): string {
+  const abs = Math.abs(v);
+  const body =
+    abs >= 1_000_000
+      ? `${(abs / 1_000_000).toFixed(2)}m`
+      : abs >= 1000
+        ? `${(abs / 1000).toFixed(0)}k`
+        : String(abs);
+  if (v > 0) return `+${body}`;
+  if (v < 0) return `-${body}`;
+  return "0";
+}
+
+function deltaClass(v: number): string {
+  if (Math.abs(v) < 0.05) return "text-muted-foreground";
+  return v > 0 ? "text-emerald-400" : "text-red-400";
+}
+
+function priceStatusTone(status: PriceForecastStatus): string {
+  switch (status) {
+    case "likely_rise":
+      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+    case "watch_rise":
+      return "border-emerald-500/20 bg-emerald-500/5 text-emerald-300/80";
+    case "likely_fall":
+      return "border-red-500/30 bg-red-500/10 text-red-400";
+    case "watch_fall":
+      return "border-red-500/20 bg-red-500/5 text-red-300/80";
+    default:
+      return "border-border bg-muted text-muted-foreground";
+  }
+}
+
+function formatRecentFixture(
+  fixture: PlayerPerformanceProfile["recent_gws"][number]["fixture"],
+): string {
+  if (!fixture?.opp) return "—";
+  const prefix = fixture.home ? "vs" : "@";
+  const fdr =
+    fixture.fdr != null && fixture.fdr > 0 ? ` · FDR ${fixture.fdr}` : "";
+  return `${prefix} ${fixture.opp}${fdr}`;
+}
+
+/** Map modal recent GWs into chart rows (ascending by GW). */
+function recentGwsToChartRows(
+  recent: PlayerPerformanceProfile["recent_gws"],
+): PlayerGwHistoryRow[] {
+  return [...recent]
+    .slice()
+    .sort((a, b) => a.gw - b.gw)
+    .map((g) => ({
+      gw: g.gw,
+      minutes: g.minutes,
+      goals_scored: g.goals_scored,
+      assists: g.assists,
+      clean_sheets: g.clean_sheets,
+      saves: 0,
+      bonus: g.bonus,
+      bps: 0,
+      expected_goals: g.expected_goals,
+      expected_assists: g.expected_assists,
+      total_points: g.total_points,
+      ict_index: g.ict_index,
+      defensive_contribution: g.defensive_contribution,
+      defcon_points: g.defcon_points,
+      fixture: g.fixture ?? null,
+    }));
+}
+
+function TeamThemeChip({
+  code,
+  name,
+}: {
+  code: string;
+  name?: string | null;
+}) {
+  const badge = getFplTeamBadgeStyle(code);
+  return (
+    <span
+      className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm"
+      style={{
+        background: badge.chipBg,
+        color: badge.color,
+        borderColor: badge.chipBorder,
+      }}
+      title={name ?? code}
+    >
+      {code}
+    </span>
+  );
 }
 
 function StatCell({
@@ -162,10 +297,33 @@ export function FplPlayerPerformanceModal({
 
   const s = detail?.season;
   const m = detail?.model;
+  const pf = detail?.price_forecast;
+  const pfLabels = labels.priceForecast;
+
+  const priceStatusLabel = (status: PriceForecastStatus): string => {
+    if (!pfLabels) return status;
+    switch (status) {
+      case "likely_rise":
+        return pfLabels.statusLikelyRise;
+      case "watch_rise":
+        return pfLabels.statusWatchRise;
+      case "likely_fall":
+        return pfLabels.statusLikelyFall;
+      case "watch_fall":
+        return pfLabels.statusWatchFall;
+      default:
+        return pfLabels.statusStable;
+    }
+  };
+
+  const teamShort = detail?.team_short ?? null;
+  const teamTheme = getFplTeamTheme(teamShort);
+  const teamBadge = getFplTeamBadgeStyle(teamShort);
+  const hasTeamTheme = Boolean(teamShort);
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[110] flex items-end justify-center p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="fpl-player-perf-title"
@@ -178,19 +336,50 @@ export function FplPlayerPerformanceModal({
       />
       <div
         className={cn(
-          "relative z-[101] flex max-h-[min(92vh,760px)] w-full flex-col",
-          "rounded-t-2xl border border-border bg-background shadow-2xl sm:max-w-3xl sm:rounded-2xl",
+          "relative z-[111] flex max-h-[min(92vh,760px)] w-full flex-col overflow-hidden",
+          "rounded-t-2xl border bg-background shadow-2xl sm:max-w-3xl sm:rounded-2xl",
         )}
+        style={
+          hasTeamTheme
+            ? {
+                borderColor: teamBadge.chipBorder,
+                background: `linear-gradient(180deg, ${teamTheme.primary}18 0%, ${teamTheme.secondary}08 22%, transparent 48%)`,
+              }
+            : undefined
+        }
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
+        {hasTeamTheme ? (
+          <div
+            className="h-1 shrink-0"
+            style={{
+              background: `linear-gradient(90deg, ${teamTheme.primary} 0%, ${teamTheme.secondary} 55%, ${teamTheme.primary} 100%)`,
+            }}
+          />
+        ) : null}
+        <div
+          className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4"
+          style={
+            hasTeamTheme
+              ? {
+                  borderColor: teamBadge.chipBorder,
+                  background: `linear-gradient(135deg, ${teamTheme.primary}24 0%, ${teamTheme.secondary}14 55%, transparent 100%)`,
+                }
+              : { borderColor: "hsl(var(--border))" }
+          }
+        >
           <div className="min-w-0">
-            <h2
-              id="fpl-player-perf-title"
-              className="truncate text-lg font-semibold text-foreground"
-            >
-              {detail?.display_name ?? "…"}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {teamShort ? (
+                <TeamThemeChip code={teamShort} name={detail?.team} />
+              ) : null}
+              <h2
+                id="fpl-player-perf-title"
+                className="truncate text-lg font-semibold text-foreground"
+              >
+                {detail?.display_name ?? "…"}
+              </h2>
+            </div>
             {detail ? (
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {detail.team ?? "—"} · {detail.position ?? "—"}
@@ -273,10 +462,93 @@ export function FplPlayerPerformanceModal({
                 </div>
               ) : null}
 
+              {pf && pfLabels ? (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">
+                    {pfLabels.title}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      GW{pf.gw}
+                    </span>
+                  </h3>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          priceStatusTone(pf.status),
+                        )}
+                      >
+                        {priceStatusLabel(pf.status)}
+                      </span>
+                      {pf.cost_change_event > 0 ? (
+                        <span className="text-[10px] font-medium text-emerald-400">
+                          {pfLabels.alreadyUp}
+                        </span>
+                      ) : null}
+                      {pf.cost_change_event < 0 ? (
+                        <span className="text-[10px] font-medium text-red-400">
+                          {pfLabels.alreadyDown}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <StatCell
+                        label={pfLabels.netTransfers}
+                        value={fmtTransferInt(pf.net_transfers)}
+                        highlight
+                      />
+                      <StatCell
+                        label={pfLabels.transfersInOut}
+                        value={`${pf.transfers_in.toLocaleString()} / ${pf.transfers_out.toLocaleString()}`}
+                      />
+                      <StatCell
+                        label={pfLabels.progress}
+                        value={`${Math.round(Math.abs(pf.progress) * 100)}%`}
+                      />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={
+                            pf.progress >= 0
+                              ? "h-full bg-emerald-400"
+                              : "h-full bg-red-400"
+                          }
+                          style={{
+                            width: `${Math.min(100, Math.abs(pf.progress) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 text-xs font-medium tabular-nums",
+                          deltaClass(pf.progress),
+                        )}
+                      >
+                        {pf.progress >= 0 ? "+" : "−"}
+                        {Math.round(Math.abs(pf.progress) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
               <section>
-                <h3 className="mb-2 text-sm font-semibold text-foreground">
-                  {labels.seasonSection}
-                </h3>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {detail.season_label
+                      ? labels.seasonSection.replace(
+                          "{season}",
+                          detail.season_label,
+                        )
+                      : labels.seasonSection.replace("{season}", "—")}
+                  </h3>
+                  {s?.source === "live" ? (
+                    <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+                      {labels.seasonLive}
+                    </span>
+                  ) : null}
+                </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <StatCell
                     label={labels.totalPts}
@@ -316,6 +588,12 @@ export function FplPlayerPerformanceModal({
                 />
               ) : null}
 
+              {detail.recent_gws.length > 0 ? (
+                <PlayerGwBarChart
+                  rows={recentGwsToChartRows(detail.recent_gws)}
+                />
+              ) : null}
+
               <section>
                 <h3 className="mb-2 text-sm font-semibold text-foreground">
                   {labels.recentTitle}
@@ -332,8 +610,11 @@ export function FplPlayerPerformanceModal({
                           <th className="px-2.5 py-2 font-medium">
                             {labels.colGw}
                           </th>
+                          <th className="px-2.5 py-2 font-medium">
+                            {labels.colOpp}
+                          </th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">
-                            {labels.colMins}
+                            {labels.colPlayedMins}
                           </th>
                           <th className="px-2.5 py-2 font-medium tabular-nums">
                             {labels.colPts}
@@ -347,6 +628,9 @@ export function FplPlayerPerformanceModal({
                           <th className="px-2.5 py-2 font-medium tabular-nums">
                             DC
                           </th>
+                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                            {labels.colDcPts}
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -357,6 +641,9 @@ export function FplPlayerPerformanceModal({
                           >
                             <td className="px-2.5 py-1.5 font-medium">
                               {g.gw}
+                            </td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground">
+                              {formatRecentFixture(g.fixture)}
                             </td>
                             <td className="px-2.5 py-1.5 tabular-nums">
                               {g.minutes}
@@ -373,6 +660,18 @@ export function FplPlayerPerformanceModal({
                             </td>
                             <td className="px-2.5 py-1.5 tabular-nums">
                               {g.defensive_contribution}
+                            </td>
+                            <td
+                              className={cn(
+                                "px-2.5 py-1.5 tabular-nums font-medium",
+                                (g.defcon_points ?? 0) > 0
+                                  ? "text-emerald-400"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {(g.defcon_points ?? 0) > 0
+                                ? `+${g.defcon_points}`
+                                : "0"}
                             </td>
                           </tr>
                         ))}

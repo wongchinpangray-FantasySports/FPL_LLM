@@ -1,0 +1,11 @@
+n_answered=34
+FPL Harry	11	32.4% of answered
+All About Fantasy	4	11.8% of answered
+FPL Gameweek	3	8.8% of answered
+FPL Focal	3	8.8% of answered
+Andy (creator)	3	8.8% of answered
+Big Man FPL	3	8.8% of answered
+Fantasy Football Scout / FFS	3	8.8% of answered
+Sam / Sam FPL	3	8.8% of answered
+FALEAGUE	1	2.9% of answered
+Let's Talk FPL	1	2.9% of answered

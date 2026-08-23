@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type {
   ValueBandRow,
@@ -104,9 +104,11 @@ export function ValueBandPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<PlayerPerformanceProfile | null>(null);
+  const profileFetchRef = useRef(0);
 
   const openProfile = useCallback(
     async (fplId: number) => {
+      const requestId = ++profileFetchRef.current;
       setOpenId(fplId);
       setLoading(true);
       setError(null);
@@ -122,17 +124,23 @@ export function ValueBandPanel({
           throw new Error(body?.error || tModal("error"));
         }
         const data = (await res.json()) as PlayerPerformanceProfile;
+        if (profileFetchRef.current !== requestId) return;
+        if (data.fpl_id !== fplId) return;
         setDetail(data);
       } catch (e) {
+        if (profileFetchRef.current !== requestId) return;
         setError(e instanceof Error ? e.message : tModal("error"));
       } finally {
-        setLoading(false);
+        if (profileFetchRef.current === requestId) {
+          setLoading(false);
+        }
       }
     },
     [horizon, tModal],
   );
 
   const closeProfile = useCallback(() => {
+    profileFetchRef.current += 1;
     setOpenId(null);
     setError(null);
     setDetail(null);
@@ -152,7 +160,8 @@ export function ValueBandPanel({
       xpHorizon: tPlayer("xpHorizon"),
       valueXm: tPlayer("valueXm"),
       news: tPlayer("news"),
-      seasonSection: tPlayer("seasonSection"),
+      seasonSection: tModal("seasonSection"),
+      seasonLive: tModal("seasonLive"),
       totalPts: tPlayer("totalPts"),
       minutes: tPlayer("minutes"),
       goalsAssists: tPlayer("goalsAssists"),
@@ -163,11 +172,13 @@ export function ValueBandPanel({
       ppg: tModal("ppg"),
       recentTitle: tModal("recentTitle"),
       fixturesTitle: tModal("fixturesTitle"),
-      colGw: tPlayer("tblGw"),
-      colOpp: tPlayer("tblOpp"),
-      colMins: tPlayer("tblMins"),
+      colGw: tModal("colGw"),
+      colOpp: tModal("colOpp"),
+      colPlayedMins: tModal("colPlayedMins"),
+      colMins: tModal("colMins"),
       colPts: tModal("colPts"),
-      colXp: tPlayer("tblXp"),
+      colXp: tModal("colXp"),
+      colDcPts: tModal("colDcPts"),
       emptyGw: tModal("emptyGw"),
       shotMap: {
         title: tModal("shotMapTitle"),
@@ -182,6 +193,20 @@ export function ValueBandPanel({
         statXg: tModal("shotMapStatXg"),
         statOnTarget: tModal("shotMapStatOnTarget"),
         sourceNote: tModal("shotMapSource"),
+      },
+      priceForecast: {
+        title: tModal("priceForecastTitle"),
+        netTransfers: tModal("priceNetTransfers"),
+        transfersInOut: tModal("priceTransfersInOut"),
+        progress: tModal("priceProgress"),
+        status: tModal("priceStatus"),
+        alreadyUp: tModal("priceAlreadyUp"),
+        alreadyDown: tModal("priceAlreadyDown"),
+        statusLikelyRise: tModal("priceStatusLikelyRise"),
+        statusWatchRise: tModal("priceStatusWatchRise"),
+        statusLikelyFall: tModal("priceStatusLikelyFall"),
+        statusWatchFall: tModal("priceStatusWatchFall"),
+        statusStable: tModal("priceStatusStable"),
       },
     }),
     [tModal, tPlayer],
@@ -350,7 +375,11 @@ export function ValueBandPanel({
         open={openId != null}
         loading={loading}
         error={error}
-        detail={detail}
+        detail={
+          detail != null && openId != null && detail.fpl_id === openId
+            ? detail
+            : null
+        }
         labels={modalLabels}
         onClose={closeProfile}
       />

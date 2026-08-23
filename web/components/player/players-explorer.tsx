@@ -304,6 +304,7 @@ export function PlayersExplorer({
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRadar, setLoadingRadar] = useState(false);
   const compareBootstrapped = useRef(false);
+  const profileFetchRef = useRef(0);
 
   const showCol = useCallback(
     (id: ColId) => visibleCols.includes(id),
@@ -419,6 +420,7 @@ export function PlayersExplorer({
 
   const openProfile = useCallback(
     async (fplId: number) => {
+      const requestId = ++profileFetchRef.current;
       setOpenId(fplId);
       setLoadingProfile(true);
       setProfileError(null);
@@ -433,17 +435,24 @@ export function PlayersExplorer({
           } | null;
           throw new Error(body?.error || tModal("error"));
         }
-        setDetail((await res.json()) as PlayerPerformanceProfile);
+        const profile = (await res.json()) as PlayerPerformanceProfile;
+        if (profileFetchRef.current !== requestId) return;
+        if (profile.fpl_id !== fplId) return;
+        setDetail(profile);
       } catch (e) {
+        if (profileFetchRef.current !== requestId) return;
         setProfileError(e instanceof Error ? e.message : tModal("error"));
       } finally {
-        setLoadingProfile(false);
+        if (profileFetchRef.current === requestId) {
+          setLoadingProfile(false);
+        }
       }
     },
     [horizon, tModal],
   );
 
   const closeProfile = useCallback(() => {
+    profileFetchRef.current += 1;
     setOpenId(null);
     setProfileError(null);
     setDetail(null);
@@ -583,7 +592,8 @@ export function PlayersExplorer({
       xpHorizon: tPlayer("xpHorizon"),
       valueXm: tPlayer("valueXm"),
       news: tPlayer("news"),
-      seasonSection: tPlayer("seasonSection"),
+      seasonSection: tModal("seasonSection"),
+      seasonLive: tModal("seasonLive"),
       totalPts: tPlayer("totalPts"),
       minutes: tPlayer("minutes"),
       goalsAssists: tPlayer("goalsAssists"),
@@ -594,11 +604,13 @@ export function PlayersExplorer({
       ppg: tModal("ppg"),
       recentTitle: tModal("recentTitle"),
       fixturesTitle: tModal("fixturesTitle"),
-      colGw: tPlayer("tblGw"),
-      colOpp: tPlayer("tblOpp"),
-      colMins: tPlayer("tblMins"),
+      colGw: tModal("colGw"),
+      colOpp: tModal("colOpp"),
+      colPlayedMins: tModal("colPlayedMins"),
+      colMins: tModal("colMins"),
       colPts: tModal("colPts"),
-      colXp: tPlayer("tblXp"),
+      colXp: tModal("colXp"),
+      colDcPts: tModal("colDcPts"),
       emptyGw: tModal("emptyGw"),
       shotMap: {
         title: tModal("shotMapTitle"),
@@ -613,6 +625,20 @@ export function PlayersExplorer({
         statXg: tModal("shotMapStatXg"),
         statOnTarget: tModal("shotMapStatOnTarget"),
         sourceNote: tModal("shotMapSource"),
+      },
+      priceForecast: {
+        title: tModal("priceForecastTitle"),
+        netTransfers: tModal("priceNetTransfers"),
+        transfersInOut: tModal("priceTransfersInOut"),
+        progress: tModal("priceProgress"),
+        status: tModal("priceStatus"),
+        alreadyUp: tModal("priceAlreadyUp"),
+        alreadyDown: tModal("priceAlreadyDown"),
+        statusLikelyRise: tModal("priceStatusLikelyRise"),
+        statusWatchRise: tModal("priceStatusWatchRise"),
+        statusLikelyFall: tModal("priceStatusLikelyFall"),
+        statusWatchFall: tModal("priceStatusWatchFall"),
+        statusStable: tModal("priceStatusStable"),
       },
     }),
     [tModal, tPlayer],
@@ -1246,7 +1272,11 @@ export function PlayersExplorer({
         open={openId != null}
         loading={loadingProfile}
         error={profileError}
-        detail={detail}
+        detail={
+          detail != null && openId != null && detail.fpl_id === openId
+            ? detail
+            : null
+        }
         labels={modalLabels}
         onClose={closeProfile}
       />

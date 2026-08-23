@@ -23,16 +23,10 @@ import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
 import { normalizeFplFdr } from "@/lib/fpl/fdr";
 import { HomeBackLink } from "@/components/home-back-link";
 import { XpHeatmap, buildHeatmapRow, buildHeatmapRowFromPick } from "@/components/xp-heatmap";
+import { DashboardSquadPanel } from "@/components/dashboard/dashboard-squad-panel";
+import { loadPriceForecastMap } from "@/lib/fpl/insights/price-forecast";
 
 export const dynamic = "force-dynamic";
-
-function SlotLabel({ pos }: { pos: string | null }) {
-  return (
-    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
-      {pos ?? "?"}
-    </span>
-  );
-}
 
 export default async function DashboardPage({
   params,
@@ -183,7 +177,7 @@ export default async function DashboardPage({
     if (!proj) {
       return buildHeatmapRowFromPick({
         fpl_id: pick.fpl_id,
-        team_id: pick.team_id,
+        team_id: pick.team_id ?? null,
         web_name: pick.web_name,
         team: pick.team,
         position: pick.position,
@@ -232,76 +226,147 @@ export default async function DashboardPage({
       ? chipSegments.join(" · ")
       : dt("stats.chipsRemainingNone");
 
+  const activeChipLabel = formatActiveChip(team.active_chip, dt);
+
+  const nextGwXpByFplId = Object.fromEntries(
+    heatmapRows.map((r) => {
+      const gw0 = gwHeaders[0];
+      const fxs = gw0 != null ? r.byGw?.[gw0] : undefined;
+      const xp =
+        fxs?.reduce((s, f) => s + (Number(f.xp_total) || 0), 0) ??
+        r.xp_total / Math.max(horizon, 1);
+      return [r.fpl_id, xp] as const;
+    }),
+  );
+
+  const gwForecastByFplId = Object.fromEntries(
+    heatmapRows.map((r) => {
+      const cells: { gw: number; opp: string; xp: number }[] = [];
+      for (const g of gwHeaders.slice(0, 5)) {
+        const fxs = r.byGw?.[g] ?? [];
+        if (fxs.length === 0) continue;
+        const xp = fxs.reduce((s, f) => s + (Number(f.xp_total) || 0), 0);
+        const opp = fxs
+          .map((f) => `${f.opp_short}${f.home ? "" : " (A)"}`)
+          .join("/");
+        cells.push({ gw: g, opp, xp });
+      }
+      return [r.fpl_id, cells] as const;
+    }),
+  );
+
+  const priceForecastMap = squadEmpty
+    ? new Map<number, never>()
+    : await loadPriceForecastMap(displayPicks.map((p) => p.fpl_id));
+  const priceForecastByFplId = Object.fromEntries(
+    [...priceForecastMap.entries()].map(([fplId, snap]) => [
+      fplId,
+      {
+        status: snap.status,
+        cost_change_event: snap.cost_change_event,
+        progress: snap.progress,
+      },
+    ]),
+  );
+
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
       <HomeBackLink label={dt("backHome")} />
-      <section className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 md:gap-8 md:pb-8">
-        <div className="flex max-w-xl flex-col gap-1.5 sm:gap-2">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
-            {dt("eyebrow")}
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            {team.entry.name}
-          </h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {team.entry.player_first_name} {team.entry.player_last_name} ·{" "}
-            <span className="text-foreground/70">
-              {formatFplInteger(team.entry.summary_overall_points, params.locale, "0")}{" "}
-              {dt("pts")}
-            </span>{" "}
-            · {dt("overallRank")}{" "}
-            <span className="text-foreground/70">
-              {formatFplInteger(team.entry.summary_overall_rank, params.locale)}
-            </span>
-          </p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {freeHitContext && hasRevert && !useFreeHitSquad
-              ? dt("squadSubRevert", {
-                  longGw: team.long_team_gw ?? "?",
-                  picksGw: team.picks_gw ?? "?",
-                })
-              : freeHitContext && useFreeHitSquad
-                ? dt("squadSubFh", { picksGw: picksGwStr })
-                : dt("squadSubPicks", {
-                    picksGw: team.picks_gw ?? team.current_gw ?? "?",
-                  })}
-            {relTime(team.fetched_at, dt)} ·{" "}
-            <Link
-              href={
-                useFreeHitSquad
-                  ? `/dashboard/${entryId}?refresh=1&squad=freehit`
-                  : `/dashboard/${entryId}?refresh=1`
-              }
-              className="font-medium text-brand-accent hover:underline"
-            >
-              {dt("refresh")}
-            </Link>
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 lg:flex lg:flex-wrap lg:gap-3">
-          <Stat label={dt("stats.bank")} value={`£${team.bank.toFixed(1)}m`} />
-          <Stat
-            label={dt("stats.teamValue")}
-            value={`£${team.team_value.toFixed(1)}m`}
-          />
-          <Stat
-            label={dt("stats.freeTransfers")}
-            value={String(team.free_transfers)}
-          />
-          <Stat label={dt("stats.activeChip")} value={team.active_chip ?? "—"} />
-          <Stat
-            label={dt("stats.chipsRemaining")}
-            value={chipsDisplay}
-            valueClassName="break-words font-normal leading-snug"
-          />
-          <Stat
-            label={dt("stats.xpXi", { horizon })}
-            value={starterXPTotal.toFixed(1)}
-          />
-          <Stat
-            label={dt("stats.xpBench", { horizon })}
-            value={benchXPTotal.toFixed(1)}
-          />
+
+      <section className="overflow-hidden rounded-2xl border border-border bg-card/70 shadow-[inset_0_1px_0_hsl(var(--border)/0.45)]">
+        <div className="flex flex-col gap-5 p-4 sm:p-5 md:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-accent">
+                {dt("eyebrow")}
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                {team.entry.name}
+              </h1>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {team.entry.player_first_name} {team.entry.player_last_name} ·{" "}
+                <span className="tabular-nums text-foreground/80">
+                  {formatFplInteger(
+                    team.entry.summary_overall_points,
+                    params.locale,
+                    "0",
+                  )}{" "}
+                  {dt("pts")}
+                </span>{" "}
+                · {dt("overallRank")}{" "}
+                <span className="tabular-nums text-foreground/80">
+                  {formatFplInteger(
+                    team.entry.summary_overall_rank,
+                    params.locale,
+                  )}
+                </span>
+              </p>
+            </div>
+            <p className="max-w-xs text-right text-[11px] leading-relaxed text-muted-foreground">
+              {freeHitContext && hasRevert && !useFreeHitSquad
+                ? dt("squadSubRevert", {
+                    longGw: team.long_team_gw ?? "?",
+                    picksGw: team.picks_gw ?? "?",
+                  })
+                : freeHitContext && useFreeHitSquad
+                  ? dt("squadSubFh", { picksGw: picksGwStr })
+                  : dt("squadSubPicks", {
+                      picksGw: team.picks_gw ?? team.current_gw ?? "?",
+                    })}
+              {relTime(team.fetched_at, dt)} ·{" "}
+              <Link
+                href={
+                  useFreeHitSquad
+                    ? `/dashboard/${entryId}?refresh=1&squad=freehit`
+                    : `/dashboard/${entryId}?refresh=1`
+                }
+                className="font-medium text-brand-accent hover:underline"
+              >
+                {dt("refresh")}
+              </Link>
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <OverviewMetric
+              label={dt("stats.bank")}
+              value={`£${team.bank.toFixed(1)}m`}
+            />
+            <OverviewMetric
+              label={dt("stats.teamValue")}
+              value={`£${team.team_value.toFixed(1)}m`}
+            />
+            <OverviewMetric
+              label={dt("stats.freeTransfers")}
+              value={String(team.free_transfers)}
+            />
+            <OverviewMetric
+              label={dt("stats.activeChip")}
+              value={activeChipLabel}
+            />
+          </div>
+
+          <div className="grid gap-3 border-t border-border/70 pt-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+            <div className="rounded-xl border border-border/60 bg-background/40 px-3.5 py-3">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {dt("stats.chipsRemaining")}
+              </p>
+              <p className="mt-1 text-sm leading-snug text-foreground">
+                {chipsDisplay}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <OverviewMetric
+                label={dt("stats.xpXi", { horizon })}
+                value={starterXPTotal.toFixed(1)}
+                accent
+              />
+              <OverviewMetric
+                label={dt("stats.xpBench", { horizon })}
+                value={benchXPTotal.toFixed(1)}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -330,19 +395,6 @@ export default async function DashboardPage({
               )}
             </p>
           ) : null}
-        </section>
-      )}
-
-      {team.picks_may_be_stale && (
-        <section className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs text-amber-100 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm">
-          <strong className="font-semibold">{dt("staleTitle")}</strong>{" "}
-          {dt("staleBody", { gw: team.current_gw ?? "?" })}{" "}
-          <Link
-            href={`/dashboard/${entryId}?refresh=1`}
-            className="underline hover:text-amber-50"
-          >
-            {dt("refresh")}
-          </Link>
         </section>
       )}
 
@@ -392,62 +444,34 @@ export default async function DashboardPage({
           </h2>
         </div>
         {!squadEmpty ? (
-        <>
-        <div className="grid gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {startingXI.map((p) => {
-            const dgwGws = upcomingDgwGwsForTeam(
-              p.team_id,
-              dgwTeamGw,
-              gwHeaders,
-            );
-            return (
-              <PlayerCard
-                key={p.fpl_id}
-                p={p}
-                formLabel={dt("playerFormLabel")}
-                profileAriaLabel={dt("playerCardOpenProfile", {
-                  name: p.web_name ?? p.name ?? `#${p.fpl_id}`,
-                })}
-                dgwLine={
-                  dgwGws.length
-                    ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
-                    : undefined
-                }
-              />
-            );
-          })}
-        </div>
-        <div className="mt-6 md:mt-10">
-          <h2 className="mb-2 text-lg font-semibold tracking-tight text-foreground md:mb-3 md:text-xl">
-            {dt("bench")}
-          </h2>
-        </div>
-        <div className="grid gap-2 sm:gap-3 md:grid-cols-4">
-          {bench.map((p) => {
-            const dgwGws = upcomingDgwGwsForTeam(
-              p.team_id,
-              dgwTeamGw,
-              gwHeaders,
-            );
-            return (
-              <PlayerCard
-                key={p.fpl_id}
-                p={p}
-                compact
-                formLabel={dt("playerFormLabel")}
-                profileAriaLabel={dt("playerCardOpenProfile", {
-                  name: p.web_name ?? p.name ?? `#${p.fpl_id}`,
-                })}
-                dgwLine={
-                  dgwGws.length
-                    ? dt("playerDgwLine", { gws: dgwGws.join(" · ") })
-                    : undefined
-                }
-              />
-            );
-          })}
-        </div>
-        </>
+          <DashboardSquadPanel
+            picks={orderedPicks.map((p) => {
+              const row = heatmapRows.find((r) => r.fpl_id === p.fpl_id);
+              return {
+                fpl_id: p.fpl_id,
+                slot: p.slot,
+                web_name: p.web_name,
+                name: p.name,
+                team: p.team,
+                team_id: p.team_id ?? null,
+                position: p.position,
+                price: p.price,
+                form: p.form,
+                is_starter: p.is_starter,
+                is_captain: p.is_captain,
+                is_vice_captain: p.is_vice_captain,
+                availability_note: row?.availability_note ?? null,
+              };
+            })}
+            title={dt("startingXI")}
+            caption={dt("squadPitchCaption")}
+            benchLabel={dt("bench")}
+            horizon={Math.max(1, horizon)}
+            nextGwXpByFplId={nextGwXpByFplId}
+            gwForecastByFplId={gwForecastByFplId}
+            priceForecastByFplId={priceForecastByFplId}
+            inspectNameTitle={dt("squadPitchCaption")}
+          />
         ) : null}
       </section>
 
@@ -564,6 +588,90 @@ export default async function DashboardPage({
         </div>
       </section>
       ) : null}
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand-accent">
+            {dt("toolsEyebrow")}
+          </p>
+          <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+            {dt("toolsTitle")}
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+            {dt("toolsDescription")}
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {(
+            [
+              {
+                href: `/planner/${entryId}`,
+                label: dt("toolsPlanner"),
+                body: dt("toolsPlannerBody"),
+                accent: true,
+              },
+              {
+                href: `/manager/${entryId}`,
+                label: dt("toolsManager"),
+                body: dt("toolsManagerBody"),
+                accent: false,
+              },
+              {
+                href: "/squad-builder",
+                label: dt("toolsSquadBuilder"),
+                body: dt("toolsSquadBuilderBody"),
+                accent: false,
+              },
+              {
+                href: "/fpl/insights",
+                label: dt("toolsInsights"),
+                body: dt("toolsInsightsBody"),
+                accent: false,
+              },
+              {
+                href: "/fpl/fixtures",
+                label: dt("toolsFixtures"),
+                body: dt("toolsFixturesBody"),
+                accent: false,
+              },
+              {
+                href: "/players",
+                label: dt("toolsPlayers"),
+                body: dt("toolsPlayersBody"),
+                accent: false,
+              },
+            ] satisfies {
+              href: string;
+              label: string;
+              body: string;
+              accent: boolean;
+            }[]
+          ).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "group flex items-start justify-between gap-3 rounded-xl border px-3.5 py-3 no-underline transition-colors",
+                item.accent
+                  ? "border-brand-accent/35 bg-brand-accent/[0.07] hover:border-brand-accent/55 hover:bg-brand-accent/15"
+                  : "border-border bg-card/50 hover:border-brand-accent/40 hover:bg-muted/30",
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground group-hover:text-brand-accent">
+                  {item.label}
+                </span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  {item.body}
+                </span>
+              </span>
+              <span className="shrink-0 pt-0.5 text-muted-foreground group-hover:text-brand-accent">
+                →
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
   } catch (err) {
@@ -583,13 +691,17 @@ export default async function DashboardPage({
   }
 }
 
-function upcomingDgwGwsForTeam(
-  teamId: number | null | undefined,
-  dgwKeys: Set<string>,
-  gwHeaders: number[],
-): number[] {
-  if (teamId == null) return [];
-  return gwHeaders.filter((g) => dgwKeys.has(`${teamId}:${g}`));
+function formatActiveChip(
+  chip: string | null | undefined,
+  dt: Awaited<ReturnType<typeof getTranslations>>,
+): string {
+  if (!chip) return "—";
+  const key = chip.toLowerCase();
+  if (key === "bboost") return dt("chipBb");
+  if (key === "freehit") return dt("chipFh");
+  if (key === "wildcard") return dt("chipWc");
+  if (key === "3xc") return dt("chipTc");
+  return chip.toUpperCase();
 }
 
 function relTime(
@@ -607,24 +719,24 @@ function relTime(
   return dt("relDaysAgo", { n: Math.floor(diff / 86_400_000) });
 }
 
-function Stat({
+function OverviewMetric({
   label,
   value,
-  valueClassName,
+  accent,
 }: {
   label: string;
   value: string;
-  valueClassName?: string;
+  accent?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card px-2 py-2 shadow-[inset_0_0_0_1px_hsl(var(--border)/0.5)] transition-colors hover:border-border sm:rounded-xl sm:px-3 sm:py-2.5">
-      <div className="text-[9px] font-medium uppercase leading-tight tracking-wider text-muted-foreground sm:text-[10px]">
+    <div className="rounded-xl border border-border/60 bg-background/35 px-3 py-2.5">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
       <div
         className={cn(
-          "mt-0.5 text-sm font-semibold text-foreground sm:text-base",
-          valueClassName ?? "tabular-nums",
+          "mt-0.5 text-base font-semibold tabular-nums sm:text-lg",
+          accent ? "text-brand-accent" : "text-foreground",
         )}
       >
         {value}
@@ -678,77 +790,5 @@ function Legend({
         {injuryLabel}
       </span>
     </>
-  );
-}
-
-function PlayerCard({
-  p,
-  compact,
-  formLabel,
-  dgwLine,
-  profileAriaLabel,
-}: {
-  formLabel: string;
-  profileAriaLabel: string;
-  dgwLine?: string;
-  p: {
-    fpl_id: number;
-    web_name: string | null;
-    name: string | null;
-    team: string | null;
-    position: string | null;
-    price: number | null;
-    form: number | null;
-    is_captain: boolean;
-    is_vice_captain: boolean;
-  };
-  compact?: boolean;
-}) {
-  return (
-    <Link
-      href={`/player/${p.fpl_id}`}
-      aria-label={profileAriaLabel}
-      className={cn(
-        "block rounded-lg border border-border bg-card p-2 shadow-[inset_0_0_0_1px_hsl(var(--border)/0.5)] transition-colors hover:border-brand-accent/35 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:rounded-xl sm:p-3.5",
-        p.is_captain && "ring-1 ring-brand-accent/80",
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold sm:text-base">
-            {p.web_name ?? p.name ?? `#${p.fpl_id}`}
-            {p.is_captain && (
-              <span className="ml-1 text-brand-accent text-xs">(C)</span>
-            )}
-            {p.is_vice_captain && (
-              <span className="ml-1 text-foreground/70 text-xs">(V)</span>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {p.team ?? "?"} <SlotLabel pos={p.position} />
-          </div>
-          {dgwLine ? (
-            <p
-              className="mt-1.5 text-[10px] font-medium leading-snug text-yellow-200/95"
-              title={dgwLine}
-            >
-              <span className="rounded bg-yellow-400/15 px-1.5 py-0.5 ring-1 ring-yellow-400/35">
-                {dgwLine}
-              </span>
-            </p>
-          ) : null}
-        </div>
-        <div className="text-right text-xs">
-          <div className="text-foreground/70">
-            £{p.price !== null ? p.price.toFixed(1) : "?"}m
-          </div>
-          {!compact && (
-            <div className="text-muted-foreground">
-              {formLabel} {p.form ?? "–"}
-            </div>
-          )}
-        </div>
-      </div>
-    </Link>
   );
 }

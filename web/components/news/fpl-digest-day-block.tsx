@@ -1,4 +1,5 @@
 import type { FplXDigestRecord, FplXDigestSource } from "@/lib/fpl/fpl-x-digest";
+import { cn } from "@/lib/utils";
 
 export function fmtLondonDigestWindow(
   start: string,
@@ -19,33 +20,69 @@ export function fmtLondonDigestWindow(
   }
 }
 
-function DigestSummaryBody({ summary }: { summary: string }) {
+export function DigestSummaryBody({
+  summary,
+  maxSections,
+  maxBullets,
+  compact = false,
+}: {
+  summary: string;
+  maxSections?: number;
+  maxBullets?: number;
+  compact?: boolean;
+}) {
   const blocks = summary.split(/\n\n+/).filter(Boolean);
+  const visibleBlocks = maxSections ? blocks.slice(0, maxSections) : blocks;
+  let bulletsShown = 0;
 
   return (
-    <div className="space-y-4 text-sm leading-relaxed text-foreground/90">
-      {blocks.map((block) => {
+    <div
+      className={cn(
+        "text-foreground/90",
+        compact
+          ? "space-y-2.5 text-xs leading-relaxed"
+          : "space-y-4 text-sm leading-relaxed",
+      )}
+    >
+      {visibleBlocks.map((block, blockIdx) => {
         const lines = block.split("\n").filter(Boolean);
         const heading = lines[0]?.startsWith("## ")
           ? lines[0].replace(/^##\s+/, "").trim()
           : null;
         const bodyLines = heading ? lines.slice(1) : lines;
-        const bullets = bodyLines.filter((line) => line.trim().startsWith("- "));
+        const bulletLines = bodyLines.filter((line) => line.trim().startsWith("- "));
         const prose = bodyLines.filter((line) => !line.trim().startsWith("- "));
 
+        let bullets = bulletLines;
+        if (maxBullets != null) {
+          const remaining = maxBullets - bulletsShown;
+          bullets = bulletLines.slice(0, Math.max(0, remaining));
+          bulletsShown += bullets.length;
+        }
+
         return (
-          <section key={block.slice(0, 48)}>
+          <section key={`${blockIdx}-${block.slice(0, 32)}`}>
             {heading ? (
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-accent">
+              <h3
+                className={cn(
+                  "font-semibold uppercase tracking-wide text-brand-accent",
+                  compact
+                    ? "mb-1 text-[10px]"
+                    : "mb-2 text-xs",
+                )}
+              >
                 {heading}
               </h3>
             ) : null}
             {bullets.length > 0 ? (
-              <ul className="space-y-1.5 pl-1">
+              <ul className={cn(compact ? "space-y-1 pl-0.5" : "space-y-1.5 pl-1")}>
                 {bullets.map((line) => (
                   <li
                     key={line.slice(0, 60)}
-                    className="relative pl-3 before:absolute before:left-0 before:top-[0.55em] before:h-1 before:w-1 before:rounded-full before:bg-brand-accent/70"
+                    className={cn(
+                      "relative pl-3 text-foreground/85",
+                      "before:absolute before:left-0 before:top-[0.55em] before:h-1 before:w-1 before:rounded-full before:bg-brand-accent/70",
+                    )}
                   >
                     {line.replace(/^\-\s+/, "")}
                   </li>
@@ -53,7 +90,10 @@ function DigestSummaryBody({ summary }: { summary: string }) {
               </ul>
             ) : null}
             {prose.map((line) => (
-              <p key={line.slice(0, 40)} className="text-foreground/85">
+              <p
+                key={line.slice(0, 40)}
+                className={compact ? "text-foreground/80" : "text-foreground/85"}
+              >
                 {line}
               </p>
             ))}

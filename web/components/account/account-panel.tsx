@@ -10,6 +10,7 @@ import type { TeamTheme } from "@/lib/team-themes";
 import { FplEntryLinkForm } from "@/components/account/fpl-entry-link-form";
 import { FplClubSelectForm } from "@/components/account/fpl-club-select-form";
 import { AccountInsightsBilling } from "@/components/account/account-insights-billing";
+import { MiniBadgesProfileSection } from "@/components/account/mini-badges-profile-section";
 
 type AccountDetails = {
   email: string;
@@ -275,6 +276,8 @@ export function AccountPanel() {
             ) : null}
           </div>
         </div>
+
+        <MiniBadgesProfileSection fplEntryId={details.profile.fpl_entry_id} />
 
         <div>
           <h2 className="text-sm font-medium text-foreground/70">{t("yourPreferences")}</h2>

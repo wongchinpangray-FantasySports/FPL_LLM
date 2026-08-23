@@ -114,6 +114,54 @@
         margin-top: 20px;
       }
 
+      .fixtures {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .fixture-day {
+        border-radius: 16px;
+        padding: 16px 18px 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .fixture-day-title {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #a7f3d0;
+      }
+
+      .fixture-day-title .count {
+        font-size: 20px;
+        font-weight: 500;
+        color: #a1a1aa;
+      }
+
+      .fixture-row {
+        display: block;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 23px;
+        line-height: 1.35;
+      }
+
+      .fixture-row:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .fixture-pair {
+        color: #e4e4e7;
+        font-weight: 600;
+      }
+
       .footer {
         margin-top: 36px;
         padding-top: 24px;
@@ -139,16 +187,68 @@
           .replace(/"/g, "&quot;");
       }
 
+      function parseUpcomingFixtures(lines) {
+        const groups = [];
+        let cur = null;
+        for (const raw of lines || []) {
+          const line = String(raw || "").trim();
+          const header = line.match(/^▸\s*(.+?)（.+?）·\s*(\d+)\s*场/);
+          if (header) {
+            cur = { label: header[1], count: header[2], fixtures: [] };
+            groups.push(cur);
+            continue;
+          }
+          const fx = line.match(/^(.+?)\s+vs\s+(.+)$/);
+          if (fx && cur) {
+            cur.fixtures.push({
+              home: fx[1].trim(),
+              away: fx[2].trim(),
+            });
+          }
+        }
+        return groups;
+      }
+
       function render(card) {
         const root = document.getElementById("root");
         const sections = (card.sections || [])
-          .map(
-            (s) => `
+          .map((s) => {
+            const isUpcoming = /即将到来的友谊赛/.test(s.title || "");
+            if (isUpcoming) {
+              const groups = parseUpcomingFixtures(s.lines || []);
+              const body = groups.length
+                ? `<div class="fixtures">${groups
+                    .map(
+                      (g) => `
+                  <div class="fixture-day">
+                    <div class="fixture-day-title">
+                      <span>${esc(g.label)}</span>
+                      <span class="count">${esc(g.count)} 场</span>
+                    </div>
+                    ${g.fixtures
+                      .map(
+                        (f) => `
+                      <div class="fixture-row">
+                        <div class="fixture-pair">${esc(f.home)} vs ${esc(f.away)}</div>
+                      </div>`,
+                      )
+                      .join("")}
+                  </div>`,
+                    )
+                    .join("")}</div>`
+                : `<ul>${(s.lines || []).map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`;
+              return `
           <div class="section">
             <div class="section-title">${esc(s.title)}</div>
-            <ul>${s.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
-          </div>`,
-          )
+            ${body}
+          </div>`;
+            }
+            return `
+          <div class="section">
+            <div class="section-title">${esc(s.title)}</div>
+            <ul>${(s.lines || []).map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+          </div>`;
+          })
           .join("");
 
         const links = (card.links || [])

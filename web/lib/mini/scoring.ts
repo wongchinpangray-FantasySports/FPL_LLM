@@ -47,10 +47,65 @@ export function scoreMiniSquad(
   statsByPlayer: Map<number, GwStatRow>,
   ownership?: MiniScoreOwnershipOpts,
 ): MiniSquadScore {
+  return scoreMiniSquadFiltered(
+    pickIds,
+    captainFplId,
+    viceFplId,
+    statsByPlayer,
+    null,
+    ownership,
+  );
+}
+
+/**
+ * Score a squad, optionally limiting to picks whose `team_id` is in `allowedTeamIds`.
+ * Used for “yesterday’s matchday” partial totals during a live GW.
+ */
+export function scoreMiniSquadFiltered(
+  pickIds: number[],
+  captainFplId: number,
+  viceFplId: number,
+  statsByPlayer: Map<number, GwStatRow>,
+  allowedTeamIds: Set<number> | null,
+  ownership?: MiniScoreOwnershipOpts,
+  pickTeamById?: Map<number, number | null>,
+): MiniSquadScore {
+  const eligibleIds =
+    allowedTeamIds == null
+      ? pickIds
+      : pickIds.filter((id) => {
+          const teamId = pickTeamById?.get(id);
+          return teamId != null && allowedTeamIds.has(teamId);
+        });
+
+  if (eligibleIds.length === 0) {
+    return {
+      total: 0,
+      breakdown: pickIds.map((id) => ({
+        player_id: id,
+        base_points: 0,
+        captain_bonus: 0,
+        scored_points: 0,
+      })),
+      doubled_player_id: null,
+      differential_bonus: 0,
+      differential_captain: false,
+    };
+  }
+
+  const capEligible = eligibleIds.includes(captainFplId);
+  const viceEligible = eligibleIds.includes(viceFplId);
+  const effectiveCaptain = capEligible
+    ? captainFplId
+    : viceEligible
+      ? viceFplId
+      : captainFplId;
+  const effectiveVice = capEligible ? viceFplId : captainFplId;
+
   const breakdown: MiniScoreBreakdown[] = [];
   let total = 0;
 
-  for (const id of pickIds) {
+  for (const id of eligibleIds) {
     const row = statsByPlayer.get(id);
     const base = Math.max(0, row?.total_points ?? 0);
     breakdown.push({
@@ -62,11 +117,11 @@ export function scoreMiniSquad(
     total += base;
   }
 
-  const capMins = statsByPlayer.get(captainFplId)?.minutes ?? 0;
-  const viceMins = statsByPlayer.get(viceFplId)?.minutes ?? 0;
+  const capMins = statsByPlayer.get(effectiveCaptain)?.minutes ?? 0;
+  const viceMins = statsByPlayer.get(effectiveVice)?.minutes ?? 0;
   let doubledId: number | null = null;
-  if (capMins > 0) doubledId = captainFplId;
-  else if (viceMins > 0) doubledId = viceFplId;
+  if (capEligible && capMins > 0) doubledId = effectiveCaptain;
+  else if (viceEligible && viceMins > 0) doubledId = effectiveVice;
 
   if (doubledId != null) {
     const line = breakdown.find((b) => b.player_id === doubledId);

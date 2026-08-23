@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
-import { scoreMiniSquad } from "@/lib/mini/scoring";
+import {
+  computeMatchdayRefresh,
+  getTeamsPlayedOnDate,
+  type MiniFixtureRow,
+} from "@/lib/mini/matchday";
+import { scoreMiniSquad, scoreMiniSquadFiltered } from "@/lib/mini/scoring";
 import { getMiniOwnershipSnapshot } from "@/lib/mini/hot-picks";
 import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 
@@ -23,6 +28,18 @@ export async function GET(req: Request) {
   }
 
   const supa = getServerSupabase();
+  const { data: fixtureRows } = await supa
+    .from("fixtures")
+    .select("kickoff_time,home_team_id,away_team_id,finished")
+    .eq("gw", gw)
+    .eq("season", season);
+
+  const fixtures = (fixtureRows ?? []) as MiniFixtureRow[];
+  const matchday = computeMatchdayRefresh(fixtures, ctx.scoring_finished);
+  const yesterdayTeams = matchday.yesterday_has_scores
+    ? getTeamsPlayedOnDate(fixtures, matchday.yesterday_date)
+    : new Set<number>();
+
   const { data: entries, error: eErr } = await supa
     .from("mini_entries")
     .select(
@@ -99,12 +116,37 @@ export async function GET(req: Request) {
           miniEntries,
         },
       );
+      const pickTeamById = new Map(
+        picks.map((p) => [p.fpl_id, p.team_id] as const),
+      );
+      const yesterdayScored =
+        yesterdayTeams.size > 0
+          ? scoreMiniSquadFiltered(
+              pickIds,
+              row.captain_fpl_id,
+              row.vice_fpl_id,
+              statsByPlayer,
+              yesterdayTeams,
+              {
+                miniOwnedById: ownedById,
+                fplOwnedById,
+                miniEntries,
+              },
+              pickTeamById,
+            )
+          : null;
       const capPick = picks.find((p) => p.fpl_id === row.captain_fpl_id);
       const vicePick = picks.find((p) => p.fpl_id === row.vice_fpl_id);
+      const gwPointsByFplId = Object.fromEntries(
+        scored.breakdown.map((b) => [b.player_id, b.scored_points]),
+      );
       return {
         entry_id: row.entry_id,
         entry_name: row.entry_name,
         total_points: scored.total,
+        yesterday_points: yesterdayScored?.total ?? null,
+        captain_fpl_id: row.captain_fpl_id,
+        vice_fpl_id: row.vice_fpl_id,
         doubled_player_id: scored.doubled_player_id,
         differential_bonus: scored.differential_bonus,
         differential_captain: scored.differential_captain,
@@ -112,21 +154,32 @@ export async function GET(req: Request) {
         vice_name: vicePick?.web_name ?? null,
         picks,
         breakdown: scored.breakdown,
+        gw_points_by_fpl_id: gwPointsByFplId,
         updated_at: row.updated_at,
       };
     })
     .sort((a, b) => b.total_points - a.total_points || a.entry_id - b.entry_id)
     .map((row, i) => ({ rank: i + 1, ...row }));
 
-  return NextResponse.json({
-    gw,
-    season,
-    scoring_gw: ctx.scoring_gw,
-    submission_gw: ctx.submission_gw,
-    submission_open: ctx.submission_open,
-    deadline_time: ctx.deadline_time,
-    scoring_finished: ctx.scoring_finished,
-    updated_at: new Date().toISOString(),
-    rows: leaderboard,
-  });
+  return NextResponse.json(
+    {
+      gw,
+      season,
+      scoring_gw: ctx.scoring_gw,
+      submission_gw: ctx.submission_gw,
+      submission_open: ctx.submission_open,
+      deadline_time: ctx.deadline_time,
+      scoring_finished: ctx.scoring_finished,
+      next_refresh_at: matchday.next_refresh_at,
+      yesterday_date: matchday.yesterday_date,
+      yesterday_has_scores: matchday.yesterday_has_scores,
+      updated_at: new Date().toISOString(),
+      rows: leaderboard,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    },
+  );
 }

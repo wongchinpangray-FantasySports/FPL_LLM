@@ -112,9 +112,18 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isProtectedPath(pathname) && !user) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("next", stripLocalePrefix(pathname));
-    return NextResponse.redirect(loginUrl);
+    const allowLocalDashboardPreview =
+      process.env.NODE_ENV === "development" &&
+      process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1" &&
+      (() => {
+        const path = stripLocalePrefix(pathname);
+        return path === "/dashboard" || path.startsWith("/dashboard/");
+      })();
+    if (!allowLocalDashboardPreview) {
+      const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("next", stripLocalePrefix(pathname));
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   if (isAdminPath(pathname) && user && !isAdminEmail(user.email)) {

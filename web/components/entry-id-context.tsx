@@ -14,6 +14,15 @@ const KEY = "fpl_entry_id";
 /** Same-tab: `storage` does not fire for own `setItem` updates. */
 const LOCAL_EVENT = "fpl-entry-id-changed";
 
+export function readStoredFplEntryId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(KEY);
+  } catch {
+    return null;
+  }
+}
+
 function subscribe(onStoreChange: () => void) {
   if (typeof window === "undefined") {
     return () => {};
@@ -31,12 +40,7 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function getSnapshot() {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem(KEY);
-  } catch {
-    return null;
-  }
+  return readStoredFplEntryId();
 }
 
 function getServerSnapshot() {

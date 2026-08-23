@@ -23,6 +23,12 @@ import { loadFixtureSwingRaw } from "../lib/fpl/insights/fixture-swing";
 import { loadXgDivergenceRaw } from "../lib/fpl/insights/xg-divergence";
 import { loadXaDivergenceRaw } from "../lib/fpl/insights/xa-divergence";
 import { loadPriceChangesRaw } from "../lib/fpl/insights/price-changes";
+import {
+  classifyPriceProgress,
+  computePriceProgress,
+  loadPriceForecastRaw,
+} from "../lib/fpl/insights/price-forecast";
+import { isKickoffInWindow } from "../lib/fpl/wechat-matchday";
 import { loadXpAccuracyRaw } from "../lib/fpl/insights/xp-accuracy";
 import { isStripeConfigured } from "../lib/stripe/server";
 
@@ -65,7 +71,47 @@ async function main(): Promise<void> {
   assert.ok(getInsightById("xg-divergence")?.status === "live");
   assert.ok(getInsightById("xa-divergence")?.status === "live");
   assert.ok(getInsightById("price-changes")?.status === "live");
+  assert.ok(getInsightById("price-forecast")?.status === "live");
+  assert.ok(getInsightById("price-forecast")?.tier === "free");
+  assert.equal(await canAccessInsight("price-forecast", null), true);
   assert.ok(getInsightById("xp-accuracy")?.status === "live");
+
+  assert.equal(
+    computePriceProgress({
+      netTransfers: 100_000,
+      selectedByPercent: 10,
+      totalPlayers: 10_000_000,
+    }),
+    1,
+  );
+  assert.equal(
+    computePriceProgress({
+      netTransfers: -40_000,
+      selectedByPercent: 0.4,
+      totalPlayers: 10_000_000,
+    }),
+    -1,
+  );
+  assert.equal(classifyPriceProgress(0.9), "likely_rise");
+  assert.equal(classifyPriceProgress(-0.6), "watch_fall");
+  assert.equal(
+    isKickoffInWindow(
+      "2026-08-23T14:00:00Z",
+      new Date("2026-08-23T10:00:00Z"),
+      14,
+      30,
+    ),
+    true,
+  );
+  assert.equal(
+    isKickoffInWindow(
+      "2026-08-24T06:00:00Z",
+      new Date("2026-08-23T10:00:00Z"),
+      14,
+      30,
+    ),
+    false,
+  );
 
   const preseason = await loadPreseasonSignalsRaw();
   assert.ok(preseason.rows.length > 0, "expected preseason signal rows");
@@ -190,6 +236,21 @@ async function main(): Promise<void> {
       hasDuplicatePlayerIdentity(priceChanges.rows),
       false,
       "price-changes: duplicate player identity rows",
+    );
+  }
+
+  const priceForecast = await loadPriceForecastRaw();
+  assert.ok(Array.isArray(priceForecast.rows), "price forecast load ok");
+  if (priceForecast.rows.length > 0) {
+    assert.equal(
+      hasDuplicateFplIds(priceForecast.rows),
+      false,
+      "price-forecast: duplicate fpl_id rows",
+    );
+    assert.equal(
+      hasDuplicatePlayerIdentity(priceForecast.rows),
+      false,
+      "price-forecast: duplicate player identity rows",
     );
   }
 

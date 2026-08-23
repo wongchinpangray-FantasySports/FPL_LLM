@@ -59,6 +59,10 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   if (pathname === "/api/chat" || pathname.startsWith("/api/chat/")) {
     return true;
   }
+  // Public player projection sheet (used by dashboard + planner inspect).
+  if (pathname.startsWith("/api/planner/player-detail")) return false;
+  // Home hub squad snapshot — auth still checked in the route except local preview.
+  if (/^\/api\/team\/[^/]+\/summary\/?$/.test(pathname)) return false;
   if (pathname.startsWith("/api/planner/")) return true;
   if (pathname.startsWith("/api/squad-builder/")) return true;
   if (pathname.startsWith("/api/team/")) return true;

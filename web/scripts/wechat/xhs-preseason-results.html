@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE Preseason Hot Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=Noto+Sans+SC:wght@700;800;900&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #05070a; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 28px 28px 22px;
+        display: flex; flex-direction: column;
+      }
+      .bg {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 90% 55% at 8% -5%, rgba(0,255,135,0.22), transparent 55%),
+          radial-gradient(ellipse 70% 50% at 105% 35%, rgba(255,214,10,0.1), transparent 50%),
+          radial-gradient(ellipse 80% 45% at 50% 110%, rgba(0,255,135,0.08), transparent 55%),
+          linear-gradient(165deg, #07110c 0%, #05070a 42%, #0a0d12 100%);
+      }
+      .slash {
+        position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+        background:
+          repeating-linear-gradient(
+            -18deg,
+            transparent 0 18px,
+            rgba(0,255,135,0.035) 18px 19px
+          );
+      }
+      .content {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; height: 100%; min-height: 0;
+      }
+
+      .top {
+        flex-shrink: 0;
+        display: flex; justify-content: space-between; align-items: flex-end;
+        margin-bottom: 14px; gap: 16px;
+      }
+      .brand-wrap { min-width: 0; }
+      .brand {
+        font-family: Inter, sans-serif; font-size: 26px; font-weight: 900;
+        letter-spacing: -0.05em;
+      }
+      .brand span { color: #00ff87; }
+      .kicker {
+        margin-top: 4px;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 5px 11px; border-radius: 999px;
+        background: #00ff87; color: #04140c;
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 900;
+        letter-spacing: 0.14em; text-transform: uppercase;
+      }
+      .date-block { text-align: right; flex-shrink: 0; }
+      .date {
+        font-family: "Bebas Neue", Inter, sans-serif;
+        font-size: 64px; line-height: 0.85; letter-spacing: 0.02em;
+      }
+      .page-chip {
+        margin-top: 4px; font-family: Inter, sans-serif;
+        font-size: 13px; font-weight: 800; letter-spacing: 0.1em;
+        color: rgba(244,244,245,0.55);
+      }
+
+      .hero-title {
+        flex-shrink: 0;
+        margin-bottom: 12px;
+      }
+      .hero-title h1 {
+        font-size: 42px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.05;
+      }
+      .hero-title h1 em {
+        font-style: normal; color: #00ff87;
+      }
+      .hero-title p {
+        margin-top: 6px; font-size: 16px; font-weight: 700;
+        color: rgba(244,244,245,0.55);
+      }
+
+      .board {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column; gap: 14px;
+      }
+
+      .club {
+        position: relative;
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex; flex-direction: column; gap: 10px;
+        padding: 16px 18px 14px 20px;
+        border-radius: 22px;
+        background:
+          linear-gradient(145deg, color-mix(in srgb, var(--club) 42%, #05070a) 0%, rgba(8, 10, 14, 0.94) 48%, rgba(8, 10, 14, 0.9) 100%);
+        border: 1px solid color-mix(in srgb, var(--club) 58%, rgba(255,255,255,0.08));
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--club) 35%, transparent);
+        overflow: hidden;
+      }
+      .club::before {
+        content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
+        background: linear-gradient(180deg, var(--club) 0%, var(--club2) 100%);
+        box-shadow: 4px 0 24px color-mix(in srgb, var(--club) 45%, transparent);
+      }
+      .club.alt::before {
+        background: linear-gradient(180deg, var(--club2) 0%, var(--club) 100%);
+      }
+      .club::after {
+        content: ""; position: absolute; right: -40px; top: -50px;
+        width: 180px; height: 180px; border-radius: 50%;
+        background: radial-gradient(circle, color-mix(in srgb, var(--club) 35%, transparent), transparent 70%);
+        pointer-events: none;
+      }
+      .club-noise {
+        position: absolute; inset: 0; pointer-events: none; opacity: 0.07;
+        background-image: radial-gradient(rgba(255,255,255,0.8) 0.6px, transparent 0.6px);
+        background-size: 4px 4px;
+      }
+
+      .club-head {
+        position: relative; z-index: 1;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        flex-shrink: 0;
+      }
+      .club-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      .badge {
+        width: 52px; height: 52px; object-fit: contain;
+        filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45));
+      }
+      .badge-fallback {
+        width: 52px; height: 52px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 900;
+        color: #00ff87; background: rgba(0,255,135,0.12);
+        border: 1px solid rgba(0,255,135,0.3);
+      }
+      .club-name {
+        font-size: 28px; font-weight: 900; letter-spacing: -0.04em;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .club-meta {
+        margin-top: 3px; display: flex; align-items: center; gap: 8px;
+        font-size: 13px; font-weight: 800; color: rgba(244,244,245,0.5);
+      }
+      .club-meta .code {
+        font-family: Inter, sans-serif; letter-spacing: 0.12em;
+      }
+      .form { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+      .pill-w, .pill-d, .pill-l {
+        min-width: 20px; height: 20px; padding: 0 4px; border-radius: 5px;
+        font-family: Inter, sans-serif; font-size: 10px; font-weight: 900;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .pill-w { background: rgba(0,255,135,0.2); color: #00ff87; }
+      .pill-d { background: rgba(255,255,255,0.08); color: rgba(244,244,245,0.5); }
+      .pill-l { background: rgba(255,80,110,0.2); color: #ff7a90; }
+
+      .star {
+        position: relative; z-index: 1;
+        flex-shrink: 0;
+        display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: linear-gradient(100deg, color-mix(in srgb, var(--club) 28%, transparent), color-mix(in srgb, var(--club2) 10%, transparent) 70%, rgba(0,0,0,0.15));
+        border: 1px solid color-mix(in srgb, var(--club) 55%, transparent);
+      }
+      .star-label {
+        font-family: Inter, sans-serif; font-size: 11px; font-weight: 900;
+        letter-spacing: 0.16em; text-transform: uppercase; color: var(--club-ink);
+      }
+      .star-name {
+        margin-top: 2px; font-size: 34px; font-weight: 900;
+        letter-spacing: -0.04em; line-height: 1;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .star-sub {
+        margin-top: 4px; font-size: 13px; font-weight: 700;
+        color: rgba(244,244,245,0.55);
+      }
+      .star-count {
+        text-align: right; line-height: 0.85;
+      }
+      .star-count .n {
+        font-family: "Bebas Neue", Inter, sans-serif;
+        font-size: 72px; color: var(--club-ink); letter-spacing: 0.02em;
+      }
+      .star-count .u {
+        display: block; margin-top: 2px;
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 900;
+        letter-spacing: 0.14em; color: rgba(244,244,245,0.5);
+      }
+
+      .lists {
+        position: relative; z-index: 1;
+        flex: 1; min-height: 0;
+        display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 10px;
+      }
+      .list {
+        min-height: 0; display: flex; flex-direction: column;
+        padding: 10px 12px; border-radius: 14px;
+        background: rgba(0,0,0,0.28);
+        border: 1px solid rgba(255,255,255,0.07);
+        overflow: hidden;
+      }
+      .list-h {
+        flex-shrink: 0;
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-bottom: 6px;
+      }
+      .list-h .t {
+        font-size: 14px; font-weight: 900; letter-spacing: 0.04em;
+      }
+      .list-h .t.g { color: var(--club-ink); }
+      .list-h .t.a { color: #ffe566; }
+      .list-h .hint {
+        font-size: 11px; font-weight: 800; color: rgba(244,244,245,0.35);
+        letter-spacing: 0.08em;
+      }
+      .rows {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column; justify-content: space-evenly;
+      }
+      .row {
+        display: grid; grid-template-columns: 22px minmax(0, 1fr) auto;
+        gap: 8px; align-items: center;
+      }
+      .row .rk {
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 900;
+        color: rgba(244,244,245,0.35);
+      }
+      .row .nm {
+        font-size: 18px; font-weight: 800; letter-spacing: -0.02em;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .row .ct {
+        font-family: "Bebas Neue", Inter, sans-serif;
+        font-size: 28px; line-height: 1; letter-spacing: 0.02em;
+      }
+      .row .ct.g { color: var(--club-ink); }
+      .row .ct.a { color: #ffe566; }
+      .empty {
+        font-size: 14px; font-weight: 700; color: rgba(244,244,245,0.35);
+        padding: 8px 0;
+      }
+
+      .fixtures {
+        position: relative; z-index: 1;
+        flex-shrink: 0;
+        display: flex; flex-wrap: wrap; gap: 6px;
+      }
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 9px; border-radius: 999px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        font-size: 12px; font-weight: 800;
+        color: rgba(244,244,245,0.72);
+      }
+      .chip .sc {
+        font-family: Inter, sans-serif; color: #fff; font-weight: 900;
+      }
+      .chip .ha {
+        color: rgba(244,244,245,0.4); font-size: 11px;
+      }
+
+      .footer {
+        flex-shrink: 0;
+        margin-top: 12px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 13px 18px; border-radius: 18px;
+        background: #00ff87; color: #04140c;
+        box-shadow: 0 12px 40px rgba(0,255,135,0.25);
+      }
+      .footer .cta { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
+      .footer .url {
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 800;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function stamp(date) {
+        const m = String(date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? { mmdd: `${m[2]}.${m[3]}`, yyyy: m[1] } : { mmdd: date || "", yyyy: "" };
+      }
+      function formHtml(form) {
+        return (form || [])
+          .map((letter) => {
+            const cls = letter === "W" ? "pill-w" : letter === "L" ? "pill-l" : "pill-d";
+            return `<span class="${cls}">${esc(letter)}</span>`;
+          })
+          .join("");
+      }
+      function badgeHtml(c) {
+        if (c.badge) {
+          return `<img class="badge" src="${esc(c.badge)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="badge-fallback" style="display:none">${esc((c.pl_code || "?").slice(0, 3))}</div>`;
+        }
+        return `<div class="badge-fallback">${esc((c.pl_code || "?").slice(0, 3))}</div>`;
+      }
+      function shortName(name) {
+        const cleaned = String(name || "")
+          .replace(/^Jo[aã]o Pedro$/i, "J.Pedro")
+          .trim();
+        const parts = cleaned.split(/\s+/);
+        if (parts.length <= 1) return cleaned;
+        const last = parts[parts.length - 1];
+        if (last.includes("-") || last.length >= 5) return last;
+        return last;
+      }
+      function listRows(rows, kind, max, ink) {
+        const list = (rows || []).slice(0, max);
+        if (!list.length) return `<div class="empty">暂无收录</div>`;
+        const countColor = kind === "a" ? "#FFE566" : ink || "#F4F4F5";
+        return `<div class="rows">${list
+          .map(
+            (r, i) => `
+            <div class="row">
+              <div class="rk">${i + 1}</div>
+              <div class="nm">${esc(r.short || shortName(r.name))}</div>
+              <div class="ct ${kind}" style="color:${esc(countColor)}">${esc(r.count)}</div>
+            </div>`,
+          )
+          .join("")}</div>`;
+      }
+      function clubCard(c, idx) {
+        const star = (c.top_scorers && c.top_scorers[0]) || null;
+        const starName = star ? star.short || shortName(star.name) : "—";
+        const starCount = star ? star.count : "–";
+        const assistLead = (c.top_assists && c.top_assists[0]) || null;
+        const color = c.color || {};
+        const primary = color.primary || "#00ff87";
+        const secondary = color.secondary || "#ffffff";
+        const tint = color.tint || primary;
+        const ink = color.ink || "#F4F4F5";
+        const chips = (c.matches || [])
+          .map(
+            (m) => `
+            <span class="chip">
+              <span class="ha">${esc(m.ha)}</span>
+              <span>${esc(m.opponent)}</span>
+              <span class="sc">${esc(m.score)}</span>
+            </span>`,
+          )
+          .join("");
+        return `
+          <article class="club${idx === 1 ? " alt" : ""}" style="--club:${esc(tint)};--club2:${esc(secondary)};--club-ink:${esc(ink)}">
+            <div class="club-noise"></div>
+            <div class="club-head">
+              <div class="club-id">
+                ${badgeHtml(c)}
+                <div>
+                  <div class="club-name">${esc(c.short || c.pl_name)}</div>
+                  <div class="club-meta">
+                    <span class="code">${esc(c.pl_code)}</span>
+                    <span>·</span>
+                    <span>${esc(c.played)}场 ${esc(c.record)}</span>
+                    <span>·</span>
+                    <span>进${esc(c.gf)} 失${esc(c.ga)}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form">${formHtml(c.form)}</div>
+            </div>
+            <div class="star">
+              <div>
+                <div class="star-label" style="color:${esc(ink)}">Hot scorer · 本队头号射手</div>
+                <div class="star-name">${esc(starName)}</div>
+                <div class="star-sub">${
+                  assistLead
+                    ? `助攻王 ${esc(assistLead.short || shortName(assistLead.name))} · ${esc(assistLead.count)}A`
+                    : "助攻数据待收录"
+                }</div>
+              </div>
+              <div class="star-count">
+                <div class="n" style="color:${esc(ink)}">${esc(starCount)}</div>
+                <div class="u">GOALS</div>
+              </div>
+            </div>
+            <div class="lists">
+              <div class="list">
+                <div class="list-h"><span class="t g" style="color:${esc(ink)}">射手榜</span><span class="hint">G</span></div>
+                ${listRows(c.top_scorers, "g", 5, ink)}
+              </div>
+              <div class="list">
+                <div class="list-h"><span class="t a">助攻榜</span><span class="hint">A</span></div>
+                ${listRows(c.top_assists, "a", 5, ink)}
+              </div>
+            </div>
+            <div class="fixtures">${chips}</div>
+          </article>`;
+      }
+      function render(data) {
+        const d = stamp(data.date);
+        const clubs = (data.clubs || []).map(clubCard).join("");
+        document.getElementById("root").innerHTML = `
+          <div class="bg"></div>
+          <div class="slash"></div>
+          <div class="content">
+            <div class="top">
+              <div class="brand-wrap">
+                <div class="brand">FA<span>LEAGUE</span></div>
+                <div class="kicker">谁在状态 · G/A 优先</div>
+              </div>
+              <div class="date-block">
+                <div class="date">${esc(d.mmdd)}</div>
+                <div class="page-chip">${esc(d.yyyy)} · PAGE ${esc(data.page)}/${esc(data.total_pages)}</div>
+              </div>
+            </div>
+            <div class="hero-title">
+              <h1>${data.page === 1 ? '季前赛 <em>状态雷达</em>' : '状态雷达 <em>续</em>'}</h1>
+              <p>${esc(data.subtitle || "各队射手 / 助攻优先 · 赛果作参考")}</p>
+            </div>
+            <div class="board">${clubs}</div>
+            <div class="footer">
+              <div class="cta">${esc(data.cta || "打开季前赛状态页 →")}</div>
+              <div class="url">${esc(data.url || "faleague-ai.com/zh/fpl/preseason")}</div>
+            </div>
+          </div>`;
+      }
+      if (window.__DATA__) render(window.__DATA__);
+    </script>
+  </body>
+</html>

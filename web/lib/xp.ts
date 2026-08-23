@@ -476,10 +476,13 @@ export interface NextFixtureOpponent {
 }
 
 /**
- * Next upcoming match for each player’s team (unfinished fixtures from current GW onward).
+ * Next upcoming match for each player’s team (unfinished fixtures from `minGw` onward).
+ * Defaults to the official current GW. Pass `minGw: current + 1` for planner cards
+ * that should show the next planning GW, not an in-progress current fixture.
  */
 export async function nextFixtureForPlayers(
   playerIds: number[],
+  opts?: { minGw?: number },
 ): Promise<Map<number, NextFixtureOpponent | null>> {
   const out = new Map<number, NextFixtureOpponent | null>();
   if (playerIds.length === 0) return out;
@@ -491,10 +494,11 @@ export async function nextFixtureForPlayers(
     loadPlayers(playerIds),
   ]);
 
-  const fromGw = current;
-  const toGw = current + 15;
+  const fromGw =
+    opts?.minGw != null && opts.minGw > 0 ? Math.floor(opts.minGw) : current;
+  const toGw = fromGw + 15;
   const raw = await loadFixturesWindow(fromGw, toGw, fplSeason);
-  const unfinished = raw.filter((f) => !f.finished);
+  const unfinished = raw.filter((f) => !f.finished && f.gw >= fromGw);
 
   const byTeam = new Map<number, Fixture[]>();
   for (const f of unfinished) {
@@ -886,6 +890,33 @@ function seasonMinutesAnchor(
 }
 
 /**
+ * Early-season / blank GW: available players with no minutes yet (e.g. Haaland
+ * after a blank) still need a minutes prior so xP is not stuck at 0.
+ * Uses ownership + price as a crude "likely starter" signal.
+ */
+function earlySeasonMinutesFallback(
+  p: PlayerCoreRow,
+  currentGw: number,
+): { expMins: number; pAppear: number; p60: number } | null {
+  if (currentGw > 5) return null;
+  const status = p.status ?? "a";
+  if (status !== "a") return null;
+  const own = num(p.selected_by_percent);
+  const price = num(p.base_price);
+  if (own < 5 && price < 6.5) return null;
+
+  let expMins = 62;
+  if (own >= 40 || price >= 12) expMins = 84;
+  else if (own >= 20 || price >= 9) expMins = 78;
+  else if (own >= 10 || price >= 7.5) expMins = 72;
+  else if (own >= 5 || price >= 6.5) expMins = 65;
+
+  const pAppear = clamp(expMins / 90, 0.55, 0.95);
+  const p60 = clamp((expMins - 8) / 90, 0.4, 0.9);
+  return { expMins, pAppear, p60 };
+}
+
+/**
  * Demote clear backups when a teammate at the same position has far more
  * season minutes. Keepers are near-binary; outfield rotation is softer.
  * `share` = playerMins / max teammate minutes at that position (0..1).
@@ -1041,7 +1072,7 @@ export function projectPlayerForFixture(args: {
           seasonPpg ?? null,
           seasonStarts,
           currentGw,
-        )
+        ) ?? earlySeasonMinutesFallback(player, currentGw)
       : null;
 
   // expected playing time (+ modest MID/FWD lift when involvement rate is credible)
@@ -1402,7 +1433,9 @@ export async function projectPlayers(
     const roll = rollingAll.get(pid) ?? emptyRolling(0);
     const sp = setPieceFlags(p);
     const seasonPpg = p.points_per_game != null ? Number(p.points_per_game) : null;
-    const roleShare = roleShareForPlayer(p, teamPosMax);
+    // Don't treat a blank (0') as a backup vs a teammate who already played.
+    const roleShare =
+      num(p.minutes) > 0 ? roleShareForPlayer(p, teamPosMax) : null;
 
     const teamFixtures = fixturesByTeam.get(p.team_id) ?? [];
     const projections: FixtureProjection[] = [];

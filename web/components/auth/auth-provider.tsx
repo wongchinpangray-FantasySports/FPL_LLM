@@ -11,7 +11,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { UserProfile } from "@/lib/auth/session";
-import { useEntryId } from "@/components/entry-id-context";
+import { useEntryId, readStoredFplEntryId } from "@/components/entry-id-context";
 import type { TeamTheme } from "@/lib/team-themes";
 import {
   applyTeamThemeToDocument,
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setThemeTeamType(null);
         clearTeamThemeOnDocument();
       }
-      if (data.profile?.fpl_entry_id != null) {
+      if (data.profile?.fpl_entry_id != null && !readStoredFplEntryId()) {
         setEntryId(String(data.profile.fpl_entry_id));
       }
     } catch {

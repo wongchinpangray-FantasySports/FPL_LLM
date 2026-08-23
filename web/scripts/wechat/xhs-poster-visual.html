@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE XHS Visual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 52px 48px 40px;
+        display: flex; flex-direction: column;
+      }
+      .pitch {
+        position: absolute; inset: 0;
+        background:
+          linear-gradient(180deg, rgba(11,10,15,0.2) 0%, rgba(11,10,15,0.72) 62%, #0b0a0f 100%),
+          repeating-linear-gradient(
+            90deg,
+            #145c32 0px, #145c32 56px,
+            #114f2b 56px, #114f2b 112px
+          );
+        opacity: 0.55;
+      }
+      .glow-a, .glow-b, .glow-c {
+        position: absolute; border-radius: 50%; pointer-events: none; filter: blur(10px);
+      }
+      .glow-a {
+        width: 520px; height: 520px; top: -160px; left: -120px;
+        background: radial-gradient(circle, rgba(0,255,135,0.28), transparent 70%);
+      }
+      .glow-b {
+        width: 460px; height: 460px; top: 28%; right: -160px;
+        background: radial-gradient(circle, rgba(0,255,135,0.16), transparent 70%);
+      }
+      .glow-c {
+        width: 380px; height: 380px; bottom: 80px; left: 20%;
+        background: radial-gradient(circle, rgba(255,255,255,0.05), transparent 70%);
+      }
+      .grid-dots {
+        position: absolute; inset: 0; pointer-events: none; opacity: 0.25;
+        background-image: radial-gradient(rgba(255,255,255,0.35) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: linear-gradient(180deg, rgba(0,0,0,0.6), transparent 65%);
+      }
+      .beam {
+        position: absolute; top: 0; width: 2px; height: 42%;
+        background: linear-gradient(180deg, rgba(0,255,135,0.55), transparent);
+        opacity: 0.5;
+      }
+      .beam.b1 { left: 18%; } .beam.b2 { left: 52%; } .beam.b3 { left: 78%; }
+
+      .content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 26px; }
+      .brand { font-family: Inter, sans-serif; font-size: 34px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow {
+        margin-top: 8px; display: inline-flex; align-items: center; gap: 8px;
+        font-family: Inter, sans-serif; font-size: 14px; font-weight: 800;
+        letter-spacing: 0.18em; text-transform: uppercase; color: #00ff87;
+      }
+      .live-dot {
+        width: 10px; height: 10px; border-radius: 50%; background: #00ff87;
+        box-shadow: 0 0 0 4px rgba(0,255,135,0.2);
+      }
+      .date {
+        font-family: Inter, sans-serif; font-size: 48px; font-weight: 900;
+        letter-spacing: -0.05em; text-align: right; text-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      }
+      .date small {
+        display: block; margin-top: 2px; font-size: 16px; letter-spacing: 0.16em;
+        color: rgba(244,244,245,0.5); font-weight: 600;
+      }
+
+      .hero-panel {
+        position: relative;
+        padding: 22px 24px 18px;
+        border-radius: 24px;
+        background: rgba(11,10,15,0.72);
+        border: 1px solid rgba(0,255,135,0.28);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      .hero-panel::before {
+        content: ""; position: absolute; inset: 0 auto 0 0; width: 10px;
+        background: #00ff87;
+      }
+      h1 {
+        font-size: 42px; font-weight: 900; line-height: 1.16; letter-spacing: -0.03em;
+        max-width: 920px;
+      }
+      h1 .accent { color: #00ff87; }
+      .sub { margin-top: 10px; font-size: 20px; line-height: 1.4; color: rgba(244,244,245,0.7); }
+      .disclaimer {
+        margin-top: 10px; font-size: 15px; font-weight: 700; line-height: 1.35;
+        color: rgba(0,255,135,0.75); letter-spacing: 0.02em;
+      }
+
+      .story-board { display: flex; flex-direction: column; gap: 12px; }
+      .story {
+        position: relative;
+        display: grid; grid-template-columns: 72px 1fr; gap: 12px;
+        padding: 14px 16px; border-radius: 20px;
+        background: rgba(11,10,15,0.78);
+        border: 1px solid rgba(255,255,255,0.1);
+        overflow: hidden;
+      }
+      .story .stripe {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+      }
+      .story .idx {
+        font-family: Inter, sans-serif; font-size: 34px; font-weight: 900;
+        letter-spacing: -0.06em; color: #00ff87; line-height: 1; padding-top: 2px;
+      }
+      .label {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 13px; font-weight: 800; letter-spacing: 0.12em;
+        color: rgba(244,244,245,0.5); margin-bottom: 4px; text-transform: uppercase;
+      }
+      .badge-mini {
+        width: 20px; height: 20px; border-radius: 4px; object-fit: contain;
+        background: rgba(255,255,255,0.08);
+      }
+      .lead { font-size: 20px; font-weight: 800; line-height: 1.25; }
+      .detail { margin-top: 4px; font-size: 15px; color: rgba(244,244,245,0.6); line-height: 1.35; }
+      .story.muted .lead { color: rgba(244,244,245,0.55); }
+      .story.muted .detail { color: rgba(244,244,245,0.4); }
+
+      .score-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+      .score {
+        padding: 10px 12px; border-radius: 12px;
+        background: #07140e; border: 1px solid rgba(0,255,135,0.25);
+      }
+      .score .teams {
+        font-size: 13px; font-weight: 700; color: rgba(244,244,245,0.55); margin-bottom: 1px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .score .digits {
+        font-family: Inter, sans-serif; font-size: 30px; font-weight: 900;
+        letter-spacing: 0.04em; color: #00ff87; line-height: 1.05;
+        text-shadow: 0 0 12px rgba(0,255,135,0.28);
+      }
+
+      .score-list {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px;
+        margin-top: 8px;
+      }
+      .score-line {
+        display: block;
+        padding: 6px 8px; border-radius: 8px;
+        background: rgba(7,20,14,0.85);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      .score-line .pair {
+        font-size: 12px; font-weight: 700; color: rgba(244,244,245,0.78);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        display: block;
+      }
+      .score-line .digits { display: none; }
+      .story.preseason { flex: 0 0 auto; }
+      .story.preseason .score-block { margin-top: 0; }
+
+      .fixture-board { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+      .fixture-day-label {
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.08em; color: #00ff87; text-transform: uppercase;
+        margin-top: 2px;
+      }
+      .fixture-day-label:first-child { margin-top: 0; }
+      .fixture-board .score-list { margin-top: 4px; }
+
+      .bullet-list {
+        display: flex; flex-direction: column; gap: 4px; margin-top: 8px;
+      }
+      .bullet-list .bullet {
+        font-size: 15px; font-weight: 700; line-height: 1.35;
+        color: rgba(244,244,245,0.78);
+        padding-left: 12px; position: relative;
+      }
+      .bullet-list .bullet::before {
+        content: "•"; position: absolute; left: 0; color: #00ff87;
+      }
+
+      /* BoP — price hero + 3 category rows (top 3 each) */
+      .price-hero {
+        display: flex; align-items: flex-end; gap: 16px; margin-bottom: 8px;
+      }
+      .price-hero .price {
+        font-family: Inter, sans-serif; font-size: 108px; font-weight: 900;
+        letter-spacing: -0.08em; line-height: 0.82; color: #00ff87;
+        text-shadow: 0 0 40px rgba(0,255,135,0.35);
+      }
+      .price-hero .pos { font-size: 34px; font-weight: 900; padding-bottom: 14px; }
+
+      .cat-board { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+      .cat-row {
+        display: grid; grid-template-columns: 118px 1fr; gap: 14px; align-items: center;
+        padding: 14px 16px; border-radius: 20px;
+        background: rgba(11,10,15,0.82);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .cat-row.xp {
+        border-color: rgba(0,255,135,0.4);
+        background: linear-gradient(105deg, rgba(0,255,135,0.16), rgba(11,10,15,0.9));
+      }
+      .cat-meta .label {
+        font-family: Inter, sans-serif; font-size: 18px; font-weight: 900;
+        letter-spacing: 0.08em; color: #00ff87; text-transform: uppercase;
+        margin-bottom: 0;
+      }
+      .cat-meta .sublabel {
+        margin-top: 4px; font-size: 13px; font-weight: 700;
+        color: rgba(244,244,245,0.45);
+      }
+      .cat-players {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      }
+      .cat-player {
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        padding: 8px 6px 10px; border-radius: 16px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      .cat-row.xp .cat-player:first-child {
+        border-color: rgba(0,255,135,0.45);
+        background: rgba(0,255,135,0.1);
+      }
+      .cat-player .rank {
+        font-family: Inter, sans-serif; font-size: 12px; font-weight: 900;
+        letter-spacing: 0.1em; color: rgba(244,244,245,0.4); margin-bottom: 6px;
+      }
+      .cat-row.xp .cat-player:first-child .rank { color: #00ff87; }
+      .cat-player .avatar {
+        width: 78px; height: 78px; border-radius: 50%; overflow: hidden;
+        border: 2px solid rgba(255,255,255,0.12); background: #18181b; margin-bottom: 8px;
+      }
+      .cat-row.xp .cat-player:first-child .avatar { border-color: #00ff87; }
+      .cat-player .avatar img {
+        width: 100%; height: 100%; object-fit: cover; object-position: center top;
+      }
+      .cat-player .avatar img.shirt {
+        object-fit: contain; object-position: center; padding: 10px;
+        background: linear-gradient(160deg, #1a2420, #0f1210);
+      }
+      .cat-player .avatar .fallback {
+        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        font-family: Inter, sans-serif; font-size: 22px; font-weight: 900; color: #00ff87;
+      }
+      .cat-player .name {
+        font-size: 16px; font-weight: 900; line-height: 1.15;
+        max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .cat-player .team {
+        margin-top: 2px; font-size: 12px; font-weight: 600; color: rgba(244,244,245,0.45);
+        max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .cat-player .stat {
+        margin-top: 6px; font-family: Inter, sans-serif; font-size: 22px; font-weight: 900;
+        color: #00ff87; letter-spacing: -0.03em;
+      }
+
+      .podium { display: none; }
+      .pod { display: none; }
+
+      .ticker {
+        margin-top: 18px; overflow: hidden; border-radius: 12px;
+        background: rgba(0,255,135,0.1); border: 1px solid rgba(0,255,135,0.25);
+        padding: 12px 0;
+      }
+      .ticker-track {
+        display: flex; gap: 36px; white-space: nowrap;
+        font-family: Inter, sans-serif; font-size: 16px; font-weight: 800;
+        letter-spacing: 0.08em; color: #00ff87;
+        padding-left: 16px;
+      }
+
+      .footer { margin-top: auto; padding-top: 18px; }
+      .cta-bar {
+        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        padding: 20px 26px; border-radius: 18px; background: #00ff87; color: #0b0a0f;
+        box-shadow: 0 12px 40px rgba(0,255,135,0.25);
+      }
+      .cta-bar .cta { font-size: 24px; font-weight: 900; }
+      .cta-bar .url { font-family: Inter, sans-serif; font-size: 17px; font-weight: 700; opacity: 0.75; }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function stamp(date) {
+        const m = String(date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? { mmdd: `${m[2]}.${m[3]}`, yyyy: m[1] } : { mmdd: date || "", yyyy: "" };
+      }
+      function avatar(photo, name, cls = "avatar", kind = "photo") {
+        const initials = esc((name || "?").slice(0, 2).toUpperCase());
+        if (!photo) return `<div class="${cls}"><div class="fallback">${initials}</div></div>`;
+        const shirtCls = kind === "shirt" ? "shirt" : "";
+        return `<div class="${cls}">
+          <img class="${shirtCls}" src="${esc(photo)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div class="fallback" style="display:none">${initials}</div>
+        </div>`;
+      }
+      function shell(inner) {
+        return `
+          <div class="pitch"></div>
+          <div class="glow-a"></div><div class="glow-b"></div><div class="glow-c"></div>
+          <div class="grid-dots"></div>
+          <div class="beam b1"></div><div class="beam b2"></div><div class="beam b3"></div>
+          <div class="content">${inner}</div>`;
+      }
+      function renderDaily(data) {
+        const d = stamp(data.date);
+        const stories = (data.stories || []).map((s, i) => {
+          const featured = s.scores || [];
+          const more = s.moreScores || [];
+          const groups = s.fixtureGroups || [];
+          const preseason = /季前|赛程/i.test(s.label || "");
+          let scoreBlock = "";
+          if (groups.length) {
+            scoreBlock = `<div class="fixture-board">${groups
+              .slice(0, 3)
+              .map((g) => {
+                const rows = (g.fixtures || [])
+                  .slice(0, 6)
+                  .map((f) => {
+                    const home = f.home || "";
+                    const away = f.away || "";
+                    return `
+                <div class="score-line">
+                  <span class="pair">${esc(home)} vs ${esc(away)}</span>
+                </div>`;
+                  })
+                  .join("");
+                return `<div class="fixture-day-label">${esc(g.dateShort || g.dateLabel)} · ${esc(String(g.count))}场</div><div class="score-list">${rows}</div>`;
+              })
+              .join("")}</div>`;
+          } else {
+            const featuredHtml = featured.length
+              ? `<div class="score-row">${featured.map((sc) => `
+                <div class="score"><div class="teams">${esc(sc.teams)}</div><div class="digits">${esc(sc.digits)}</div></div>
+              `).join("")}</div>`
+              : "";
+            const moreHtml = more.length
+              ? `<div class="score-list">${more.map((sc) => {
+                  const home = sc.home || (sc.teams || "").split(" vs ")[0] || "";
+                  const away = sc.away || (sc.teams || "").split(" vs ")[1] || "";
+                  return `
+                <div class="score-line">
+                  <span class="pair">${esc(home)} vs ${esc(away)}</span>
+                  <span class="digits">${esc(sc.digits)}</span>
+                </div>`;
+                }).join("")}</div>`
+              : "";
+            scoreBlock = `<div class="score-block">${featuredHtml}${moreHtml}</div>`;
+          }
+          const bullets = (s.bullets || []).filter(Boolean);
+          const bulletsHtml =
+            bullets.length && !groups.length
+              ? `<div class="bullet-list">${bullets
+                  .map((b) => `<div class="bullet">${esc(b)}</div>`)
+                  .join("")}</div>`
+              : "";
+          return `
+          <article class="story${s.muted ? " muted" : ""}${preseason ? " preseason" : ""}">
+            <div class="stripe" style="background:${esc(s.color || "#00ff87")}"></div>
+            <div class="idx">${String(i + 1).padStart(2, "0")}</div>
+            <div>
+              <div class="label">
+                ${s.badge ? `<img class="badge-mini" src="${esc(s.badge)}" alt="" />` : ""}
+                ${esc(s.label)}
+              </div>
+              <div class="lead">${esc(s.lead)}</div>
+              ${bulletsHtml || (s.detail ? `<div class="detail">${esc(s.detail)}</div>` : "")}
+              ${scoreBlock}
+            </div>
+          </article>`;
+        }).join("");
+        const ticker = (data.ticker || []).map((t) => `<span>${esc(t)}</span>`).join("<span>·</span>");
+        const inner = `
+          <div class="top">
+            <div>
+              <div class="brand">FA<span>LEAGUE</span></div>
+              <div class="eyebrow"><span class="live-dot"></span>${esc(data.eyebrow)}</div>
+            </div>
+            <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+          </div>
+          <div class="hero-panel">
+            <h1>${data.titleHtml || esc(data.title)}</h1>
+            <p class="sub">${esc(data.subtitle)}</p>
+          </div>
+          <div class="story-board">${stories}</div>
+          <div class="ticker"><div class="ticker-track">${ticker}</div></div>
+          <div class="footer"><div class="cta-bar"><div class="cta">${esc(data.cta)}</div><div class="url">${esc(data.url)}</div></div></div>`;
+        return shell(inner);
+      }
+      function renderBop(data) {
+        const d = stamp(data.date);
+        const cats = data.categories?.length
+          ? data.categories
+          : (data.ranks || []).length
+            ? [{
+                kind: "xp",
+                label: "TOP",
+                label_zh: "精选",
+                players: (data.ranks || []).map((r) => ({
+                  name: r.name, team: r.team, value: r.value,
+                  photo: r.photo, photo_kind: r.photo_kind,
+                })),
+              }]
+            : [];
+        const rows = cats.map((cat) => {
+          const players = (cat.players || []).slice(0, 3).map((p, i) => `
+            <div class="cat-player">
+              <div class="rank">#${i + 1}</div>
+              ${avatar(p.photo, p.name, "avatar", p.photo_kind || "shirt")}
+              <div class="name">${esc(p.name)}</div>
+              <div class="team">${esc(p.team)}</div>
+              <div class="stat">${esc(p.value)}</div>
+            </div>`).join("");
+          return `
+            <section class="cat-row ${esc(cat.kind || "")}">
+              <div class="cat-meta">
+                <div class="label">${esc(cat.label)}</div>
+                <div class="sublabel">${esc(cat.label_zh || "")}</div>
+              </div>
+              <div class="cat-players">${players}</div>
+            </section>`;
+        }).join("");
+        const ticker = (data.chips || []).map((t) => `<span>${esc(t)}</span>`).join("<span>·</span>");
+        const inner = `
+          <div class="top">
+            <div>
+              <div class="brand">FA<span>LEAGUE</span></div>
+              <div class="eyebrow"><span class="live-dot"></span>${esc(data.eyebrow)}</div>
+            </div>
+            <div class="date">${esc(d.mmdd)}<small>${esc(d.yyyy)}</small></div>
+          </div>
+          <div class="hero-panel">
+            <div class="price-hero">
+              <div class="price">£${esc(data.price)}</div>
+              <div class="pos">${esc(data.position)}</div>
+            </div>
+            <h1 style="font-size:40px">${esc(data.title)}</h1>
+            <p class="sub">${esc(data.subtitle)}</p>
+            ${data.disclaimer ? `<p class="disclaimer">${esc(data.disclaimer)}</p>` : ""}
+          </div>
+          <div class="cat-board">${rows}</div>
+          <div class="ticker"><div class="ticker-track">${ticker || "<span>BEST OF POSITION</span>"}</div></div>
+          <div class="footer"><div class="cta-bar"><div class="cta">${esc(data.cta)}</div><div class="url">${esc(data.urlShort || data.url)}</div></div></div>`;
+        return shell(inner);
+      }
+      function render(data) {
+        document.getElementById("root").innerHTML =
+          data.kind === "bop" ? renderBop(data) : renderDaily(data);
+      }
+      if (window.__POSTER__) render(window.__POSTER__);
+    </script>
+  </body>
+</html>

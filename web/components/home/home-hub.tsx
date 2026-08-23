@@ -6,17 +6,23 @@ import { Link } from "@/i18n/navigation";
 import { GatedLink } from "@/components/auth/gated-link";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { EntryIdForm } from "@/components/entry-id-form";
-import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HomeGuestLanding } from "@/components/home/home-guest-landing";
 import { DeadlineCountdown } from "@/components/home/deadline-countdown";
+import { HomeSeasonSections } from "@/components/home/home-season-hub";
+import { MatchdayTicker } from "@/components/home/matchday-ticker";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import type { GroupTable, LeaderboardRow } from "@/lib/wc/standings";
 import { WcFlag } from "@/components/worldcup/wc-flag";
 import { NewsThumb } from "@/components/news/news-thumb";
+import { DigestSummaryBody } from "@/components/news/fpl-digest-day-block";
+import {
+  InboxNotificationRow,
+  type InboxNotification,
+} from "@/components/inbox/inbox-notification-row";
+import { groupNotificationsByCategory } from "@/lib/notifications/categories";
 
 function HubSection({
   eyebrow,
@@ -215,14 +221,7 @@ function TodayTicker({
   );
 }
 
-type InboxItem = {
-  id: string;
-  title: string;
-  body: string | null;
-  href: string | null;
-  read_at: string | null;
-  created_at: string;
-};
+type InboxItem = InboxNotification;
 
 function YourFootballSection({
   labels,
@@ -236,10 +235,14 @@ function YourFootballSection({
     inboxCta: string;
     empty: string;
     loading: string;
-    unread: string;
+    sectionNews: string;
+    sectionMessages: string;
+    emptyNews: string;
+    emptyMessages: string;
   };
 }) {
   const { user, profile, unreadCount, loading: authLoading } = useAuth();
+  const tHome = useTranslations("home");
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -247,7 +250,7 @@ function YourFootballSection({
     if (!user) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/notifications?limit=3");
+      const res = await fetch("/api/notifications?limit=8");
       if (!res.ok) return;
       const data = (await res.json()) as { items?: InboxItem[] };
       setItems(data.items ?? []);
@@ -262,16 +265,20 @@ function YourFootballSection({
 
   if (authLoading) {
     return (
-      <HubSection title={labels.title}>
-        <div className="h-24 animate-pulse rounded-xl border border-border bg-card" />
-      </HubSection>
+      <div className="h-28 animate-pulse rounded-xl border border-border bg-card" />
     );
   }
 
   if (!user) {
     return (
-      <HubSection title={labels.guestTitle} description={labels.guestBody}>
-        <div className="flex flex-wrap gap-2">
+      <section className="home-hub-card overflow-hidden rounded-xl border border-border bg-card/40">
+        <div className="border-b border-border/80 px-4 py-3">
+          <h2 className="text-sm font-semibold text-foreground">{labels.guestTitle}</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {labels.guestBody}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 px-4 py-3">
           <Link href="/auth/signup" className={cn(buttonVariants(), "no-underline")}>
             {labels.signUp}
           </Link>
@@ -282,70 +289,82 @@ function YourFootballSection({
             {labels.signIn}
           </Link>
         </div>
-      </HubSection>
+      </section>
     );
   }
 
   const name = profile?.display_name ?? user.email?.split("@")[0] ?? "";
+  const { news, message } = groupNotificationsByCategory(items);
+  const previewNews = news.slice(0, 2);
+  const previewMessages = message.slice(0, 2);
 
   return (
-    <section className="home-hub-card rounded-xl border">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
+    <section className="home-hub-card overflow-hidden rounded-xl border border-sky-500/25 bg-gradient-to-b from-sky-500/[0.07] to-card/40">
+      <div className="flex items-start justify-between gap-3 border-b border-sky-500/15 px-4 py-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
           {name ? (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{name}</p>
+            <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              {name}
+            </p>
           ) : null}
         </div>
-        {unreadCount > 0 ? (
-          <span className="shrink-0 rounded-full bg-brand-accent/15 px-2 py-0.5 text-[11px] font-medium text-brand-accent">
-            {labels.unread.replace("{n}", String(unreadCount))}
-          </span>
-        ) : null}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {unreadCount > 0 ? (
+            <span className="rounded-full bg-brand-accent/15 px-2 py-0.5 text-[11px] font-medium text-brand-accent">
+              {tHome("yourFootballUnread", { n: unreadCount })}
+            </span>
+          ) : null}
+          <Link
+            href="/inbox"
+            className="text-xs font-medium text-brand-accent no-underline hover:underline"
+          >
+            {labels.inboxCta}
+          </Link>
+        </div>
       </div>
-      <div className="px-4 pb-3 pt-0">
+
+      <div className="px-4 py-3">
         {loading ? (
           <p className="text-sm text-muted-foreground">{labels.loading}</p>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{labels.empty}</p>
         ) : (
-          <ul className="space-y-1">
-            {items.map((n) => (
-              <li key={n.id}>
-                {n.href ? (
-                  <Link
-                    href={n.href}
-                    className="block py-2.5 no-underline hover:opacity-90"
-                  >
-                    <p
-                      className={cn(
-                        "text-sm leading-snug",
-                        n.read_at ? "text-muted-foreground" : "font-medium text-foreground",
-                      )}
-                    >
-                      {n.title}
-                    </p>
-                    {n.body ? (
-                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                        {n.body}
-                      </p>
-                    ) : null}
-                  </Link>
-                ) : (
-                  <div className="py-2.5">
-                    <p className="text-sm text-foreground">{n.title}</p>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {labels.sectionNews}
+              </h3>
+              {previewNews.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{labels.emptyNews}</p>
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {previewNews.map((n) => (
+                    <li key={n.id}>
+                      <InboxNotificationRow item={n} compact />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {labels.sectionMessages}
+              </h3>
+              {previewMessages.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{labels.emptyMessages}</p>
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {previewMessages.map((n) => (
+                    <li key={n.id}>
+                      <InboxNotificationRow item={n} compact />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
-        <Link
-          href="/inbox"
-          className="mt-2 inline-block text-xs font-medium text-brand-accent no-underline hover:underline"
-        >
-          {labels.inboxCta} →
-        </Link>
       </div>
     </section>
   );
@@ -479,24 +498,29 @@ function HomeNewsSidebar({
     seeTransfers: string;
     seeFplX: string;
     seeFplDaily: string;
-    fplDailySources: string;
     empty: string;
   };
 }) {
   const { user } = useAuth();
   const tSignup = useTranslations("signupPrompt");
+  const tHome = useTranslations("home");
 
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
       {fplDailyDigest ? (
-        <section className="home-hub-card rounded-xl border border-brand-accent/25 bg-brand-accent/5">
-          <div className="flex items-center justify-between px-4 pb-2 pt-3">
-            <h2 className="text-sm font-semibold text-foreground">
-              {labels.fplDailyTitle}
-            </h2>
+        <section className="home-hub-card overflow-hidden rounded-xl border border-brand-accent/25 bg-gradient-to-b from-brand-accent/[0.07] to-card/40">
+          <div className="flex items-center justify-between gap-3 border-b border-brand-accent/15 px-4 py-3">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-foreground">
+                {labels.fplDailyTitle}
+              </h2>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {fplDailyDigest.digest_date}
+              </p>
+            </div>
             <GatedLink
               href="/news/fpl-daily"
-              className="text-xs font-medium text-brand-accent no-underline hover:underline"
+              className="shrink-0 text-xs font-medium text-brand-accent no-underline hover:underline"
             >
               {labels.seeFplDaily}
             </GatedLink>
@@ -504,23 +528,22 @@ function HomeNewsSidebar({
           {user ? (
             <GatedLink
               href="/news/fpl-daily"
-              className="block px-4 pb-3 no-underline transition-opacity hover:opacity-90"
+              className="block px-4 py-3 no-underline transition-opacity hover:opacity-95"
             >
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {fplDailyDigest.digest_date}
-              </p>
-              <p className="mt-1.5 line-clamp-5 text-sm leading-relaxed text-foreground/90">
-                {fplDailyDigest.summary}
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {labels.fplDailySources.replace(
-                  "{n}",
-                  String(fplDailyDigest.source_count),
-                )}
+              <DigestSummaryBody
+                summary={fplDailyDigest.summary}
+                maxSections={3}
+                maxBullets={5}
+                compact
+              />
+              <p className="mt-3 border-t border-border/60 pt-2.5 text-[11px] text-muted-foreground">
+                {tHome("sidebarFplDailySources", {
+                  n: fplDailyDigest.source_count,
+                })}
               </p>
             </GatedLink>
           ) : (
-            <p className="px-4 pb-3 text-sm text-muted-foreground">
+            <p className="px-4 py-3 text-sm text-muted-foreground">
               {tSignup("fplNewsSignInHint")}
             </p>
           )}
@@ -1029,303 +1052,6 @@ function NewsSection({
   );
 }
 
-type SquadSnapshot = {
-  entry?: {
-    name?: string;
-    player_first_name?: string;
-    player_last_name?: string;
-    summary_overall_rank?: number | null;
-    summary_overall_points?: number | null;
-    current_event?: number | null;
-  };
-  picks_gw?: number | null;
-  current_gw?: number | null;
-};
-
-function squadDisplayName(s: SquadSnapshot): string | null {
-  const e = s.entry;
-  if (!e) return null;
-  const teamName = e.name?.trim();
-  if (teamName) return teamName;
-  const parts = [e.player_first_name, e.player_last_name].filter(Boolean);
-  return parts.length ? parts.join(" ") : null;
-}
-
-function formatSnapshotRank(
-  rank: number | null | undefined,
-  locale: string,
-): string | null {
-  if (rank == null || rank <= 0) return null;
-  return rank.toLocaleString(locale);
-}
-
-function formatSnapshotPoints(points: number | null | undefined): string | null {
-  if (points == null || points < 0) return null;
-  return String(points);
-}
-
-function snapshotPlanningGw(s: SquadSnapshot): number | null {
-  const gw = s.picks_gw ?? s.current_gw ?? s.entry?.current_event ?? null;
-  return gw != null && gw > 0 ? gw : null;
-}
-
-function FplSection({
-  labels,
-}: {
-  labels: {
-    title: string;
-    description: string;
-    entryHint: string;
-    snapshotLoading: string;
-    snapshotRank: string;
-    snapshotPoints: string;
-    snapshotGw: string;
-    snapshotError: string;
-    snapshotEmpty: string;
-  };
-}) {
-  const { entryId } = useEntryId();
-  const [snapshot, setSnapshot] = useState<SquadSnapshot | null>(null);
-  const [snapshotLoading, setSnapshotLoading] = useState(false);
-  const [snapshotError, setSnapshotError] = useState<string | null>(null);
-  const locale = useLocale();
-
-  useEffect(() => {
-    if (!entryId) {
-      setSnapshot(null);
-      setSnapshotError(null);
-      return;
-    }
-    let cancelled = false;
-    setSnapshotLoading(true);
-    setSnapshotError(null);
-    fetch(`/api/team/${entryId}/summary`)
-      .then(async (res) => {
-        const data = (await res.json()) as SquadSnapshot & { error?: string };
-        if (!res.ok) throw new Error(data.error ?? labels.snapshotError);
-        if (!cancelled) {
-          setSnapshot(data);
-          setSnapshotError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setSnapshot(null);
-          setSnapshotError(err instanceof Error ? err.message : labels.snapshotError);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setSnapshotLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch when entry id changes
-  }, [entryId]);
-
-  return (
-    <section className="home-hub-card home-hub-card-hero rounded-xl border">
-      <div aria-hidden className="home-hub-glow-primary" />
-      <div aria-hidden className="home-hub-glow-secondary" />
-      <div className="home-hub-card-inner px-4 pb-2 pt-3">
-        <h2 className="text-sm font-semibold text-foreground">{labels.title}</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{labels.description}</p>
-      </div>
-      <div className="home-hub-card-inner flex flex-col gap-4 px-4 pb-4 pt-1">
-        <div>
-          <EntryIdForm
-            redirectTo={(id) => `/dashboard/${id}`}
-            showQuickLinks={false}
-          />
-          <p className="mt-2 text-xs text-muted-foreground">{labels.entryHint}</p>
-        </div>
-
-        {entryId ? (
-          snapshotLoading ? (
-            <div className="rounded-lg border border-border bg-card/80 px-3 py-3">
-              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-              <div className="mt-2 h-3 w-48 animate-pulse rounded bg-muted" />
-              <p className="mt-2 text-xs text-muted-foreground">{labels.snapshotLoading}</p>
-            </div>
-          ) : snapshotError ? (
-            <p className="text-xs text-destructive">{snapshotError}</p>
-          ) : snapshot ? (
-            (() => {
-              const rank = formatSnapshotRank(snapshot.entry?.summary_overall_rank, locale);
-              const points = formatSnapshotPoints(snapshot.entry?.summary_overall_points);
-              const gw = snapshotPlanningGw(snapshot);
-              const stats = [
-                rank != null ? labels.snapshotRank.replace("{rank}", rank) : null,
-                points != null ? labels.snapshotPoints.replace("{pts}", points) : null,
-                gw != null ? labels.snapshotGw.replace("{gw}", String(gw)) : null,
-              ].filter(Boolean);
-
-              return (
-                <div className="home-hub-snapshot rounded-lg px-3 py-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {squadDisplayName(snapshot) ?? `#${entryId}`}
-                  </p>
-                  {stats.length > 0 ? (
-                    <p className="mt-1 text-xs text-muted-foreground">{stats.join(" · ")}</p>
-                  ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">{labels.snapshotEmpty}</p>
-                  )}
-                </div>
-              );
-            })()
-          ) : null
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-type FeatureLink = { href: string; label: string };
-
-type FeaturedCard = {
-  href: string;
-  title: string;
-  body: string;
-  image: string;
-};
-
-const FEATURED_CARD_ACCENTS = [
-  "home-feature-card--accent-emerald",
-  "home-feature-card--accent-indigo",
-  "home-feature-card--accent-amber",
-  "home-feature-card--accent-brand",
-  "home-feature-card--accent-cyan",
-  "home-feature-card--accent-violet",
-] as const;
-
-function HomeFeaturedCards({
-  title,
-  items,
-}: {
-  title: string;
-  items: FeaturedCard[];
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item, index) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "home-feature-card group flex flex-col overflow-hidden rounded-xl border no-underline transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:shadow-md",
-              FEATURED_CARD_ACCENTS[index % FEATURED_CARD_ACCENTS.length],
-            )}
-          >
-            <div className="home-feature-card-thumb relative aspect-[16/10] w-full overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.image}
-                alt=""
-                className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.04]"
-              />
-            </div>
-            <div className="flex flex-1 flex-col gap-1 px-3.5 py-3">
-              <h3 className="text-sm font-semibold text-foreground group-hover:text-brand-accent">
-                {item.title}
-              </h3>
-              <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                {item.body}
-              </p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FeatureGroup({
-  title,
-  items,
-  variant,
-}: {
-  title: string;
-  items: FeatureLink[];
-  variant: number;
-}) {
-  if (items.length === 0) return null;
-
-  return (
-    <section
-      className="home-hub-feature-group rounded-xl border"
-      data-variant={String(variant % 4)}
-    >
-      <h3 className="home-hub-feature-title px-4 pb-1.5 pt-2.5 text-xs font-semibold uppercase tracking-wide">
-        {title}
-      </h3>
-      <ul className="pb-1">
-        {items.map((item) => (
-          <li key={`${item.href}-${item.label}`}>
-            <Link
-              href={item.href}
-              className="home-hub-feature-link group flex items-center justify-between gap-3 px-4 py-2.5 text-sm no-underline transition-colors"
-            >
-              <span className="text-foreground group-hover:text-brand-accent">{item.label}</span>
-              <span className="shrink-0 text-muted-foreground group-hover:text-brand-accent">
-                →
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function HomeFeatureGroups({
-  labels,
-}: {
-  labels: {
-    manage: string;
-    research: string;
-    tools: string;
-    game: string;
-    dashboard: string;
-    planner: string;
-    manager: string;
-    fixtures: string;
-    preseason: string;
-    guide: string;
-    news: string;
-  };
-}) {
-  const { entryId } = useEntryId();
-
-  const manage: FeatureLink[] = [
-    { href: entryId ? `/dashboard/${entryId}` : "/dashboard", label: labels.dashboard },
-    { href: entryId ? `/planner/${entryId}` : "/planner", label: labels.planner },
-    { href: entryId ? `/manager/${entryId}` : "/manager", label: labels.manager },
-  ];
-
-  const research: FeatureLink[] = [
-    { href: "/fpl/guide", label: labels.guide },
-    { href: "/fpl/fixtures", label: labels.fixtures },
-    { href: "/fpl/preseason", label: labels.preseason },
-  ];
-
-  const tools: FeatureLink[] = [{ href: "/news", label: labels.news }];
-
-  const game: FeatureLink[] = [];
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <FeatureGroup title={labels.manage} items={manage} variant={0} />
-      <FeatureGroup title={labels.research} items={research} variant={1} />
-      <FeatureGroup title={labels.tools} items={tools} variant={2} />
-      <FeatureGroup title={labels.game} items={game} variant={3} />
-    </div>
-  );
-}
-
 export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
@@ -1397,6 +1123,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6">
+      <MatchdayTicker />
+
       {hub.today.fpl.gw != null ? (
         <Link
           href="/planner"
@@ -1425,87 +1153,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(20rem,24rem)] xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="flex flex-col gap-5">
-          <FplSection
-            labels={{
-              title: t("fplTitle"),
-              description: t("fplDescription"),
-              entryHint: t("entryHint"),
-              snapshotLoading: t("fplSnapshotLoading"),
-              snapshotRank: t("fplSnapshotRank"),
-              snapshotPoints: t("fplSnapshotPoints"),
-              snapshotGw: t("fplSnapshotGw"),
-              snapshotError: t("fplSnapshotError"),
-              snapshotEmpty: t("fplSnapshotEmpty"),
-            }}
-          />
-
-          <div className="flex flex-wrap gap-2">
-            <HubChip href="/fpl/guide" variant="accent">
-              {t("exploreGuideTitle")}
-            </HubChip>
-            <HubChip href="/fpl/preseason" variant="accent">
-              {t("explorePreseasonTitle")}
-            </HubChip>
-            <HubChip href="/fpl/fixtures">{t("exploreFixturesTitle")}</HubChip>
-          </div>
-
-          <HomeFeaturedCards
-            title={t("homeFeaturedTitle")}
-            items={[
-              {
-                href: "/squad-builder",
-                title: t("fplOpenSquadBuilder"),
-                body: t("exploreSquadBuilderBody"),
-                image: `/home-features/squad-builder.png?v=3`,
-              },
-              {
-                href: "/players",
-                title: t("explorePlayersTitle"),
-                body: t("explorePlayersBody"),
-                image: `/home-features/players.png?v=3`,
-              },
-              {
-                href: "/fpl/historical",
-                title: t("exploreHistoricalTitle"),
-                body: t("exploreHistoricalBody"),
-                image: `/home-features/historical.png?v=3`,
-              },
-              {
-                href: "/fpl/insights/recommended-squad",
-                title: t("exploreRecommendedSquadTitle"),
-                body: t("exploreRecommendedSquadBody"),
-                image: `/home-features/recommended-squad.png?v=3`,
-              },
-              {
-                href: "/fpl/insights",
-                title: t("exploreInsightsTitle"),
-                body: t("exploreInsightsBody"),
-                image: `/home-features/insights.png?v=3`,
-              },
-              {
-                href: "/mini",
-                title: t("exploreMiniTitle"),
-                body: t("exploreMiniBody"),
-                image: `/home-features/mini5.png?v=3`,
-              },
-            ]}
-          />
-
-          <HomeFeatureGroups
-            labels={{
-              manage: t("homeGroupManage"),
-              research: t("homeGroupResearch"),
-              tools: t("homeGroupTools"),
-              game: t("homeGroupGame"),
-              dashboard: t("fplOpenDashboard"),
-              planner: t("fplOpenPlanner"),
-              manager: t("homeGroupManager"),
-              fixtures: t("exploreFixturesTitle"),
-              preseason: t("explorePreseasonTitle"),
-              guide: t("exploreGuideTitle"),
-              news: t("sidebarNews"),
-            }}
-          />
+          <HomeSeasonSections />
 
           {hubError ? (
             <p className="text-xs text-muted-foreground">{hubError}</p>
@@ -1523,7 +1171,10 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               inboxCta: t("yourFootballInbox"),
               empty: t("yourFootballEmpty"),
               loading: t("loading"),
-              unread: t("yourFootballUnread"),
+              sectionNews: t("yourFootballSectionNews"),
+              sectionMessages: t("yourFootballSectionMessages"),
+              emptyNews: t("yourFootballEmptyNews"),
+              emptyMessages: t("yourFootballEmptyMessages"),
             }}
           />
           <HomeNewsSidebar
@@ -1540,7 +1191,6 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
               seeTransfers: t("ctaTransfers"),
               seeFplX: t("sidebarFplXSee"),
               seeFplDaily: t("sidebarFplDailySee"),
-              fplDailySources: t("sidebarFplDailySources"),
               empty: t("newsEmpty"),
             }}
           />

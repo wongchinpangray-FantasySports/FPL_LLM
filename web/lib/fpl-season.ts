@@ -128,3 +128,11 @@ export async function resolveFplSeasonForTool(
   }
   return getCurrentFplSeason();
 }
+
+/** Display label e.g. `2025` → `2025/26`. */
+export function formatFplSeasonDisplay(seasonStartYear: string): string {
+  const y = Number(String(seasonStartYear).trim());
+  if (!Number.isFinite(y)) return String(seasonStartYear);
+  const endShort = String(y + 1).slice(-2);
+  return `${y}/${endShort}`;
+}

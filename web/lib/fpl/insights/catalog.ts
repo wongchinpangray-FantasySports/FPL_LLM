@@ -99,6 +99,18 @@ export const INSIGHT_CATALOG: InsightDefinition[] = [
     badgeKey: "badgePremium",
   },
   {
+    id: "price-forecast",
+    href: "/fpl/insights/price-forecast",
+    tier: "free",
+    phase: 2,
+    status: "live",
+    group: "market",
+    titleKey: "priceForecast.title",
+    navTitleKey: "nav.priceForecast",
+    descriptionKey: "priceForecast.description",
+    badgeKey: "badgeLive",
+  },
+  {
     id: "price-changes",
     href: "/fpl/insights/price-changes",
     tier: "premium",

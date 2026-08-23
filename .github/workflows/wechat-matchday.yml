@@ -1,0 +1,66 @@
+name: WeChat matchday notes
+
+on:
+  schedule:
+    # 18:00 Shanghai (10:00 UTC) — evening slate (12:30–20:00 UK)
+    - cron: "0 10 * * *"
+    # 22:00 Shanghai (14:00 UTC) — late UK kickoffs / midweek
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Lookahead window in hours"
+        type: string
+        default: "14"
+      notify:
+        description: "Push via webhook / PushPlus if secrets are set"
+        type: boolean
+        default: true
+
+concurrency:
+  group: wechat-matchday
+  cancel-in-progress: false
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      WECHAT_WORK_WEBHOOK_URL: ${{ secrets.WECHAT_WORK_WEBHOOK_URL }}
+      PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Generate matchday notes
+        working-directory: web
+        run: |
+          HOURS="${{ github.event.inputs.hours }}"
+          HOURS="${HOURS:-14}"
+          FLAGS="--hours $HOURS"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.notify }}" != "true" ]; then
+            FLAGS="$FLAGS --skip-wechat"
+          fi
+          npx tsx scripts/notify-matchday.ts $FLAGS
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wechat-matchday-${{ github.run_id }}
+          path: |
+            web/output/wechat-matchday/matchday.txt
+            web/output/wechat-matchday/matchday.json
+          if-no-files-found: warn
+          retention-days: 14
