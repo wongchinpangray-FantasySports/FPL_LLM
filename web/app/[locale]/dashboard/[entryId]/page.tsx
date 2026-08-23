@@ -22,7 +22,7 @@ import { formatFplInteger } from "@/lib/fpl";
 import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
 import { normalizeFplFdr } from "@/lib/fpl/fdr";
 import { HomeBackLink } from "@/components/home-back-link";
-import { XpHeatmap, buildHeatmapRow } from "@/components/xp-heatmap";
+import { XpHeatmap, buildHeatmapRow, buildHeatmapRowFromPick } from "@/components/xp-heatmap";
 
 export const dynamic = "force-dynamic";
 
@@ -139,15 +139,26 @@ export default async function DashboardPage({
   );
   const allTeamIds = await allPremierTeamIds();
   const fplSeason = await getCurrentFplSeason();
-  const grid = await cachedAllClubsFixtureGrid(startGw, horizon, fplSeason);
   const gwHeaders = Array.from({ length: horizon }, (_, i) => startGw + i);
 
-  const dgwTeamGw = await loadDoubleGameweekKeys(
-    allTeamIds,
-    startGw,
-    horizon > 0 ? startGw + horizon - 1 : startGw,
-    fplSeason,
-  );
+  let grid: Awaited<ReturnType<typeof cachedAllClubsFixtureGrid>> = [];
+  try {
+    grid = await cachedAllClubsFixtureGrid(startGw, horizon, fplSeason);
+  } catch {
+    grid = [];
+  }
+
+  let dgwTeamGw = new Set<string>();
+  try {
+    dgwTeamGw = await loadDoubleGameweekKeys(
+      allTeamIds,
+      startGw,
+      horizon > 0 ? startGw + horizon - 1 : startGw,
+      fplSeason,
+    );
+  } catch {
+    dgwTeamGw = new Set();
+  }
 
   const startingXI = displayPicks.filter((p) => p.is_starter);
   const bench = displayPicks.filter((p) => !p.is_starter);
@@ -167,17 +178,27 @@ export default async function DashboardPage({
       : new Map();
 
   const orderedPicks = [...startingXI, ...bench];
-  const heatmapRows = orderedPicks
-    .map((pick) => {
-      const proj = projections.get(pick.fpl_id);
-      if (!proj) return null;
-      return buildHeatmapRow(proj, {
+  const heatmapRows = orderedPicks.map((pick) => {
+    const proj = projections.get(pick.fpl_id);
+    if (!proj) {
+      return buildHeatmapRowFromPick({
+        fpl_id: pick.fpl_id,
+        team_id: pick.team_id,
+        web_name: pick.web_name,
+        team: pick.team,
+        position: pick.position,
         is_starter: pick.is_starter,
         is_captain: pick.is_captain,
         is_vice_captain: pick.is_vice_captain,
+        price: pick.price ?? null,
       });
-    })
-    .filter(<T,>(v: T | null): v is T => v !== null);
+    }
+    return buildHeatmapRow(proj, {
+      is_starter: pick.is_starter,
+      is_captain: pick.is_captain,
+      is_vice_captain: pick.is_vice_captain,
+    });
+  });
 
   const starterXPTotal = heatmapRows
     .filter((r) => r.is_starter)
@@ -361,38 +382,6 @@ export default async function DashboardPage({
         </section>
       )}
 
-      <section className="flex flex-col gap-3 md:gap-4">
-        <XpHeatmap
-          rows={heatmapRows}
-          gws={gwHeaders}
-          dgwTeamGw={dgwTeamGw}
-          title={
-            gwHeaders.length > 0
-              ? dt("xpHeatmap", {
-                  from: gwHeaders[0],
-                  to: gwHeaders[gwHeaders.length - 1],
-                })
-              : undefined
-          }
-          legendHint={dt("heatmapLegendHint")}
-          columnHeaders={{
-            player: dt("heatmapPlayer"),
-            team: dt("heatmapTeam"),
-            pos: dt("heatmapPos"),
-            total: dt("heatmapTotal"),
-          }}
-          gwTotalLabel={dt("heatmapGwTotal")}
-          benchLabel={dt("heatmapBench")}
-        />
-        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-          <Legend
-            flagsLabel={dt("xpLegendNote")}
-            xpPerFixturePrefix={dt("xpPerFixturePrefix")}
-            injuryLabel={dt("legendInjury")}
-          />
-        </div>
-      </section>
-
       <section className="space-y-5 md:space-y-8">
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -462,6 +451,39 @@ export default async function DashboardPage({
         ) : null}
       </section>
 
+      <section className="flex flex-col gap-3 md:gap-4">
+        <XpHeatmap
+          rows={heatmapRows}
+          gws={gwHeaders}
+          dgwTeamGw={dgwTeamGw}
+          title={
+            gwHeaders.length > 0
+              ? dt("xpHeatmap", {
+                  from: gwHeaders[0],
+                  to: gwHeaders[gwHeaders.length - 1],
+                })
+              : undefined
+          }
+          legendHint={dt("heatmapLegendHint")}
+          columnHeaders={{
+            player: dt("heatmapPlayer"),
+            team: dt("heatmapTeam"),
+            pos: dt("heatmapPos"),
+            total: dt("heatmapTotal"),
+          }}
+          gwTotalLabel={dt("heatmapGwTotal")}
+          benchLabel={dt("heatmapBench")}
+        />
+        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          <Legend
+            flagsLabel={dt("xpLegendNote")}
+            xpPerFixturePrefix={dt("xpPerFixturePrefix")}
+            injuryLabel={dt("legendInjury")}
+          />
+        </div>
+      </section>
+
+      {grid.length > 0 ? (
       <section className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
@@ -541,6 +563,7 @@ export default async function DashboardPage({
           </table>
         </div>
       </section>
+      ) : null}
     </div>
   );
   } catch (err) {

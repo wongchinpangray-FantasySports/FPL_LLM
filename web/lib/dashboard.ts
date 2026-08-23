@@ -1,7 +1,7 @@
-import { unstable_cache } from "next/cache";
 import { fplGet } from "@/lib/fpl";
 import { listCurrentPlTeams } from "@/lib/fpl/epl-2627-clubs";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 export interface DashFixture {
   gw: number;
@@ -173,14 +173,16 @@ export async function cachedAllClubsFixtureGrid(
   horizon: number,
   fplSeason: string,
 ): Promise<DashTeam[]> {
-  return unstable_cache(
+  // Prefer isolate TTL cache: `unstable_cache` needs R2 on OpenNext Cloudflare
+  // and can throw "incrementalCache missing", blanking the dashboard mid-render.
+  return withIsolateCache(
+    `dash-all-clubs-grid-v4:${fplSeason}:${startGw}:${horizon}`,
+    600_000,
     async () => {
       const ids = await allPremierTeamIds();
       return teamsFixtureGrid(ids, startGw, horizon, fplSeason);
     },
-    ["dash-all-clubs-grid-v3", fplSeason, String(startGw), String(horizon)],
-    { revalidate: 600 },
-  )();
+  );
 }
 
 export { fdrClass, normalizeFplFdr } from "@/lib/fpl/fdr";
