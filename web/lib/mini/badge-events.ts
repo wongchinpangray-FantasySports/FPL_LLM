@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import { getServerSupabase } from "@/lib/supabase";
+import { guestEntryIdFromProfileId } from "@/lib/mini/profile";
 import {
   MINI_BADGES,
   type MiniBadgeId,
