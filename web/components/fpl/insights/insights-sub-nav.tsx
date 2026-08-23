@@ -8,6 +8,7 @@ import {
   INSIGHT_CATALOG,
   insightNavLabelKey,
 } from "@/lib/fpl/insights/catalog";
+import { ShareButton } from "@/components/share/share-button";
 
 export function InsightsSubNav() {
   const t = useTranslations("fplInsights");
@@ -30,26 +31,34 @@ export function InsightsSubNav() {
     })),
   ];
 
+  const current = tabs.find((tab) => tab.match(pathname));
+
   return (
     <nav
       aria-label={t("navAria")}
       className="rounded-xl border border-border bg-card/40 p-2"
     >
-      <div className="flex flex-wrap gap-1.5">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={cn(
-              "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors no-underline",
-              tab.match(pathname)
-                ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
-                : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={cn(
+                "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors no-underline",
+                tab.match(pathname)
+                  ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
+                  : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+        <ShareButton
+          path={pathname || "/fpl/insights"}
+          title={current?.label ?? t("hubTitle")}
+        />
       </div>
     </nav>
   );

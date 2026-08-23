@@ -37,7 +37,10 @@ export default async function LoginPage({ searchParams }: Props) {
         </p>
         <p className="text-center text-sm text-muted-foreground">
           {t("noAccount")}{" "}
-          <Link href="/auth/signup" className="text-brand-accent hover:underline">
+          <Link
+            href={nextPath ? `/auth/signup?next=${encodeURIComponent(nextPath)}` : "/auth/signup"}
+            className="text-brand-accent hover:underline"
+          >
             {t("signupLink")}
           </Link>
         </p>

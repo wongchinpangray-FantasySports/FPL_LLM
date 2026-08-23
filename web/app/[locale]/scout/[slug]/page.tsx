@@ -8,6 +8,7 @@ import { getScoutArticleBySlug } from "@/lib/scout/store";
 import { displayScoutBody, displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import { Link } from "@/i18n/navigation";
+import { ShareButton } from "@/components/share/share-button";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,13 @@ export default async function ScoutArticlePage({ params }: Props) {
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {displayScoutTitle(article)}
           </h1>
+          <div className="pt-1">
+            <ShareButton
+              path={`/scout/${article.slug}`}
+              title={displayScoutTitle(article)}
+              refId={article.slug}
+            />
+          </div>
           <p className="text-sm text-muted-foreground">
             {published ? `${published} · ` : ""}
             {article.author ? `${article.author} · ` : ""}

@@ -1,6 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { MiniGameApp } from "@/components/mini/mini-game-app";
+import { ShareButton } from "@/components/share/share-button";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,9 @@ export default async function PlayMiniFplPage({ params }: Props) {
       title={t("title")}
       description={t("description")}
       width="4xl"
+      actions={
+        <ShareButton path="/play/mini" title={t("title")} />
+      }
     >
       <MiniGameApp locale={params.locale} />
     </PageShell>

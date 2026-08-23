@@ -22,6 +22,7 @@ export function PageShell({
   eyebrow,
   width = "6xl",
   className,
+  actions,
 }: {
   children: React.ReactNode;
   backHref?: string;
@@ -31,6 +32,7 @@ export function PageShell({
   eyebrow?: string;
   width?: Width;
   className?: string;
+  actions?: React.ReactNode;
 }) {
   return (
     <div
@@ -54,18 +56,21 @@ export function PageShell({
       ) : null}
 
       {title ? (
-        <header className="flex flex-col gap-1">
-          {eyebrow ? (
-            <p className="page-eyebrow text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
-              {eyebrow}
-            </p>
-          ) : null}
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {title}
-          </h1>
-          {description ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-          ) : null}
+        <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-1">
+            {eyebrow ? (
+              <p className="page-eyebrow text-[11px] font-medium uppercase tracking-[0.15em] text-brand-accent">
+                {eyebrow}
+              </p>
+            ) : null}
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              {title}
+            </h1>
+            {description ? (
+              <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+            ) : null}
+          </div>
+          {actions ? <div className="shrink-0">{actions}</div> : null}
         </header>
       ) : null}
 

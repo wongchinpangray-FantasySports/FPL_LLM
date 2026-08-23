@@ -11,6 +11,12 @@ import {
 import { stripLocalePrefix } from "./i18n/routing";
 import { localePath } from "./lib/auth/auth-path";
 import { isAdminEmail } from "./lib/auth/admin";
+import {
+  SHARE_VISITOR_COOKIE,
+  SHARE_VISITOR_COOKIE_MAX_AGE,
+  isShareVisitorId,
+  newShareVisitorId,
+} from "./lib/share/visitor";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -51,7 +57,6 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // Retired FPL creators archive (FFS partnership exclusivity).
   const pathNoLocale = stripLocalePrefix(pathname);
   if (
     pathNoLocale === "/news/fpl-creators" ||
@@ -78,6 +83,18 @@ export async function middleware(request: NextRequest) {
   }
 
   let response = intlMiddleware(request);
+
+  if (pathNoLocale === "/s" || pathNoLocale.startsWith("/s/")) {
+    const existing = request.cookies.get(SHARE_VISITOR_COOKIE)?.value;
+    if (!isShareVisitorId(existing)) {
+      response.cookies.set(SHARE_VISITOR_COOKIE, newShareVisitorId(), {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: SHARE_VISITOR_COOKIE_MAX_AGE,
+      });
+    }
+  }
 
   if (!isProtectedPath(pathname) && !isAdminPath(pathname)) {
     return response;

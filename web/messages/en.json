@@ -6,6 +6,22 @@
   "common": {
     "backHome": "← Home"
   },
+  "share": {
+    "share": "Share",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "qr": "QR code",
+    "close": "Close",
+    "hint": "A short link and QR you can send anywhere. Guests can preview this card once.",
+    "error": "Could not create a share link. Try again in a moment.",
+    "gateTitle": "Create an account to see the full page",
+    "gateBodyOnce": "This is a one-time preview. Sign up free to open the full page and use Insights, Mini 5, and player tools.",
+    "gateBodyRepeat": "You’ve already used this preview. Create an account to view the full information.",
+    "signup": "Sign up",
+    "login": "Log in",
+    "stay": "Finish this preview first",
+    "emptyPreview": "Sign in to see the full data."
+  },
   "nav": {
     "home": "Home",
     "chat": "AI Chat",

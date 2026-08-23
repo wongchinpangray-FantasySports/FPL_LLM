@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { HomeBackLink } from "@/components/home-back-link";
 import { PageHeader } from "@/components/page-header";
+import { ShareButton } from "@/components/share/share-button";
 import { xpCellClass } from "@/components/xp-heatmap";
 import { loadPlayerProfileBundle } from "@/lib/player-hub";
 import { loadPlayerGwHistory } from "@/lib/player-gw-history";
@@ -89,17 +90,24 @@ export default async function PlayerHubPage({
         </Link>
       </div>
 
-      <PageHeader
-        eyebrow={t("eyebrow")}
-        title={displayName}
-        description={t("description", {
-          team: row.team ?? "—",
-          pos: row.position ?? "—",
-          gw0: String(currentGw),
-          gw1: String(fromGw),
-          gw2: String(toGw),
-        })}
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <PageHeader
+          eyebrow={t("eyebrow")}
+          title={displayName}
+          description={t("description", {
+            team: row.team ?? "—",
+            pos: row.position ?? "—",
+            gw0: String(currentGw),
+            gw1: String(fromGw),
+            gw2: String(toGw),
+          })}
+        />
+        <ShareButton
+          path={`/player/${fplId}`}
+          title={displayName}
+          refId={String(fplId)}
+        />
+      </div>
 
       <section className="rounded-xl border border-border bg-card/50 p-4 sm:p-5">
         <h2 className="mb-2 text-sm font-semibold text-foreground">

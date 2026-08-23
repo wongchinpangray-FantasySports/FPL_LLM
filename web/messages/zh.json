@@ -6,6 +6,22 @@
   "common": {
     "backHome": "← 返回首页"
   },
+  "share": {
+    "share": "分享",
+    "copy": "复制链接",
+    "copied": "已复制",
+    "qr": "二维码",
+    "close": "关闭",
+    "hint": "短链接与二维码可发到微信、朋友圈或任何地方。未注册访客只能预览这一次。",
+    "error": "暂时无法生成分享链接，请稍后重试。",
+    "gateTitle": "注册后查看完整内容",
+    "gateBodyOnce": "这是分享预览。注册免费账号后，可以打开完整页面、收藏球员，并使用全部 Insights / Mini 5 功能。",
+    "gateBodyRepeat": "这次预览已经看过。创建账号后即可查看完整信息，并继续使用 FALEAGUE。",
+    "signup": "注册账号",
+    "login": "已有账号登录",
+    "stay": "先看完这次预览",
+    "emptyPreview": "完整数据需登录后查看。"
+  },
   "nav": {
     "home": "首页",
     "chat": "AI 对话",

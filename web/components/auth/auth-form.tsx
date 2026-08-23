@@ -91,7 +91,7 @@ export function AuthForm({
 
       if (mode === "signup") {
         redirecting = true;
-        redirectTo("/onboarding");
+        redirectTo(safeNextPath(nextPath) ?? "/onboarding");
         return;
       }
 
