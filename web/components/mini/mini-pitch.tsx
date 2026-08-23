@@ -302,8 +302,8 @@ function PitchCard({
             </div>
           </div>
         ) : (
-          <div className="relative px-1.5 pb-1.5 pt-1.5 sm:px-2 sm:pb-2 sm:pt-2">
-            <div className="mb-1 flex items-center justify-between gap-1">
+          <div className="relative px-1 pb-1 pt-1 sm:px-2 sm:pb-2 sm:pt-2">
+            <div className="mb-0.5 flex items-center justify-between gap-1 sm:mb-1">
               <span className="rounded bg-white/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/85 sm:text-[9px]">
                 {player.position ?? "—"}
               </span>
@@ -321,12 +321,12 @@ function PitchCard({
               </div>
             </div>
 
-            <p className="line-clamp-2 min-h-[1.9rem] text-center text-[12px] font-bold leading-tight text-white sm:min-h-[2.1rem] sm:text-[13px]">
+            <p className="line-clamp-2 min-h-[1.6rem] text-center text-[11px] font-bold leading-tight text-white sm:min-h-[2.1rem] sm:text-[13px]">
               {name ?? `#${player.fpl_id}`}
             </p>
             <p
               className={cn(
-                "truncate text-center text-[9px] font-medium tracking-wide sm:text-[10px]",
+                "truncate text-center text-[8px] font-medium tracking-wide sm:text-[10px]",
                 fixtureLabel
                   ? "text-[#7dffa8]/90"
                   : "uppercase text-white/55",
@@ -346,7 +346,7 @@ function PitchCard({
               </p>
             ) : null}
 
-            <div className="mt-1.5 grid grid-cols-3 gap-0.5 rounded-md bg-black/35 px-1 py-1 text-center">
+            <div className="mt-1 grid grid-cols-3 gap-0.5 rounded-md bg-black/35 px-1 py-0.5 text-center sm:mt-1.5 sm:py-1">
               <div>
                 <p className="text-[7px] uppercase tracking-wide text-white/45 sm:text-[8px]">
                   {t("cardSeasonPts")}
@@ -396,7 +396,7 @@ function PitchCard({
         "flex w-full flex-col items-center gap-1",
         compact
           ? "max-w-[5.25rem] sm:max-w-[5.75rem]"
-          : "max-w-[6.5rem] sm:max-w-[7.25rem]",
+          : "max-w-[5.75rem] sm:max-w-[7.25rem]",
       )}
     >
       {interactive ? (
@@ -525,9 +525,8 @@ export function MiniPitch({
     <div
       className={cn(
         "relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.25rem] border border-[#1f6b45]/70 shadow-[0_18px_40px_rgba(0,0,0,0.32)]",
-        compact
-          ? "min-h-0"
-          : "aspect-[5/4] sm:aspect-[4/3]",
+        // Content-height pitch so GKP + C/V buttons are never clipped on mobile.
+        "min-h-0",
       )}
     >
       {/* Grass */}
@@ -561,14 +560,14 @@ export function MiniPitch({
           "relative z-[1] flex flex-col",
           compact
             ? "gap-2 px-2 py-2.5 sm:gap-2.5 sm:px-3 sm:py-3"
-            : "h-full justify-between px-2 py-3 sm:px-4 sm:py-4",
+            : "gap-2 px-2 py-2.5 sm:gap-3 sm:px-4 sm:py-4",
         )}
       >
         {/* Outfield near halfway */}
         <div
           className={cn(
             "grid grid-cols-2 justify-items-center",
-            compact ? "gap-1.5" : "gap-2 pt-1 sm:gap-6 sm:pt-2",
+            compact ? "gap-1.5" : "gap-2 sm:gap-6",
           )}
         >
           <PitchCard
@@ -617,8 +616,13 @@ export function MiniPitch({
           />
         </div>
 
-        {/* GK in the box */}
-        <div className={cn("flex justify-center", compact ? "pt-0.5" : "pb-0.5 sm:pb-1")}>
+        {/* GK in the box — reserved bottom space so C/V controls stay visible */}
+        <div
+          className={cn(
+            "flex justify-center",
+            compact ? "pt-0.5 pb-0.5" : "pt-1 pb-1 sm:pb-2",
+          )}
+        >
           <PitchCard
             slotIndex={MINI_GK_SLOT}
             player={gk}
