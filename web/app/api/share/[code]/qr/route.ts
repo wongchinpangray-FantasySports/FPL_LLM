@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { getShareByCode } from "@/lib/share/store";
 import { sharePublicOrigin } from "@/lib/share/origin";
+import { sharePagePath } from "@/lib/share/card-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(
   if (!link) {
     return new NextResponse("Not found", { status: 404 });
   }
-  const url = `${sharePublicOrigin(req)}/s/${link.code}`;
+  const url = `${sharePublicOrigin(req)}${sharePagePath(link.code)}`;
   const svg = await QRCode.toString(url, {
     type: "svg",
     margin: 1,

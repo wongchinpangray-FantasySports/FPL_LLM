@@ -3,6 +3,7 @@ import { getAuthUser } from "@/lib/auth/session";
 import { inferShareKind, normalizeSharePath } from "@/lib/share/codes";
 import { upsertShareLink } from "@/lib/share/store";
 import { sharePublicOrigin } from "@/lib/share/origin";
+import { sharePagePath } from "@/lib/share/card-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
       ref_id: refId,
       created_by: user?.id ?? null,
     });
-    const url = `${sharePublicOrigin(req)}/s/${link.code}`;
+    const url = `${sharePublicOrigin(req)}${sharePagePath(link.code)}`;
     return NextResponse.json({
       code: link.code,
       url,

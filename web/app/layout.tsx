@@ -11,6 +11,10 @@ const inter = Inter({
 
 /** Root metadata fallback; `[locale]/layout` overrides. Site is Chinese-only. */
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ||
+      "https://www.faleague-ai.com",
+  ),
   title: "Faleague 足球智汇",
   description: "世界杯直播、FPL 工具、足球资讯与 AI 助手。",
 };
