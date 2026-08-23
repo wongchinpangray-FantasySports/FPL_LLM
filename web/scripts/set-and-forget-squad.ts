@@ -530,12 +530,14 @@ function evaluateSquadFixed(
   const picks: PlannerPickPayload[] = squad.map((c, i) => ({
     slot: i + 1,
     fpl_id: c.fpl_id,
-    position: c.position,
-    team_id: c.team_id,
-    price: c.price,
     web_name: c.web_name,
+    team: c.team,
+    team_id: c.team_id,
+    position: c.position,
+    base_price: c.price,
+    is_starter: i < 11,
     is_captain: false,
-    is_vice: false,
+    is_vice_captain: false,
   }));
   const xpByFid: Record<string, number> = {};
   for (const c of squad) {
