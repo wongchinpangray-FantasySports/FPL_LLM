@@ -1,0 +1,481 @@
+/**
+ * Xiaohongshu carousel helpers for translated Scout articles.
+ * Pure (no Playwright / no Supabase). Used by scripts/scout-xhs-pages.ts.
+ */
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { sanitizeScoutHtml, stripTags } from "./html";
+import { looksLikeChinese } from "./zh-status";
+
+export const XHS_WIDTH = 1080;
+export const XHS_HEIGHT = 1440;
+export const DEFAULT_LATEST = 8;
+export const DEFAULT_DAYS = 5;
+export const MAX_PAGES = 18;
+
+const CJK_RE = /[\u3400-\u9fff\uf900-\ufaff]/g;
+
+const PAYWALL_SLUG_RE =
+  /hall-of-famer|hall-of-famers|team-reveal|goals-assists-bonus-defcon/i;
+
+const PAYWALL_BODY_RE =
+  /此内容仅限|requires a Fantasy Football Scout user account|register\?via=Editorial/i;
+
+const PROMO_SRC_RE =
+  /image-2026-07-24T120104|Dont-Chase-Last-Weeks|FFScoutEditorial|伴侣应用/i;
+
+export type LocalScoutZh = {
+  slug: string;
+  dir: string;
+  title_zh: string;
+  excerpt_zh: string;
+  title_en: string;
+  excerpt_en: string | null;
+  author: string | null;
+  series: string;
+  source_url: string;
+  source_published_at: string | null;
+  translate_requested_at: string | null;
+  status: string;
+  body_html_zh: string;
+  zh_mtime_ms: number;
+};
+
+export type ScoutXhsBlock = {
+  html: string;
+  kind: "heading" | "p" | "list" | "quote" | "figure" | "table" | "other";
+};
+
+export type SkipReason =
+  | "missing_zh"
+  | "not_chinese"
+  | "paywall"
+  | "too_short"
+  | "not_in_window";
+
+export function scoutTranslateRoot(cwd = process.cwd()): string {
+  return join(cwd, "output", "scout-translate");
+}
+
+export function scoutXhsOutRoot(cwd = process.cwd()): string {
+  return join(cwd, "output", "scout-xhs");
+}
+
+export function countCjk(text: string): number {
+  return (text.match(CJK_RE) ?? []).length;
+}
+
+export function isPromoImageSrc(src: string): boolean {
+  return PROMO_SRC_RE.test(src);
+}
+
+export function isPaywallSlug(slug: string): boolean {
+  return PAYWALL_SLUG_RE.test(slug);
+}
+
+export function looksLikePaywallLeftover(slug: string, html: string): boolean {
+  if (isPaywallSlug(slug)) return true;
+  if (!PAYWALL_BODY_RE.test(html)) return false;
+  const cleaned = stripTags(stripScoutAds(html));
+  return cleaned.length < 1400;
+}
+
+export function skipReasonFor(article: LocalScoutZh): SkipReason | null {
+  if (!article.body_html_zh.trim()) return "missing_zh";
+  if (looksLikePaywallLeftover(article.slug, article.body_html_zh)) {
+    return "paywall";
+  }
+  if (countCjk(article.body_html_zh) < 80) return "not_chinese";
+  const blocks = articleBlocks(article.body_html_zh);
+  if (blocks.length === 0) return "too_short";
+  return null;
+}
+
+export function stripScoutAds(html: string): string {
+  let out = html;
+  out = out.replace(/<figure>[\s\S]*?<\/figure>/gi, (fig) =>
+    /FFScoutEditorial|Dont-Chase-Last-Weeks|image-2026-07-24T120104|伴侣应用/.test(fig)
+      ? ""
+      : fig,
+  );
+  out = out.replace(
+    /<p>\s*<strong>\s*<a[^>]*(?:FFScoutEditorial|bit\.ly\/(?:FFScoutEditorial|joinffscout))[\s\S]*?<\/p>/gi,
+    "",
+  );
+  out = out.replace(/<div>\s*<a[^>]*register\?via=Editorial[\s\S]*?<\/div>/gi, "");
+  out = out.replace(/<a[^>]*register\?via=Editorial[^>]*>[\s\S]*?<\/a>/gi, "");
+  out = out.replace(
+    /此内容仅限[\s\S]{0,900}?用 Fantasy Football Scout[\s\S]{0,80}?<\/a>/gi,
+    "",
+  );
+  out = out.replace(
+    /<img[^>]*(?:image-2026-07-24T120104|Dont-Chase-Last-Weeks|伴侣应用)[^>]*>/gi,
+    "",
+  );
+  out = out.replace(/<div>\s*<span>\s*<\/span>\s*/gi, "<div>");
+  out = out.replace(/<div>\s*<\/div>/gi, "");
+  out = out.replace(/<hr\s*\/?>/gi, "");
+  out = out.replace(/<p>\s*<\/p>/gi, "");
+  return out.trim();
+}
+
+function unwrapUselessDivs(html: string): string {
+  return html
+    .replace(/<span>\s*<\/span>/gi, "")
+    .replace(/<div>\s*<\/div>/gi, "")
+    .replace(/<\/?div>/gi, "\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+export function articleBlocks(rawHtml: string): ScoutXhsBlock[] {
+  const stripped = stripScoutAds(rawHtml);
+  const { html } = sanitizeScoutHtml(stripped);
+  const unwrapped = unwrapUselessDivs(html);
+  const re =
+    /<(h[1-6]|p|ul|ol|blockquote|figure|table)(\s[^>]*)?>[\s\S]*?<\/\1>|<img\b[^>]*>/gi;
+  const blocks: ScoutXhsBlock[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(unwrapped))) {
+    const raw = m[0].trim();
+    if (!raw) continue;
+    if (/^<img\b/i.test(raw)) {
+      const src = raw.match(/src=["']([^"']+)/i)?.[1] ?? "";
+      if (isPromoImageSrc(src)) continue;
+      blocks.push({
+        html: `<figure>${raw}</figure>`,
+        kind: "figure",
+      });
+      continue;
+    }
+    const kind = blockKind(raw);
+    if (kind === "figure") {
+      const src = raw.match(/src=["']([^"']+)/i)?.[1] ?? "";
+      if (isPromoImageSrc(src)) continue;
+    }
+    const text = stripTags(raw);
+    if (!text && kind !== "figure") continue;
+    if (kind === "p" && !text.trim()) continue;
+    if (kind === "p") {
+      blocks.push(...splitLongParagraph(raw));
+      continue;
+    }
+    if (kind === "quote") {
+      blocks.push(...splitTallQuote(raw));
+      continue;
+    }
+    blocks.push({ html: raw, kind });
+  }
+  return mergeRelatedReading(blocks);
+}
+
+function blockKind(html: string): ScoutXhsBlock["kind"] {
+  if (/^<h[1-6]\b/i.test(html)) return "heading";
+  if (/^<p\b/i.test(html)) return "p";
+  if (/^<(ul|ol)\b/i.test(html)) return "list";
+  if (/^<blockquote\b/i.test(html)) return "quote";
+  if (/^<figure\b/i.test(html) || /<img\b/i.test(html)) return "figure";
+  if (/^<table\b/i.test(html)) return "table";
+  return "other";
+}
+
+function splitLongParagraph(html: string): ScoutXhsBlock[] {
+  const inner = html.replace(/^<p[^>]*>/i, "").replace(/<\/p>$/i, "");
+  const text = stripTags(inner);
+  if (text.length <= 240) return [{ html, kind: "p" }];
+  const parts: string[] = [];
+  let buf = "";
+  for (const ch of inner) {
+    buf += ch;
+    if ("。！？".includes(ch) && stripTags(buf).length >= 90) {
+      parts.push(buf);
+      buf = "";
+    }
+  }
+  if (buf.trim()) parts.push(buf);
+  if (parts.length <= 1) return [{ html, kind: "p" }];
+  return parts
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => ({ html: `<p>${p}</p>`, kind: "p" as const }));
+}
+
+function splitTallQuote(html: string): ScoutXhsBlock[] {
+  const inner = html
+    .replace(/^<blockquote[^>]*>/i, "")
+    .replace(/<\/blockquote>$/i, "")
+    .trim();
+  const paras = inner.match(/<p\b[\s\S]*?<\/p>/gi);
+  if (!paras || paras.length <= 1) return [{ html, kind: "quote" }];
+  const text = stripTags(inner);
+  if (text.length <= 280) return [{ html, kind: "quote" }];
+  return paras.map((p) => ({
+    html: `<blockquote>${p}</blockquote>`,
+    kind: "quote" as const,
+  }));
+}
+
+function mergeRelatedReading(blocks: ScoutXhsBlock[]): ScoutXhsBlock[] {
+  return blocks.map((b) => {
+    if (b.kind !== "list") return b;
+    if (!/延伸阅读/.test(b.html)) return b;
+    const compact = b.html
+      .replace(/<li>/gi, "<li>")
+      .replace(/target="_blank"[^>]*/gi, "");
+    return { ...b, html: compact };
+  });
+}
+
+export function pickHeroSrc(blocks: ScoutXhsBlock[]): string | null {
+  for (const b of blocks) {
+    if (b.kind !== "figure") continue;
+    const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
+    if (!src || isPromoImageSrc(src)) continue;
+    if (/Screen-Shot/i.test(src)) continue;
+    return src;
+  }
+  for (const b of blocks) {
+    if (b.kind !== "figure") continue;
+    const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
+    if (src && !isPromoImageSrc(src)) return src;
+  }
+  return null;
+}
+
+export function dropHeroFromBlocks(
+  blocks: ScoutXhsBlock[],
+  heroSrc: string | null,
+): ScoutXhsBlock[] {
+  if (!heroSrc) return blocks;
+  let dropped = false;
+  return blocks.filter((b) => {
+    if (dropped || b.kind !== "figure") return true;
+    if (b.html.includes(heroSrc)) {
+      dropped = true;
+      return false;
+    }
+    return true;
+  });
+}
+
+export function seriesLabel(series: string, titleZh: string): string {
+  if (series === "scout_notes" || /笔记/.test(titleZh)) return "FPL 笔记";
+  if (series === "team_news" || /球队新闻|伤情/.test(titleZh)) return "球队新闻";
+  if (series === "preview") return "赛前瞻";
+  if (series === "review") return "赛后复盘";
+  return "Scout 中文";
+}
+
+export function gwTag(slug: string, titleZh: string, titleEn: string): string | null {
+  const blob = `${slug} ${titleZh} ${titleEn}`;
+  const m =
+    blob.match(/gameweek[- ]?(\d+)/i) ||
+    titleZh.match(/第\s*(\d+)\s*轮/) ||
+    blob.match(/\bgw\s*(\d+)/i);
+  if (m) return `GW${m[1]}`;
+  if (/2026-27|2026\/27/.test(blob)) return "2026/27";
+  return null;
+}
+
+export function publishedAtMs(article: LocalScoutZh): number {
+  if (article.source_published_at) {
+    const t = Date.parse(article.source_published_at);
+    if (!Number.isNaN(t)) return t;
+  }
+  const fromUrl = article.source_url.match(/\/(20\d{2})\/(\d{2})\/(\d{2})\//);
+  if (fromUrl) {
+    return Date.parse(`${fromUrl[1]}-${fromUrl[2]}-${fromUrl[3]}T12:00:00Z`);
+  }
+  return article.zh_mtime_ms;
+}
+
+function parseMetaJson(path: string): Record<string, unknown> {
+  if (!existsSync(path)) return {};
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+export function loadLocalScoutZh(cwd = process.cwd()): LocalScoutZh[] {
+  const root = scoutTranslateRoot(cwd);
+  if (!existsSync(root)) return [];
+  const out: LocalScoutZh[] = [];
+  for (const dirent of readdirSync(root, { withFileTypes: true })) {
+    if (!dirent.isDirectory()) continue;
+    const dir = join(root, dirent.name);
+    const zhPath = join(dir, "body_html_zh.html");
+    const metaZhPath = join(dir, "meta.zh.json");
+    if (!existsSync(zhPath) || !existsSync(metaZhPath)) continue;
+    const meta = parseMetaJson(join(dir, "meta.json"));
+    const metaZh = parseMetaJson(metaZhPath);
+    let zh_mtime_ms = 0;
+    try {
+      zh_mtime_ms = statSync(zhPath).mtimeMs;
+    } catch {
+      zh_mtime_ms = 0;
+    }
+    const title_zh = String(metaZh.title_zh ?? "").trim();
+    const excerpt_zh = String(metaZh.excerpt_zh ?? "").trim();
+    const body = readFileSync(zhPath, "utf8");
+    out.push({
+      slug: String(meta.slug ?? dirent.name),
+      dir,
+      title_zh,
+      excerpt_zh,
+      title_en: String(meta.title_en ?? ""),
+      excerpt_en: meta.excerpt_en ? String(meta.excerpt_en) : null,
+      author: meta.author ? String(meta.author) : null,
+      series: String(meta.series ?? "other"),
+      source_url: String(meta.source_url ?? ""),
+      source_published_at: meta.source_published_at
+        ? String(meta.source_published_at)
+        : null,
+      translate_requested_at: meta.translate_requested_at
+        ? String(meta.translate_requested_at)
+        : null,
+      status: String(meta.status ?? "pending"),
+      body_html_zh: body,
+      zh_mtime_ms,
+    });
+  }
+  return out;
+}
+
+export function isNotesArticle(article: LocalScoutZh): boolean {
+  return article.series === "scout_notes" || article.slug.startsWith("fpl-notes-");
+}
+
+export function priorityScore(article: LocalScoutZh): number {
+  // Recency first; Notes jump ahead of other series inside the same window.
+  let n = publishedAtMs(article);
+  if (isNotesArticle(article)) n += 10 * 24 * 60 * 60 * 1000;
+  if (article.series === "team_news") n += 12 * 60 * 60 * 1000;
+  if (/this-evening|this-morning/.test(article.slug)) n -= 3 * 24 * 60 * 60 * 1000;
+  if (/iraola-on-szoboszlai/.test(article.slug)) n += 1e7;
+  return n;
+}
+
+export type SelectOpts = {
+  slugs?: string[];
+  latest?: number;
+  days?: number;
+  force?: boolean;
+  now?: Date;
+};
+
+export function selectScoutXhsArticles(
+  articles: LocalScoutZh[],
+  opts: SelectOpts,
+): {
+  selected: LocalScoutZh[];
+  skipped: { slug: string; reason: SkipReason | "not_found" }[];
+} {
+  const skipped: { slug: string; reason: SkipReason | "not_found" }[] = [];
+  const bySlug = new Map(articles.map((a) => [a.slug, a]));
+
+  if (opts.slugs?.length) {
+    const selected: LocalScoutZh[] = [];
+    for (const slug of opts.slugs) {
+      const a = bySlug.get(slug);
+      if (!a) {
+        skipped.push({ slug, reason: "not_found" });
+        continue;
+      }
+      const reason = skipReasonFor(a);
+      if (reason && !opts.force) {
+        skipped.push({ slug, reason });
+        continue;
+      }
+      selected.push(a);
+    }
+    return { selected, skipped };
+  }
+
+  const now = opts.now ?? new Date();
+  const days = opts.days ?? DEFAULT_DAYS;
+  const cap = opts.latest ?? DEFAULT_LATEST;
+  const windowMs = days * 24 * 60 * 60 * 1000;
+  const eligible: LocalScoutZh[] = [];
+
+  for (const a of articles) {
+    const reason = skipReasonFor(a);
+    if (reason) {
+      skipped.push({ slug: a.slug, reason });
+      continue;
+    }
+    if (days > 0 && now.getTime() - publishedAtMs(a) > windowMs) {
+      skipped.push({ slug: a.slug, reason: "not_in_window" });
+      continue;
+    }
+    eligible.push(a);
+  }
+
+  eligible.sort((a, b) => priorityScore(b) - priorityScore(a));
+  const selected = eligible.slice(0, Math.max(1, cap));
+  for (const a of eligible.slice(selected.length)) {
+    skipped.push({ slug: a.slug, reason: "not_in_window" });
+  }
+  return { selected, skipped };
+}
+
+export function packBlocksByHeight(
+  blocks: ScoutXhsBlock[],
+  heights: number[],
+  maxHeight: number,
+): ScoutXhsBlock[][] {
+  const pages: ScoutXhsBlock[][] = [];
+  let current: ScoutXhsBlock[] = [];
+  let used = 0;
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]!;
+    const h = Math.max(1, heights[i] ?? 80);
+    const next = used + h;
+    const headingNeedsRoom =
+      block.kind === "heading" && current.length > 0 && next > maxHeight * 0.68;
+    if (current.length > 0 && (next > maxHeight || headingNeedsRoom)) {
+      pages.push(current);
+      current = [block];
+      used = h;
+    } else {
+      current.push(block);
+      used = next;
+    }
+  }
+  if (current.length) pages.push(current);
+  // Don't leave a heading as the last item on a page.
+  for (let i = 0; i < pages.length - 1; i++) {
+    const page = pages[i]!;
+    const last = page[page.length - 1];
+    if (last?.kind === "heading") {
+      page.pop();
+      pages[i + 1]!.unshift(last);
+      if (page.length === 0) {
+        pages.splice(i, 1);
+        i -= 1;
+      }
+    }
+  }
+  return pages.length ? pages : [[]];
+}
+
+export function buildCaption(article: LocalScoutZh): string {
+  const lines = [
+    article.title_zh,
+    "",
+    article.excerpt_zh,
+    "",
+    "左滑看全文。原文 Fantasy Football Scout，中文整理 Faleague。",
+    "完整中文请到 faleague 阅读，并回看 fantasyfootballscout.co.uk。",
+    "",
+    "#FPL #英超 #FantasyFootballScout #Faleague #FPL笔记",
+  ];
+  if (article.source_url) {
+    lines.push("", `原文：${article.source_url}`);
+  }
+  return lines.join("\n");
+}
+
+export function looksLikeChineseTitle(title: string): boolean {
+  return looksLikeChinese(title);
+}

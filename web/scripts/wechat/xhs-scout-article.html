@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080" />
+    <title>FALEAGUE Scout XHS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 1080px; height: 1440px; overflow: hidden;
+        font-family: "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", Inter, system-ui, sans-serif;
+        background: #0b0a0f; color: #f4f4f5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .poster {
+        position: relative; width: 1080px; height: 1440px; overflow: hidden;
+        padding: 36px 40px 28px;
+        display: flex; flex-direction: column;
+      }
+      .bg {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 70% 50% at 10% 0%, rgba(0,255,135,0.16), transparent 50%),
+          radial-gradient(ellipse 60% 40% at 100% 20%, rgba(55,0,60,0.25), transparent 45%),
+          linear-gradient(180deg, #0f0c16 0%, #0b0a0f 100%);
+      }
+      .pitch-stripe {
+        position: absolute; inset: 0; opacity: 0.07; pointer-events: none;
+        background: repeating-linear-gradient(90deg, #145c32 0 56px, #114f2b 56px 112px);
+      }
+      .wm {
+        position: absolute; right: -8px; top: 300px;
+        font-family: Inter, sans-serif; font-size: 150px; font-weight: 900;
+        letter-spacing: -0.08em; color: rgba(255,255,255,0.03);
+        pointer-events: none;
+      }
+      .content {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; height: 100%; min-height: 0;
+      }
+      .top {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 16px; flex-shrink: 0;
+      }
+      .brand { font-family: Inter, sans-serif; font-size: 30px; font-weight: 900; letter-spacing: -0.04em; }
+      .brand span { color: #00ff87; }
+      .eyebrow {
+        margin-top: 5px; font-size: 15px; font-weight: 800;
+        letter-spacing: 0.08em; color: #00ff87;
+      }
+      .page-meta { text-align: right; }
+      .page-num {
+        font-family: Inter, sans-serif; font-size: 36px; font-weight: 900; letter-spacing: -0.04em;
+      }
+      .page-total { font-size: 14px; font-weight: 700; color: rgba(244,244,245,0.45); letter-spacing: 0.08em; }
+
+      .chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+      .chip {
+        padding: 7px 14px; border-radius: 999px;
+        background: rgba(55,0,60,0.7); border: 1px solid rgba(0,255,135,0.3);
+        font-size: 15px; font-weight: 800; color: #00ff87; letter-spacing: 0.06em;
+      }
+      .chip.muted {
+        background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.14);
+        color: rgba(244,244,245,0.8);
+      }
+
+      .cover-hero { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      h1 {
+        font-size: 46px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.22;
+      }
+      h1.long { font-size: 38px; }
+      h1.longer { font-size: 32px; }
+      .sub {
+        margin-top: 14px; font-size: 24px; line-height: 1.45;
+        color: rgba(244,244,245,0.72); font-weight: 600;
+      }
+      .hero-img {
+        margin-top: 22px; max-height: 480px;
+        border-radius: 18px; overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(0,0,0,0.28);
+        display: flex; align-items: center; justify-content: center;
+        flex: 0 1 auto;
+      }
+      .hero-img img {
+        width: 100%; max-height: 480px; object-fit: contain; display: block;
+      }
+      .hero-img.hidden, figure.hidden { display: none; }
+      .swipe {
+        margin-top: auto; padding-top: 18px;
+        font-size: 20px; font-weight: 800; color: rgba(244,244,245,0.55);
+      }
+      .swipe em { color: #00ff87; font-style: normal; }
+
+      .body-kicker {
+        flex-shrink: 0;
+        padding-bottom: 12px; margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      .body-kicker h2 {
+        font-size: 22px; font-weight: 800; line-height: 1.3;
+        color: rgba(244,244,245,0.88);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+
+      .body-copy {
+        flex: 1; min-height: 0; overflow: hidden;
+        width: 100%;
+        font-size: 28px; line-height: 1.55; font-weight: 600;
+        color: #e8e6ef;
+        padding-top: 18px;
+        word-break: normal;
+        overflow-wrap: break-word;
+      }
+      .body-copy p { margin: 0 0 16px; }
+      .body-copy h1, .body-copy h2, .body-copy h3, .body-copy h4 {
+        font-size: 30px; font-weight: 900; line-height: 1.28;
+        color: #00ff87; letter-spacing: -0.02em;
+        margin: 4px 0 14px;
+      }
+      .body-copy ul, .body-copy ol {
+        margin: 0 0 16px; padding-left: 0; list-style: none;
+      }
+      .body-copy li {
+        position: relative;
+        display: block;
+        padding-left: 22px;
+        margin-bottom: 10px;
+        line-height: 1.45;
+      }
+      .body-copy li::before {
+        content: ""; position: absolute; left: 0; top: 12px;
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #00ff87;
+        box-shadow: 0 0 8px rgba(0,255,135,0.45);
+      }
+      .body-copy a { color: #7dffc3; text-decoration: none; }
+      .body-copy blockquote {
+        margin: 0 0 16px; padding: 14px 16px 12px;
+        border-left: 4px solid #00ff87;
+        background: rgba(0,255,135,0.07);
+        border-radius: 0 12px 12px 0;
+        font-size: 25px; line-height: 1.5; color: rgba(244,244,245,0.88);
+      }
+      .body-copy blockquote p { margin: 0 0 8px; }
+      .body-copy blockquote p:last-child { margin: 0; }
+      .body-copy figure {
+        margin: 0 0 16px; text-align: center;
+      }
+      .body-copy img {
+        max-width: 100%; max-height: 460px;
+        object-fit: contain; border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: #16131c;
+      }
+      .body-copy em, .body-copy figcaption {
+        display: block; margin-top: 6px;
+        font-size: 20px; font-style: normal; font-weight: 600;
+        color: rgba(244,244,245,0.5); line-height: 1.35;
+      }
+      .body-copy table {
+        width: 100%; border-collapse: collapse; font-size: 22px; margin-bottom: 16px;
+      }
+      .body-copy th, .body-copy td {
+        text-align: left; padding: 8px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .body-copy th { color: #00ff87; font-size: 16px; letter-spacing: 0.08em; }
+
+      .footer {
+        margin-top: 10px; padding-top: 12px; flex-shrink: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        font-size: 16px; font-weight: 700;
+        color: rgba(244,244,245,0.48);
+      }
+      .footer strong { color: #00ff87; font-weight: 800; }
+      .footer .src { font-family: Inter, sans-serif; font-size: 15px; }
+
+      #measure-root {
+        position: absolute; left: -2400px; top: 0;
+        width: 1000px; pointer-events: none;
+      }
+      #measure-col.body-copy {
+        padding-top: 0;
+      }
+      .mblock { }
+    </style>
+  </head>
+  <body>
+    <div class="poster" id="root"></div>
+    <div id="measure-root"><div id="measure-col" class="body-copy"></div></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function waitImages(root, ms) {
+        const imgs = Array.from(root.querySelectorAll("img"));
+        if (!imgs.length) return Promise.resolve();
+        return Promise.all(imgs.map((img) => {
+          if (img.complete && img.naturalWidth) return Promise.resolve();
+          return new Promise((res) => {
+            const done = () => res();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", () => {
+              img.style.display = "none";
+              const wrap = img.closest(".hero-img, figure");
+              if (wrap) wrap.classList.add("hidden");
+              done();
+            }, { once: true });
+            setTimeout(done, ms || 2500);
+          });
+        }));
+      }
+      window.measureBlocks = async function (blocks) {
+        const col = document.getElementById("measure-col");
+        col.innerHTML = blocks.map((h, i) =>
+          `<div class="mblock" data-i="${i}">${h}</div>`
+        ).join("");
+        await waitImages(col, 2500);
+        return Array.from(col.querySelectorAll(".mblock")).map((el) => el.offsetHeight);
+      };
+      window.bodyOverflow = function () {
+        const el = document.querySelector(".body-copy");
+        if (!el) return 0;
+        return el.scrollHeight - el.clientHeight;
+      };
+      window.waitPageImages = function () {
+        return waitImages(document.getElementById("root"), 2500);
+      };
+      function titleClass(title) {
+        const n = String(title || "").length;
+        if (n > 42) return "longer";
+        if (n > 28) return "long";
+        return "";
+      }
+      window.renderPage = function (data) {
+        const isCover = data.kind === "cover";
+        const pageLabel = `第 ${data.page}/${data.total}`;
+        const footer = `
+          <div class="footer">
+            <span>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></span>
+            <span>中文 <strong>faleague</strong></span>
+          </div>`;
+        const chips = `
+          <div class="chips">
+            ${data.seriesLabel ? `<div class="chip">${esc(data.seriesLabel)}</div>` : ""}
+            ${data.gwTag ? `<div class="chip muted">${esc(data.gwTag)}</div>` : ""}
+            <div class="chip muted">Fantasy Football Scout 中文</div>
+          </div>`;
+
+        let inner = "";
+        if (isCover) {
+          inner = `
+            ${chips}
+            <div class="cover-hero">
+              <h1 class="${titleClass(data.title)}">${esc(data.title)}</h1>
+              ${data.subtitle ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
+              ${data.heroSrc ? `<div class="hero-img"><img src="${esc(data.heroSrc)}" alt=""></div>` : ""}
+              <div class="swipe">左滑阅读全文 · 原文 <em>Fantasy Football Scout</em> · 中文 Faleague</div>
+            </div>`;
+        } else {
+          inner = `
+            <div class="body-kicker"><h2>${esc(data.title)}</h2></div>
+            <div class="body-copy">${data.html || ""}</div>`;
+        }
+
+        document.getElementById("root").innerHTML = `
+          <div class="bg"></div>
+          ${isCover ? '<div class="pitch-stripe"></div>' : ""}
+          <div class="wm">FFS</div>
+          <div class="content">
+            <div class="top">
+              <div>
+                <div class="brand">FA<span>LEAGUE</span></div>
+                <div class="eyebrow">FANTASY FOOTBALL SCOUT 中文</div>
+              </div>
+              <div class="page-meta">
+                <div class="page-num">${String(data.page).padStart(2, "0")} / ${String(data.total).padStart(2, "0")}</div>
+                <div class="page-total">SWIPE →</div>
+              </div>
+            </div>
+            ${inner}
+            ${footer}
+          </div>`;
+      };
+    </script>
+  </body>
+</html>

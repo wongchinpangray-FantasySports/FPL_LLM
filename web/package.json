@@ -44,7 +44,8 @@
     "sync:scout": "tsx scripts/sync-scout-articles.ts",
     "scout:queue": "tsx scripts/write-scout-zh-batch.ts --requested",
     "scout:write-zh": "tsx scripts/write-scout-zh-batch.ts --apply",
-    "test:scout": "tsx scripts/scout-self-test.ts"
+    "test:scout": "tsx scripts/scout-self-test.ts",
+    "xhs:scout": "tsx scripts/scout-xhs-pages.ts"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",
