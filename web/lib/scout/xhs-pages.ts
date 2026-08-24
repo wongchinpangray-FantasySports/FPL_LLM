@@ -13,6 +13,33 @@ export const DEFAULT_LATEST = 8;
 export const DEFAULT_DAYS = 5;
 export const MAX_PAGES = 18;
 
+/** FFS “Powered by” lockup on carousel pages (attribution only — not a Premium CTA). */
+export const FFS_LOGO_FILENAME = "ffs-logo.png";
+
+/** Public Scout listing on Faleague (localePrefix as-needed, default zh). */
+export const XHS_SCOUT_CTA_PATH = "/scout";
+export const XHS_SCOUT_CTA_LABEL = "来 Faleague 读 Scout 中文 →";
+export const DEFAULT_SITE_ORIGIN = "https://www.faleague-ai.com";
+
+export function scoutPublicDir(cwd = process.cwd()): string {
+  return join(cwd, "public", "scout");
+}
+
+export function ffsLogoPath(cwd = process.cwd()): string {
+  return join(scoutPublicDir(cwd), FFS_LOGO_FILENAME);
+}
+
+export function resolveScoutCta(origin?: string | null): {
+  href: string;
+  display: string;
+  label: string;
+} {
+  const base = (origin?.trim() || DEFAULT_SITE_ORIGIN).replace(/\/$/, "");
+  const href = `${base}${XHS_SCOUT_CTA_PATH}`;
+  const display = href.replace(/^https?:\/\/(www\.)?/i, "");
+  return { href, display, label: XHS_SCOUT_CTA_LABEL };
+}
+
 const CJK_RE = /[\u3400-\u9fff\uf900-\ufaff]/g;
 
 const PAYWALL_SLUG_RE =
@@ -459,14 +486,17 @@ export function packBlocksByHeight(
   return pages.length ? pages : [[]];
 }
 
-export function buildCaption(article: LocalScoutZh): string {
+export function buildCaption(
+  article: LocalScoutZh,
+  ctaDisplay = resolveScoutCta().display,
+): string {
   const lines = [
     article.title_zh,
     "",
     article.excerpt_zh,
     "",
     "左滑看全文。原文 Fantasy Football Scout，中文整理 Faleague。",
-    "完整中文请到 faleague 阅读，并回看 fantasyfootballscout.co.uk。",
+    `完整中文请到 ${ctaDisplay} 阅读 Scout 专栏。`,
     "",
     "#FPL #英超 #FantasyFootballScout #Faleague #FPL笔记",
   ];

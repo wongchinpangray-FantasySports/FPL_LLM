@@ -12,10 +12,11 @@
  * Default: recent local ZH (last 5 days), skip paywall leftovers, cap 8,
  * prioritize FPL Notes + GW1. Output: output/scout-xhs/<slug>/01.png …
  */
-import { mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
+import { loadScriptEnv } from "./load-env";
 import {
   DEFAULT_DAYS,
   DEFAULT_LATEST,
@@ -25,10 +26,12 @@ import {
   articleBlocks,
   buildCaption,
   dropHeroFromBlocks,
+  ffsLogoPath,
   gwTag,
   loadLocalScoutZh,
   packBlocksByHeight,
   pickHeroSrc,
+  resolveScoutCta,
   scoutXhsOutRoot,
   selectScoutXhsArticles,
   seriesLabel,
@@ -39,7 +42,16 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const templatePath = join(__dirname, "wechat", "xhs-scout-article.html");
 
-const BODY_MAX_HEIGHT = 820;
+/** Leave room for the FFS lockup + Faleague Scout CTA footer (no Premium QR). */
+const BODY_MAX_HEIGHT = 780;
+
+let logoSrc = "";
+let ctaLabel = "";
+let ctaDisplay = "";
+
+function withAssets(data: Record<string, unknown>): Record<string, unknown> {
+  return { ...data, logoSrc, ctaLabel, ctaUrl: ctaDisplay };
+}
 
 function flagStr(name: string): string | null {
   const raw = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -79,7 +91,7 @@ async function renderOnePage(
 ): Promise<void> {
   await page.evaluate((payload) => {
     (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-  }, data);
+  }, withAssets(data));
   try {
     await page.evaluate(() =>
       (window as unknown as { waitPageImages: () => Promise<void> }).waitPageImages(),
@@ -146,7 +158,7 @@ async function reflowPackedPages(
     const guess = Math.min(MAX_PAGES, out.length + queue.length + 2);
     await page.evaluate((payload) => {
       (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-    }, bodyPagePayload(article, blocks, out.length + 2, guess, series, gw));
+    }, withAssets(bodyPagePayload(article, blocks, out.length + 2, guess, series, gw)));
     try {
       await page.evaluate(() =>
         (window as unknown as { waitPageImages: () => Promise<void> }).waitPageImages(),
@@ -159,7 +171,7 @@ async function reflowPackedPages(
       carry.unshift(blocks.pop()!);
       await page.evaluate((payload) => {
         (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-      }, bodyPagePayload(article, blocks, out.length + 2, guess, series, gw));
+      }, withAssets(bodyPagePayload(article, blocks, out.length + 2, guess, series, gw)));
       overflow = await pageOverflow(page);
     }
     out.push(blocks);
@@ -232,7 +244,7 @@ async function generateArticle(
     );
   }
 
-  const caption = buildCaption(article);
+  const caption = buildCaption(article, ctaDisplay);
   writeFileSync(join(dir, "caption.txt"), caption, "utf8");
   writeFileSync(
     join(dir, "manifest.json"),
@@ -245,6 +257,7 @@ async function generateArticle(
         series: article.series,
         pages: actualTotal,
         hero: Boolean(heroSrc),
+        cta_url: ctaDisplay,
         output: dir,
       },
       null,
@@ -264,14 +277,19 @@ async function generateArticle(
 }
 
 async function loadRequestedSlugs(): Promise<string[]> {
-  const { loadScriptEnv } = await import("./load-env");
-  loadScriptEnv();
   const { listScoutTranslateQueue } = await import("../lib/scout/store");
   const rows = await listScoutTranslateQueue();
   return rows.map((r) => r.slug);
 }
 
 async function main() {
+  loadScriptEnv();
+  const cta = resolveScoutCta(process.env.NEXT_PUBLIC_SITE_URL);
+  ctaLabel = cta.label;
+  ctaDisplay = cta.display;
+  const logoPath = ffsLogoPath();
+  logoSrc = existsSync(logoPath) ? pathToFileURL(logoPath).href : "";
+
   const dry = process.argv.includes("--dry");
   const force = process.argv.includes("--force");
   const requested = process.argv.includes("--requested");
@@ -311,6 +329,7 @@ async function main() {
 
   const summary = {
     mode: dry ? "dry" : "render",
+    cta: { label: ctaLabel, url: ctaDisplay, href: cta.href },
     selected: selected.map((a) => a.slug),
     skipped: skipped.filter((s) => s.reason === "paywall" || s.reason === "not_found" || slugFilter.includes(s.slug)),
     skipped_paywall: skipped.filter((s) => s.reason === "paywall").map((s) => s.slug),
@@ -354,6 +373,7 @@ async function main() {
     JSON.stringify(
       {
         generated_at: new Date().toISOString(),
+        cta: { label: ctaLabel, url: ctaDisplay, href: cta.href },
         results,
         skipped_paywall: skipped.filter((s) => s.reason === "paywall").map((s) => s.slug),
       },
