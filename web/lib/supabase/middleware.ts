@@ -18,6 +18,7 @@ export const FPL_PUBLIC_PREFIXES = [
   "/fpl/guide",
   "/fpl/historical",
   "/fpl/insights",
+  "/fpl/mini-league",
   "/fpl/preseason",
 ];
 
@@ -68,6 +69,8 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;
   if (pathname.startsWith("/api/fpl/insights/")) return false;
+  // Mini League Killer — route handlers enforce auth / local preview.
+  if (pathname.startsWith("/api/fpl/mini-league")) return false;
   // Exact path + nested (UI legacy + autocomplete/detail).
   if (
     pathname === "/api/fpl/historical" ||

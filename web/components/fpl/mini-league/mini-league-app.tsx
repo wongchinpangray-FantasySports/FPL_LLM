@@ -221,7 +221,19 @@ export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null 
   const tPlayer = useTranslations("playerPage");
   const tModal = useTranslations("fplInsights.playerModal");
   const { entryId: stored } = useEntryId();
-  const entryId = linkedEntryId ?? (stored && /^\d+$/.test(stored) ? Number(stored) : null);
+  const [queryEntry, setQueryEntry] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      const raw = new URLSearchParams(window.location.search).get("entry");
+      if (raw && /^\d+$/.test(raw)) setQueryEntry(Number(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const entryId =
+    linkedEntryId ??
+    queryEntry ??
+    (stored && /^\d+$/.test(stored) ? Number(stored) : null);
 
   const [index, setIndex] = useState<MiniLeagueIndex | null>(null);
   const [indexError, setIndexError] = useState<string | null>(null);
@@ -469,7 +481,7 @@ export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null 
       xpHorizon: tPlayer("xpHorizon"),
       valueXm: tPlayer("valueXm"),
       news: tPlayer("news"),
-      seasonSection: tModal("seasonSection"),
+      seasonSection: tModal("seasonSection", { season: "{season}" }),
       seasonLive: tModal("seasonLive"),
       totalPts: tPlayer("totalPts"),
       minutes: tPlayer("minutes"),

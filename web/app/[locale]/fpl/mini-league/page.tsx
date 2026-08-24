@@ -21,6 +21,9 @@ export default async function MiniLeaguePage({ params }: Props) {
   const profile = user ? await getUserProfile(user.id) : null;
   const allowed = await canAccessPremiumFeature(user?.id);
   const enforce = isInsightsPremiumEnforced();
+  const localPreview =
+    process.env.NODE_ENV === "development" &&
+    process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1";
 
   return (
     <PageShell
@@ -45,8 +48,8 @@ export default async function MiniLeaguePage({ params }: Props) {
           returnPath="/fpl/mini-league"
           locale={params.locale}
         />
-      ) : profile?.fpl_entry_id ? (
-        <MiniLeagueApp linkedEntryId={profile.fpl_entry_id} />
+      ) : profile?.fpl_entry_id || localPreview ? (
+        <MiniLeagueApp linkedEntryId={profile?.fpl_entry_id ?? null} />
       ) : (
         <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
           <p className="mb-4 text-sm text-muted-foreground">{t("needEntry")}</p>

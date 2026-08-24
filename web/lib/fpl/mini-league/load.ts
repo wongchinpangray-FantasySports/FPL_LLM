@@ -65,6 +65,31 @@ const PICKS_CONCURRENCY = 6;
 const TEMPLATE_PCT = 0.4;
 const TEMPLATE_MIN_OWNERS = 2;
 
+async function resolveGwFromBootstrap(): Promise<{ current: number; next: number }> {
+  const boot = await fplGet<{
+    events?: Array<{ id?: number; is_current?: boolean; is_next?: boolean }>;
+  }>("/bootstrap-static/");
+  const events = boot.events ?? [];
+  const cur = events.find((e) => e.is_current);
+  const nxt = events.find((e) => e.is_next);
+  const current = Number(cur?.id) || Number(nxt?.id) || 1;
+  const next = Number(nxt?.id) || current;
+  return { current, next };
+}
+
+/** Prefer DB gameweek, then official bootstrap-static. */
+async function resolveGw(): Promise<{ current: number; next: number }> {
+  try {
+    return await resolveCurrentGw();
+  } catch {
+    try {
+      return await resolveGwFromBootstrap();
+    } catch {
+      return { current: 1, next: 1 };
+    }
+  }
+}
+
 type ClassicStandingsApi = {
   league?: {
     id?: number;
@@ -102,6 +127,67 @@ type PlayerMeta = {
   chance_of_playing: number | null;
   news: string | null;
 };
+
+const POS_BY_TYPE = ["", "GKP", "DEF", "MID", "FWD"] as const;
+
+async function loadMetaFromBootstrap(ids: number[]): Promise<Map<number, PlayerMeta>> {
+  const want = new Set(ids.filter((id) => Number.isFinite(id) && id > 0));
+  if (!want.size) return new Map();
+  const boot = await fplGet<{
+    elements?: Array<{
+      id?: number;
+      web_name?: string;
+      team?: number;
+      element_type?: number;
+      now_cost?: number;
+      status?: string;
+      chance_of_playing_this_round?: number | null;
+      news?: string;
+    }>;
+    teams?: Array<{ id?: number; short_name?: string }>;
+  }>("/bootstrap-static/");
+  const teamName = new Map<number, string>();
+  for (const team of boot.teams ?? []) {
+    const id = Number(team.id);
+    if (Number.isFinite(id)) teamName.set(id, String(team.short_name ?? "").trim());
+  }
+  const out = new Map<number, PlayerMeta>();
+  for (const el of boot.elements ?? []) {
+    const id = Number(el.id);
+    if (!want.has(id)) continue;
+    const teamId = Number(el.team);
+    const type = Number(el.element_type);
+    out.set(id, {
+      fpl_id: id,
+      web_name: el.web_name?.trim() || null,
+      team: Number.isFinite(teamId) ? teamName.get(teamId) || null : null,
+      team_id: Number.isFinite(teamId) ? teamId : null,
+      position: POS_BY_TYPE[type] ?? null,
+      base_price: el.now_cost != null ? Number(el.now_cost) / 10 : null,
+      status: el.status ?? null,
+      chance_of_playing:
+        el.chance_of_playing_this_round != null
+          ? Number(el.chance_of_playing_this_round)
+          : null,
+      news: el.news?.trim() || null,
+    });
+  }
+  return out;
+}
+
+async function fillMissingMeta(
+  metaById: Map<number, PlayerMeta>,
+  ids: number[],
+): Promise<void> {
+  const missing = [...new Set(ids)].filter((id) => id > 0 && !metaById.has(id));
+  if (!missing.length) return;
+  try {
+    const extra = await loadMetaFromBootstrap(missing);
+    for (const [id, row] of extra) metaById.set(id, row);
+  } catch {
+    /* optional */
+  }
+}
 
 type RivalPicks = {
   entry: number;
@@ -230,10 +316,14 @@ function formatFixture(oppShort: string | undefined, home: boolean | undefined):
 
 async function stampFixtures(refs: MiniLeaguePlayerRef[]): Promise<void> {
   if (!refs.length) return;
-  const map = await nextFixtureForPlayers(refs.map((r) => r.fplId));
-  for (const ref of refs) {
-    const fx = map.get(ref.fplId);
-    ref.fixture = formatFixture(fx?.opp_short, fx?.home);
+  try {
+    const map = await nextFixtureForPlayers(refs.map((r) => r.fplId));
+    for (const ref of refs) {
+      const fx = map.get(ref.fplId);
+      ref.fixture = formatFixture(fx?.opp_short, fx?.home);
+    }
+  } catch {
+    /* fixtures are optional */
   }
 }
 
@@ -318,7 +408,7 @@ export async function loadMiniLeagueAnalysis(
   format: MiniLeagueFormat = "classic",
 ): Promise<MiniLeagueAnalysis> {
   const [{ current, next }, page1, entry] = await Promise.all([
-    resolveCurrentGw(),
+    resolveGw(),
     fetchStandingsPage(leagueId, 1, format),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
@@ -415,17 +505,22 @@ export async function loadMiniLeagueAnalysis(
   const managerCount = Math.max(sampledWithSquad.length, 1);
 
   const allIds = [...new Set(picksList.flatMap((p) => p.ids))];
-  const supa = getServerSupabase();
-  const { data: playerRows } = allIds.length
-    ? await supa
+  const metaById = new Map<number, PlayerMeta>();
+  if (allIds.length) {
+    try {
+      const supa = getServerSupabase();
+      const { data: playerRows } = await supa
         .from("players_static")
         .select("fpl_id,web_name,team,team_id,position,base_price,status,chance_of_playing,news")
-        .in("fpl_id", allIds)
-    : { data: [] as PlayerMeta[] };
-  const metaById = new Map<number, PlayerMeta>();
-  for (const row of playerRows ?? []) {
-    metaById.set(Number(row.fpl_id), row as PlayerMeta);
+        .in("fpl_id", allIds);
+      for (const row of playerRows ?? []) {
+        metaById.set(Number(row.fpl_id), row as PlayerMeta);
+      }
+    } catch {
+      /* Player names/xP still render from FPL ids when DB is unavailable. */
+    }
   }
+  await fillMissingMeta(metaById, allIds);
 
   let xpById = new Map<number, number>();
   try {
@@ -604,19 +699,24 @@ async function loadPlayerBundle(ids: number[]): Promise<{
   const unique = [...new Set(ids.filter((id) => Number.isFinite(id) && id > 0))];
   const metaById = new Map<number, PlayerMeta>();
   if (unique.length) {
-    const supa = getServerSupabase();
-    const { data: playerRows } = await supa
-      .from("players_static")
-      .select("fpl_id,web_name,team,team_id,position,base_price,status,chance_of_playing,news")
-      .in("fpl_id", unique);
-    for (const row of playerRows ?? []) {
-      metaById.set(Number(row.fpl_id), row as PlayerMeta);
+    try {
+      const supa = getServerSupabase();
+      const { data: playerRows } = await supa
+        .from("players_static")
+        .select("fpl_id,web_name,team,team_id,position,base_price,status,chance_of_playing,news")
+        .in("fpl_id", unique);
+      for (const row of playerRows ?? []) {
+        metaById.set(Number(row.fpl_id), row as PlayerMeta);
+      }
+    } catch {
+      /* fallback: refs show #id */
     }
   }
+  await fillMissingMeta(metaById, unique);
 
   let xpById = new Map<number, number>();
   try {
-    const { current, next } = await resolveCurrentGw();
+    const { current, next } = await resolveGw();
     const gw = next || current || 1;
     const projections = await projectPlayers(unique, {
       currentGw: gw,
@@ -668,7 +768,7 @@ export async function loadRivalCompare(
   youEntryId: number,
   rivalEntryId: number,
 ): Promise<MiniLeagueRivalCompare> {
-  const { current, next } = await resolveCurrentGw();
+  const { current, next } = await resolveGw();
   const gw = next || current || 1;
   const [youEntry, rivalEntry, youPicks, rivalPicks] = await Promise.all([
     fplGet<FplEntry>(`/entry/${youEntryId}/`),
@@ -716,7 +816,7 @@ export async function loadMiniLeagueStandingsPage(
 ): Promise<MiniLeagueStandingsPage> {
   const safePage = Math.max(1, Math.floor(page) || 1);
   const [{ current, next }, pack] = await Promise.all([
-    resolveCurrentGw(),
+    resolveGw(),
     fetchStandingsPage(leagueId, safePage, format),
   ]);
   const gw = next || current || 1;
@@ -798,7 +898,7 @@ async function loadStandingsContext(
   format: MiniLeagueFormat,
 ): Promise<StandingsContext> {
   const [{ current, next }, page1, entry] = await Promise.all([
-    resolveCurrentGw(),
+    resolveGw(),
     fetchStandingsPage(leagueId, 1, format),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
@@ -1046,11 +1146,18 @@ async function buildFixtureOverlap(
   };
   if (!allIds.length) return empty;
 
-  const fplSeason = await getCurrentFplSeason();
-  const [players, fixtures] = await Promise.all([
-    loadPlayers(allIds),
-    loadFixturesWindow(fromGw, toGw, fplSeason),
-  ]);
+  let players: Awaited<ReturnType<typeof loadPlayers>>;
+  let fixtures: Awaited<ReturnType<typeof loadFixturesWindow>>;
+  let fplSeason: string;
+  try {
+    fplSeason = await getCurrentFplSeason();
+    [players, fixtures] = await Promise.all([
+      loadPlayers(allIds),
+      loadFixturesWindow(fromGw, toGw, fplSeason),
+    ]);
+  } catch {
+    return empty;
+  }
   const dgwTeamIds = [
     ...new Set(
       [...players.values()]
@@ -1273,11 +1380,28 @@ export async function loadMiniLeagueLive(
   const allIds = [
     ...new Set(picksList.flatMap((p) => (p.picks?.picks ?? []).map((x) => x.element))),
   ];
-  const players = allIds.length ? await loadPlayers(allIds) : new Map();
+  let players: Awaited<ReturnType<typeof loadPlayers>> = new Map();
+  if (allIds.length) {
+    try {
+      players = await loadPlayers(allIds);
+    } catch {
+      players = new Map();
+    }
+  }
   const teamByPlayer = new Map<number, number>();
   for (const [id, row] of players) {
     if (row.team_id != null && Number.isFinite(row.team_id)) {
       teamByPlayer.set(id, Number(row.team_id));
+    }
+  }
+  if (allIds.length && teamByPlayer.size === 0) {
+    try {
+      const extra = await loadMetaFromBootstrap(allIds);
+      for (const [id, row] of extra) {
+        if (row.team_id != null) teamByPlayer.set(id, row.team_id);
+      }
+    } catch {
+      /* live remaining counts stay unknown */
     }
   }
   const liveTeams = unfinishedTeamIds(fixtures);
@@ -1410,7 +1534,7 @@ export async function loadH2hMatchup(
   leagueId: number,
 ): Promise<MiniLeagueH2hPayload> {
   const [{ current, next }, entry] = await Promise.all([
-    resolveCurrentGw(),
+    resolveGw(),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
   const gw = next || current || 1;
