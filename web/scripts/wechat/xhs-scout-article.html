@@ -177,32 +177,12 @@
       .footer {
         margin-top: 10px; padding-top: 12px; flex-shrink: 0;
         border-top: 1px solid rgba(255,255,255,0.1);
-        display: flex; justify-content: space-between; align-items: center; gap: 16px;
-        font-size: 15px; font-weight: 700;
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        font-size: 16px; font-weight: 700;
         color: rgba(244,244,245,0.48);
       }
-      .footer-left {
-        display: flex; align-items: center; gap: 14px; min-width: 0;
-      }
-      .ffs-logo {
-        height: 58px; width: auto; max-width: 260px;
-        object-fit: contain; flex-shrink: 0; border-radius: 8px;
-      }
-      .footer-copy { line-height: 1.4; min-width: 0; }
       .footer strong { color: #00ff87; font-weight: 800; }
-      .footer .src { font-family: Inter, sans-serif; font-size: 14px; }
-      .footer-qr {
-        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-      }
-      .footer-qr img {
-        width: 100px; height: 100px; object-fit: contain;
-        background: #fff; border-radius: 10px; padding: 5px;
-      }
-      .footer-qr-label {
-        text-align: right; font-size: 14px; font-weight: 700;
-        color: rgba(244,244,245,0.55); line-height: 1.3;
-      }
-      .footer-qr-label strong { color: #00ff87; font-size: 16px; }
+      .footer .src { font-family: Inter, sans-serif; font-size: 15px; }
 
       #measure-root {
         position: absolute; left: -2400px; top: 0;
@@ -266,21 +246,10 @@
       window.renderPage = function (data) {
         const isCover = data.kind === "cover";
         const pageLabel = `第 ${data.page}/${data.total}`;
-        const logoSrc = data.logoSrc || "../../public/scout/ffs-logo.png";
-        const qrSrc = data.qrSrc || "../../public/scout/ffs-premium-qr.png";
         const footer = `
           <div class="footer">
-            <div class="footer-left">
-              <img class="ffs-logo" src="${esc(logoSrc)}" alt="Fantasy Football Scout">
-              <div class="footer-copy">
-                <div>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></div>
-                <div>中文整理 <strong>faleague</strong> · 回看 Scout 原文</div>
-              </div>
-            </div>
-            <div class="footer-qr">
-              <div class="footer-qr-label">扫码开通<br><strong>FFS Premium</strong></div>
-              <img src="${esc(qrSrc)}" alt="FFS Premium">
-            </div>
+            <span>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></span>
+            <span>中文 <strong>faleague</strong></span>
           </div>`;
         const chips = `
           <div class="chips">

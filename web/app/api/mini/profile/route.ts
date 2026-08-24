@@ -8,10 +8,6 @@ import {
   isValidNickname,
   sanitizeNickname,
 } from "@/lib/mini/profile";
-import {
-  claimMiniProfileFplEntryId,
-  isMiniFplEntryUniqueViolation,
-} from "@/lib/mini/claim-fpl-entry";
 
 export const dynamic = "force-dynamic";
 
@@ -131,41 +127,23 @@ export async function POST(req: Request) {
     unlock,
   );
 
-  if (fplEntryId != null) {
-    const claim = await claimMiniProfileFplEntryId(supa, profileId, fplEntryId);
-    if (claim.error) {
-      return NextResponse.json({ error: claim.error }, { status: 500 });
-    }
-  }
-
-  const row = {
-    id: profileId,
-    nickname,
-    fpl_entry_id: fplEntryId,
-    badges,
-    updated_at: new Date().toISOString(),
-  };
-
-  let { data, error } = await supa
+  const { data, error } = await supa
     .from("mini_profiles")
-    .upsert(row, { onConflict: "id" })
+    .upsert(
+      {
+        id: profileId,
+        nickname,
+        fpl_entry_id: fplEntryId,
+        badges,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    )
     .select("id,nickname,fpl_entry_id,badges,updated_at")
     .single();
 
-  if (error && isMiniFplEntryUniqueViolation(error.message) && fplEntryId != null) {
-    await claimMiniProfileFplEntryId(supa, profileId, fplEntryId);
-    ({ data, error } = await supa
-      .from("mini_profiles")
-      .upsert(row, { onConflict: "id" })
-      .select("id,nickname,fpl_entry_id,badges,updated_at")
-      .single());
-  }
-
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  if (!data) {
-    return NextResponse.json({ error: "Profile save failed" }, { status: 500 });
   }
 
   return NextResponse.json({

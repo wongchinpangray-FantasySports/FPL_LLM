@@ -1,6 +1,0 @@
-{
-  "note": "Translate each article to Simplified Chinese. Keep HTML tags, player names in English, FPL jargon. Write output/scout-translate/<slug>/body_html_zh.html and meta.zh.json { title_zh, excerpt_zh }, then: npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=<slugs>. Do not publish. Do not call Gemini/OpenAI/DeepSeek.",
-  "count": 0,
-  "slugs": [],
-  "articles": []
-}

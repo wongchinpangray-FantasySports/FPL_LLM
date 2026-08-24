@@ -13,27 +13,6 @@ export const DEFAULT_LATEST = 8;
 export const DEFAULT_DAYS = 5;
 export const MAX_PAGES = 18;
 
-/** Local FFS lockup + Premium QR used on every carousel page. */
-export const FFS_LOGO_FILENAME = "ffs-logo.png";
-export const FFS_PREMIUM_QR_FILENAME = "ffs-premium-qr.png";
-export const FFS_PREMIUM_QR_URL_FILENAME = "ffs-premium-qr.url.txt";
-
-export function scoutPublicDir(cwd = process.cwd()): string {
-  return join(cwd, "public", "scout");
-}
-
-export function ffsLogoPath(cwd = process.cwd()): string {
-  return join(scoutPublicDir(cwd), FFS_LOGO_FILENAME);
-}
-
-export function ffsPremiumQrPath(cwd = process.cwd()): string {
-  return join(scoutPublicDir(cwd), FFS_PREMIUM_QR_FILENAME);
-}
-
-export function ffsPremiumQrUrlPath(cwd = process.cwd()): string {
-  return join(scoutPublicDir(cwd), FFS_PREMIUM_QR_URL_FILENAME);
-}
-
 const CJK_RE = /[\u3400-\u9fff\uf900-\ufaff]/g;
 
 const PAYWALL_SLUG_RE =
@@ -487,8 +466,7 @@ export function buildCaption(article: LocalScoutZh): string {
     article.excerpt_zh,
     "",
     "左滑看全文。原文 Fantasy Football Scout，中文整理 Faleague。",
-    "图中二维码直达 Fantasy Football Scout Premium 会员页（不是 Faleague 会员）。",
-    "完整中文请到 faleague 阅读，并回看 fantasyfootballscout.co.uk 原文。",
+    "完整中文请到 faleague 阅读，并回看 fantasyfootballscout.co.uk。",
     "",
     "#FPL #英超 #FantasyFootballScout #Faleague #FPL笔记",
   ];

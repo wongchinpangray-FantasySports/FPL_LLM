@@ -8,7 +8,6 @@ import {
 } from "../lib/fpl/insights/catalog";
 import {
   canAccessInsight,
-  canAccessPremiumFeature,
   isInsightsPremiumEnforced,
 } from "../lib/fpl/insights/access";
 import {
@@ -32,13 +31,6 @@ import {
 import { isKickoffInWindow } from "../lib/fpl/wechat-matchday";
 import { loadXpAccuracyRaw } from "../lib/fpl/insights/xp-accuracy";
 import { isStripeConfigured } from "../lib/stripe/server";
-import {
-  classifyClassicLeague,
-  pointsToCatch,
-  rankMove,
-  squadDiffPct,
-  standingsPageForRank,
-} from "../lib/fpl/mini-league/math";
 
 function loadEnvLocal(): void {
   const envPath = join(process.cwd(), ".env.local");
@@ -69,10 +61,8 @@ async function main(): Promise<void> {
   if (isInsightsPremiumEnforced()) {
     assert.equal(await canAccessInsight("transfers", null), false);
     assert.equal(await canAccessInsight("set-pieces", null), true);
-    assert.equal(await canAccessPremiumFeature(null), false);
   } else {
     assert.equal(await canAccessInsight("transfers", null), true);
-    assert.equal(await canAccessPremiumFeature(null), true);
   }
 
   assert.ok(getInsightById("transfers")?.status === "live");
@@ -85,23 +75,6 @@ async function main(): Promise<void> {
   assert.ok(getInsightById("price-forecast")?.tier === "free");
   assert.equal(await canAccessInsight("price-forecast", null), true);
   assert.ok(getInsightById("xp-accuracy")?.status === "live");
-
-  assert.deepEqual(rankMove(3, 5), { delta: 2, dir: "up" });
-  assert.deepEqual(rankMove(8, 6), { delta: -2, dir: "down" });
-  assert.deepEqual(rankMove(4, 4), { delta: 0, dir: "same" });
-  assert.equal(rankMove(2, 0).dir, "new");
-  assert.equal(pointsToCatch(100, 110), 11);
-  assert.equal(pointsToCatch(110, 100), 0);
-  assert.equal(classifyClassicLeague({ name: "Office league", league_type: "x" }), "mini");
-  assert.equal(classifyClassicLeague({ name: "Overall", league_type: "s" }), "overall");
-  assert.equal(squadDiffPct([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]), 0);
-  assert.equal(squadDiffPct([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]), 100);
-  assert.equal(squadDiffPct([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20]), 33);
-  assert.equal(squadDiffPct([], [1]), null);
-  assert.equal(standingsPageForRank(1), 1);
-  assert.equal(standingsPageForRank(50), 1);
-  assert.equal(standingsPageForRank(51), 2);
-  assert.equal(standingsPageForRank(174), 4);
 
   assert.equal(
     computePriceProgress({
