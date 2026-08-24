@@ -36,6 +36,23 @@ export function inferShareKind(
   return null;
 }
 
+export function managerEntryIdFromShare(
+  targetPath: string,
+  refId?: string | null,
+): number | null {
+  const path = (targetPath.split("?")[0] ?? targetPath).replace(/\/+$/, "") || "/";
+  const fromPath = path.match(/^\/manager\/(\d+)$/);
+  if (fromPath) {
+    const id = Number(fromPath[1]);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+  const fromRef = Number(refId);
+  if (Number.isFinite(fromRef) && fromRef > 0 && path.startsWith("/manager")) {
+    return fromRef;
+  }
+  return null;
+}
+
 export function isAllowedSharePath(targetPath: string): boolean {
   return inferShareKind(targetPath) != null;
 }

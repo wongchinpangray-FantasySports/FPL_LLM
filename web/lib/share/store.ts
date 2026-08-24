@@ -1,5 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase";
-import { randomShareCode, isShareCode } from "@/lib/share/codes";
+import { randomShareCode, isShareCode, managerEntryIdFromShare } from "@/lib/share/codes";
 import type { ShareKind, ShareLink } from "@/lib/share/types";
 import { isShareKind } from "@/lib/share/types";
 import {
@@ -16,9 +16,14 @@ import {
 } from "@/lib/share/memory-store";
 
 function asLink(row: Record<string, unknown>): ShareLink {
-  const kind = String(row.kind ?? "");
+  let kind = String(row.kind ?? "");
   if (!isShareKind(kind)) {
-    throw new Error(`Invalid share kind: ${kind}`);
+    kind = managerEntryIdFromShare(
+      String(row.target_path ?? ""),
+      row.ref_id != null ? String(row.ref_id) : null,
+    )
+      ? "manager"
+      : "insight";
   }
   return {
     id: String(row.id),
@@ -37,8 +42,11 @@ function isMissingRelation(message: string): boolean {
   );
 }
 
-function isKindRejected(message: string): boolean {
-  return /check constraint|share_links_kind/i.test(message);
+function isKindRejected(message: string, code?: string): boolean {
+  return (
+    code === "23514" ||
+    /check constraint|share_links_kind|violates check/i.test(message)
+  );
 }
 
 async function fallbackGetShareByCode(code: string): Promise<ShareLink | null> {
@@ -116,8 +124,18 @@ export async function upsertShareLink(input: {
     }
     throw new Error(findErr.message);
   }
-  if (existing) {
-    const link = asLink(existing as Record<string, unknown>);
+  let row = existing as Record<string, unknown> | null;
+  if (!row && input.kind === "manager") {
+    const { data: alias } = await supa
+      .from("share_links")
+      .select("id,code,kind,target_path,title,ref_id,created_at")
+      .eq("kind", "insight")
+      .eq("target_path", input.target_path)
+      .maybeSingle();
+    row = (alias as Record<string, unknown> | null) ?? null;
+  }
+  if (row) {
+    const link = asLink(row);
     if (input.title && input.title !== link.title) {
       await supa
         .from("share_links")
@@ -143,7 +161,12 @@ export async function upsertShareLink(input: {
       .select("id,code,kind,target_path,title,ref_id,created_at")
       .maybeSingle();
     if (!error && data) return asLink(data as Record<string, unknown>);
-    if (error && isKindRejected(error.message)) {
+    if (error && isKindRejected(error.message, error.code)) {
+      // 0034's check constraint predates `manager`. Persist as `insight` so
+      // the short link survives across serverless isolates until 0035 is applied.
+      if (input.kind === "manager") {
+        return upsertShareLink({ ...input, kind: "insight" });
+      }
       return fallbackUpsertShareLink(input);
     }
     if (error && !/duplicate|unique/i.test(error.message)) {

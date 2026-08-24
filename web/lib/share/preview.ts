@@ -12,6 +12,7 @@ import { displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 import { fplGet, type FplEntry, type FplHistoryResponse } from "@/lib/fpl";
 import { getCachedBootstrapEventAverages } from "@/lib/fpl-bootstrap";
 import { estimateAverageRank, midpointRank } from "@/lib/fpl-rank-series";
+import { managerEntryIdFromShare } from "@/lib/share/codes";
 import type { ShareKind, SharePreview, SharePreviewItem } from "@/lib/share/types";
 
 function insightFromPath(path: string) {
@@ -273,8 +274,9 @@ export async function loadSharePreview(input: {
     return miniPreview();
   }
 
-  if (input.kind === "manager") {
-    const id = Number(input.ref_id || href.split("/").pop());
+  const managerId = managerEntryIdFromShare(href, input.ref_id);
+  if (input.kind === "manager" || managerId != null) {
+    const id = managerId ?? Number(input.ref_id);
     if (Number.isFinite(id) && id > 0) {
       const preview = await managerPreview(id, input.title, href).catch(
         () => null,

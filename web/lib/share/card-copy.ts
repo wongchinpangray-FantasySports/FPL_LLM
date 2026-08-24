@@ -39,9 +39,9 @@ export function shareOgDescription(preview: SharePreview): string {
 }
 
 export function shareCardImagePath(code: string): string {
-  return `/api/share/${code}/card.png?v=1`;
+  return `/api/share/${code}/card.png?v=2`;
 }
 
 export function sharePagePath(code: string): string {
-  return `/s/${code}?v=og1`;
+  return `/s/${code}?v=og2`;
 }
