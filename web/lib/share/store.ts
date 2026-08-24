@@ -16,15 +16,15 @@ import {
 } from "@/lib/share/memory-store";
 
 function asLink(row: Record<string, unknown>): ShareLink {
-  let kind = String(row.kind ?? "");
-  if (!isShareKind(kind)) {
-    kind = managerEntryIdFromShare(
-      String(row.target_path ?? ""),
-      row.ref_id != null ? String(row.ref_id) : null,
-    )
+  const raw = String(row.kind ?? "");
+  const kind: ShareKind = isShareKind(raw)
+    ? raw
+    : managerEntryIdFromShare(
+          String(row.target_path ?? ""),
+          row.ref_id != null ? String(row.ref_id) : null,
+        )
       ? "manager"
       : "insight";
-  }
   return {
     id: String(row.id),
     code: String(row.code),
