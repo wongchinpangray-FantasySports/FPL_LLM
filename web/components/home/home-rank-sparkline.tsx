@@ -27,6 +27,26 @@ function toPoints(xs: number[], ys: number[]): string {
   return xs.map((x, i) => `${x},${ys[i]}`).join(" ");
 }
 
+const AXIS_GWS = 5;
+
+function axisWindow(events: number[]): number[] {
+  const last = Math.max(...events);
+  const end = Math.max(last, AXIS_GWS);
+  const start = Math.max(1, end - AXIS_GWS + 1);
+  return Array.from({ length: AXIS_GWS }, (_, i) => start + i);
+}
+
+function xAt(
+  event: number,
+  start: number,
+  count: number,
+  x0: number,
+  innerW: number,
+): number {
+  if (count <= 1) return x0 + innerW / 2;
+  return x0 + ((event - start) / (count - 1)) * innerW;
+}
+
 export function HomeRankSparkline({
   points,
   labels,
@@ -48,18 +68,17 @@ export function HomeRankSparkline({
     const all = [...you, ...avg];
     const minR = Math.min(...all);
     const maxR = Math.max(...all);
-    const lo = Math.log10(Math.max(1, minR / 1.15));
-    const hi = Math.log10(Math.max(minR + 1, maxR * 1.15));
+    const lo = Math.log10(Math.max(1, minR / 1.35));
+    const hi = Math.log10(Math.max(minR + 1, maxR * 1.55));
 
     const w = 320;
     const h = 108;
-    const pad = { l: 34, r: 10, t: 8, b: 22 };
+    const pad = { l: 38, r: 18, t: 8, b: 22 };
     const innerW = w - pad.l - pad.r;
     const innerH = h - pad.t - pad.b;
-    const n = points.length;
-    const xs = points.map((_, i) =>
-      n === 1 ? pad.l + innerW / 2 : pad.l + (i / (n - 1)) * innerW,
-    );
+    const axis = axisWindow(points.map((p) => p.event));
+    const start = axis[0]!;
+    const xs = points.map((p) => xAt(p.event, start, axis.length, pad.l, innerW));
     const youY = you.map((r) => scaleYLog(r, lo, hi, pad.t, pad.t + innerH));
     const avgY = points.map((p) =>
       p.average_rank != null
@@ -68,11 +87,14 @@ export function HomeRankSparkline({
     );
     const avgXs = xs.filter((_, i) => avgY[i] != null);
     const avgYs = avgY.filter((y): y is number => y != null);
+    const axisXs = axis.map((gw) => xAt(gw, start, axis.length, pad.l, innerW));
 
     return {
       w,
       h,
       pad,
+      axis,
+      axisXs,
       xs,
       youY,
       avgXs,
@@ -86,7 +108,8 @@ export function HomeRankSparkline({
 
   if (!layout) return null;
 
-  const { w, h, pad, xs, youY, avgXs, avgYs, lastYou, lastAvg } = layout;
+  const { w, h, pad, axis, axisXs, xs, youY, avgXs, avgYs, lastYou, lastAvg } =
+    layout;
   const ticks = [layout.lo, layout.hi].map((logV) => 10 ** logV);
 
   return (
@@ -145,28 +168,27 @@ export function HomeRankSparkline({
             </g>
           );
         })}
+        {axisXs.map((x, i) => (
+          <line
+            key={`v-${axis[i]}`}
+            x1={x}
+            x2={x}
+            y1={pad.t}
+            y2={h - pad.b}
+            stroke="rgba(148, 163, 184, 0.1)"
+            strokeWidth={1}
+          />
+        ))}
         {avgXs.length > 0 ? (
-          avgXs.length === 1 ? (
-            <line
-              x1={pad.l}
-              x2={w - pad.r}
-              y1={avgYs[0]}
-              y2={avgYs[0]}
-              stroke="rgb(148 163 184)"
-              strokeWidth={1.4}
-              strokeDasharray="4 3"
-            />
-          ) : (
-            <polyline
-              points={toPoints(avgXs, avgYs)}
-              fill="none"
-              stroke="rgb(148 163 184)"
-              strokeWidth={1.4}
-              strokeDasharray="4 3"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          )
+          <line
+            x1={pad.l}
+            x2={w - pad.r}
+            y1={avgYs[avgYs.length - 1]}
+            y2={avgYs[avgYs.length - 1]}
+            stroke="rgb(148 163 184)"
+            strokeWidth={1.4}
+            strokeDasharray="4 3"
+          />
         ) : null}
         {xs.length === 1 ? (
           <circle cx={xs[0]} cy={youY[0]} r={3.5} fill="#00ff87" />
@@ -188,22 +210,18 @@ export function HomeRankSparkline({
             />
           </>
         )}
-        {points.map((p, i) =>
-          i === 0 || i === points.length - 1 ? (
-            <text
-              key={p.event}
-              x={xs[i]}
-              y={h - 6}
-              textAnchor={
-                i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"
-              }
-              fill="rgb(148 163 184)"
-              fontSize={9}
-            >
-              GW{p.event}
-            </text>
-          ) : null,
-        )}
+        {axis.map((gw, i) => (
+          <text
+            key={gw}
+            x={axisXs[i]}
+            y={h - 6}
+            textAnchor="middle"
+            fill="rgb(148 163 184)"
+            fontSize={9}
+          >
+            GW{gw}
+          </text>
+        ))}
       </svg>
     </div>
   );
