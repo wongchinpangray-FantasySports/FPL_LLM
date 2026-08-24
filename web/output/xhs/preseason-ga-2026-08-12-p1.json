@@ -1,0 +1,476 @@
+{
+  "date": "2026-08-12",
+  "page": 1,
+  "total_pages": 2,
+  "subtitle": "英超各队至今 · 进球 / 助攻分行显示 · 助攻依战报收录",
+  "total_clubs": 18,
+  "total_goals": 156,
+  "total_assists": 36,
+  "clubs": [
+    {
+      "pl_code": "BOU",
+      "pl_name": "Bournemouth",
+      "short": "Bournemouth",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t91.png",
+      "goals": 21,
+      "assists": 0,
+      "scorers": [
+        {
+          "name": "Enes Unal",
+          "count": 3
+        },
+        {
+          "name": "Alex Scott",
+          "count": 2
+        },
+        {
+          "name": "Ben Gannon-Doak",
+          "count": 2
+        },
+        {
+          "name": "Daniel Jebbison",
+          "count": 2
+        },
+        {
+          "name": "Evanilson",
+          "count": 2
+        },
+        {
+          "name": "Justin Kluivert",
+          "count": 2
+        },
+        {
+          "name": "Marcus Tavernier",
+          "count": 2
+        },
+        {
+          "name": "Adrien Truffert",
+          "count": 1
+        },
+        {
+          "name": "Alex Toth",
+          "count": 1
+        },
+        {
+          "name": "Bafode Diakite",
+          "count": 1
+        },
+        {
+          "name": "David Brooks",
+          "count": 1
+        },
+        {
+          "name": "Harold William",
+          "count": 1
+        },
+        {
+          "name": "Malcom Dacosta Gonzalez",
+          "count": 1
+        }
+      ],
+      "assists_list": [],
+      "scorers_line": "Unal×3 · Scott×2 · Doak×2 · Jebbison×2",
+      "assists_line": "报告未收录助攻"
+    },
+    {
+      "pl_code": "AVL",
+      "pl_name": "Aston Villa",
+      "short": "Villa",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t7.png",
+      "goals": 15,
+      "assists": 3,
+      "scorers": [
+        {
+          "name": "Brian Madjo",
+          "count": 3
+        },
+        {
+          "name": "George Hemmings",
+          "count": 2
+        },
+        {
+          "name": "Aidan Borland",
+          "count": 1
+        },
+        {
+          "name": "Boubacar Kamara",
+          "count": 1
+        },
+        {
+          "name": "Emiliano Buendía",
+          "count": 1
+        },
+        {
+          "name": "Emiliano Buendia",
+          "count": 1
+        },
+        {
+          "name": "Inaki Ruperez",
+          "count": 1
+        },
+        {
+          "name": "João Gomes",
+          "count": 1
+        },
+        {
+          "name": "Luka Lynch",
+          "count": 1
+        },
+        {
+          "name": "Ross Barkley",
+          "count": 1
+        },
+        {
+          "name": "Victor Lindelöf",
+          "count": 1
+        },
+        {
+          "name": "William Gomes",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Luka Lynch",
+          "count": 2
+        },
+        {
+          "name": "Kosta Nedeljković",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Madjo×3 · Hemmings×2 · Borland · Kamara",
+      "assists_line": "Lynch×2 · Nedeljković"
+    },
+    {
+      "pl_code": "CHE",
+      "pl_name": "Chelsea",
+      "short": "Chelsea",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t8.png",
+      "goals": 13,
+      "assists": 2,
+      "scorers": [
+        {
+          "name": "João Pedro",
+          "count": 5
+        },
+        {
+          "name": "Liam Delap",
+          "count": 2
+        },
+        {
+          "name": "Caicedo",
+          "count": 1
+        },
+        {
+          "name": "Essugo",
+          "count": 1
+        },
+        {
+          "name": "Gittens",
+          "count": 1
+        },
+        {
+          "name": "Own Goal",
+          "count": 1
+        },
+        {
+          "name": "Sandro Tonali",
+          "count": 1
+        },
+        {
+          "name": "Satpayev",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "João Pedro",
+          "count": 1
+        },
+        {
+          "name": "Pedro Neto",
+          "count": 1
+        }
+      ],
+      "scorers_line": "J.Pedro×5 · Delap×2 · Caicedo · Essugo",
+      "assists_line": "J.Pedro · Neto"
+    },
+    {
+      "pl_code": "BHA",
+      "pl_name": "Brighton",
+      "short": "Brighton",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t36.png",
+      "goals": 11,
+      "assists": 6,
+      "scorers": [
+        {
+          "name": "Babis Kostoulas",
+          "count": 2
+        },
+        {
+          "name": "Georginio Rutter",
+          "count": 2
+        },
+        {
+          "name": "Ibrahim Osman",
+          "count": 2
+        },
+        {
+          "name": "Yasin Ayari",
+          "count": 2
+        },
+        {
+          "name": "Eiran Cashin",
+          "count": 1
+        },
+        {
+          "name": "Olivier Boscagli",
+          "count": 1
+        },
+        {
+          "name": "Pascal Gross",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Diego Gómez",
+          "count": 1
+        },
+        {
+          "name": "Georginio Rutter",
+          "count": 1
+        },
+        {
+          "name": "Ibrahim Osman",
+          "count": 1
+        },
+        {
+          "name": "Olivier Boscagli",
+          "count": 1
+        },
+        {
+          "name": "Pascal Gross",
+          "count": 1
+        },
+        {
+          "name": "Sean Keogh",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Kostoulas×2 · Rutter×2 · Osman×2 · Ayari×2",
+      "assists_line": "Gómez · Rutter · Osman"
+    },
+    {
+      "pl_code": "SUN",
+      "pl_name": "Sunderland",
+      "short": "Sunderland",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t56.png",
+      "goals": 10,
+      "assists": 4,
+      "scorers": [
+        {
+          "name": "Enzo Le Fée",
+          "count": 3
+        },
+        {
+          "name": "Chris Rigg",
+          "count": 1
+        },
+        {
+          "name": "Nordi Mukiele",
+          "count": 1
+        },
+        {
+          "name": "Timur Tuterov",
+          "count": 1
+        },
+        {
+          "name": "Timur Tutierov",
+          "count": 1
+        },
+        {
+          "name": "Tom Proctor",
+          "count": 1
+        },
+        {
+          "name": "Trai Hume",
+          "count": 1
+        },
+        {
+          "name": "Wilson Isidor",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Brian Brobbey",
+          "count": 1
+        },
+        {
+          "name": "Charlie Dinsdale",
+          "count": 1
+        },
+        {
+          "name": "Chris Rigg",
+          "count": 1
+        },
+        {
+          "name": "Timur Tuterov",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Le Fée×3 · Rigg · Mukiele · Tuterov",
+      "assists_line": "Brobbey · Dinsdale · Rigg"
+    },
+    {
+      "pl_code": "LEE",
+      "pl_name": "Leeds United",
+      "short": "Leeds",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t2.png",
+      "goals": 9,
+      "assists": 2,
+      "scorers": [
+        {
+          "name": "Dominic Calvert-Lewin",
+          "count": 3
+        },
+        {
+          "name": "Lukas Nmecha",
+          "count": 2
+        },
+        {
+          "name": "Brenden Aaronson",
+          "count": 1
+        },
+        {
+          "name": "Longstaff",
+          "count": 1
+        },
+        {
+          "name": "Piroe",
+          "count": 1
+        },
+        {
+          "name": "Sean Longstaff",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Ethan Ampadu",
+          "count": 1
+        },
+        {
+          "name": "Sebastiaan Bornauw",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Calvert-Lewin×3 · Nmecha×2 · Aaronson · Longstaff",
+      "assists_line": "Ampadu · Bornauw"
+    },
+    {
+      "pl_code": "LIV",
+      "pl_name": "Liverpool",
+      "short": "Liverpool",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t14.png",
+      "goals": 9,
+      "assists": 2,
+      "scorers": [
+        {
+          "name": "Florian Wirtz",
+          "count": 2
+        },
+        {
+          "name": "Alexander Isak",
+          "count": 1
+        },
+        {
+          "name": "Dominik Szoboszlai",
+          "count": 1
+        },
+        {
+          "name": "Federico Chiesa",
+          "count": 1
+        },
+        {
+          "name": "Kieran Morrison",
+          "count": 1
+        },
+        {
+          "name": "Lewis Koumas",
+          "count": 1
+        },
+        {
+          "name": "Luke Chambers",
+          "count": 1
+        },
+        {
+          "name": "Rio Ngumoha",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Dominik Szoboszlai",
+          "count": 1
+        },
+        {
+          "name": "Jeremie Frimpong",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Wirtz×2 · Isak · Szoboszlai · Chiesa",
+      "assists_line": "Szoboszlai · Frimpong"
+    },
+    {
+      "pl_code": "MUN",
+      "pl_name": "Man Utd",
+      "short": "Man Utd",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t1.png",
+      "goals": 8,
+      "assists": 2,
+      "scorers": [
+        {
+          "name": "Bryan Mbeumo",
+          "count": 3
+        },
+        {
+          "name": "Ethan Williams",
+          "count": 1
+        },
+        {
+          "name": "Harry Amass",
+          "count": 1
+        },
+        {
+          "name": "Jacob Devaney",
+          "count": 1
+        },
+        {
+          "name": "Joshua Zirkzee",
+          "count": 1
+        },
+        {
+          "name": "Shea Lacey",
+          "count": 1
+        }
+      ],
+      "assists_list": [
+        {
+          "name": "Amad Diallo",
+          "count": 1
+        },
+        {
+          "name": "Jack Fletcher",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Mbeumo×3 · Williams · Amass · Devaney",
+      "assists_line": "Diallo · Fletcher"
+    }
+  ],
+  "cta": "打开季前赛信号 →",
+  "url": "faleague-ai.com/zh/fpl/insights/preseason-signals"
+}

@@ -1,0 +1,144 @@
+{
+  "kind": "bop",
+  "date": "2026-08-15",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "7.5",
+  "priceMark": "7.5",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 5 人 · 未来 5 轮 · Cherki 领跑 xP 30.1",
+  "disclaimer": "出场门槛：上季 ≥1200 分钟（威胁榜硬过滤 · xP 优先）",
+  "ranks": [
+    {
+      "name": "Cherki",
+      "team": "Man City",
+      "value": "30.1",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t43.png",
+      "label": "xP"
+    },
+    {
+      "name": "Rice",
+      "team": "Arsenal",
+      "value": "10.9",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t3.png",
+      "label": "DEFCON"
+    },
+    {
+      "name": "Rogers",
+      "team": "Chelsea",
+      "value": "871",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t8.png",
+      "label": "THREAT"
+    }
+  ],
+  "categories": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "name": "Cherki",
+          "team": "Man City",
+          "value": "30.1",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        },
+        {
+          "name": "Rice",
+          "team": "Arsenal",
+          "value": "29.2",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t3.png"
+        },
+        {
+          "name": "Wirtz",
+          "team": "Liverpool",
+          "value": "26.3",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "name": "Rice",
+          "team": "Arsenal",
+          "value": "10.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t3.png"
+        },
+        {
+          "name": "Cherki",
+          "team": "Man City",
+          "value": "6.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        },
+        {
+          "name": "Wirtz",
+          "team": "Liverpool",
+          "value": "6.7",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "name": "Rogers",
+          "team": "Chelsea",
+          "value": "871",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t8.png"
+        },
+        {
+          "name": "Wirtz",
+          "team": "Liverpool",
+          "value": "665",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        },
+        {
+          "name": "Doku",
+          "team": "Man City",
+          "value": "645",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        }
+      ]
+    }
+  ],
+  "chips": [
+    "£7.0m 中场",
+    "£8.0m 中场",
+    "£6.5m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-7-5",
+  "urlShort": "faleague-ai.com/bop"
+}

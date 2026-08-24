@@ -30,7 +30,7 @@ export function MiniModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="mini-modal-title"
@@ -43,8 +43,9 @@ export function MiniModal({
       />
       <div
         className={cn(
-          "relative z-[101] w-full max-w-md rounded-xl border border-border",
-          "bg-background p-5 shadow-2xl",
+          "relative z-[101] w-full max-w-md border border-border bg-background p-5 shadow-2xl",
+          "rounded-t-xl sm:rounded-xl",
+          "pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5",
         )}
       >
         <h2

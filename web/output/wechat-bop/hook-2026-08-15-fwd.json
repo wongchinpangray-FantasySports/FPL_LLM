@@ -1,0 +1,137 @@
+{
+  "card_date": "2026-08-15",
+  "band_id": "fwd-7-5",
+  "position": "FWD",
+  "price": "7.5",
+  "position_zh": "前锋",
+  "title_zh": "最佳 £7.5m 前锋",
+  "assessed": 3,
+  "horizon": 5,
+  "takeaways": [
+    {
+      "kind": "xp",
+      "fpl_id": 165,
+      "web_name": "João Pedro",
+      "team": "Chelsea",
+      "blurb_en": "João Pedro leads this band on projected xP (34.4) among regulars (prior minutes ≥ 1200).",
+      "blurb_zh": "João Pedro 在出场可靠球员中以投影 xP 34.4 领跑（上季 ≥1200 分钟）。"
+    },
+    {
+      "kind": "defcon",
+      "fpl_id": 26,
+      "web_name": "Havertz",
+      "team": "Arsenal",
+      "blurb_en": "Havertz is the standout DEFCON/90 option at this price (5.0).",
+      "blurb_zh": "Havertz 是该价位 DEFCON/90 最强选项（5.0）。"
+    },
+    {
+      "kind": "attack",
+      "fpl_id": 25,
+      "web_name": "Gyökeres",
+      "team": "Arsenal",
+      "blurb_en": "Gyökeres offers attacking upside (threat 772.0).",
+      "blurb_zh": "Gyökeres 具备进攻上行空间（威胁指数 772.0）。"
+    }
+  ],
+  "category_tops": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "fpl_id": 165,
+          "web_name": "João Pedro",
+          "team": "Chelsea",
+          "value": 34.35
+        },
+        {
+          "fpl_id": 25,
+          "web_name": "Gyökeres",
+          "team": "Arsenal",
+          "value": 27.54
+        },
+        {
+          "fpl_id": 26,
+          "web_name": "Havertz",
+          "team": "Arsenal",
+          "value": 19.87
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "fpl_id": 165,
+          "web_name": "João Pedro",
+          "team": "Chelsea",
+          "value": 4.67
+        },
+        {
+          "fpl_id": 25,
+          "web_name": "Gyökeres",
+          "team": "Arsenal",
+          "value": 3.45
+        },
+        {
+          "fpl_id": 26,
+          "web_name": "Havertz",
+          "team": "Arsenal",
+          "value": 4.99
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "fpl_id": 165,
+          "web_name": "João Pedro",
+          "team": "Chelsea",
+          "value": 909
+        },
+        {
+          "fpl_id": 25,
+          "web_name": "Gyökeres",
+          "team": "Arsenal",
+          "value": 772
+        },
+        {
+          "fpl_id": 26,
+          "web_name": "Havertz",
+          "team": "Arsenal",
+          "value": 210
+        }
+      ]
+    }
+  ],
+  "minutes_floor": 1200,
+  "top_player": "João Pedro",
+  "top_xp": 34.35,
+  "siblings": [
+    {
+      "id": "fwd-7-0",
+      "label": "£7.0m 前锋",
+      "href": "https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-7-0"
+    },
+    {
+      "id": "fwd-8-0",
+      "label": "£8.0m 前锋",
+      "href": "https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-8-0"
+    },
+    {
+      "id": "fwd-6-5",
+      "label": "£6.5m 前锋",
+      "href": "https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-6-5"
+    }
+  ],
+  "band_url": "https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-7-5",
+  "hub_url": "https://www.faleague-ai.com/zh/fpl/insights/best-of-position",
+  "text_full": "🎯 位置精选 · Best of Position\n📅 2026-08-15\n\n今日钩子：最佳 £7.5m 前锋\n我们评估了 3 名该价位球员（未来 5 轮 xP）。\n\n📌 今日看点\n• João Pedro 在出场可靠球员中以投影 xP 34.4 领跑（上季 ≥1200 分钟）。\n• Havertz 是该价位 DEFCON/90 最强选项（5.0）。\n• Gyökeres 具备进攻上行空间（威胁指数 772.0）。\n※ 出场门槛：上季 ≥1200 分钟（威胁硬过滤 · xP 优先）\n\n🔁 同系列接着逛\n• £7.0m 前锋\n• £8.0m 前锋\n• £6.5m 前锋\n\n💬 £7.5m 前锋你会选 João Pedro，还是另有冷门？留言说说你的理由。\n\n🔗 打开本页：https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-7-5\n📚 全部价位：https://www.faleague-ai.com/zh/fpl/insights/best-of-position\n\n回来 faleague-ai.com，把预算花在刀刃上。",
+  "text_short": "🎯 最佳 £7.5m 前锋｜João Pedro 在出场可靠球员中以投影 xP 34.4 领跑（上季 ≥1200 分钟）。\n完整排名 → https://www.faleague-ai.com/zh/fpl/insights/best-of-position/fwd-7-5\n系列导航 → https://www.faleague-ai.com/zh/fpl/insights/best-of-position"
+}

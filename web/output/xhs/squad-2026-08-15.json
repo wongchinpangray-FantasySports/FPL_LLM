@@ -1,0 +1,4740 @@
+{
+  "pitch": {
+    "date": "2026-08-15",
+    "eyebrow": "SQUAD PICK · NO FERNANDES",
+    "title": "推荐阵容",
+    "titleHtml": "推荐阵容 · <span class=\"accent\">No Fernandes Squad</span>",
+    "subtitle": "No Fernandes Squad · 3-4-3 · £99.5m · Haaland (C) · Osula (V)",
+    "starters": [
+      {
+        "fpl_id": 109,
+        "web_name": "Verbruggen",
+        "position": "GKP",
+        "team": "Brighton",
+        "team_short": "BHA",
+        "price": 4.5,
+        "selected_by_percent": 18.3,
+        "expected_goals": 0,
+        "expected_assists": 0.06,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 106,
+        "fixture": "AVL (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/489639.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p489639.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "106",
+        "xp_total": 20.55,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.567,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.68
+          },
+          {
+            "gw": 2,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 3.17
+          },
+          {
+            "gw": 3,
+            "opp": "LEE",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.68
+          },
+          {
+            "gw": 4,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.17
+          },
+          {
+            "gw": 5,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.68
+          },
+          {
+            "gw": 6,
+            "opp": "SUN",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.17
+          }
+        ]
+      },
+      {
+        "fpl_id": 229,
+        "web_name": "Tarkowski",
+        "position": "DEF",
+        "team": "Everton",
+        "team_short": "EVE",
+        "price": 6,
+        "selected_by_percent": 9.7,
+        "expected_goals": 2.53,
+        "expected_assists": 2.1,
+        "goals_scored": 2,
+        "assists": 3,
+        "defensive_contribution": 376,
+        "saves": 0,
+        "fixture": "CRY (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_11-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/17761.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p17761.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "376",
+        "xp_total": 29.7,
+        "expected_minutes_next": 90,
+        "value_per_million": 4.95,
+        "goals": 2,
+        "threat": 422,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.06,
+        "dc_per_90": 10.16,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.01
+          },
+          {
+            "gw": 2,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 3,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 5.01
+          },
+          {
+            "gw": 4,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 5,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.01
+          },
+          {
+            "gw": 6,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.89
+          }
+        ]
+      },
+      {
+        "fpl_id": 532,
+        "web_name": "Ballard",
+        "position": "DEF",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.5,
+        "expected_goals": 2.46,
+        "expected_assists": 0.63,
+        "goals_scored": 2,
+        "assists": 2,
+        "defensive_contribution": 264,
+        "saves": 0,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223827.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223827.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "264",
+        "xp_total": 28.89,
+        "expected_minutes_next": 81,
+        "value_per_million": 5.778,
+        "goals": 2,
+        "threat": 370,
+        "xg_per_90": 0.1,
+        "xa_per_90": 0.03,
+        "dc_per_90": 11.08,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.76
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.76
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.87
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.76
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          }
+        ]
+      },
+      {
+        "fpl_id": 423,
+        "web_name": "Shaw",
+        "position": "DEF",
+        "team": "Man Utd",
+        "team_short": "MUN",
+        "price": 4.5,
+        "selected_by_percent": 24.2,
+        "expected_goals": 0.72,
+        "expected_assists": 1.98,
+        "goals_scored": 1,
+        "assists": 1,
+        "defensive_contribution": 224,
+        "saves": 0,
+        "fixture": "HUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/106760.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p106760.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "224",
+        "xp_total": 18.03,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.007,
+        "goals": 1,
+        "threat": 97,
+        "xg_per_90": 0.02,
+        "xa_per_90": 0.06,
+        "dc_per_90": 6.26,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 2.83
+          },
+          {
+            "gw": 2,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.18
+          },
+          {
+            "gw": 3,
+            "opp": "EVE",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 4,
+            "opp": "MCI",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.18
+          },
+          {
+            "gw": 5,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 6,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.18
+          }
+        ]
+      },
+      {
+        "fpl_id": 154,
+        "web_name": "Palmer",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 9.5,
+        "selected_by_percent": 11.2,
+        "expected_goals": 10.55,
+        "expected_assists": 2.49,
+        "goals_scored": 10,
+        "assists": 2,
+        "defensive_contribution": 135,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/244851.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p244851.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-2",
+        "xp_total": 39.63,
+        "expected_minutes_next": 88,
+        "value_per_million": 4.172,
+        "goals": 10,
+        "threat": 547,
+        "xg_per_90": 0.49,
+        "xa_per_90": 0.11,
+        "dc_per_90": 6.22,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.14
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.07
+          }
+        ]
+      },
+      {
+        "fpl_id": 155,
+        "web_name": "Enzo",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7,
+        "selected_by_percent": 5.6,
+        "expected_goals": 11.26,
+        "expected_assists": 7.26,
+        "goals_scored": 10,
+        "assists": 5,
+        "defensive_contribution": 244,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/448047.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p448047.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-5",
+        "xp_total": 36.15,
+        "expected_minutes_next": 88,
+        "value_per_million": 5.164,
+        "goals": 10,
+        "threat": 747,
+        "xg_per_90": 0.33,
+        "xa_per_90": 0.21,
+        "dc_per_90": 7.05,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.69
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 6.36
+          }
+        ]
+      },
+      {
+        "fpl_id": 335,
+        "web_name": "Stach",
+        "position": "MID",
+        "team": "Leeds",
+        "team_short": "LEE",
+        "price": 6,
+        "selected_by_percent": 1.1,
+        "expected_goals": 2.88,
+        "expected_assists": 4.47,
+        "goals_scored": 5,
+        "assists": 6,
+        "defensive_contribution": 266,
+        "saves": 0,
+        "fixture": "NFO (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/466525.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p466525.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-6",
+        "xp_total": 32.25,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.375,
+        "goals": 5,
+        "threat": 315,
+        "xg_per_90": 0.11,
+        "xa_per_90": 0.17,
+        "dc_per_90": 10.11,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "NFO",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 2,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 3,
+            "opp": "BHA",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 4,
+            "opp": "NEW",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.32
+          },
+          {
+            "gw": 5,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 6,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.43
+          }
+        ]
+      },
+      {
+        "fpl_id": 400,
+        "web_name": "Doku",
+        "position": "MID",
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 7.5,
+        "selected_by_percent": 6.5,
+        "expected_goals": 2.87,
+        "expected_assists": 5.86,
+        "goals_scored": 5,
+        "assists": 8,
+        "defensive_contribution": 126,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/248875.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p248875.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-8",
+        "xp_total": 30.24,
+        "expected_minutes_next": 80.4,
+        "value_per_million": 4.032,
+        "goals": 5,
+        "threat": 645,
+        "xg_per_90": 0.15,
+        "xa_per_90": 0.3,
+        "dc_per_90": 6.4,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.35
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.73
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          }
+        ]
+      },
+      {
+        "fpl_id": 411,
+        "web_name": "Haaland",
+        "position": "FWD",
+        "is_captain": true,
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 15.5,
+        "selected_by_percent": 73.4,
+        "expected_goals": 25.5,
+        "expected_assists": 2.67,
+        "goals_scored": 27,
+        "assists": 8,
+        "defensive_contribution": 104,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223094.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223094.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "27-8",
+        "xp_total": 53.91,
+        "expected_minutes_next": 90,
+        "value_per_million": 3.478,
+        "goals": 27,
+        "threat": 1520,
+        "xg_per_90": 0.78,
+        "xa_per_90": 0.08,
+        "dc_per_90": 3.17,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 9.73
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 8.24
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          }
+        ]
+      },
+      {
+        "fpl_id": 465,
+        "web_name": "Osula",
+        "position": "FWD",
+        "is_vice": true,
+        "team": "Newcastle",
+        "team_short": "NEW",
+        "price": 6,
+        "selected_by_percent": 1.2,
+        "expected_goals": 4.28,
+        "expected_assists": 0.62,
+        "goals_scored": 7,
+        "assists": 1,
+        "defensive_contribution": 31,
+        "saves": 0,
+        "fixture": "LIV (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_4-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/538207.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p538207.png",
+        "photo_kind": "photo",
+        "preseason_goals": 1,
+        "preseason_assists": 0,
+        "stat_display": "1 / 0",
+        "stat_col": "7-1",
+        "xp_total": 40.47,
+        "expected_minutes_next": 84,
+        "value_per_million": 6.745,
+        "goals": 7,
+        "threat": 284,
+        "xg_per_90": 0.48,
+        "xa_per_90": 0.07,
+        "dc_per_90": 3.47,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 7.25
+          },
+          {
+            "gw": 2,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 3,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          },
+          {
+            "gw": 4,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 5,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 6,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 6.24
+          }
+        ]
+      },
+      {
+        "fpl_id": 165,
+        "web_name": "João Pedro",
+        "position": "FWD",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7.5,
+        "selected_by_percent": 55.9,
+        "expected_goals": 14.91,
+        "expected_assists": 1.96,
+        "goals_scored": 15,
+        "assists": 9,
+        "defensive_contribution": 138,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/475168.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p475168.png",
+        "photo_kind": "photo",
+        "preseason_goals": 5,
+        "preseason_assists": 1,
+        "stat_display": "5 / 1",
+        "stat_col": "15-9",
+        "xp_total": 40.65,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.42,
+        "goals": 15,
+        "threat": 909,
+        "xg_per_90": 0.5,
+        "xa_per_90": 0.07,
+        "dc_per_90": 4.67,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.3
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          }
+        ]
+      }
+    ],
+    "bench": [
+      {
+        "fpl_id": 529,
+        "web_name": "Roefs",
+        "position": "GKP",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.8,
+        "expected_goals": 0,
+        "expected_assists": 0.1,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 109,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/498016.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p498016.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "109",
+        "xp_total": 21.93,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.386,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.39
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.39
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.92
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 3.39
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          }
+        ]
+      },
+      {
+        "fpl_id": 60,
+        "web_name": "Hill",
+        "position": "DEF",
+        "team": "Bournemouth",
+        "team_short": "BOU",
+        "price": 5.5,
+        "selected_by_percent": 1.2,
+        "expected_goals": 0.89,
+        "expected_assists": 1.16,
+        "goals_scored": 0,
+        "assists": 3,
+        "defensive_contribution": 260,
+        "saves": 0,
+        "fixture": "MCI (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/463981.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p463981.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "260",
+        "xp_total": 26.22,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.767,
+        "goals": 0,
+        "threat": 119,
+        "xg_per_90": 0.04,
+        "xa_per_90": 0.05,
+        "dc_per_90": 11.13,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.36
+          },
+          {
+            "gw": 2,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 3,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.36
+          },
+          {
+            "gw": 4,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 5,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.38
+          },
+          {
+            "gw": 6,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.36
+          }
+        ]
+      },
+      {
+        "fpl_id": 84,
+        "web_name": "Collins",
+        "position": "DEF",
+        "team": "Brentford",
+        "team_short": "BRE",
+        "price": 5.5,
+        "selected_by_percent": 2.1,
+        "expected_goals": 2.24,
+        "expected_assists": 1.71,
+        "goals_scored": 1,
+        "assists": 2,
+        "defensive_contribution": 319,
+        "saves": 0,
+        "fixture": "TOT (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/432830.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p432830.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "319",
+        "xp_total": 25.35,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.609,
+        "goals": 1,
+        "threat": 325,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.05,
+        "dc_per_90": 9.66,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.25
+          },
+          {
+            "gw": 2,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 3,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.25
+          },
+          {
+            "gw": 4,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 5,
+            "opp": "CHE",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.25
+          },
+          {
+            "gw": 6,
+            "opp": "AVL",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.2
+          }
+        ]
+      },
+      {
+        "fpl_id": 290,
+        "web_name": "Slater",
+        "position": "MID",
+        "team": "Hull City",
+        "team_short": "HUL",
+        "price": 4.5,
+        "selected_by_percent": 2.3,
+        "expected_goals": 0,
+        "expected_assists": 0,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 0,
+        "fixture": "MUN (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_88-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/243413.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p243413.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "0-0",
+        "xp_total": 1.92,
+        "expected_minutes_next": 0,
+        "value_per_million": 0.427,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": null,
+        "xa_per_90": null,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 0.37
+          },
+          {
+            "gw": 2,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 0.27
+          },
+          {
+            "gw": 3,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          },
+          {
+            "gw": 4,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 0.27
+          },
+          {
+            "gw": 5,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 0.27
+          },
+          {
+            "gw": 6,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          }
+        ]
+      }
+    ],
+    "legend": "图例 · MID/FWD：季前赛 G / A　·　DEF：季前赛 DC　·　GKP：季前赛 Saves　·　无数据为 - / - 或 -",
+    "legendHtml": "<strong>G / A</strong> 季前赛进球/助攻　·　<strong>DC</strong> 防守贡献　·　<strong>Sv</strong> 扑救　·　无记录显示 - / - 或 -",
+    "meta": "2026-08-15 · faleague-ai.com"
+  },
+  "list": {
+    "date": "2026-08-15",
+    "eyebrow": "SQUAD LIST · NO FERNANDES",
+    "title": "推荐阵容数据一览",
+    "titleHtml": "推荐阵容 · <span class=\"accent\">No Fernandes Squad</span>",
+    "subtitle": "No Fernandes Squad · 3-4-3 · £99.5m · Haaland (C) · Osula (V) · 首发 xP 71.9 · XP 展望 GW1–6",
+    "formation": "3-4-3",
+    "starters": [
+      {
+        "fpl_id": 109,
+        "web_name": "Verbruggen",
+        "position": "GKP",
+        "team": "Brighton",
+        "team_short": "BHA",
+        "price": 4.5,
+        "selected_by_percent": 18.3,
+        "expected_goals": 0,
+        "expected_assists": 0.06,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 106,
+        "fixture": "AVL (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/489639.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p489639.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "106",
+        "xp_total": 20.55,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.567,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.68
+          },
+          {
+            "gw": 2,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 3.17
+          },
+          {
+            "gw": 3,
+            "opp": "LEE",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.68
+          },
+          {
+            "gw": 4,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.17
+          },
+          {
+            "gw": 5,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.68
+          },
+          {
+            "gw": 6,
+            "opp": "SUN",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.17
+          }
+        ]
+      },
+      {
+        "fpl_id": 229,
+        "web_name": "Tarkowski",
+        "position": "DEF",
+        "team": "Everton",
+        "team_short": "EVE",
+        "price": 6,
+        "selected_by_percent": 9.7,
+        "expected_goals": 2.53,
+        "expected_assists": 2.1,
+        "goals_scored": 2,
+        "assists": 3,
+        "defensive_contribution": 376,
+        "saves": 0,
+        "fixture": "CRY (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_11-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/17761.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p17761.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "376",
+        "xp_total": 29.7,
+        "expected_minutes_next": 90,
+        "value_per_million": 4.95,
+        "goals": 2,
+        "threat": 422,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.06,
+        "dc_per_90": 10.16,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.01
+          },
+          {
+            "gw": 2,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 3,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 5.01
+          },
+          {
+            "gw": 4,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 5,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.01
+          },
+          {
+            "gw": 6,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.89
+          }
+        ]
+      },
+      {
+        "fpl_id": 532,
+        "web_name": "Ballard",
+        "position": "DEF",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.5,
+        "expected_goals": 2.46,
+        "expected_assists": 0.63,
+        "goals_scored": 2,
+        "assists": 2,
+        "defensive_contribution": 264,
+        "saves": 0,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223827.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223827.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "264",
+        "xp_total": 28.89,
+        "expected_minutes_next": 81,
+        "value_per_million": 5.778,
+        "goals": 2,
+        "threat": 370,
+        "xg_per_90": 0.1,
+        "xa_per_90": 0.03,
+        "dc_per_90": 11.08,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.76
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.76
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.87
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.76
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          }
+        ]
+      },
+      {
+        "fpl_id": 423,
+        "web_name": "Shaw",
+        "position": "DEF",
+        "team": "Man Utd",
+        "team_short": "MUN",
+        "price": 4.5,
+        "selected_by_percent": 24.2,
+        "expected_goals": 0.72,
+        "expected_assists": 1.98,
+        "goals_scored": 1,
+        "assists": 1,
+        "defensive_contribution": 224,
+        "saves": 0,
+        "fixture": "HUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/106760.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p106760.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "224",
+        "xp_total": 18.03,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.007,
+        "goals": 1,
+        "threat": 97,
+        "xg_per_90": 0.02,
+        "xa_per_90": 0.06,
+        "dc_per_90": 6.26,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 2.83
+          },
+          {
+            "gw": 2,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.18
+          },
+          {
+            "gw": 3,
+            "opp": "EVE",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 4,
+            "opp": "MCI",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.18
+          },
+          {
+            "gw": 5,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 6,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.18
+          }
+        ]
+      },
+      {
+        "fpl_id": 154,
+        "web_name": "Palmer",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 9.5,
+        "selected_by_percent": 11.2,
+        "expected_goals": 10.55,
+        "expected_assists": 2.49,
+        "goals_scored": 10,
+        "assists": 2,
+        "defensive_contribution": 135,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/244851.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p244851.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-2",
+        "xp_total": 39.63,
+        "expected_minutes_next": 88,
+        "value_per_million": 4.172,
+        "goals": 10,
+        "threat": 547,
+        "xg_per_90": 0.49,
+        "xa_per_90": 0.11,
+        "dc_per_90": 6.22,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.14
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.07
+          }
+        ]
+      },
+      {
+        "fpl_id": 155,
+        "web_name": "Enzo",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7,
+        "selected_by_percent": 5.6,
+        "expected_goals": 11.26,
+        "expected_assists": 7.26,
+        "goals_scored": 10,
+        "assists": 5,
+        "defensive_contribution": 244,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/448047.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p448047.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-5",
+        "xp_total": 36.15,
+        "expected_minutes_next": 88,
+        "value_per_million": 5.164,
+        "goals": 10,
+        "threat": 747,
+        "xg_per_90": 0.33,
+        "xa_per_90": 0.21,
+        "dc_per_90": 7.05,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.69
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 6.36
+          }
+        ]
+      },
+      {
+        "fpl_id": 335,
+        "web_name": "Stach",
+        "position": "MID",
+        "team": "Leeds",
+        "team_short": "LEE",
+        "price": 6,
+        "selected_by_percent": 1.1,
+        "expected_goals": 2.88,
+        "expected_assists": 4.47,
+        "goals_scored": 5,
+        "assists": 6,
+        "defensive_contribution": 266,
+        "saves": 0,
+        "fixture": "NFO (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/466525.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p466525.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-6",
+        "xp_total": 32.25,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.375,
+        "goals": 5,
+        "threat": 315,
+        "xg_per_90": 0.11,
+        "xa_per_90": 0.17,
+        "dc_per_90": 10.11,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "NFO",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 2,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 3,
+            "opp": "BHA",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 4,
+            "opp": "NEW",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.32
+          },
+          {
+            "gw": 5,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 6,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.43
+          }
+        ]
+      },
+      {
+        "fpl_id": 400,
+        "web_name": "Doku",
+        "position": "MID",
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 7.5,
+        "selected_by_percent": 6.5,
+        "expected_goals": 2.87,
+        "expected_assists": 5.86,
+        "goals_scored": 5,
+        "assists": 8,
+        "defensive_contribution": 126,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/248875.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p248875.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-8",
+        "xp_total": 30.24,
+        "expected_minutes_next": 80.4,
+        "value_per_million": 4.032,
+        "goals": 5,
+        "threat": 645,
+        "xg_per_90": 0.15,
+        "xa_per_90": 0.3,
+        "dc_per_90": 6.4,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.35
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.73
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          }
+        ]
+      },
+      {
+        "fpl_id": 411,
+        "web_name": "Haaland",
+        "position": "FWD",
+        "is_captain": true,
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 15.5,
+        "selected_by_percent": 73.4,
+        "expected_goals": 25.5,
+        "expected_assists": 2.67,
+        "goals_scored": 27,
+        "assists": 8,
+        "defensive_contribution": 104,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223094.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223094.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "27-8",
+        "xp_total": 53.91,
+        "expected_minutes_next": 90,
+        "value_per_million": 3.478,
+        "goals": 27,
+        "threat": 1520,
+        "xg_per_90": 0.78,
+        "xa_per_90": 0.08,
+        "dc_per_90": 3.17,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 9.73
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 8.24
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          }
+        ]
+      },
+      {
+        "fpl_id": 465,
+        "web_name": "Osula",
+        "position": "FWD",
+        "is_vice": true,
+        "team": "Newcastle",
+        "team_short": "NEW",
+        "price": 6,
+        "selected_by_percent": 1.2,
+        "expected_goals": 4.28,
+        "expected_assists": 0.62,
+        "goals_scored": 7,
+        "assists": 1,
+        "defensive_contribution": 31,
+        "saves": 0,
+        "fixture": "LIV (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_4-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/538207.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p538207.png",
+        "photo_kind": "photo",
+        "preseason_goals": 1,
+        "preseason_assists": 0,
+        "stat_display": "1 / 0",
+        "stat_col": "7-1",
+        "xp_total": 40.47,
+        "expected_minutes_next": 84,
+        "value_per_million": 6.745,
+        "goals": 7,
+        "threat": 284,
+        "xg_per_90": 0.48,
+        "xa_per_90": 0.07,
+        "dc_per_90": 3.47,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 7.25
+          },
+          {
+            "gw": 2,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 3,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          },
+          {
+            "gw": 4,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 5,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 6,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 6.24
+          }
+        ]
+      },
+      {
+        "fpl_id": 165,
+        "web_name": "João Pedro",
+        "position": "FWD",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7.5,
+        "selected_by_percent": 55.9,
+        "expected_goals": 14.91,
+        "expected_assists": 1.96,
+        "goals_scored": 15,
+        "assists": 9,
+        "defensive_contribution": 138,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/475168.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p475168.png",
+        "photo_kind": "photo",
+        "preseason_goals": 5,
+        "preseason_assists": 1,
+        "stat_display": "5 / 1",
+        "stat_col": "15-9",
+        "xp_total": 40.65,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.42,
+        "goals": 15,
+        "threat": 909,
+        "xg_per_90": 0.5,
+        "xa_per_90": 0.07,
+        "dc_per_90": 4.67,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.3
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          }
+        ]
+      }
+    ],
+    "bench": [
+      {
+        "fpl_id": 529,
+        "web_name": "Roefs",
+        "position": "GKP",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.8,
+        "expected_goals": 0,
+        "expected_assists": 0.1,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 109,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/498016.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p498016.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "109",
+        "xp_total": 21.93,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.386,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.39
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.39
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.92
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 3.39
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          }
+        ]
+      },
+      {
+        "fpl_id": 60,
+        "web_name": "Hill",
+        "position": "DEF",
+        "team": "Bournemouth",
+        "team_short": "BOU",
+        "price": 5.5,
+        "selected_by_percent": 1.2,
+        "expected_goals": 0.89,
+        "expected_assists": 1.16,
+        "goals_scored": 0,
+        "assists": 3,
+        "defensive_contribution": 260,
+        "saves": 0,
+        "fixture": "MCI (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/463981.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p463981.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "260",
+        "xp_total": 26.22,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.767,
+        "goals": 0,
+        "threat": 119,
+        "xg_per_90": 0.04,
+        "xa_per_90": 0.05,
+        "dc_per_90": 11.13,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.36
+          },
+          {
+            "gw": 2,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 3,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.36
+          },
+          {
+            "gw": 4,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 5,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.38
+          },
+          {
+            "gw": 6,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.36
+          }
+        ]
+      },
+      {
+        "fpl_id": 84,
+        "web_name": "Collins",
+        "position": "DEF",
+        "team": "Brentford",
+        "team_short": "BRE",
+        "price": 5.5,
+        "selected_by_percent": 2.1,
+        "expected_goals": 2.24,
+        "expected_assists": 1.71,
+        "goals_scored": 1,
+        "assists": 2,
+        "defensive_contribution": 319,
+        "saves": 0,
+        "fixture": "TOT (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/432830.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p432830.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "319",
+        "xp_total": 25.35,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.609,
+        "goals": 1,
+        "threat": 325,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.05,
+        "dc_per_90": 9.66,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.25
+          },
+          {
+            "gw": 2,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 3,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.25
+          },
+          {
+            "gw": 4,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 5,
+            "opp": "CHE",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.25
+          },
+          {
+            "gw": 6,
+            "opp": "AVL",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.2
+          }
+        ]
+      },
+      {
+        "fpl_id": 290,
+        "web_name": "Slater",
+        "position": "MID",
+        "team": "Hull City",
+        "team_short": "HUL",
+        "price": 4.5,
+        "selected_by_percent": 2.3,
+        "expected_goals": 0,
+        "expected_assists": 0,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 0,
+        "fixture": "MUN (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_88-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/243413.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p243413.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "0-0",
+        "xp_total": 1.92,
+        "expected_minutes_next": 0,
+        "value_per_million": 0.427,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": null,
+        "xa_per_90": null,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 0.37
+          },
+          {
+            "gw": 2,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 0.27
+          },
+          {
+            "gw": 3,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          },
+          {
+            "gw": 4,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 0.27
+          },
+          {
+            "gw": 5,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 0.27
+          },
+          {
+            "gw": 6,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          }
+        ]
+      }
+    ],
+    "whyLabel": "WHY · 选队理由",
+    "why": [
+      "主题：No Fernandes Squad — 不用 Bruno，把贵价预算押在 Haaland + Palmer。",
+      "队长 Haaland 锁进攻天花板，副队 Osula 做廉价覆盖；锋线再配 João Pedro。",
+      "中场 Palmer / Enzo / Doku / Stach：创造 + 控价，主动避开 United 贵价中场模板。",
+      "后防 Verbruggen · Tarkowski · Ballard · Shaw 走功能型；替补 Roefs / Hill / Collins / Slater 控价留银行。"
+    ],
+    "source": "本阵容由 FALEAGUE 推荐阵容工具生成 · faleague-ai.com",
+    "sourceHtml": "本阵容由 <strong>FALEAGUE 推荐阵容工具</strong>生成 · faleague-ai.com/zh/fpl/insights/recommended-squad",
+    "note": "列与站内 Players 表一致：XP / 出场 / 威胁 / xG/90 / xA/90 / DC/90 / £/m。不足分钟的速率显示为 —。",
+    "cta": "打开推荐阵容 →",
+    "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+  },
+  "analysis": {
+    "date": "2026-08-15",
+    "layout": "overview",
+    "eyebrow": "PLAYER WHY · NO FERNANDES",
+    "title": "选人思路",
+    "titleHtml": "选人思路 · <span class=\"accent\">No Fernandes Squad</span>",
+    "subtitle": "No Fernandes Squad · 3-4-3 · £99.5m · Haaland (C) · Osula (V)",
+    "starters": [
+      {
+        "fpl_id": 109,
+        "web_name": "Verbruggen",
+        "position": "GKP",
+        "team": "Brighton",
+        "team_short": "BHA",
+        "price": 4.5,
+        "selected_by_percent": 18.3,
+        "expected_goals": 0,
+        "expected_assists": 0.06,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 106,
+        "fixture": "AVL (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/489639.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p489639.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "106",
+        "xp_total": 20.55,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.567,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.68
+          },
+          {
+            "gw": 2,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 3.17
+          },
+          {
+            "gw": 3,
+            "opp": "LEE",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.68
+          },
+          {
+            "gw": 4,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.17
+          },
+          {
+            "gw": 5,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.68
+          },
+          {
+            "gw": 6,
+            "opp": "SUN",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.17
+          }
+        ],
+        "why": "£4.5m 功能型门将，把预算留给 Haaland / Palmer。Brighton 赛程有零封窗口，首发门将位够稳。"
+      },
+      {
+        "fpl_id": 229,
+        "web_name": "Tarkowski",
+        "position": "DEF",
+        "team": "Everton",
+        "team_short": "EVE",
+        "price": 6,
+        "selected_by_percent": 9.7,
+        "expected_goals": 2.53,
+        "expected_assists": 2.1,
+        "goals_scored": 2,
+        "assists": 3,
+        "defensive_contribution": 376,
+        "saves": 0,
+        "fixture": "CRY (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_11-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/17761.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p17761.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "376",
+        "xp_total": 29.7,
+        "expected_minutes_next": 90,
+        "value_per_million": 4.95,
+        "goals": 2,
+        "threat": 422,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.06,
+        "dc_per_90": 10.16,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.01
+          },
+          {
+            "gw": 2,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 3,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 5.01
+          },
+          {
+            "gw": 4,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.89
+          },
+          {
+            "gw": 5,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.01
+          },
+          {
+            "gw": 6,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.89
+          }
+        ],
+        "why": "Everton 主力中卫，出场与 DEFCON 稳定。作为后防支点吃防守分，不必再砸贵价中卫。"
+      },
+      {
+        "fpl_id": 532,
+        "web_name": "Ballard",
+        "position": "DEF",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.5,
+        "expected_goals": 2.46,
+        "expected_assists": 0.63,
+        "goals_scored": 2,
+        "assists": 2,
+        "defensive_contribution": 264,
+        "saves": 0,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223827.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223827.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "264",
+        "xp_total": 28.89,
+        "expected_minutes_next": 81,
+        "value_per_million": 5.778,
+        "goals": 2,
+        "threat": 370,
+        "xg_per_90": 0.1,
+        "xa_per_90": 0.03,
+        "dc_per_90": 11.08,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 4.76
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.76
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.87
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.76
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.87
+          }
+        ],
+        "why": "Sunderland 中卫，DEFCON 高、价格友好。放首发后防第三席，伤停时也有替补覆盖。"
+      },
+      {
+        "fpl_id": 423,
+        "web_name": "Shaw",
+        "position": "DEF",
+        "team": "Man Utd",
+        "team_short": "MUN",
+        "price": 4.5,
+        "selected_by_percent": 24.2,
+        "expected_goals": 0.72,
+        "expected_assists": 1.98,
+        "goals_scored": 1,
+        "assists": 1,
+        "defensive_contribution": 224,
+        "saves": 0,
+        "fixture": "HUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/106760.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p106760.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "224",
+        "xp_total": 18.03,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.007,
+        "goals": 1,
+        "threat": 97,
+        "xg_per_90": 0.02,
+        "xa_per_90": 0.06,
+        "dc_per_90": 6.26,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "HUL",
+            "home": false,
+            "fdr": 2,
+            "xp": 2.83
+          },
+          {
+            "gw": 2,
+            "opp": "IPS",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.18
+          },
+          {
+            "gw": 3,
+            "opp": "EVE",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 4,
+            "opp": "MCI",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.18
+          },
+          {
+            "gw": 5,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 2.83
+          },
+          {
+            "gw": 6,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 3.18
+          }
+        ],
+        "why": "Man Utd 廉价边卫，£4.5m 腾预算给锋线贵价。进攻套路上场机会在，适合当第三后卫。"
+      },
+      {
+        "fpl_id": 154,
+        "web_name": "Palmer",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 9.5,
+        "selected_by_percent": 11.2,
+        "expected_goals": 10.55,
+        "expected_assists": 2.49,
+        "goals_scored": 10,
+        "assists": 2,
+        "defensive_contribution": 135,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/244851.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p244851.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-2",
+        "xp_total": 39.63,
+        "expected_minutes_next": 88,
+        "value_per_million": 4.172,
+        "goals": 10,
+        "threat": 547,
+        "xg_per_90": 0.49,
+        "xa_per_90": 0.11,
+        "dc_per_90": 6.22,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.14
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.07
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.14
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.07
+          }
+        ],
+        "why": "本套中场贵价核心，替代 Bruno 的进球助攻模板。Chelsea 创造点明确，用来撑起无 Fernandes 中场上限。"
+      },
+      {
+        "fpl_id": 155,
+        "web_name": "Enzo",
+        "position": "MID",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7,
+        "selected_by_percent": 5.6,
+        "expected_goals": 11.26,
+        "expected_assists": 7.26,
+        "goals_scored": 10,
+        "assists": 5,
+        "defensive_contribution": 244,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/448047.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p448047.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "10-5",
+        "xp_total": 36.15,
+        "expected_minutes_next": 88,
+        "value_per_million": 5.164,
+        "goals": 10,
+        "threat": 747,
+        "xg_per_90": 0.33,
+        "xa_per_90": 0.21,
+        "dc_per_90": 7.05,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.69
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 6.36
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.69
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 6.36
+          }
+        ],
+        "why": "Chelsea 双中场叠赛程：Enzo 补进球威胁与控场。£7.0m 比再堆一个贵价中场更均衡。"
+      },
+      {
+        "fpl_id": 335,
+        "web_name": "Stach",
+        "position": "MID",
+        "team": "Leeds",
+        "team_short": "LEE",
+        "price": 6,
+        "selected_by_percent": 1.1,
+        "expected_goals": 2.88,
+        "expected_assists": 4.47,
+        "goals_scored": 5,
+        "assists": 6,
+        "defensive_contribution": 266,
+        "saves": 0,
+        "fixture": "NFO (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/466525.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p466525.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-6",
+        "xp_total": 32.25,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.375,
+        "goals": 5,
+        "threat": 315,
+        "xg_per_90": 0.11,
+        "xa_per_90": 0.17,
+        "dc_per_90": 10.11,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "NFO",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 2,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 3,
+            "opp": "BHA",
+            "home": false,
+            "fdr": 3,
+            "xp": 5.43
+          },
+          {
+            "gw": 4,
+            "opp": "NEW",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.32
+          },
+          {
+            "gw": 5,
+            "opp": "CRY",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.32
+          },
+          {
+            "gw": 6,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 5.43
+          }
+        ],
+        "why": "Leeds 控价中场，出场稳定、价格友好。第四中场位用来省预算，而不是再追热门贵价。"
+      },
+      {
+        "fpl_id": 400,
+        "web_name": "Doku",
+        "position": "MID",
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 7.5,
+        "selected_by_percent": 6.5,
+        "expected_goals": 2.87,
+        "expected_assists": 5.86,
+        "goals_scored": 5,
+        "assists": 8,
+        "defensive_contribution": 126,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/248875.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p248875.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "5-8",
+        "xp_total": 30.24,
+        "expected_minutes_next": 80.4,
+        "value_per_million": 4.032,
+        "goals": 5,
+        "threat": 645,
+        "xg_per_90": 0.15,
+        "xa_per_90": 0.3,
+        "dc_per_90": 6.4,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 5.35
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.73
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 5.35
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.73
+          }
+        ],
+        "why": "City 边路爆发点，和 Haaland 同队可共享进攻回合。用来补第四中场的上限与差分。"
+      },
+      {
+        "fpl_id": 411,
+        "web_name": "Haaland",
+        "position": "FWD",
+        "is_captain": true,
+        "team": "Man City",
+        "team_short": "MCI",
+        "price": 15.5,
+        "selected_by_percent": 73.4,
+        "expected_goals": 25.5,
+        "expected_assists": 2.67,
+        "goals_scored": 27,
+        "assists": 8,
+        "defensive_contribution": 104,
+        "saves": 0,
+        "fixture": "BOU (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223094.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223094.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "27-8",
+        "xp_total": 53.91,
+        "expected_minutes_next": 90,
+        "value_per_million": 3.478,
+        "goals": 27,
+        "threat": 1520,
+        "xg_per_90": 0.78,
+        "xa_per_90": 0.08,
+        "dc_per_90": 3.17,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 9.73
+          },
+          {
+            "gw": 2,
+            "opp": "CRY",
+            "home": false,
+            "fdr": 3,
+            "xp": 8.24
+          },
+          {
+            "gw": 3,
+            "opp": "COV",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 4,
+            "opp": "MUN",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          },
+          {
+            "gw": 5,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 9.73
+          },
+          {
+            "gw": 6,
+            "opp": "LIV",
+            "home": false,
+            "fdr": 4,
+            "xp": 8.24
+          }
+        ],
+        "why": "全队进攻天花板，开队长最直接。No Fernandes 路线的核心就是把预算集中砸在 Haaland 身上。"
+      },
+      {
+        "fpl_id": 465,
+        "web_name": "Osula",
+        "position": "FWD",
+        "is_vice": true,
+        "team": "Newcastle",
+        "team_short": "NEW",
+        "price": 6,
+        "selected_by_percent": 1.2,
+        "expected_goals": 4.28,
+        "expected_assists": 0.62,
+        "goals_scored": 7,
+        "assists": 1,
+        "defensive_contribution": 31,
+        "saves": 0,
+        "fixture": "LIV (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_4-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/538207.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p538207.png",
+        "photo_kind": "photo",
+        "preseason_goals": 1,
+        "preseason_assists": 0,
+        "stat_display": "1 / 0",
+        "stat_col": "7-1",
+        "xp_total": 40.47,
+        "expected_minutes_next": 84,
+        "value_per_million": 6.745,
+        "goals": 7,
+        "threat": 284,
+        "xg_per_90": 0.48,
+        "xa_per_90": 0.07,
+        "dc_per_90": 3.47,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 7.25
+          },
+          {
+            "gw": 2,
+            "opp": "TOT",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 3,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          },
+          {
+            "gw": 4,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.24
+          },
+          {
+            "gw": 5,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 6,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 6.24
+          }
+        ],
+        "why": "廉价前锋副队，覆盖队长轮空。Newcastle 前场有进球窗口，£6.0m 换的是板凳深度以外的首发产出。"
+      },
+      {
+        "fpl_id": 165,
+        "web_name": "João Pedro",
+        "position": "FWD",
+        "team": "Chelsea",
+        "team_short": "CHE",
+        "price": 7.5,
+        "selected_by_percent": 55.9,
+        "expected_goals": 14.91,
+        "expected_assists": 1.96,
+        "goals_scored": 15,
+        "assists": 9,
+        "defensive_contribution": 138,
+        "saves": 0,
+        "fixture": "FUL (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/475168.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p475168.png",
+        "photo_kind": "photo",
+        "preseason_goals": 5,
+        "preseason_assists": 1,
+        "stat_display": "5 / 1",
+        "stat_col": "15-9",
+        "xp_total": 40.65,
+        "expected_minutes_next": 90,
+        "value_per_million": 5.42,
+        "goals": 15,
+        "threat": 909,
+        "xg_per_90": 0.5,
+        "xa_per_90": 0.07,
+        "dc_per_90": 4.67,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "FUL",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 2,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 3,
+            "opp": "ARS",
+            "home": false,
+            "fdr": 5,
+            "xp": 6.3
+          },
+          {
+            "gw": 4,
+            "opp": "HUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 7.25
+          },
+          {
+            "gw": 5,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 6.3
+          },
+          {
+            "gw": 6,
+            "opp": "BOU",
+            "home": true,
+            "fdr": 3,
+            "xp": 7.25
+          }
+        ],
+        "why": "Chelsea 锋线第三点，和 Palmer / Enzo 同队叠赛程。£7.5m 补进球威胁，避免锋线过度依赖一人。"
+      }
+    ],
+    "bench": [
+      {
+        "fpl_id": 529,
+        "web_name": "Roefs",
+        "position": "GKP",
+        "team": "Sunderland",
+        "team_short": "SUN",
+        "price": 5,
+        "selected_by_percent": 4.8,
+        "expected_goals": 0,
+        "expected_assists": 0.1,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 109,
+        "fixture": "IPS (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56_1-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/498016.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p498016.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "109",
+        "xp_total": 21.93,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.386,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": 0,
+        "xa_per_90": 0,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "IPS",
+            "home": false,
+            "fdr": 2,
+            "xp": 3.39
+          },
+          {
+            "gw": 2,
+            "opp": "FUL",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          },
+          {
+            "gw": 3,
+            "opp": "BRE",
+            "home": false,
+            "fdr": 3,
+            "xp": 3.39
+          },
+          {
+            "gw": 4,
+            "opp": "ARS",
+            "home": true,
+            "fdr": 4,
+            "xp": 3.92
+          },
+          {
+            "gw": 5,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 3.39
+          },
+          {
+            "gw": 6,
+            "opp": "BHA",
+            "home": true,
+            "fdr": 2,
+            "xp": 3.92
+          }
+        ],
+        "why": "替补门将，避免单门将伤停打穿。和 Ballard 同队方便一起看 Sunderland 赛程。"
+      },
+      {
+        "fpl_id": 60,
+        "web_name": "Hill",
+        "position": "DEF",
+        "team": "Bournemouth",
+        "team_short": "BOU",
+        "price": 5.5,
+        "selected_by_percent": 1.2,
+        "expected_goals": 0.89,
+        "expected_assists": 1.16,
+        "goals_scored": 0,
+        "assists": 3,
+        "defensive_contribution": 260,
+        "saves": 0,
+        "fixture": "MCI (A)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/463981.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p463981.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "260",
+        "xp_total": 26.22,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.767,
+        "goals": 0,
+        "threat": 119,
+        "xg_per_90": 0.04,
+        "xa_per_90": 0.05,
+        "dc_per_90": 11.13,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MCI",
+            "home": false,
+            "fdr": 5,
+            "xp": 4.36
+          },
+          {
+            "gw": 2,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 3,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.36
+          },
+          {
+            "gw": 4,
+            "opp": "BRE",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.38
+          },
+          {
+            "gw": 5,
+            "opp": "LIV",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.38
+          },
+          {
+            "gw": 6,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.36
+          }
+        ],
+        "why": "£5.5m 板凳后卫，Bournemouth 有零封可能。用来覆盖后防轮换，不占进攻预算。"
+      },
+      {
+        "fpl_id": 84,
+        "web_name": "Collins",
+        "position": "DEF",
+        "team": "Brentford",
+        "team_short": "BRE",
+        "price": 5.5,
+        "selected_by_percent": 2.1,
+        "expected_goals": 2.24,
+        "expected_assists": 1.71,
+        "goals_scored": 1,
+        "assists": 2,
+        "defensive_contribution": 319,
+        "saves": 0,
+        "fixture": "TOT (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/432830.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p432830.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "-",
+        "stat_col": "319",
+        "xp_total": 25.35,
+        "expected_minutes_next": 81,
+        "value_per_million": 4.609,
+        "goals": 1,
+        "threat": 325,
+        "xg_per_90": 0.07,
+        "xa_per_90": 0.05,
+        "dc_per_90": 9.66,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "TOT",
+            "home": true,
+            "fdr": 3,
+            "xp": 4.25
+          },
+          {
+            "gw": 2,
+            "opp": "LEE",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 3,
+            "opp": "SUN",
+            "home": true,
+            "fdr": 2,
+            "xp": 4.25
+          },
+          {
+            "gw": 4,
+            "opp": "BOU",
+            "home": false,
+            "fdr": 3,
+            "xp": 4.2
+          },
+          {
+            "gw": 5,
+            "opp": "CHE",
+            "home": true,
+            "fdr": 4,
+            "xp": 4.25
+          },
+          {
+            "gw": 6,
+            "opp": "AVL",
+            "home": false,
+            "fdr": 4,
+            "xp": 4.2
+          }
+        ],
+        "why": "Brentford 中卫模板，DEFCON / 零封双边。放替补当伤停补位，比空着后防席更稳。"
+      },
+      {
+        "fpl_id": 290,
+        "web_name": "Slater",
+        "position": "MID",
+        "team": "Hull City",
+        "team_short": "HUL",
+        "price": 4.5,
+        "selected_by_percent": 2.3,
+        "expected_goals": 0,
+        "expected_assists": 0,
+        "goals_scored": 0,
+        "assists": 0,
+        "defensive_contribution": 0,
+        "saves": 0,
+        "fixture": "MUN (H)",
+        "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_88-220.webp",
+        "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/243413.png",
+        "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p243413.png",
+        "photo_kind": "photo",
+        "preseason_goals": null,
+        "preseason_assists": null,
+        "stat_display": "- / -",
+        "stat_col": "0-0",
+        "xp_total": 1.92,
+        "expected_minutes_next": 0,
+        "value_per_million": 0.427,
+        "goals": 0,
+        "threat": 0,
+        "xg_per_90": null,
+        "xa_per_90": null,
+        "dc_per_90": null,
+        "gw_run": [
+          {
+            "gw": 1,
+            "opp": "MUN",
+            "home": true,
+            "fdr": 4,
+            "xp": 0.37
+          },
+          {
+            "gw": 2,
+            "opp": "COV",
+            "home": false,
+            "fdr": 2,
+            "xp": 0.27
+          },
+          {
+            "gw": 3,
+            "opp": "AVL",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          },
+          {
+            "gw": 4,
+            "opp": "CHE",
+            "home": false,
+            "fdr": 4,
+            "xp": 0.27
+          },
+          {
+            "gw": 5,
+            "opp": "NEW",
+            "home": false,
+            "fdr": 3,
+            "xp": 0.27
+          },
+          {
+            "gw": 6,
+            "opp": "EVE",
+            "home": true,
+            "fdr": 3,
+            "xp": 0.37
+          }
+        ],
+        "why": "£4.5m 控价中场，Hull 出场机会在。板凳末席省钱，必要时可顶伤停中场。"
+      }
+    ],
+    "cta": "打开推荐阵容 →",
+    "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+  },
+  "analysisPages": [
+    {
+      "key": "def",
+      "date": "2026-08-15",
+      "layout": "cards",
+      "page": 1,
+      "pages": 4,
+      "eyebrow": "PLAYER WHY · 1/4",
+      "title": "选人思路",
+      "titleHtml": "选人思路 · <span class=\"accent\">后防</span>",
+      "subtitle": "No Fernandes · GKP + DEF · GW1–5 FDR / xP · 3-4-3 · Haaland (C) · Osula (V)",
+      "groups": [
+        {
+          "label": "GKP",
+          "players": [
+            {
+              "fpl_id": 109,
+              "web_name": "Verbruggen",
+              "position": "GKP",
+              "team": "Brighton",
+              "team_short": "BHA",
+              "price": 4.5,
+              "selected_by_percent": 18.3,
+              "expected_goals": 0,
+              "expected_assists": 0.06,
+              "goals_scored": 0,
+              "assists": 0,
+              "defensive_contribution": 0,
+              "saves": 106,
+              "fixture": "AVL (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36_1-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/489639.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p489639.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "106",
+              "xp_total": 20.55,
+              "expected_minutes_next": 81,
+              "value_per_million": 4.567,
+              "goals": 0,
+              "threat": 0,
+              "xg_per_90": 0,
+              "xa_per_90": 0,
+              "dc_per_90": null,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "AVL",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 3.68
+                },
+                {
+                  "gw": 2,
+                  "opp": "CHE",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 3.17
+                },
+                {
+                  "gw": 3,
+                  "opp": "LEE",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 3.68
+                },
+                {
+                  "gw": 4,
+                  "opp": "COV",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 3.17
+                },
+                {
+                  "gw": 5,
+                  "opp": "ARS",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 3.68
+                },
+                {
+                  "gw": 6,
+                  "opp": "SUN",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 3.17
+                }
+              ],
+              "why": "£4.5m 功能型门将，把预算留给 Haaland / Palmer。Brighton 赛程有零封窗口，首发门将位够稳。"
+            }
+          ]
+        },
+        {
+          "label": "DEF",
+          "players": [
+            {
+              "fpl_id": 229,
+              "web_name": "Tarkowski",
+              "position": "DEF",
+              "team": "Everton",
+              "team_short": "EVE",
+              "price": 6,
+              "selected_by_percent": 9.7,
+              "expected_goals": 2.53,
+              "expected_assists": 2.1,
+              "goals_scored": 2,
+              "assists": 3,
+              "defensive_contribution": 376,
+              "saves": 0,
+              "fixture": "CRY (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_11-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/17761.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p17761.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "376",
+              "xp_total": 29.7,
+              "expected_minutes_next": 90,
+              "value_per_million": 4.95,
+              "goals": 2,
+              "threat": 422,
+              "xg_per_90": 0.07,
+              "xa_per_90": 0.06,
+              "dc_per_90": 10.16,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "CRY",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 5.01
+                },
+                {
+                  "gw": 2,
+                  "opp": "BOU",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.89
+                },
+                {
+                  "gw": 3,
+                  "opp": "MUN",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 5.01
+                },
+                {
+                  "gw": 4,
+                  "opp": "TOT",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.89
+                },
+                {
+                  "gw": 5,
+                  "opp": "IPS",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 5.01
+                },
+                {
+                  "gw": 6,
+                  "opp": "HUL",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 4.89
+                }
+              ],
+              "why": "Everton 主力中卫，出场与 DEFCON 稳定。作为后防支点吃防守分，不必再砸贵价中卫。"
+            },
+            {
+              "fpl_id": 532,
+              "web_name": "Ballard",
+              "position": "DEF",
+              "team": "Sunderland",
+              "team_short": "SUN",
+              "price": 5,
+              "selected_by_percent": 4.5,
+              "expected_goals": 2.46,
+              "expected_assists": 0.63,
+              "goals_scored": 2,
+              "assists": 2,
+              "defensive_contribution": 264,
+              "saves": 0,
+              "fixture": "IPS (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223827.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223827.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "264",
+              "xp_total": 28.89,
+              "expected_minutes_next": 81,
+              "value_per_million": 5.778,
+              "goals": 2,
+              "threat": 370,
+              "xg_per_90": 0.1,
+              "xa_per_90": 0.03,
+              "dc_per_90": 11.08,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "IPS",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 4.76
+                },
+                {
+                  "gw": 2,
+                  "opp": "FUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 4.87
+                },
+                {
+                  "gw": 3,
+                  "opp": "BRE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.76
+                },
+                {
+                  "gw": 4,
+                  "opp": "ARS",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 4.87
+                },
+                {
+                  "gw": 5,
+                  "opp": "MCI",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 4.76
+                },
+                {
+                  "gw": 6,
+                  "opp": "BHA",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 4.87
+                }
+              ],
+              "why": "Sunderland 中卫，DEFCON 高、价格友好。放首发后防第三席，伤停时也有替补覆盖。"
+            },
+            {
+              "fpl_id": 423,
+              "web_name": "Shaw",
+              "position": "DEF",
+              "team": "Man Utd",
+              "team_short": "MUN",
+              "price": 4.5,
+              "selected_by_percent": 24.2,
+              "expected_goals": 0.72,
+              "expected_assists": 1.98,
+              "goals_scored": 1,
+              "assists": 1,
+              "defensive_contribution": 224,
+              "saves": 0,
+              "fixture": "HUL (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/106760.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p106760.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "224",
+              "xp_total": 18.03,
+              "expected_minutes_next": 81,
+              "value_per_million": 4.007,
+              "goals": 1,
+              "threat": 97,
+              "xg_per_90": 0.02,
+              "xa_per_90": 0.06,
+              "dc_per_90": 6.26,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "HUL",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 2.83
+                },
+                {
+                  "gw": 2,
+                  "opp": "IPS",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 3.18
+                },
+                {
+                  "gw": 3,
+                  "opp": "EVE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 2.83
+                },
+                {
+                  "gw": 4,
+                  "opp": "MCI",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 3.18
+                },
+                {
+                  "gw": 5,
+                  "opp": "FUL",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 2.83
+                },
+                {
+                  "gw": 6,
+                  "opp": "TOT",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 3.18
+                }
+              ],
+              "why": "Man Utd 廉价边卫，£4.5m 腾预算给锋线贵价。进攻套路上场机会在，适合当第三后卫。"
+            }
+          ]
+        }
+      ],
+      "cta": "打开推荐阵容 →",
+      "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+    },
+    {
+      "key": "mid",
+      "date": "2026-08-15",
+      "layout": "cards",
+      "page": 2,
+      "pages": 4,
+      "eyebrow": "PLAYER WHY · 2/4",
+      "title": "选人思路",
+      "titleHtml": "选人思路 · <span class=\"accent\">中场</span>",
+      "subtitle": "No Fernandes · MID · GW1–5 FDR / xP · 3-4-3 · Haaland (C) · Osula (V)",
+      "groups": [
+        {
+          "label": "MID",
+          "players": [
+            {
+              "fpl_id": 154,
+              "web_name": "Palmer",
+              "position": "MID",
+              "team": "Chelsea",
+              "team_short": "CHE",
+              "price": 9.5,
+              "selected_by_percent": 11.2,
+              "expected_goals": 10.55,
+              "expected_assists": 2.49,
+              "goals_scored": 10,
+              "assists": 2,
+              "defensive_contribution": 135,
+              "saves": 0,
+              "fixture": "FUL (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/244851.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p244851.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "10-2",
+              "xp_total": 39.63,
+              "expected_minutes_next": 88,
+              "value_per_million": 4.172,
+              "goals": 10,
+              "threat": 547,
+              "xg_per_90": 0.49,
+              "xa_per_90": 0.11,
+              "dc_per_90": 6.22,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "FUL",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.14
+                },
+                {
+                  "gw": 2,
+                  "opp": "BHA",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 7.07
+                },
+                {
+                  "gw": 3,
+                  "opp": "ARS",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 6.14
+                },
+                {
+                  "gw": 4,
+                  "opp": "HUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 7.07
+                },
+                {
+                  "gw": 5,
+                  "opp": "BRE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.14
+                },
+                {
+                  "gw": 6,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 7.07
+                }
+              ],
+              "why": "本套中场贵价核心，替代 Bruno 的进球助攻模板。Chelsea 创造点明确，用来撑起无 Fernandes 中场上限。"
+            },
+            {
+              "fpl_id": 155,
+              "web_name": "Enzo",
+              "position": "MID",
+              "team": "Chelsea",
+              "team_short": "CHE",
+              "price": 7,
+              "selected_by_percent": 5.6,
+              "expected_goals": 11.26,
+              "expected_assists": 7.26,
+              "goals_scored": 10,
+              "assists": 5,
+              "defensive_contribution": 244,
+              "saves": 0,
+              "fixture": "FUL (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/448047.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p448047.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "10-5",
+              "xp_total": 36.15,
+              "expected_minutes_next": 88,
+              "value_per_million": 5.164,
+              "goals": 10,
+              "threat": 747,
+              "xg_per_90": 0.33,
+              "xa_per_90": 0.21,
+              "dc_per_90": 7.05,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "FUL",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 5.69
+                },
+                {
+                  "gw": 2,
+                  "opp": "BHA",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 6.36
+                },
+                {
+                  "gw": 3,
+                  "opp": "ARS",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 5.69
+                },
+                {
+                  "gw": 4,
+                  "opp": "HUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 6.36
+                },
+                {
+                  "gw": 5,
+                  "opp": "BRE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 5.69
+                },
+                {
+                  "gw": 6,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 6.36
+                }
+              ],
+              "why": "Chelsea 双中场叠赛程：Enzo 补进球威胁与控场。£7.0m 比再堆一个贵价中场更均衡。"
+            },
+            {
+              "fpl_id": 335,
+              "web_name": "Stach",
+              "position": "MID",
+              "team": "Leeds",
+              "team_short": "LEE",
+              "price": 6,
+              "selected_by_percent": 1.1,
+              "expected_goals": 2.88,
+              "expected_assists": 4.47,
+              "goals_scored": 5,
+              "assists": 6,
+              "defensive_contribution": 266,
+              "saves": 0,
+              "fixture": "NFO (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/466525.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p466525.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "5-6",
+              "xp_total": 32.25,
+              "expected_minutes_next": 90,
+              "value_per_million": 5.375,
+              "goals": 5,
+              "threat": 315,
+              "xg_per_90": 0.11,
+              "xa_per_90": 0.17,
+              "dc_per_90": 10.11,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "NFO",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 5.43
+                },
+                {
+                  "gw": 2,
+                  "opp": "BRE",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 5.32
+                },
+                {
+                  "gw": 3,
+                  "opp": "BHA",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 5.43
+                },
+                {
+                  "gw": 4,
+                  "opp": "NEW",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 5.32
+                },
+                {
+                  "gw": 5,
+                  "opp": "CRY",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 5.32
+                },
+                {
+                  "gw": 6,
+                  "opp": "ARS",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 5.43
+                }
+              ],
+              "why": "Leeds 控价中场，出场稳定、价格友好。第四中场位用来省预算，而不是再追热门贵价。"
+            },
+            {
+              "fpl_id": 400,
+              "web_name": "Doku",
+              "position": "MID",
+              "team": "Man City",
+              "team_short": "MCI",
+              "price": 7.5,
+              "selected_by_percent": 6.5,
+              "expected_goals": 2.87,
+              "expected_assists": 5.86,
+              "goals_scored": 5,
+              "assists": 8,
+              "defensive_contribution": 126,
+              "saves": 0,
+              "fixture": "BOU (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/248875.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p248875.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "5-8",
+              "xp_total": 30.24,
+              "expected_minutes_next": 80.4,
+              "value_per_million": 4.032,
+              "goals": 5,
+              "threat": 645,
+              "xg_per_90": 0.15,
+              "xa_per_90": 0.3,
+              "dc_per_90": 6.4,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 5.35
+                },
+                {
+                  "gw": 2,
+                  "opp": "CRY",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.73
+                },
+                {
+                  "gw": 3,
+                  "opp": "COV",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 5.35
+                },
+                {
+                  "gw": 4,
+                  "opp": "MUN",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 4.73
+                },
+                {
+                  "gw": 5,
+                  "opp": "SUN",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 5.35
+                },
+                {
+                  "gw": 6,
+                  "opp": "LIV",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 4.73
+                }
+              ],
+              "why": "City 边路爆发点，和 Haaland 同队可共享进攻回合。用来补第四中场的上限与差分。"
+            }
+          ]
+        }
+      ],
+      "cta": "打开推荐阵容 →",
+      "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+    },
+    {
+      "key": "fwd",
+      "date": "2026-08-15",
+      "layout": "cards",
+      "page": 3,
+      "pages": 4,
+      "eyebrow": "PLAYER WHY · 3/4",
+      "title": "选人思路",
+      "titleHtml": "选人思路 · <span class=\"accent\">锋线</span>",
+      "subtitle": "No Fernandes · FWD · GW1–5 FDR / xP · 3-4-3 · Haaland (C) · Osula (V)",
+      "groups": [
+        {
+          "label": "FWD",
+          "players": [
+            {
+              "fpl_id": 411,
+              "web_name": "Haaland",
+              "position": "FWD",
+              "is_captain": true,
+              "team": "Man City",
+              "team_short": "MCI",
+              "price": 15.5,
+              "selected_by_percent": 73.4,
+              "expected_goals": 25.5,
+              "expected_assists": 2.67,
+              "goals_scored": 27,
+              "assists": 8,
+              "defensive_contribution": 104,
+              "saves": 0,
+              "fixture": "BOU (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223094.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223094.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "27-8",
+              "xp_total": 53.91,
+              "expected_minutes_next": 90,
+              "value_per_million": 3.478,
+              "goals": 27,
+              "threat": 1520,
+              "xg_per_90": 0.78,
+              "xa_per_90": 0.08,
+              "dc_per_90": 3.17,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 9.73
+                },
+                {
+                  "gw": 2,
+                  "opp": "CRY",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 8.24
+                },
+                {
+                  "gw": 3,
+                  "opp": "COV",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 9.73
+                },
+                {
+                  "gw": 4,
+                  "opp": "MUN",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 8.24
+                },
+                {
+                  "gw": 5,
+                  "opp": "SUN",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 9.73
+                },
+                {
+                  "gw": 6,
+                  "opp": "LIV",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 8.24
+                }
+              ],
+              "why": "全队进攻天花板，开队长最直接。No Fernandes 路线的核心就是把预算集中砸在 Haaland 身上。"
+            },
+            {
+              "fpl_id": 465,
+              "web_name": "Osula",
+              "position": "FWD",
+              "is_vice": true,
+              "team": "Newcastle",
+              "team_short": "NEW",
+              "price": 6,
+              "selected_by_percent": 1.2,
+              "expected_goals": 4.28,
+              "expected_assists": 0.62,
+              "goals_scored": 7,
+              "assists": 1,
+              "defensive_contribution": 31,
+              "saves": 0,
+              "fixture": "LIV (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_4-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/538207.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p538207.png",
+              "photo_kind": "photo",
+              "preseason_goals": 1,
+              "preseason_assists": 0,
+              "stat_display": "1 / 0",
+              "stat_col": "7-1",
+              "xp_total": 40.47,
+              "expected_minutes_next": 84,
+              "value_per_million": 6.745,
+              "goals": 7,
+              "threat": 284,
+              "xg_per_90": 0.48,
+              "xa_per_90": 0.07,
+              "dc_per_90": 3.47,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "LIV",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 7.25
+                },
+                {
+                  "gw": 2,
+                  "opp": "TOT",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.24
+                },
+                {
+                  "gw": 3,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 7.25
+                },
+                {
+                  "gw": 4,
+                  "opp": "LEE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.24
+                },
+                {
+                  "gw": 5,
+                  "opp": "HUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 7.25
+                },
+                {
+                  "gw": 6,
+                  "opp": "COV",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 6.24
+                }
+              ],
+              "why": "廉价前锋副队，覆盖队长轮空。Newcastle 前场有进球窗口，£6.0m 换的是板凳深度以外的首发产出。"
+            },
+            {
+              "fpl_id": 165,
+              "web_name": "João Pedro",
+              "position": "FWD",
+              "team": "Chelsea",
+              "team_short": "CHE",
+              "price": 7.5,
+              "selected_by_percent": 55.9,
+              "expected_goals": 14.91,
+              "expected_assists": 1.96,
+              "goals_scored": 15,
+              "assists": 9,
+              "defensive_contribution": 138,
+              "saves": 0,
+              "fixture": "FUL (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/475168.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p475168.png",
+              "photo_kind": "photo",
+              "preseason_goals": 5,
+              "preseason_assists": 1,
+              "stat_display": "5 / 1",
+              "stat_col": "15-9",
+              "xp_total": 40.65,
+              "expected_minutes_next": 90,
+              "value_per_million": 5.42,
+              "goals": 15,
+              "threat": 909,
+              "xg_per_90": 0.5,
+              "xa_per_90": 0.07,
+              "dc_per_90": 4.67,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "FUL",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.3
+                },
+                {
+                  "gw": 2,
+                  "opp": "BHA",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 7.25
+                },
+                {
+                  "gw": 3,
+                  "opp": "ARS",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 6.3
+                },
+                {
+                  "gw": 4,
+                  "opp": "HUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 7.25
+                },
+                {
+                  "gw": 5,
+                  "opp": "BRE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 6.3
+                },
+                {
+                  "gw": 6,
+                  "opp": "BOU",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 7.25
+                }
+              ],
+              "why": "Chelsea 锋线第三点，和 Palmer / Enzo 同队叠赛程。£7.5m 补进球威胁，避免锋线过度依赖一人。"
+            }
+          ]
+        }
+      ],
+      "cta": "打开推荐阵容 →",
+      "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+    },
+    {
+      "key": "bench",
+      "date": "2026-08-15",
+      "layout": "cards",
+      "page": 4,
+      "pages": 4,
+      "eyebrow": "PLAYER WHY · 4/4",
+      "title": "选人思路",
+      "titleHtml": "选人思路 · <span class=\"accent\">替补</span>",
+      "subtitle": "No Fernandes · BENCH · GW1–5 FDR / xP · 3-4-3 · Haaland (C) · Osula (V)",
+      "groups": [
+        {
+          "label": "BENCH",
+          "players": [
+            {
+              "fpl_id": 529,
+              "web_name": "Roefs",
+              "position": "GKP",
+              "team": "Sunderland",
+              "team_short": "SUN",
+              "price": 5,
+              "selected_by_percent": 4.8,
+              "expected_goals": 0,
+              "expected_assists": 0.1,
+              "goals_scored": 0,
+              "assists": 0,
+              "defensive_contribution": 0,
+              "saves": 109,
+              "fixture": "IPS (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56_1-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/498016.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p498016.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "109",
+              "xp_total": 21.93,
+              "expected_minutes_next": 81,
+              "value_per_million": 4.386,
+              "goals": 0,
+              "threat": 0,
+              "xg_per_90": 0,
+              "xa_per_90": 0,
+              "dc_per_90": null,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "IPS",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 3.39
+                },
+                {
+                  "gw": 2,
+                  "opp": "FUL",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 3.92
+                },
+                {
+                  "gw": 3,
+                  "opp": "BRE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 3.39
+                },
+                {
+                  "gw": 4,
+                  "opp": "ARS",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 3.92
+                },
+                {
+                  "gw": 5,
+                  "opp": "MCI",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 3.39
+                },
+                {
+                  "gw": 6,
+                  "opp": "BHA",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 3.92
+                }
+              ],
+              "why": "替补门将，避免单门将伤停打穿。和 Ballard 同队方便一起看 Sunderland 赛程。"
+            },
+            {
+              "fpl_id": 60,
+              "web_name": "Hill",
+              "position": "DEF",
+              "team": "Bournemouth",
+              "team_short": "BOU",
+              "price": 5.5,
+              "selected_by_percent": 1.2,
+              "expected_goals": 0.89,
+              "expected_assists": 1.16,
+              "goals_scored": 0,
+              "assists": 3,
+              "defensive_contribution": 260,
+              "saves": 0,
+              "fixture": "MCI (A)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/463981.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p463981.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "260",
+              "xp_total": 26.22,
+              "expected_minutes_next": 81,
+              "value_per_million": 4.767,
+              "goals": 0,
+              "threat": 119,
+              "xg_per_90": 0.04,
+              "xa_per_90": 0.05,
+              "dc_per_90": 11.13,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "MCI",
+                  "home": false,
+                  "fdr": 5,
+                  "xp": 4.36
+                },
+                {
+                  "gw": 2,
+                  "opp": "EVE",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 4.38
+                },
+                {
+                  "gw": 3,
+                  "opp": "NEW",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.36
+                },
+                {
+                  "gw": 4,
+                  "opp": "BRE",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 4.38
+                },
+                {
+                  "gw": 5,
+                  "opp": "LIV",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 4.38
+                },
+                {
+                  "gw": 6,
+                  "opp": "CHE",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 4.36
+                }
+              ],
+              "why": "£5.5m 板凳后卫，Bournemouth 有零封可能。用来覆盖后防轮换，不占进攻预算。"
+            },
+            {
+              "fpl_id": 84,
+              "web_name": "Collins",
+              "position": "DEF",
+              "team": "Brentford",
+              "team_short": "BRE",
+              "price": 5.5,
+              "selected_by_percent": 2.1,
+              "expected_goals": 2.24,
+              "expected_assists": 1.71,
+              "goals_scored": 1,
+              "assists": 2,
+              "defensive_contribution": 319,
+              "saves": 0,
+              "fixture": "TOT (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/432830.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p432830.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "-",
+              "stat_col": "319",
+              "xp_total": 25.35,
+              "expected_minutes_next": 81,
+              "value_per_million": 4.609,
+              "goals": 1,
+              "threat": 325,
+              "xg_per_90": 0.07,
+              "xa_per_90": 0.05,
+              "dc_per_90": 9.66,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "TOT",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 4.25
+                },
+                {
+                  "gw": 2,
+                  "opp": "LEE",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.2
+                },
+                {
+                  "gw": 3,
+                  "opp": "SUN",
+                  "home": true,
+                  "fdr": 2,
+                  "xp": 4.25
+                },
+                {
+                  "gw": 4,
+                  "opp": "BOU",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 4.2
+                },
+                {
+                  "gw": 5,
+                  "opp": "CHE",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 4.25
+                },
+                {
+                  "gw": 6,
+                  "opp": "AVL",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 4.2
+                }
+              ],
+              "why": "Brentford 中卫模板，DEFCON / 零封双边。放替补当伤停补位，比空着后防席更稳。"
+            },
+            {
+              "fpl_id": 290,
+              "web_name": "Slater",
+              "position": "MID",
+              "team": "Hull City",
+              "team_short": "HUL",
+              "price": 4.5,
+              "selected_by_percent": 2.3,
+              "expected_goals": 0,
+              "expected_assists": 0,
+              "goals_scored": 0,
+              "assists": 0,
+              "defensive_contribution": 0,
+              "saves": 0,
+              "fixture": "MUN (H)",
+              "shirt_url": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_88-220.webp",
+              "photo_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/243413.png",
+              "photo_legacy": "https://resources.premierleague.com/premierleague/photos/players/250x250/p243413.png",
+              "photo_kind": "photo",
+              "preseason_goals": null,
+              "preseason_assists": null,
+              "stat_display": "- / -",
+              "stat_col": "0-0",
+              "xp_total": 1.92,
+              "expected_minutes_next": 0,
+              "value_per_million": 0.427,
+              "goals": 0,
+              "threat": 0,
+              "xg_per_90": null,
+              "xa_per_90": null,
+              "dc_per_90": null,
+              "gw_run": [
+                {
+                  "gw": 1,
+                  "opp": "MUN",
+                  "home": true,
+                  "fdr": 4,
+                  "xp": 0.37
+                },
+                {
+                  "gw": 2,
+                  "opp": "COV",
+                  "home": false,
+                  "fdr": 2,
+                  "xp": 0.27
+                },
+                {
+                  "gw": 3,
+                  "opp": "AVL",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 0.37
+                },
+                {
+                  "gw": 4,
+                  "opp": "CHE",
+                  "home": false,
+                  "fdr": 4,
+                  "xp": 0.27
+                },
+                {
+                  "gw": 5,
+                  "opp": "NEW",
+                  "home": false,
+                  "fdr": 3,
+                  "xp": 0.27
+                },
+                {
+                  "gw": 6,
+                  "opp": "EVE",
+                  "home": true,
+                  "fdr": 3,
+                  "xp": 0.37
+                }
+              ],
+              "why": "£4.5m 控价中场，Hull 出场机会在。板凳末席省钱，必要时可顶伤停中场。"
+            }
+          ]
+        }
+      ],
+      "cta": "打开推荐阵容 →",
+      "url": "faleague-ai.com/zh/fpl/insights/recommended-squad"
+    }
+  ],
+  "caption": "No Fernandes Squad｜3-4-3 · £99.5m · 首发 xP 71.9\n\n队长 Haaland，副队 Osula\n主题：不用 Bruno Fernandes，预算集中在 Haaland + Palmer\n左滑看选人思路：后防 → 中场 → 锋线 → 替补\n每人附 GW1–5 赛程色块 + 该轮 xP\n\nXI\nGKP Verbruggen\nDEF Tarkowski · Ballard · Shaw\nMID Palmer · Enzo · Stach · Doku\nFWD Haaland (C) · Osula (V) · João Pedro\nBENCH Roefs · Hill · Collins · Slater\n\n这套怎么排的\n✅ 主题：No Fernandes Squad — 不用 Bruno，把贵价预算押在 Haaland + Palmer。\n✅ 队长 Haaland 锁进攻天花板，副队 Osula 做廉价覆盖；锋线再配 João Pedro。\n✅ 中场 Palmer / Enzo / Doku / Stach：创造 + 控价，主动避开 United 贵价中场模板。\n✅ 后防 Verbruggen · Tarkowski · Ballard · Shaw 走功能型；替补 Roefs / Hill / Collins / Slater 控价留银行。\n\n参考阵，不是唯一解。构建器里可继续微调。\n👉 https://faleague-ai.com/zh/fpl/insights/recommended-squad\n\n#FPL #FantasyPremierLeague #英超 #范特西足球 #开局阵容 #推荐阵容 #FALEAGUE #GW1 #NoFernandes #选人思路"
+}

@@ -24,6 +24,10 @@ import {
   isValidNickname,
   sanitizeNickname,
 } from "@/lib/mini/profile";
+import {
+  claimMiniProfileFplEntryId,
+  isMiniFplEntryUniqueViolation,
+} from "@/lib/mini/claim-fpl-entry";
 
 export const dynamic = "force-dynamic";
 
@@ -196,16 +200,49 @@ export async function POST(req: Request) {
       const prev = (existing?.badges as string[] | null) ?? [];
       const badges = mergeBadges(prev, unlock);
       newlyUnlocked = unlock.filter((id) => !prev.includes(id));
-      const { error: profErr } = await supa.from("mini_profiles").upsert(
-        {
-          id: profileId,
-          nickname: nickname ?? "Manager",
-          fpl_entry_id: entryId > 0 ? entryId : null,
-          badges,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "id" },
-      );
+      const linkedFplId = entryId > 0 ? entryId : null;
+
+      // Same FPL ID on a new device → different profile_id; free the old link first.
+      if (linkedFplId != null) {
+        const claim = await claimMiniProfileFplEntryId(
+          supa,
+          profileId,
+          linkedFplId,
+        );
+        if (claim.error) {
+          return NextResponse.json({ error: claim.error }, { status: 500 });
+        }
+      }
+
+      const profileRow = {
+        id: profileId,
+        nickname: nickname ?? "Manager",
+        fpl_entry_id: linkedFplId,
+        badges,
+        updated_at: new Date().toISOString(),
+      };
+
+      let profErr = (
+        await supa.from("mini_profiles").upsert(profileRow, { onConflict: "id" })
+      ).error;
+
+      if (profErr && isMiniFplEntryUniqueViolation(profErr.message) && linkedFplId != null) {
+        await claimMiniProfileFplEntryId(supa, profileId, linkedFplId);
+        profErr = (
+          await supa.from("mini_profiles").upsert(profileRow, { onConflict: "id" })
+        ).error;
+      }
+
+      // Last resort: save profile without FPL link so squad submit can continue.
+      if (profErr && isMiniFplEntryUniqueViolation(profErr.message)) {
+        profErr = (
+          await supa.from("mini_profiles").upsert(
+            { ...profileRow, fpl_entry_id: null },
+            { onConflict: "id" },
+          )
+        ).error;
+      }
+
       if (profErr && !/schema cache|does not exist|Could not find/i.test(profErr.message)) {
         return NextResponse.json({ error: profErr.message }, { status: 500 });
       }

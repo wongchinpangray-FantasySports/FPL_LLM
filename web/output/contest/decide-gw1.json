@@ -1,0 +1,183 @@
+{
+  "algorithmVersion": "contest-v1.0.0",
+  "gw": 1,
+  "horizon": 5,
+  "fromGw": 1,
+  "toGw": 5,
+  "bank_after": 0,
+  "free_transfers_after": 0,
+  "hit_cost": 0,
+  "transfers": [],
+  "startingXi": [
+    {
+      "fpl_id": 529,
+      "web_name": "Roefs",
+      "position": "GKP",
+      "team": "Sunderland",
+      "team_id": 20,
+      "price": 5,
+      "xp": 3.39
+    },
+    {
+      "fpl_id": 356,
+      "web_name": "Virgil",
+      "position": "DEF",
+      "team": "Liverpool",
+      "team_id": 14,
+      "price": 6.5,
+      "xp": 4.75
+    },
+    {
+      "fpl_id": 445,
+      "web_name": "Thiaw",
+      "position": "DEF",
+      "team": "Newcastle",
+      "team_id": 17,
+      "price": 5,
+      "xp": 4.61
+    },
+    {
+      "fpl_id": 231,
+      "web_name": "Keane",
+      "position": "DEF",
+      "team": "Everton",
+      "team_id": 9,
+      "price": 5,
+      "xp": 4.46
+    },
+    {
+      "fpl_id": 12,
+      "web_name": "Saka",
+      "position": "MID",
+      "team": "Arsenal",
+      "team_id": 1,
+      "price": 9.5,
+      "xp": 7.21
+    },
+    {
+      "fpl_id": 427,
+      "web_name": "Mbeumo",
+      "position": "MID",
+      "team": "Man Utd",
+      "team_id": 16,
+      "price": 8,
+      "xp": 5.87
+    },
+    {
+      "fpl_id": 68,
+      "web_name": "Tavernier",
+      "position": "MID",
+      "team": "Bournemouth",
+      "team_id": 3,
+      "price": 6,
+      "xp": 5
+    },
+    {
+      "fpl_id": 542,
+      "web_name": "E.Le Fée",
+      "position": "MID",
+      "team": "Sunderland",
+      "team_id": 20,
+      "price": 6,
+      "xp": 4.93
+    },
+    {
+      "fpl_id": 411,
+      "web_name": "Haaland",
+      "position": "FWD",
+      "team": "Man City",
+      "team_id": 15,
+      "price": 15.5,
+      "xp": 9.73
+    },
+    {
+      "fpl_id": 165,
+      "web_name": "João Pedro",
+      "position": "FWD",
+      "team": "Chelsea",
+      "team_id": 6,
+      "price": 7.5,
+      "xp": 6.3
+    },
+    {
+      "fpl_id": 346,
+      "web_name": "Calvert-Lewin",
+      "position": "FWD",
+      "team": "Leeds",
+      "team_id": 13,
+      "price": 6,
+      "xp": 5.44
+    }
+  ],
+  "benchOrder": [
+    {
+      "fpl_id": 41,
+      "web_name": "Buendía",
+      "position": "MID",
+      "team": "Aston Villa",
+      "team_id": 2,
+      "price": 6,
+      "xp": 4.84
+    },
+    {
+      "fpl_id": 202,
+      "web_name": "Richards",
+      "position": "DEF",
+      "team": "Crystal Palace",
+      "team_id": 8,
+      "price": 5,
+      "xp": 4.27
+    },
+    {
+      "fpl_id": 329,
+      "web_name": "Rodon",
+      "position": "DEF",
+      "team": "Leeds",
+      "team_id": 13,
+      "price": 4.5,
+      "xp": 3.55
+    },
+    {
+      "fpl_id": 57,
+      "web_name": "Petrović",
+      "position": "GKP",
+      "team": "Bournemouth",
+      "team_id": 3,
+      "price": 4.5,
+      "xp": 3.18
+    }
+  ],
+  "captain": {
+    "fpl_id": 411,
+    "web_name": "Haaland",
+    "position": "FWD",
+    "team": "Man City",
+    "team_id": 15,
+    "price": 15.5,
+    "xp": 9.73
+  },
+  "vice": {
+    "fpl_id": 12,
+    "web_name": "Saka",
+    "position": "MID",
+    "team": "Arsenal",
+    "team_id": 1,
+    "price": 9.5,
+    "xp": 7.21
+  },
+  "chip": null,
+  "chip_notes": {
+    "triple_captain": "GW1: captain xP 9.7 — strong TC window.",
+    "bench_boost": "GW1: bench xP 15.8 — solid BB candidate.",
+    "wildcard": "Wildcard not auto-played in v1 — use when 4+ starters are injured/blanking.",
+    "freehit": "Free Hit not auto-played in v1 — reserve for blank/double gameweeks."
+  },
+  "xpSummary": {
+    "xi_gw": 61.69,
+    "bench_gw": 15.84,
+    "captain_ev": 19.46,
+    "transfer_delta_horizon": 0
+  },
+  "rationale": "No transfer — hold squad; set Best XI + captain. Captain Haaland (xP 9.7; EV 19.5). No chip this GW.",
+  "scoring": "xP = (Poisson team xG + rolling per-90 xG/xA with optional Understat blend; fixture attack context capped) + appearance + CS + GC + saves + DC + bonus×ICT + card EV; E[minutes] uses season depth/starts (not PPG-as-nailed) plus teammate minutes-share demotion for backups; small rolling boost for nailed starters; all line items × position output scale (MID/FWD > DEF/GKP). Position calibration before scale. Rolling 6-GW 70/30 FPL blend. H2H PPG on xG/xA. Set-piece / availability."
+}

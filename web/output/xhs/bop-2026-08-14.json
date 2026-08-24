@@ -1,0 +1,144 @@
+{
+  "kind": "bop",
+  "date": "2026-08-14",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "7.0",
+  "priceMark": "7.0",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 6 人 · 未来 5 轮 · Enzo 领跑 xP 30.5",
+  "disclaimer": "出场门槛：上季 ≥1200 分钟（威胁榜硬过滤 · xP 优先）",
+  "ranks": [
+    {
+      "name": "Enzo",
+      "team": "Chelsea",
+      "value": "30.5",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t8.png",
+      "label": "xP"
+    },
+    {
+      "name": "Szoboszlai",
+      "team": "Liverpool",
+      "value": "9.4",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t14.png",
+      "label": "DEFCON"
+    },
+    {
+      "name": "Gakpo",
+      "team": "Liverpool",
+      "value": "831",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t14.png",
+      "label": "THREAT"
+    }
+  ],
+  "categories": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "name": "Enzo",
+          "team": "Chelsea",
+          "value": "30.5",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t8.png"
+        },
+        {
+          "name": "Bruno G.",
+          "team": "Arsenal",
+          "value": "30.4",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t3.png"
+        },
+        {
+          "name": "Szoboszlai",
+          "team": "Liverpool",
+          "value": "26.8",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "name": "Szoboszlai",
+          "team": "Liverpool",
+          "value": "9.4",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        },
+        {
+          "name": "Bruno G.",
+          "team": "Arsenal",
+          "value": "9.2",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t3.png"
+        },
+        {
+          "name": "Enzo",
+          "team": "Chelsea",
+          "value": "7.0",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t8.png"
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "name": "Gakpo",
+          "team": "Liverpool",
+          "value": "831",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_14-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+        },
+        {
+          "name": "Enzo",
+          "team": "Chelsea",
+          "value": "747",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t8.png"
+        },
+        {
+          "name": "Foden",
+          "team": "Man City",
+          "value": "520",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        }
+      ]
+    }
+  ],
+  "chips": [
+    "£6.5m 中场",
+    "£7.5m 中场",
+    "£6.0m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-7-0",
+  "urlShort": "faleague-ai.com/bop"
+}

@@ -62,3 +62,12 @@ export async function getInsightsAccessSummary(userId?: string | null): Promise<
     enforcePremium && plan !== "premium" ? premiumInsightIds : [];
   return { enforcePremium, plan, premiumInsightIds, lockedInsightIds };
 }
+
+/** Same Insights Pro plan; used by standalone premium tools (e.g. Mini League Killer). */
+export async function canAccessPremiumFeature(
+  userId?: string | null,
+): Promise<boolean> {
+  if (!isInsightsPremiumEnforced()) return true;
+  const plan = await getUserInsightsPlan(userId ?? null);
+  return plan === "premium";
+}

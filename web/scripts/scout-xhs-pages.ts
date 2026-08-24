@@ -12,10 +12,13 @@
  * Default: recent local ZH (last 5 days), skip paywall leftovers, cap 8,
  * prioritize FPL Notes + GW1. Output: output/scout-xhs/<slug>/01.png …
  */
-import { mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import QRCode from "qrcode";
 import { chromium } from "playwright";
+import { ffsPremiumUrl } from "../lib/scout/links";
+import { loadScriptEnv } from "./load-env";
 import {
   DEFAULT_DAYS,
   DEFAULT_LATEST,
@@ -25,6 +28,9 @@ import {
   articleBlocks,
   buildCaption,
   dropHeroFromBlocks,
+  ffsLogoPath,
+  ffsPremiumQrPath,
+  ffsPremiumQrUrlPath,
   gwTag,
   loadLocalScoutZh,
   packBlocksByHeight,
@@ -39,7 +45,33 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const templatePath = join(__dirname, "wechat", "xhs-scout-article.html");
 
-const BODY_MAX_HEIGHT = 820;
+/** Leave room for the FFS logo + Premium QR footer (~100px QR). */
+const BODY_MAX_HEIGHT = 740;
+
+let logoSrc = "";
+let qrSrc = "";
+let premiumUrl = "";
+
+function withAssets(data: Record<string, unknown>): Record<string, unknown> {
+  return { ...data, logoSrc, qrSrc };
+}
+
+async function ensurePremiumQr(cwd: string, url: string): Promise<string> {
+  const qrPath = ffsPremiumQrPath(cwd);
+  const urlPath = ffsPremiumQrUrlPath(cwd);
+  const existingUrl = existsSync(urlPath) ? readFileSync(urlPath, "utf8").trim() : "";
+  if (existsSync(qrPath) && existingUrl === url) return qrPath;
+  mkdirSync(dirname(qrPath), { recursive: true });
+  await QRCode.toFile(qrPath, url, {
+    type: "png",
+    width: 360,
+    margin: 1,
+    errorCorrectionLevel: "M",
+    color: { dark: "#0b0a0f", light: "#ffffff" },
+  });
+  writeFileSync(urlPath, `${url}\n`, "utf8");
+  return qrPath;
+}
 
 function flagStr(name: string): string | null {
   const raw = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -79,7 +111,7 @@ async function renderOnePage(
 ): Promise<void> {
   await page.evaluate((payload) => {
     (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-  }, data);
+  }, withAssets(data));
   try {
     await page.evaluate(() =>
       (window as unknown as { waitPageImages: () => Promise<void> }).waitPageImages(),
@@ -146,7 +178,7 @@ async function reflowPackedPages(
     const guess = Math.min(MAX_PAGES, out.length + queue.length + 2);
     await page.evaluate((payload) => {
       (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-    }, bodyPagePayload(article, blocks, out.length + 2, guess, series, gw));
+    }, withAssets(bodyPagePayload(article, blocks, out.length + 2, guess, series, gw)));
     try {
       await page.evaluate(() =>
         (window as unknown as { waitPageImages: () => Promise<void> }).waitPageImages(),
@@ -159,7 +191,7 @@ async function reflowPackedPages(
       carry.unshift(blocks.pop()!);
       await page.evaluate((payload) => {
         (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
-      }, bodyPagePayload(article, blocks, out.length + 2, guess, series, gw));
+      }, withAssets(bodyPagePayload(article, blocks, out.length + 2, guess, series, gw)));
       overflow = await pageOverflow(page);
     }
     out.push(blocks);
@@ -245,6 +277,7 @@ async function generateArticle(
         series: article.series,
         pages: actualTotal,
         hero: Boolean(heroSrc),
+        premium_url: premiumUrl,
         output: dir,
       },
       null,
@@ -264,14 +297,14 @@ async function generateArticle(
 }
 
 async function loadRequestedSlugs(): Promise<string[]> {
-  const { loadScriptEnv } = await import("./load-env");
-  loadScriptEnv();
   const { listScoutTranslateQueue } = await import("../lib/scout/store");
   const rows = await listScoutTranslateQueue();
   return rows.map((r) => r.slug);
 }
 
 async function main() {
+  loadScriptEnv();
+  premiumUrl = ffsPremiumUrl();
   const dry = process.argv.includes("--dry");
   const force = process.argv.includes("--force");
   const requested = process.argv.includes("--requested");
@@ -311,6 +344,7 @@ async function main() {
 
   const summary = {
     mode: dry ? "dry" : "render",
+    premium_url: premiumUrl,
     selected: selected.map((a) => a.slug),
     skipped: skipped.filter((s) => s.reason === "paywall" || s.reason === "not_found" || slugFilter.includes(s.slug)),
     skipped_paywall: skipped.filter((s) => s.reason === "paywall").map((s) => s.slug),
@@ -319,6 +353,22 @@ async function main() {
   console.log(JSON.stringify(summary, null, 2));
 
   if (dry || selected.length === 0) return;
+
+  const cwd = process.cwd();
+  const logoPath = ffsLogoPath(cwd);
+  if (!existsSync(logoPath)) {
+    throw new Error(`Missing FFS logo at ${logoPath}`);
+  }
+  const qrPath = await ensurePremiumQr(cwd, premiumUrl);
+  logoSrc = pathToFileURL(logoPath).href;
+  qrSrc = pathToFileURL(qrPath).href;
+  console.log(
+    JSON.stringify({
+      premium_url: premiumUrl,
+      logo: logoPath,
+      qr: qrPath,
+    }),
+  );
 
   const outRoot = scoutXhsOutRoot();
   mkdirSync(outRoot, { recursive: true });
@@ -354,6 +404,7 @@ async function main() {
     JSON.stringify(
       {
         generated_at: new Date().toISOString(),
+        premium_url: premiumUrl,
         results,
         skipped_paywall: skipped.filter((s) => s.reason === "paywall").map((s) => s.slug),
       },

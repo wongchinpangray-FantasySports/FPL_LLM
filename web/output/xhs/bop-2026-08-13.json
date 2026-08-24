@@ -1,0 +1,144 @@
+{
+  "kind": "bop",
+  "date": "2026-08-13",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "6.5",
+  "priceMark": "6.5",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 18 人 · 未来 5 轮 · Anderson 领跑 xP 29.3",
+  "disclaimer": "出场门槛：上季 ≥1200 分钟（威胁榜硬过滤 · xP 优先）",
+  "ranks": [
+    {
+      "name": "Anderson",
+      "team": "Man City",
+      "value": "29.3",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t43.png",
+      "label": "xP"
+    },
+    {
+      "name": "Anderson",
+      "team": "Man City",
+      "value": "13.9",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t43.png",
+      "label": "DEFCON"
+    },
+    {
+      "name": "O.Dango",
+      "team": "Brentford",
+      "value": "702",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t94.png",
+      "label": "THREAT"
+    }
+  ],
+  "categories": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "name": "Anderson",
+          "team": "Man City",
+          "value": "29.3",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        },
+        {
+          "name": "Sarr",
+          "team": "Crystal Palace",
+          "value": "28.4",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t31.png"
+        },
+        {
+          "name": "O.Dango",
+          "team": "Brentford",
+          "value": "27.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t94.png"
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "name": "Anderson",
+          "team": "Man City",
+          "value": "13.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t43.png"
+        },
+        {
+          "name": "Dewsbury-Hall",
+          "team": "Everton",
+          "value": "7.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_11-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t11.png"
+        },
+        {
+          "name": "Kudus",
+          "team": "Spurs",
+          "value": "7.8",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_6-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t6.png"
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "name": "O.Dango",
+          "team": "Brentford",
+          "value": "702",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t94.png"
+        },
+        {
+          "name": "Sarr",
+          "team": "Crystal Palace",
+          "value": "601",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t31.png"
+        },
+        {
+          "name": "Wilson",
+          "team": "Leeds",
+          "value": "601",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t2.png"
+        }
+      ]
+    }
+  ],
+  "chips": [
+    "£6.0m 中场",
+    "£7.0m 中场",
+    "£5.5m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-6-5",
+  "urlShort": "faleague-ai.com/bop"
+}

@@ -753,6 +753,14 @@ export function HomeSeasonSections() {
     },
   ];
 
+  const decideTools = [
+    {
+      href: "/fpl/mini-league",
+      label: t("seasonToolMiniLeague"),
+      body: t("seasonToolMiniLeagueBody"),
+    },
+  ];
+
   const learnTools = [
     {
       href: "/fpl/guide",
@@ -834,7 +842,7 @@ export function HomeSeasonSections() {
         title={t("seasonToolsTitle")}
         description={t("seasonToolsDescription")}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ToolGroup
             title={t("seasonToolsManage")}
             items={manageTop}
@@ -874,6 +882,7 @@ export function HomeSeasonSections() {
               </>
             }
           />
+          <ToolGroup title={t("seasonToolsDecide")} items={decideTools} />
           <ToolGroup title={t("seasonToolsLearn")} items={learnTools} />
         </div>
       </SectionShell>

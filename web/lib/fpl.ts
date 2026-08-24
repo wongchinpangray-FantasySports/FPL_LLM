@@ -124,6 +124,32 @@ export async function fplGetSession<T = unknown>(
   }
 }
 
+export interface FplClassicLeague {
+  id: number;
+  name: string;
+  short_name?: string;
+  created?: string;
+  closed?: boolean;
+  rank?: number | null;
+  max_entries?: number | null;
+  /** `x` = private mini league, `s` = system (Overall / country / club). */
+  league_type?: string;
+  scoring?: string;
+  admin_entry?: number | null;
+  start_event?: number;
+  entry_rank?: number | null;
+  entry_last_rank?: number | null;
+  entry_can_leave?: boolean;
+  entry_can_admin?: boolean;
+  entry_can_invite?: boolean;
+  has_cup?: boolean;
+}
+
+export interface FplEntryLeagues {
+  classic?: FplClassicLeague[];
+  h2h?: FplClassicLeague[];
+}
+
 export interface FplEntry {
   id: number;
   name: string;
@@ -136,6 +162,7 @@ export interface FplEntry {
   last_deadline_bank: number | null;
   last_deadline_value: number | null;
   last_deadline_total_transfers: number | null;
+  leagues?: FplEntryLeagues;
 }
 
 /** Safe display for FPL integer stats that may be null pre-season. */

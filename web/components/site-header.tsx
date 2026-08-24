@@ -189,6 +189,11 @@ export function SiteHeader() {
 
               <MenuSection title={t("menuSectionTools")}>
                 <MenuLink
+                  href="/fpl/mini-league"
+                  label={t("miniLeague")}
+                  active={pathname === "/fpl/mini-league" || pathname.startsWith("/fpl/mini-league/")}
+                />
+                <MenuLink
                   href="/fpl/insights/recommended-squad"
                   label={t("recommendedSquad")}
                   active={pathname.startsWith("/fpl/insights/recommended-squad")}

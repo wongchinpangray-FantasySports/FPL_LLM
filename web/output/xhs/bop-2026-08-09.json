@@ -1,0 +1,48 @@
+{
+  "kind": "bop",
+  "date": "2026-08-09",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "4.5",
+  "priceMark": "4.5",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 21 人 · 未来 5 轮 · Hughes 领跑 xP 16.5",
+  "ranks": [
+    {
+      "name": "Hughes",
+      "team": "Crystal Palace",
+      "value": "16.5",
+      "label": "xP",
+      "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p108413.png",
+      "photo_kind": "photo",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t31.png"
+    },
+    {
+      "name": "Yates",
+      "team": "Nott'm Forest",
+      "value": "10.3",
+      "label": "DEFCON",
+      "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p204968.png",
+      "photo_kind": "photo",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t17.png"
+    },
+    {
+      "name": "Reed",
+      "team": "Fulham",
+      "value": "11.0",
+      "label": "THREAT",
+      "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p153366.png",
+      "photo_kind": "photo",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t54.png"
+    }
+  ],
+  "chips": [
+    "£5.0m 中场",
+    "£5.5m 中场",
+    "£6.0m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-4-5",
+  "urlShort": "faleague-ai.com/bop"
+}

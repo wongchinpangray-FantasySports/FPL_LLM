@@ -1,0 +1,907 @@
+{
+  "from_gw": 1,
+  "to_gw": 6,
+  "horizon": 6,
+  "by_id": {
+    "60": {
+      "xp_total": 26.22,
+      "expected_minutes_next": 81,
+      "value_per_million": 4.767,
+      "goals": 0,
+      "assists": 3,
+      "threat": 119,
+      "xg_per_90": 0.04,
+      "xa_per_90": 0.05,
+      "dc_per_90": 11.13,
+      "ownership": 1,
+      "price": 5.5,
+      "team": "Bournemouth",
+      "position": "DEF",
+      "web_name": "Hill",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "MCI",
+          "home": false,
+          "fdr": 5,
+          "xp": 4.36
+        },
+        {
+          "gw": 2,
+          "opp": "EVE",
+          "home": true,
+          "fdr": 3,
+          "xp": 4.38
+        },
+        {
+          "gw": 3,
+          "opp": "NEW",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.36
+        },
+        {
+          "gw": 4,
+          "opp": "BRE",
+          "home": true,
+          "fdr": 3,
+          "xp": 4.38
+        },
+        {
+          "gw": 5,
+          "opp": "LIV",
+          "home": true,
+          "fdr": 4,
+          "xp": 4.38
+        },
+        {
+          "gw": 6,
+          "opp": "CHE",
+          "home": false,
+          "fdr": 4,
+          "xp": 4.36
+        }
+      ]
+    },
+    "84": {
+      "xp_total": 25.35,
+      "expected_minutes_next": 81,
+      "value_per_million": 4.609,
+      "goals": 1,
+      "assists": 2,
+      "threat": 325,
+      "xg_per_90": 0.07,
+      "xa_per_90": 0.05,
+      "dc_per_90": 9.66,
+      "ownership": 2,
+      "price": 5.5,
+      "team": "Brentford",
+      "position": "DEF",
+      "web_name": "Collins",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "TOT",
+          "home": true,
+          "fdr": 3,
+          "xp": 4.25
+        },
+        {
+          "gw": 2,
+          "opp": "LEE",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.2
+        },
+        {
+          "gw": 3,
+          "opp": "SUN",
+          "home": true,
+          "fdr": 2,
+          "xp": 4.25
+        },
+        {
+          "gw": 4,
+          "opp": "BOU",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.2
+        },
+        {
+          "gw": 5,
+          "opp": "CHE",
+          "home": true,
+          "fdr": 4,
+          "xp": 4.25
+        },
+        {
+          "gw": 6,
+          "opp": "AVL",
+          "home": false,
+          "fdr": 4,
+          "xp": 4.2
+        }
+      ]
+    },
+    "109": {
+      "xp_total": 20.55,
+      "expected_minutes_next": 81,
+      "value_per_million": 4.567,
+      "goals": 0,
+      "assists": 0,
+      "threat": 0,
+      "xg_per_90": 0,
+      "xa_per_90": 0,
+      "dc_per_90": null,
+      "ownership": 19.4,
+      "price": 4.5,
+      "team": "Brighton",
+      "position": "GKP",
+      "web_name": "Verbruggen",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "AVL",
+          "home": true,
+          "fdr": 3,
+          "xp": 3.68
+        },
+        {
+          "gw": 2,
+          "opp": "CHE",
+          "home": false,
+          "fdr": 4,
+          "xp": 3.17
+        },
+        {
+          "gw": 3,
+          "opp": "LEE",
+          "home": true,
+          "fdr": 2,
+          "xp": 3.68
+        },
+        {
+          "gw": 4,
+          "opp": "COV",
+          "home": false,
+          "fdr": 2,
+          "xp": 3.17
+        },
+        {
+          "gw": 5,
+          "opp": "ARS",
+          "home": true,
+          "fdr": 4,
+          "xp": 3.68
+        },
+        {
+          "gw": 6,
+          "opp": "SUN",
+          "home": false,
+          "fdr": 3,
+          "xp": 3.17
+        }
+      ]
+    },
+    "154": {
+      "xp_total": 39.63,
+      "expected_minutes_next": 88,
+      "value_per_million": 4.172,
+      "goals": 10,
+      "assists": 2,
+      "threat": 547,
+      "xg_per_90": 0.49,
+      "xa_per_90": 0.11,
+      "dc_per_90": 6.22,
+      "ownership": 10.5,
+      "price": 9.5,
+      "team": "Chelsea",
+      "position": "MID",
+      "web_name": "Palmer",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "FUL",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.14
+        },
+        {
+          "gw": 2,
+          "opp": "BHA",
+          "home": true,
+          "fdr": 2,
+          "xp": 7.07
+        },
+        {
+          "gw": 3,
+          "opp": "ARS",
+          "home": false,
+          "fdr": 5,
+          "xp": 6.14
+        },
+        {
+          "gw": 4,
+          "opp": "HUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 7.07
+        },
+        {
+          "gw": 5,
+          "opp": "BRE",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.14
+        },
+        {
+          "gw": 6,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 7.07
+        }
+      ]
+    },
+    "155": {
+      "xp_total": 36.15,
+      "expected_minutes_next": 88,
+      "value_per_million": 5.164,
+      "goals": 10,
+      "assists": 5,
+      "threat": 747,
+      "xg_per_90": 0.33,
+      "xa_per_90": 0.21,
+      "dc_per_90": 7.05,
+      "ownership": 5.2,
+      "price": 7,
+      "team": "Chelsea",
+      "position": "MID",
+      "web_name": "Enzo",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "FUL",
+          "home": false,
+          "fdr": 3,
+          "xp": 5.69
+        },
+        {
+          "gw": 2,
+          "opp": "BHA",
+          "home": true,
+          "fdr": 2,
+          "xp": 6.36
+        },
+        {
+          "gw": 3,
+          "opp": "ARS",
+          "home": false,
+          "fdr": 5,
+          "xp": 5.69
+        },
+        {
+          "gw": 4,
+          "opp": "HUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 6.36
+        },
+        {
+          "gw": 5,
+          "opp": "BRE",
+          "home": false,
+          "fdr": 3,
+          "xp": 5.69
+        },
+        {
+          "gw": 6,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 6.36
+        }
+      ]
+    },
+    "165": {
+      "xp_total": 40.65,
+      "expected_minutes_next": 90,
+      "value_per_million": 5.42,
+      "goals": 15,
+      "assists": 9,
+      "threat": 909,
+      "xg_per_90": 0.5,
+      "xa_per_90": 0.07,
+      "dc_per_90": 4.67,
+      "ownership": 61.1,
+      "price": 7.5,
+      "team": "Chelsea",
+      "position": "FWD",
+      "web_name": "João Pedro",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "FUL",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.3
+        },
+        {
+          "gw": 2,
+          "opp": "BHA",
+          "home": true,
+          "fdr": 2,
+          "xp": 7.25
+        },
+        {
+          "gw": 3,
+          "opp": "ARS",
+          "home": false,
+          "fdr": 5,
+          "xp": 6.3
+        },
+        {
+          "gw": 4,
+          "opp": "HUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 7.25
+        },
+        {
+          "gw": 5,
+          "opp": "BRE",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.3
+        },
+        {
+          "gw": 6,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 7.25
+        }
+      ]
+    },
+    "229": {
+      "xp_total": 29.7,
+      "expected_minutes_next": 90,
+      "value_per_million": 4.95,
+      "goals": 2,
+      "assists": 3,
+      "threat": 422,
+      "xg_per_90": 0.07,
+      "xa_per_90": 0.06,
+      "dc_per_90": 10.16,
+      "ownership": 9.4,
+      "price": 6,
+      "team": "Everton",
+      "position": "DEF",
+      "web_name": "Tarkowski",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "CRY",
+          "home": true,
+          "fdr": 3,
+          "xp": 5.01
+        },
+        {
+          "gw": 2,
+          "opp": "BOU",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.89
+        },
+        {
+          "gw": 3,
+          "opp": "MUN",
+          "home": true,
+          "fdr": 4,
+          "xp": 5.01
+        },
+        {
+          "gw": 4,
+          "opp": "TOT",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.89
+        },
+        {
+          "gw": 5,
+          "opp": "IPS",
+          "home": true,
+          "fdr": 2,
+          "xp": 5.01
+        },
+        {
+          "gw": 6,
+          "opp": "HUL",
+          "home": false,
+          "fdr": 2,
+          "xp": 4.89
+        }
+      ]
+    },
+    "290": {
+      "xp_total": 1.92,
+      "expected_minutes_next": 0,
+      "value_per_million": 0.427,
+      "goals": 0,
+      "assists": 0,
+      "threat": 0,
+      "xg_per_90": null,
+      "xa_per_90": null,
+      "dc_per_90": null,
+      "ownership": 2.5,
+      "price": 4.5,
+      "team": "Hull City",
+      "position": "MID",
+      "web_name": "Slater",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "MUN",
+          "home": true,
+          "fdr": 4,
+          "xp": 0.37
+        },
+        {
+          "gw": 2,
+          "opp": "COV",
+          "home": false,
+          "fdr": 2,
+          "xp": 0.27
+        },
+        {
+          "gw": 3,
+          "opp": "AVL",
+          "home": true,
+          "fdr": 3,
+          "xp": 0.37
+        },
+        {
+          "gw": 4,
+          "opp": "CHE",
+          "home": false,
+          "fdr": 4,
+          "xp": 0.27
+        },
+        {
+          "gw": 5,
+          "opp": "NEW",
+          "home": false,
+          "fdr": 3,
+          "xp": 0.27
+        },
+        {
+          "gw": 6,
+          "opp": "EVE",
+          "home": true,
+          "fdr": 3,
+          "xp": 0.37
+        }
+      ]
+    },
+    "335": {
+      "xp_total": 32.25,
+      "expected_minutes_next": 90,
+      "value_per_million": 5.375,
+      "goals": 5,
+      "assists": 6,
+      "threat": 315,
+      "xg_per_90": 0.11,
+      "xa_per_90": 0.17,
+      "dc_per_90": 10.11,
+      "ownership": 1,
+      "price": 6,
+      "team": "Leeds",
+      "position": "MID",
+      "web_name": "Stach",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "NFO",
+          "home": false,
+          "fdr": 3,
+          "xp": 5.43
+        },
+        {
+          "gw": 2,
+          "opp": "BRE",
+          "home": true,
+          "fdr": 3,
+          "xp": 5.32
+        },
+        {
+          "gw": 3,
+          "opp": "BHA",
+          "home": false,
+          "fdr": 3,
+          "xp": 5.43
+        },
+        {
+          "gw": 4,
+          "opp": "NEW",
+          "home": true,
+          "fdr": 2,
+          "xp": 5.32
+        },
+        {
+          "gw": 5,
+          "opp": "CRY",
+          "home": true,
+          "fdr": 3,
+          "xp": 5.32
+        },
+        {
+          "gw": 6,
+          "opp": "ARS",
+          "home": false,
+          "fdr": 5,
+          "xp": 5.43
+        }
+      ]
+    },
+    "400": {
+      "xp_total": 22.98,
+      "expected_minutes_next": 60.3,
+      "value_per_million": 3.064,
+      "goals": 5,
+      "assists": 8,
+      "threat": 645,
+      "xg_per_90": 0.15,
+      "xa_per_90": 0.3,
+      "dc_per_90": 6.4,
+      "ownership": 5.2,
+      "price": 7.5,
+      "team": "Man City",
+      "position": "MID",
+      "web_name": "Doku",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 4.1
+        },
+        {
+          "gw": 2,
+          "opp": "CRY",
+          "home": false,
+          "fdr": 3,
+          "xp": 3.56
+        },
+        {
+          "gw": 3,
+          "opp": "COV",
+          "home": true,
+          "fdr": 2,
+          "xp": 4.1
+        },
+        {
+          "gw": 4,
+          "opp": "MUN",
+          "home": false,
+          "fdr": 4,
+          "xp": 3.56
+        },
+        {
+          "gw": 5,
+          "opp": "SUN",
+          "home": true,
+          "fdr": 2,
+          "xp": 4.1
+        },
+        {
+          "gw": 6,
+          "opp": "LIV",
+          "home": false,
+          "fdr": 4,
+          "xp": 3.56
+        }
+      ]
+    },
+    "411": {
+      "xp_total": 53.91,
+      "expected_minutes_next": 90,
+      "value_per_million": 3.478,
+      "goals": 27,
+      "assists": 8,
+      "threat": 1520,
+      "xg_per_90": 0.78,
+      "xa_per_90": 0.08,
+      "dc_per_90": 3.17,
+      "ownership": 69.9,
+      "price": 15.5,
+      "team": "Man City",
+      "position": "FWD",
+      "web_name": "Haaland",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 9.73
+        },
+        {
+          "gw": 2,
+          "opp": "CRY",
+          "home": false,
+          "fdr": 3,
+          "xp": 8.24
+        },
+        {
+          "gw": 3,
+          "opp": "COV",
+          "home": true,
+          "fdr": 2,
+          "xp": 9.73
+        },
+        {
+          "gw": 4,
+          "opp": "MUN",
+          "home": false,
+          "fdr": 4,
+          "xp": 8.24
+        },
+        {
+          "gw": 5,
+          "opp": "SUN",
+          "home": true,
+          "fdr": 2,
+          "xp": 9.73
+        },
+        {
+          "gw": 6,
+          "opp": "LIV",
+          "home": false,
+          "fdr": 4,
+          "xp": 8.24
+        }
+      ]
+    },
+    "423": {
+      "xp_total": 18.03,
+      "expected_minutes_next": 81,
+      "value_per_million": 4.007,
+      "goals": 1,
+      "assists": 1,
+      "threat": 97,
+      "xg_per_90": 0.02,
+      "xa_per_90": 0.06,
+      "dc_per_90": 6.26,
+      "ownership": 21.9,
+      "price": 4.5,
+      "team": "Man Utd",
+      "position": "DEF",
+      "web_name": "Shaw",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "HUL",
+          "home": false,
+          "fdr": 2,
+          "xp": 2.83
+        },
+        {
+          "gw": 2,
+          "opp": "IPS",
+          "home": true,
+          "fdr": 2,
+          "xp": 3.18
+        },
+        {
+          "gw": 3,
+          "opp": "EVE",
+          "home": false,
+          "fdr": 3,
+          "xp": 2.83
+        },
+        {
+          "gw": 4,
+          "opp": "MCI",
+          "home": true,
+          "fdr": 4,
+          "xp": 3.18
+        },
+        {
+          "gw": 5,
+          "opp": "FUL",
+          "home": false,
+          "fdr": 3,
+          "xp": 2.83
+        },
+        {
+          "gw": 6,
+          "opp": "TOT",
+          "home": true,
+          "fdr": 3,
+          "xp": 3.18
+        }
+      ]
+    },
+    "465": {
+      "xp_total": 40.47,
+      "expected_minutes_next": 84,
+      "value_per_million": 6.745,
+      "goals": 7,
+      "assists": 1,
+      "threat": 284,
+      "xg_per_90": 0.48,
+      "xa_per_90": 0.07,
+      "dc_per_90": 3.47,
+      "ownership": 1,
+      "price": 6,
+      "team": "Newcastle",
+      "position": "FWD",
+      "web_name": "Osula",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "LIV",
+          "home": true,
+          "fdr": 4,
+          "xp": 7.25
+        },
+        {
+          "gw": 2,
+          "opp": "TOT",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.24
+        },
+        {
+          "gw": 3,
+          "opp": "BOU",
+          "home": true,
+          "fdr": 3,
+          "xp": 7.25
+        },
+        {
+          "gw": 4,
+          "opp": "LEE",
+          "home": false,
+          "fdr": 3,
+          "xp": 6.24
+        },
+        {
+          "gw": 5,
+          "opp": "HUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 7.25
+        },
+        {
+          "gw": 6,
+          "opp": "COV",
+          "home": false,
+          "fdr": 2,
+          "xp": 6.24
+        }
+      ]
+    },
+    "529": {
+      "xp_total": 21.93,
+      "expected_minutes_next": 81,
+      "value_per_million": 4.386,
+      "goals": 0,
+      "assists": 0,
+      "threat": 0,
+      "xg_per_90": 0,
+      "xa_per_90": 0,
+      "dc_per_90": null,
+      "ownership": 4.7,
+      "price": 5,
+      "team": "Sunderland",
+      "position": "GKP",
+      "web_name": "Roefs",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "IPS",
+          "home": false,
+          "fdr": 2,
+          "xp": 3.39
+        },
+        {
+          "gw": 2,
+          "opp": "FUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 3.92
+        },
+        {
+          "gw": 3,
+          "opp": "BRE",
+          "home": false,
+          "fdr": 3,
+          "xp": 3.39
+        },
+        {
+          "gw": 4,
+          "opp": "ARS",
+          "home": true,
+          "fdr": 4,
+          "xp": 3.92
+        },
+        {
+          "gw": 5,
+          "opp": "MCI",
+          "home": false,
+          "fdr": 5,
+          "xp": 3.39
+        },
+        {
+          "gw": 6,
+          "opp": "BHA",
+          "home": true,
+          "fdr": 2,
+          "xp": 3.92
+        }
+      ]
+    },
+    "532": {
+      "xp_total": 28.89,
+      "expected_minutes_next": 81,
+      "value_per_million": 5.778,
+      "goals": 2,
+      "assists": 2,
+      "threat": 370,
+      "xg_per_90": 0.1,
+      "xa_per_90": 0.03,
+      "dc_per_90": 11.08,
+      "ownership": 4.7,
+      "price": 5,
+      "team": "Sunderland",
+      "position": "DEF",
+      "web_name": "Ballard",
+      "gw_run": [
+        {
+          "gw": 1,
+          "opp": "IPS",
+          "home": false,
+          "fdr": 2,
+          "xp": 4.76
+        },
+        {
+          "gw": 2,
+          "opp": "FUL",
+          "home": true,
+          "fdr": 2,
+          "xp": 4.87
+        },
+        {
+          "gw": 3,
+          "opp": "BRE",
+          "home": false,
+          "fdr": 3,
+          "xp": 4.76
+        },
+        {
+          "gw": 4,
+          "opp": "ARS",
+          "home": true,
+          "fdr": 4,
+          "xp": 4.87
+        },
+        {
+          "gw": 5,
+          "opp": "MCI",
+          "home": false,
+          "fdr": 5,
+          "xp": 4.76
+        },
+        {
+          "gw": 6,
+          "opp": "BHA",
+          "home": true,
+          "fdr": 2,
+          "xp": 4.87
+        }
+      ]
+    }
+  }
+}

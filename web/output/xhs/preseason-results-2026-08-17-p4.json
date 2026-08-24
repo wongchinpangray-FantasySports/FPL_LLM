@@ -1,0 +1,180 @@
+{
+  "date": "2026-08-17",
+  "page": 4,
+  "total_pages": 10,
+  "subtitle": "各队射手 / 助攻优先 · 赛果作参考 · FPL 选人先看状态",
+  "clubs": [
+    {
+      "pl_code": "COV",
+      "pl_name": "Coventry",
+      "short": "Coventry",
+      "sort_name": "Coventry City",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t9.png",
+      "played": 4,
+      "won": 2,
+      "drawn": 1,
+      "lost": 1,
+      "gf": 7,
+      "ga": 4,
+      "record": "2胜-1平-1负",
+      "form": [
+        "L",
+        "D",
+        "W",
+        "W"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-11",
+          "date_label": "7月11日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Wimbledon",
+          "score": "3–2",
+          "note": "Behind closed doors"
+        },
+        {
+          "date": "2026-07-18",
+          "date_label": "7月18日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Northampton Town",
+          "score": "0–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-08",
+          "date_label": "8月8日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Espanyol",
+          "score": "3–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-14",
+          "date_label": "8月14日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Monaco",
+          "score": "2–0",
+          "note": null
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Ellis Simms",
+          "short": "Simms",
+          "count": 2
+        },
+        {
+          "name": "Josh Eccles",
+          "short": "Eccles",
+          "count": 1
+        },
+        {
+          "name": "Loum Tchaouna",
+          "short": "Tchaouna",
+          "count": 1
+        },
+        {
+          "name": "Milan Van Ewijk",
+          "short": "Ewijk",
+          "count": 1
+        },
+        {
+          "name": "Norman Bassette",
+          "short": "Bassette",
+          "count": 1
+        },
+        {
+          "name": "Tatsuhiro Sakamoto",
+          "short": "Sakamoto",
+          "count": 1
+        }
+      ],
+      "top_assists": [],
+      "scorers_line": "Simms×2 · Eccles · Tchaouna · Ewijk",
+      "assists_line": "—",
+      "color": {
+        "primary": "#84BCE1",
+        "secondary": "#FFFFFF",
+        "accent": "#000000",
+        "ink": "#84BCE1",
+        "tint": "#84BCE1"
+      }
+    },
+    {
+      "pl_code": "CRY",
+      "pl_name": "Crystal Palace",
+      "short": "Palace",
+      "sort_name": "Crystal Palace",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t31.png",
+      "played": 3,
+      "won": 1,
+      "drawn": 1,
+      "lost": 1,
+      "gf": 5,
+      "ga": 4,
+      "record": "1胜-1平-1负",
+      "form": [
+        "W",
+        "L",
+        "D"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-18",
+          "date_label": "7月18日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Swindon",
+          "score": "5–1",
+          "note": null
+        },
+        {
+          "date": "2026-07-28",
+          "date_label": "7月28日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Lens",
+          "score": "3–0",
+          "note": null
+        },
+        {
+          "date": "2026-07-28",
+          "date_label": "7月28日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Famalicao",
+          "score": "0–0",
+          "note": null
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Matheus França",
+          "short": "França",
+          "count": 3
+        },
+        {
+          "name": "Eddie Nketiah",
+          "short": "Nketiah",
+          "count": 2
+        }
+      ],
+      "top_assists": [],
+      "scorers_line": "França×3 · Nketiah×2",
+      "assists_line": "—",
+      "color": {
+        "primary": "#0A4AF5",
+        "secondary": "#C4122E",
+        "accent": "#FFFFFF",
+        "ink": "#0A4AF5",
+        "tint": "#0A4AF5"
+      }
+    }
+  ],
+  "cta": "打开季前赛状态页 →",
+  "url": "faleague-ai.com/zh/fpl/preseason"
+}

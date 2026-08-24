@@ -1,0 +1,251 @@
+{
+  "date": "2026-08-17",
+  "page": 6,
+  "total_pages": 10,
+  "subtitle": "各队射手 / 助攻优先 · 赛果作参考 · FPL 选人先看状态",
+  "clubs": [
+    {
+      "pl_code": "HUL",
+      "pl_name": "Hull",
+      "short": "Hull",
+      "sort_name": "Hull City",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t88.png",
+      "played": 5,
+      "won": 2,
+      "drawn": 2,
+      "lost": 1,
+      "gf": 6,
+      "ga": 4,
+      "record": "2胜-2平-1负",
+      "form": [
+        "W",
+        "W",
+        "D",
+        "L",
+        "D"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-25",
+          "date_label": "7月25日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Konyaspor",
+          "score": "3–0",
+          "note": null
+        },
+        {
+          "date": "2026-07-28",
+          "date_label": "7月28日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Caykur Rizespor",
+          "score": "2–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-01",
+          "date_label": "8月1日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Kasimpasa",
+          "score": "1–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-08",
+          "date_label": "8月8日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Eintracht Frankfurt",
+          "score": "2–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-15",
+          "date_label": "8月15日",
+          "home": true,
+          "ha": "主",
+          "opponent": "OGC Nice",
+          "score": "0–0",
+          "note": null
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Oli McBurnie",
+          "short": "McBurnie",
+          "count": 2
+        },
+        {
+          "name": "Abu Kamara",
+          "short": "Kamara",
+          "count": 1
+        },
+        {
+          "name": "Enis Destan",
+          "short": "Destan",
+          "count": 1
+        },
+        {
+          "name": "Kieran Dowell",
+          "short": "Dowell",
+          "count": 1
+        },
+        {
+          "name": "Own goal",
+          "short": "Own goal",
+          "count": 1
+        }
+      ],
+      "top_assists": [],
+      "scorers_line": "McBurnie×2 · Kamara · Destan · Dowell",
+      "assists_line": "—",
+      "color": {
+        "primary": "#E0A922",
+        "secondary": "#000000",
+        "accent": "#000000",
+        "ink": "#E0A922",
+        "tint": "#E0A922"
+      }
+    },
+    {
+      "pl_code": "IPS",
+      "pl_name": "Ipswich",
+      "short": "Ipswich",
+      "sort_name": "Ipswich Town",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t40.png",
+      "played": 6,
+      "won": 4,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 11,
+      "ga": 7,
+      "record": "4胜-0平-2负",
+      "form": [
+        "L",
+        "L",
+        "W",
+        "W",
+        "W",
+        "W"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-29",
+          "date_label": "7月29日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Osasuna",
+          "score": "1–2",
+          "note": null
+        },
+        {
+          "date": "2026-08-01",
+          "date_label": "8月1日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Oxford Utd",
+          "score": "2–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-01",
+          "date_label": "8月1日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Wycombe",
+          "score": "1–2",
+          "note": null
+        },
+        {
+          "date": "2026-08-04",
+          "date_label": "8月4日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Le Havre",
+          "score": "1–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-08",
+          "date_label": "8月8日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Rayo Vallecano",
+          "score": "3–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-15",
+          "date_label": "8月15日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Union Berlin",
+          "score": "2–4",
+          "note": null
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Cameron Humphreys",
+          "short": "Humphreys",
+          "count": 2
+        },
+        {
+          "name": "Chuba Akpom",
+          "short": "Akpom",
+          "count": 2
+        },
+        {
+          "name": "Emersonn",
+          "short": "Emersonn",
+          "count": 2
+        },
+        {
+          "name": "Leif Davis",
+          "short": "Davis",
+          "count": 2
+        },
+        {
+          "name": "Dara O'Shea",
+          "short": "O'Shea",
+          "count": 1
+        },
+        {
+          "name": "Jack Clarke",
+          "short": "Clarke",
+          "count": 1
+        }
+      ],
+      "top_assists": [
+        {
+          "name": "Abdul Fatawu",
+          "short": "Fatawu",
+          "count": 1
+        },
+        {
+          "name": "Anis Mehmeti",
+          "short": "Mehmeti",
+          "count": 1
+        },
+        {
+          "name": "Leif Davis",
+          "short": "Davis",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Humphreys×2 · Akpom×2 · Emersonn×2 · Davis×2",
+      "assists_line": "Fatawu · Mehmeti · Davis",
+      "color": {
+        "primary": "#0000FF",
+        "secondary": "#FFFFFF",
+        "accent": "#FFFFFF",
+        "ink": "#FFFFFF",
+        "tint": "#0000FF"
+      }
+    }
+  ],
+  "cta": "打开季前赛状态页 →",
+  "url": "faleague-ai.com/zh/fpl/preseason"
+}

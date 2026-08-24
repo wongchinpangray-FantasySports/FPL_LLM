@@ -1,0 +1,292 @@
+{
+  "date": "2026-08-17",
+  "page": 10,
+  "total_pages": 10,
+  "subtitle": "各队射手 / 助攻优先 · 赛果作参考 · FPL 选人先看状态",
+  "clubs": [
+    {
+      "pl_code": "SUN",
+      "pl_name": "Sunderland",
+      "short": "Sunderland",
+      "sort_name": "Sunderland",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t56.png",
+      "played": 6,
+      "won": 4,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 12,
+      "ga": 7,
+      "record": "4胜-0平-2负",
+      "form": [
+        "W",
+        "L",
+        "L",
+        "W",
+        "W",
+        "W"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-18",
+          "date_label": "7月18日",
+          "home": false,
+          "ha": "客",
+          "opponent": "York City",
+          "score": "1–5",
+          "note": null
+        },
+        {
+          "date": "2026-07-25",
+          "date_label": "7月25日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Liverpool",
+          "score": "2–4",
+          "note": null
+        },
+        {
+          "date": "2026-07-30",
+          "date_label": "7月30日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Leeds",
+          "score": "0–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-02",
+          "date_label": "8月2日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Wrexham",
+          "score": "1–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-08",
+          "date_label": "8月8日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Lens",
+          "score": "0–2",
+          "note": "Behind closed doors"
+        },
+        {
+          "date": "2026-08-15",
+          "date_label": "8月15日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Rennes",
+          "score": "2–1",
+          "note": null
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Enzo Le Fée",
+          "short": "Le Fée",
+          "count": 3
+        },
+        {
+          "name": "Trai Hume",
+          "short": "Hume",
+          "count": 2
+        },
+        {
+          "name": "Brian Brobbey",
+          "short": "Brobbey",
+          "count": 1
+        },
+        {
+          "name": "Chris Rigg",
+          "short": "Rigg",
+          "count": 1
+        },
+        {
+          "name": "Nordi Mukiele",
+          "short": "Mukiele",
+          "count": 1
+        },
+        {
+          "name": "Timur Tuterov",
+          "short": "Tuterov",
+          "count": 1
+        }
+      ],
+      "top_assists": [
+        {
+          "name": "Brian Brobbey",
+          "short": "Brobbey",
+          "count": 1
+        },
+        {
+          "name": "Charlie Dinsdale",
+          "short": "Dinsdale",
+          "count": 1
+        },
+        {
+          "name": "Chris Rigg",
+          "short": "Rigg",
+          "count": 1
+        },
+        {
+          "name": "Timur Tuterov",
+          "short": "Tuterov",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Le Fée×3 · Hume×2 · Brobbey · Rigg",
+      "assists_line": "Brobbey · Dinsdale · Rigg",
+      "color": {
+        "primary": "#E52229",
+        "secondary": "#FFFFFF",
+        "accent": "#FFFFFF",
+        "ink": "#E52229",
+        "tint": "#E52229"
+      }
+    },
+    {
+      "pl_code": "TOT",
+      "pl_name": "Spurs",
+      "short": "Spurs",
+      "sort_name": "Tottenham Hotspur",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t6.png",
+      "played": 7,
+      "won": 4,
+      "drawn": 3,
+      "lost": 0,
+      "gf": 12,
+      "ga": 5,
+      "record": "4胜-3平-0负",
+      "form": [
+        "W",
+        "W",
+        "D",
+        "W",
+        "D",
+        "W",
+        "D"
+      ],
+      "matches": [
+        {
+          "date": "2026-07-22",
+          "date_label": "7月22日",
+          "home": true,
+          "ha": "主",
+          "opponent": "MK Dons",
+          "score": "1–0",
+          "note": "Behind closed doors"
+        },
+        {
+          "date": "2026-07-26",
+          "date_label": "7月26日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Auckland FC",
+          "score": "0–2",
+          "note": null
+        },
+        {
+          "date": "2026-07-29",
+          "date_label": "7月29日",
+          "home": false,
+          "ha": "客",
+          "opponent": "Sydney FC",
+          "score": "1–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-01",
+          "date_label": "8月1日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Chelsea",
+          "score": "2–1",
+          "note": null
+        },
+        {
+          "date": "2026-08-08",
+          "date_label": "8月8日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Getafe",
+          "score": "1–1",
+          "note": "Behind closed doors"
+        },
+        {
+          "date": "2026-08-15",
+          "date_label": "8月15日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Hoffenheim",
+          "score": "3–0",
+          "note": null
+        },
+        {
+          "date": "2026-08-16",
+          "date_label": "8月16日",
+          "home": true,
+          "ha": "主",
+          "opponent": "Hoffenheim",
+          "score": "2–2",
+          "note": "Behind closed doors"
+        }
+      ],
+      "top_scorers": [
+        {
+          "name": "Richarlison",
+          "short": "Richarlison",
+          "count": 3
+        },
+        {
+          "name": "Mikey Moore",
+          "short": "Moore",
+          "count": 2
+        },
+        {
+          "name": "Ben Davies",
+          "short": "Davies",
+          "count": 1
+        },
+        {
+          "name": "Conor Gallagher",
+          "short": "Gallagher",
+          "count": 1
+        },
+        {
+          "name": "Mateus Fernandes",
+          "short": "Fernandes",
+          "count": 1
+        },
+        {
+          "name": "Mathys Tel",
+          "short": "Tel",
+          "count": 1
+        }
+      ],
+      "top_assists": [
+        {
+          "name": "Mathys Tel",
+          "short": "Tel",
+          "count": 2
+        },
+        {
+          "name": "Andrew Robertson",
+          "short": "Robertson",
+          "count": 1
+        }
+      ],
+      "scorers_line": "Richarlison×3 · Moore×2 · Davies · Gallagher",
+      "assists_line": "Tel×2 · Robertson",
+      "color": {
+        "primary": "#FFFFFF",
+        "secondary": "#132257",
+        "accent": "#132257",
+        "ink": "#FFFFFF",
+        "tint": "#3B4F8A"
+      }
+    }
+  ],
+  "cta": "打开季前赛状态页 →",
+  "url": "faleague-ai.com/zh/fpl/preseason"
+}

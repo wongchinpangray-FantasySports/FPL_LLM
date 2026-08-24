@@ -1,0 +1,221 @@
+{
+  "kind": "daily",
+  "date": "2026-08-11",
+  "eyebrow": "FPL DAILY BRIEF",
+  "ribbon": "DAILY",
+  "title": "阿劳霍加盟，明日友谊赛抢先看",
+  "titleHtml": "<span class=\"accent\">阿劳霍</span>加盟，明日友谊赛抢先看",
+  "subtitle": "查洛巴离队 Here we go · 即将 8 场友谊赛",
+  "faces": [
+    {
+      "name": "NEWS",
+      "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p606702.png",
+      "photo_kind": "photo",
+      "tag": "伤病"
+    },
+    {
+      "name": "Chalobah",
+      "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p180736.png",
+      "photo_kind": "photo",
+      "tag": "转会"
+    },
+    {
+      "name": "FIXTURES",
+      "photo": "https://resources.premierleague.com/premierleague/badges/t3.png",
+      "photo_kind": "shirt",
+      "tag": "赛程"
+    }
+  ],
+  "stories": [
+    {
+      "label": "伤病",
+      "lead": "FPL 季前赛：Gudmundsson + Mukiele…",
+      "detail": "FPL 季前赛：Vuskovic 亮相，Minteh 伤情 + Ndiaye …",
+      "face": {
+        "name": "NEWS",
+        "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p606702.png",
+        "photo_kind": "photo",
+        "tag": "伤病"
+      },
+      "color": "#C8102E",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t14.png",
+      "muted": false
+    },
+    {
+      "label": "转会",
+      "hot": true,
+      "lead": "查洛巴离队 Here we go",
+      "detail": "Araujo→利物浦（租借） · Barcola→利物浦绿灯 · 查尔斯→富勒姆（£30m）",
+      "bullets": [
+        "查洛巴离队 Here we go",
+        "Araujo→利物浦（租借）",
+        "Barcola→利物浦绿灯",
+        "查尔斯→富勒姆（£30m）",
+        "曼联盯莱斯特少年 Page"
+      ],
+      "face": {
+        "name": "Chalobah",
+        "photo": "https://resources.premierleague.com/premierleague/photos/players/250x250/p180736.png",
+        "photo_kind": "photo",
+        "tag": "转会"
+      },
+      "color": "#C8102E",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t14.png"
+    },
+    {
+      "label": "赛程",
+      "lead": "8月12日开打 · 8 场",
+      "detail": "8月12日 6场 · 8月14日 1场 · 8月15日 1场",
+      "scores": [
+        {
+          "date": "08.12",
+          "teams": "Everton vs Newcastle",
+          "home": "Everton",
+          "away": "Newcastle",
+          "meta": "",
+          "digits": "08.12"
+        },
+        {
+          "date": "08.12",
+          "teams": "Arsenal vs Como",
+          "home": "Arsenal",
+          "away": "Como",
+          "meta": "",
+          "digits": "08.12"
+        },
+        {
+          "date": "08.12",
+          "teams": "Fulham vs Malaga",
+          "home": "Fulham",
+          "away": "Malaga",
+          "meta": "",
+          "digits": "08.12"
+        },
+        {
+          "date": "08.12",
+          "teams": "Villa vs PSG",
+          "home": "Villa",
+          "away": "PSG",
+          "meta": "",
+          "digits": "08.12"
+        }
+      ],
+      "moreScores": [
+        {
+          "date": "08.12",
+          "teams": "Leeds vs Man Utd",
+          "home": "Leeds",
+          "away": "Man Utd",
+          "meta": "",
+          "digits": "08.12"
+        },
+        {
+          "date": "08.12",
+          "teams": "Forest vs Leverkusen",
+          "home": "Forest",
+          "away": "Leverkusen",
+          "meta": "",
+          "digits": "08.12"
+        },
+        {
+          "date": "08.14",
+          "teams": "Coventry vs Monaco",
+          "home": "Coventry",
+          "away": "Monaco",
+          "meta": "",
+          "digits": "08.14"
+        },
+        {
+          "date": "08.15",
+          "teams": "Villa vs Gladbach",
+          "home": "Villa",
+          "away": "Gladbach",
+          "meta": "",
+          "digits": "08.15"
+        }
+      ],
+      "fixtureGroups": [
+        {
+          "dateLabel": "8月12日",
+          "dateShort": "08.12",
+          "count": 6,
+          "fixtures": [
+            {
+              "home": "Everton",
+              "away": "Newcastle",
+              "meta": ""
+            },
+            {
+              "home": "Arsenal",
+              "away": "Como",
+              "meta": ""
+            },
+            {
+              "home": "Fulham",
+              "away": "Malaga",
+              "meta": ""
+            },
+            {
+              "home": "Aston Villa",
+              "away": "Paris Saint-Germain",
+              "meta": ""
+            },
+            {
+              "home": "Leeds United",
+              "away": "Man Utd",
+              "meta": ""
+            },
+            {
+              "home": "Nott'm Forest",
+              "away": "Bayer Leverkusen",
+              "meta": ""
+            }
+          ]
+        },
+        {
+          "dateLabel": "8月14日",
+          "dateShort": "08.14",
+          "count": 1,
+          "fixtures": [
+            {
+              "home": "Coventry City",
+              "away": "Monaco",
+              "meta": ""
+            }
+          ]
+        },
+        {
+          "dateLabel": "8月15日",
+          "dateShort": "08.15",
+          "count": 1,
+          "fixtures": [
+            {
+              "home": "Aston Villa",
+              "away": "Borussia Monchengladbach",
+              "meta": ""
+            }
+          ]
+        }
+      ],
+      "face": {
+        "name": "FIXTURES",
+        "photo": "https://resources.premierleague.com/premierleague/badges/t3.png",
+        "photo_kind": "shirt",
+        "tag": "赛程"
+      },
+      "color": "#E30613",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t3.png"
+    }
+  ],
+  "ticker": [
+    "FALEAGUE DAILY",
+    "INJURY UPDATE",
+    "CHALOBAH OUT",
+    "08.12 · 6场",
+    "08.14 · 1场",
+    "08.15 · 1场",
+    "faleague-ai.com"
+  ],
+  "cta": "打开完整简报 →",
+  "url": "faleague-ai.com/zh/news/fpl-daily"
+}

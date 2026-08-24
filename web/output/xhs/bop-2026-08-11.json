@@ -1,0 +1,144 @@
+{
+  "kind": "bop",
+  "date": "2026-08-11",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "5.5",
+  "priceMark": "5.5",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 61 人 · 未来 5 轮 · Damsgaard 领跑 xP 24.3",
+  "disclaimer": "出场门槛：上季 ≥1200 分钟（威胁榜硬过滤 · xP 优先）",
+  "ranks": [
+    {
+      "name": "Damsgaard",
+      "team": "Brentford",
+      "value": "1200",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t94.png",
+      "label": "xP"
+    },
+    {
+      "name": "Gomes",
+      "team": "Aston Villa",
+      "value": "15.8",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_7-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t7.png",
+      "label": "DEFCON"
+    },
+    {
+      "name": "Aaronson",
+      "team": "Leeds",
+      "value": "498",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t2.png",
+      "label": "THREAT"
+    }
+  ],
+  "categories": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "name": "Damsgaard",
+          "team": "Brentford",
+          "value": "24.3",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t94.png"
+        },
+        {
+          "name": "Gomes",
+          "team": "Aston Villa",
+          "value": "23.8",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_7-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t7.png"
+        },
+        {
+          "name": "Wharton",
+          "team": "Crystal Palace",
+          "value": "22.5",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t31.png"
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "name": "Gomes",
+          "team": "Aston Villa",
+          "value": "15.8",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_7-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t7.png"
+        },
+        {
+          "name": "Bentancur",
+          "team": "Spurs",
+          "value": "13.3",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_6-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t6.png"
+        },
+        {
+          "name": "Ampadu",
+          "team": "Leeds",
+          "value": "12",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t2.png"
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "name": "Aaronson",
+          "team": "Leeds",
+          "value": "498",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t2.png"
+        },
+        {
+          "name": "Smith Rowe",
+          "team": "Fulham",
+          "value": "404",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_54-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t54.png"
+        },
+        {
+          "name": "Yeremy",
+          "team": "Crystal Palace",
+          "value": "371",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t31.png"
+        }
+      ]
+    }
+  ],
+  "chips": [
+    "£5.0m 中场",
+    "£6.0m 中场",
+    "£4.5m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-5-5",
+  "urlShort": "faleague-ai.com/bop"
+}

@@ -53,6 +53,12 @@ export function FplHub() {
       <div className="grid gap-3 sm:grid-cols-2">
         <HubTile href={dashboardHref} title={t("dashboard")} description={t("dashboardBody")} />
         <HubTile href={plannerHref} title={t("planner")} description={t("plannerBody")} />
+        <HubTile
+          href="/fpl/mini-league"
+          title={t("miniLeagueTitle")}
+          description={t("miniLeagueBody")}
+          accent
+        />
         <HubTile href={managerHref} title={t("manager")} description={t("managerBody")} />
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
         <HubTile

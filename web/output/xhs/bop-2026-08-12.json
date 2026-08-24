@@ -1,0 +1,144 @@
+{
+  "kind": "bop",
+  "date": "2026-08-12",
+  "eyebrow": "BEST OF POSITION",
+  "ribbon": "BOP",
+  "price": "6.0",
+  "priceMark": "6.0",
+  "position": "中场",
+  "title": "钱花在谁身上？",
+  "subtitle": "评估 30 人 · 未来 5 轮 · Stach 领跑 xP 26.8",
+  "disclaimer": "出场门槛：上季 ≥1200 分钟（威胁榜硬过滤 · xP 优先）",
+  "ranks": [
+    {
+      "name": "Stach",
+      "team": "Leeds",
+      "value": "26.8",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t2.png",
+      "label": "xP"
+    },
+    {
+      "name": "Scott",
+      "team": "Bournemouth",
+      "value": "12.2",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t91.png",
+      "label": "DEFCON"
+    },
+    {
+      "name": "Schade",
+      "team": "Brentford",
+      "value": "821",
+      "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+      "photo_kind": "shirt",
+      "badge": "https://resources.premierleague.com/premierleague/badges/t94.png",
+      "label": "THREAT"
+    }
+  ],
+  "categories": [
+    {
+      "kind": "xp",
+      "label": "xP",
+      "label_zh": "投影 xP",
+      "players": [
+        {
+          "name": "Stach",
+          "team": "Leeds",
+          "value": "26.8",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t2.png"
+        },
+        {
+          "name": "Tavernier",
+          "team": "Bournemouth",
+          "value": "26.3",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t91.png"
+        },
+        {
+          "name": "E.Le Fée",
+          "team": "Sunderland",
+          "value": "24.9",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_56-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t56.png"
+        }
+      ]
+    },
+    {
+      "kind": "defcon",
+      "label": "DEFCON",
+      "label_zh": "DEFCON/90",
+      "players": [
+        {
+          "name": "Scott",
+          "team": "Bournemouth",
+          "value": "12.2",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t91.png"
+        },
+        {
+          "name": "Fernandes",
+          "team": "Spurs",
+          "value": "11.0",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_6-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t6.png"
+        },
+        {
+          "name": "Stach",
+          "team": "Leeds",
+          "value": "10.1",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t2.png"
+        }
+      ]
+    },
+    {
+      "kind": "attack",
+      "label": "THREAT",
+      "label_zh": "威胁指数",
+      "players": [
+        {
+          "name": "Schade",
+          "team": "Brentford",
+          "value": "821",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_94-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t94.png"
+        },
+        {
+          "name": "Barnes",
+          "team": "Newcastle",
+          "value": "682",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_4-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t4.png"
+        },
+        {
+          "name": "Minteh",
+          "team": "Brighton",
+          "value": "617",
+          "photo": "https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36-66.webp",
+          "photo_kind": "shirt",
+          "badge": "https://resources.premierleague.com/premierleague/badges/t36.png"
+        }
+      ]
+    }
+  ],
+  "chips": [
+    "£5.5m 中场",
+    "£6.5m 中场",
+    "£5.0m 中场"
+  ],
+  "cta": "打开完整排名 →",
+  "url": "www.faleague-ai.com/zh/fpl/insights/best-of-position/mid-6-0",
+  "urlShort": "faleague-ai.com/bop"
+}

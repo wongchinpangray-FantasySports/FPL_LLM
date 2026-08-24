@@ -1,0 +1,33 @@
+══════════════════════════════════════════════════
+  SET & FORGET CONTEST — FINAL SUBMIT
+  £100.0m · 3-4-3 · Haaland (C) · João Pedro (V)
+  Factors: minutes · set-pieces · FDR · DEFCON
+══════════════════════════════════════════════════
+
+LOCKED XI
+  GKP  Petrović          BOU  £4.5
+  DEF  Virgil            LIV  £6.5   DC 9.3 · FDR 2.93
+  DEF  Richards          CRY  £5.0   DC 9.9 · FDR 3.07
+  DEF  Keane             EVE  £5.0   DC 10.5 · FDR 3.13
+  MID  Saka              ARS  £9.5   P1 / FK2
+  MID  Mbeumo            MUN  £8.0   P2 / FK2
+  MID  Tavernier         BOU  £6.0   FK1
+  MID  Buendía           AVL  £6.0   P1 / FK1 · DC 10.1
+  FWD  Haaland (C)       MCI £15.5   P1
+  FWD  João Pedro (V)    CHE  £7.5
+  FWD  Calvert-Lewin     LEE  £6.0   P1
+
+BENCH (auto-sub only)
+  MID  E.Le Fée          SUN  £6.0   P2 / FK2 · DC 9.8
+  DEF  Thiaw             NEW  £5.0   DC 8.9
+  GKP  Roefs             SUN  £5.0
+  DEF  Rodon             LEE  £4.5   DC 8.3
+
+──────────────────────────────────────────────────
+NOTES
+  • Dubravka out — Spurs #1 not assured
+  • Thiaw → Richards in XI (higher DEFCON)
+  • Dunk → Rodon on bench (cheap DC)
+  • No chips · captain locked on Haaland all season
+  • Bank £0.0m
+──────────────────────────────────────────────────

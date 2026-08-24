@@ -564,6 +564,24 @@ export function MiniGameApp({ locale }: { locale: string }) {
     submissionOpen && squadComplete && nicknameOk && profileId,
   );
 
+  const submitBlocker = useMemo((): string | null => {
+    if (canSubmit) return null;
+    if (!submissionOpen) return t("submissionsClosed");
+    if (!nicknameOk) return t("invalidNickname");
+    if (picks.length < 5) return t("needFivePlayers");
+    if (validationIssues[0]) return validationIssues[0].message;
+    if (!profileId) return t("profileLoading");
+    return t("submitLocked");
+  }, [
+    canSubmit,
+    submissionOpen,
+    nicknameOk,
+    picks.length,
+    validationIssues,
+    profileId,
+    t,
+  ]);
+
   const missionLive = useMemo(() => {
     if (!ctx?.mission || picks.length !== 5 || captainId == null) {
       return { completed: false, diffCaptainReady: false };
@@ -718,7 +736,13 @@ export function MiniGameApp({ locale }: { locale: string }) {
     };
     if (!res.ok) {
       setSubmitStatus("error");
-      showNotice(data.issues?.[0]?.message ?? data.error ?? t("submitFailed"));
+      const raw = data.issues?.[0]?.message ?? data.error ?? t("submitFailed");
+      const friendly = /mini_profiles_fpl_entry_id|duplicate key|unique constraint/i.test(
+        raw,
+      )
+        ? t("entryIdConflict")
+        : raw;
+      showNotice(friendly);
       return;
     }
     setSubmitStatus("ok");
@@ -729,11 +753,9 @@ export function MiniGameApp({ locale }: { locale: string }) {
   }
 
   function onSubmitClick() {
+    if (submitStatus === "loading") return;
     if (!canSubmit) {
-      if (!nicknameOk) showNotice(t("invalidNickname"));
-      else if (picks.length < 5) showNotice(t("needFivePlayers"));
-      else if (validationIssues[0]) showNotice(validationIssues[0].message);
-      else showNotice(t("submissionsClosed"));
+      showNotice(submitBlocker ?? t("submitLocked"));
       return;
     }
     setConfirmOpen(true);
@@ -892,23 +914,47 @@ export function MiniGameApp({ locale }: { locale: string }) {
             <p className="text-sm text-brand-accent">{t("submitOk")}</p>
           ) : null}
 
-          <Button
-            type="button"
-            size="lg"
-            disabled={!canSubmit || submitStatus === "loading"}
-            className={cn(
-              canSubmit &&
-                "shadow-[0_0_28px_rgba(0,255,135,0.5)] ring-2 ring-brand-accent/40",
-            )}
-            onClick={onSubmitClick}
-          >
-            {submitStatus === "loading" ? t("submitting") : t("submit")}
-          </Button>
-          {!canSubmit && picks.length < 5 ? (
-            <p className="text-center text-xs text-muted-foreground">
-              {t("submitLocked")}
-            </p>
-          ) : null}
+          <div className="sticky bottom-0 z-40 -mx-4 space-y-3 border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+            {squadComplete && !nicknameOk ? (
+              <div className="sm:hidden">
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {t("nicknameLabel")}
+                </label>
+                <Input
+                  placeholder={t("nicknamePlaceholder")}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  autoComplete="nickname"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("nicknameHint")}
+                </p>
+              </div>
+            ) : null}
+
+            {submitBlocker ? (
+              <p className="text-center text-xs text-amber-400/90">
+                {submitBlocker}
+              </p>
+            ) : null}
+
+            <Button
+              type="button"
+              size="lg"
+              disabled={submitStatus === "loading"}
+              className={cn(
+                "w-full sm:w-auto",
+                canSubmit &&
+                  "shadow-[0_0_28px_rgba(0,255,135,0.5)] ring-2 ring-brand-accent/40",
+                !canSubmit &&
+                  submitStatus !== "loading" &&
+                  "opacity-80",
+              )}
+              onClick={onSubmitClick}
+            >
+              {submitStatus === "loading" ? t("submitting") : t("submit")}
+            </Button>
+          </div>
 
           <MiniShareCard
             locale={locale}
