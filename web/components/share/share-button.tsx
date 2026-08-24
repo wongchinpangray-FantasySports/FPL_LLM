@@ -9,10 +9,12 @@ export function ShareButton({
   path,
   title,
   refId,
+  compact,
 }: {
   path: string;
   title: string;
   refId?: string;
+  compact?: boolean;
 }) {
   const t = useTranslations("share");
   const [open, setOpen] = useState(false);
@@ -80,6 +82,7 @@ export function ShareButton({
         type="button"
         size="sm"
         variant="secondary"
+        className={compact ? "h-7 gap-1 px-2 text-[11px]" : undefined}
         disabled={busy}
         onClick={() => void createLink()}
       >

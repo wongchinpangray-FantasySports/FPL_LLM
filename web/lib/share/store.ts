@@ -37,6 +37,10 @@ function isMissingRelation(message: string): boolean {
   );
 }
 
+function isKindRejected(message: string): boolean {
+  return /check constraint|share_links_kind/i.test(message);
+}
+
 async function fallbackGetShareByCode(code: string): Promise<ShareLink | null> {
   return (await redisGetShareByCode(code)) ?? memoryGetShareByCode(code);
 }
@@ -139,6 +143,9 @@ export async function upsertShareLink(input: {
       .select("id,code,kind,target_path,title,ref_id,created_at")
       .maybeSingle();
     if (!error && data) return asLink(data as Record<string, unknown>);
+    if (error && isKindRejected(error.message)) {
+      return fallbackUpsertShareLink(input);
+    }
     if (error && !/duplicate|unique/i.test(error.message)) {
       throw new Error(error.message);
     }

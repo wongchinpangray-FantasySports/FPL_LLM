@@ -15,6 +15,8 @@ export function shareKindEyebrow(kind: ShareKind): string {
       return "FFS SCOUT";
     case "mini_leaderboard":
       return "MINI 5";
+    case "manager":
+      return "FPL RANK";
     default:
       return "FPL INSIGHT";
   }

@@ -1,6 +1,13 @@
 import { FplAccessError, requireFplEntryAccess } from "@/lib/auth/fpl-access";
 import { getServerSupabase } from "@/lib/supabase";
 import { fplGet, type FplEntry, type FplHistoryResponse } from "@/lib/fpl";
+import { getCachedBootstrapEventAverages } from "@/lib/fpl-bootstrap";
+import {
+  applyLiveOverallRank,
+  historyToRankSeries,
+  midpointRank,
+  type RankHistoryPoint,
+} from "@/lib/fpl-rank-series";
 import type { CachedTeam, FplSquadPick } from "@/lib/tools/team";
 
 export const runtime = "nodejs";
@@ -145,10 +152,14 @@ async function buildSquadHealth(
   };
 }
 
-function historyPerformance(history: FplHistoryResponse | null) {
+function historyPerformance(
+  history: FplHistoryResponse | null,
+  fallbackAverage: number | null,
+) {
   const current = history?.current ?? [];
   const last = current.at(-1) ?? null;
   const prev = current.length >= 2 ? current[current.length - 2] : null;
+  const rank_history = historyToRankSeries(current, fallbackAverage);
   return {
     last_gw: last?.event ?? null,
     last_gw_points: last?.points ?? null,
@@ -158,6 +169,30 @@ function historyPerformance(history: FplHistoryResponse | null) {
       last?.overall_rank != null && prev?.overall_rank != null
         ? prev.overall_rank - last.overall_rank
         : null,
+    rank_history,
+    average_rank: rank_history.at(-1)?.average_rank ?? fallbackAverage,
+  };
+}
+
+function rankPayload(
+  perf: {
+    rank_history: RankHistoryPoint[];
+    average_rank: number | null;
+  },
+  live: {
+    event: number | null | undefined;
+    overall_rank: number | null | undefined;
+  },
+  fallbackAverage: number | null,
+) {
+  const rank_history = applyLiveOverallRank(
+    perf.rank_history,
+    live,
+    fallbackAverage,
+  );
+  return {
+    rank_history,
+    average_rank: rank_history.at(-1)?.average_rank ?? perf.average_rank,
   };
 }
 
@@ -187,10 +222,14 @@ export async function GET(
       .eq("entry_id", entryId)
       .maybeSingle();
 
-    const history = await fplGet<FplHistoryResponse>(
-      `/entry/${entryId}/history/`,
-    ).catch(() => null as FplHistoryResponse | null);
-    const perfHist = historyPerformance(history);
+    const [history, bootstrap] = await Promise.all([
+      fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`).catch(
+        () => null as FplHistoryResponse | null,
+      ),
+      getCachedBootstrapEventAverages().catch(() => null),
+    ]);
+    const fallbackAvg = midpointRank(bootstrap?.total_players);
+    const perfHist = historyPerformance(history, fallbackAvg);
 
     // Prefer cached squad even if slightly stale — home snapshot needs XI + health.
     if (cached?.raw) {
@@ -221,6 +260,14 @@ export async function GET(
         last_gw_rank: perfHist.last_gw_rank,
         prev_gw_rank: perfHist.prev_gw_rank,
         rank_delta: perfHist.rank_delta,
+        ...rankPayload(
+          perfHist,
+          {
+            event: entryFresh?.current_event ?? entry.current_event,
+            overall_rank: entry.summary_overall_rank,
+          },
+          fallbackAvg,
+        ),
         bank: team.bank,
         team_value: team.team_value,
         free_transfers: team.free_transfers,
@@ -251,6 +298,14 @@ export async function GET(
       last_gw_rank: perfHist.last_gw_rank,
       prev_gw_rank: perfHist.prev_gw_rank,
       rank_delta: perfHist.rank_delta,
+      ...rankPayload(
+        perfHist,
+        {
+          event: entry.current_event,
+          overall_rank: entry.summary_overall_rank,
+        },
+        fallbackAvg,
+      ),
       bank: entry.last_deadline_bank != null ? entry.last_deadline_bank / 10 : null,
       team_value:
         entry.last_deadline_value != null

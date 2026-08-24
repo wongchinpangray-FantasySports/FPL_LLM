@@ -6,7 +6,10 @@ import { Link } from "@/i18n/navigation";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { useEntryId } from "@/components/entry-id-context";
 import { useAuth } from "@/components/auth/auth-provider";
+import { ShareButton } from "@/components/share/share-button";
+import { HomeRankSparkline } from "@/components/home/home-rank-sparkline";
 import { cn } from "@/lib/utils";
+import type { RankHistoryPoint } from "@/lib/fpl-rank-series";
 
 type HealthFlag = {
   fpl_id: number;
@@ -38,6 +41,8 @@ type TeamSummary = {
   last_gw_rank?: number | null;
   prev_gw_rank?: number | null;
   rank_delta?: number | null;
+  rank_history?: RankHistoryPoint[];
+  average_rank?: number | null;
   bank?: number | null;
   team_value?: number | null;
   free_transfers?: number | null;
@@ -355,15 +360,25 @@ function PerformanceBlock({
             <p className="text-sm text-destructive">{error}</p>
           ) : data ? (
             <>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-foreground">
                   {teamDisplayName(data, entryId)}
                 </p>
-                {formatChip(data.active_chip) ? (
-                  <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-foreground">
-                    {t("seasonPerfChip", { chip: formatChip(data.active_chip)! })}
-                  </span>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {formatChip(data.active_chip) ? (
+                    <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-foreground">
+                      {t("seasonPerfChip", { chip: formatChip(data.active_chip)! })}
+                    </span>
+                  ) : null}
+                  <ShareButton
+                    compact
+                    path={`/manager/${entryId}`}
+                    title={t("seasonPerfShareTitle", {
+                      team: teamDisplayName(data, entryId),
+                    })}
+                    refId={entryId}
+                  />
+                </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <Metric
@@ -427,6 +442,17 @@ function PerformanceBlock({
                     .join(" · ") || undefined}
                 />
               </div>
+              {data.rank_history && data.rank_history.length > 0 ? (
+                <HomeRankSparkline
+                  points={data.rank_history}
+                  labels={{
+                    you: t("seasonPerfChartYou"),
+                    avg: t("seasonPerfChartAvg"),
+                    aria: t("seasonPerfChartAria"),
+                    hint: t("seasonPerfChartHint"),
+                  }}
+                />
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/manager/${entryId}`}

@@ -4,6 +4,7 @@ export const SHARE_KINDS = [
   "scout_article",
   "player",
   "mini_leaderboard",
+  "manager",
 ] as const;
 
 export type ShareKind = (typeof SHARE_KINDS)[number];

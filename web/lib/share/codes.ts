@@ -32,6 +32,7 @@ export function inferShareKind(
   if (path === "/play/mini" || path.startsWith("/play/mini")) {
     return "mini_leaderboard";
   }
+  if (/^\/manager\/\d+$/.test(path)) return "manager";
   return null;
 }
 

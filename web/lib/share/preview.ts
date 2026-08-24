@@ -9,6 +9,9 @@ import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 import { getServerSupabase } from "@/lib/supabase";
 import { getScoutArticleBySlug } from "@/lib/scout/store";
 import { displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
+import { fplGet, type FplEntry, type FplHistoryResponse } from "@/lib/fpl";
+import { getCachedBootstrapEventAverages } from "@/lib/fpl-bootstrap";
+import { estimateAverageRank, midpointRank } from "@/lib/fpl-rank-series";
 import type { ShareKind, SharePreview, SharePreviewItem } from "@/lib/share/types";
 
 function insightFromPath(path: string) {
@@ -194,6 +197,47 @@ async function miniPreview(): Promise<SharePreview> {
   };
 }
 
+function formatShareRank(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return Math.round(n).toLocaleString("zh-CN");
+}
+
+async function managerPreview(
+  entryId: number,
+  fallbackTitle: string,
+  href: string,
+): Promise<SharePreview | null> {
+  const [entry, history, bootstrap] = await Promise.all([
+    fplGet<FplEntry>(`/entry/${entryId}/`).catch(() => null),
+    fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`).catch(() => null),
+    getCachedBootstrapEventAverages().catch(() => null),
+  ]);
+  if (!entry) return null;
+  const last = history?.current?.at(-1) ?? null;
+  const fallbackAvg = midpointRank(bootstrap?.total_players);
+  const avg =
+    last != null
+      ? estimateAverageRank(last.overall_rank, last.percentile_rank, fallbackAvg)
+      : fallbackAvg;
+  const rank = entry.summary_overall_rank ?? last?.overall_rank ?? null;
+  const points = entry.summary_overall_points ?? last?.total_points ?? null;
+  return {
+    kind: "manager",
+    title: entry.name?.trim() || fallbackTitle || `Entry ${entryId}`,
+    subtitle: "实时战绩快照",
+    href,
+    items: [
+      { label: "总排名", value: formatShareRank(rank) },
+      { label: "平均排名", value: formatShareRank(avg) },
+      { label: "总积分", value: points != null ? String(points) : "—" },
+      {
+        label: last?.event != null ? `GW${last.event} 得分` : "最近一轮",
+        value: last?.points != null ? String(last.points) : "—",
+      },
+    ],
+  };
+}
+
 export async function loadSharePreview(input: {
   kind: ShareKind;
   target_path: string;
@@ -227,6 +271,23 @@ export async function loadSharePreview(input: {
 
   if (input.kind === "mini_leaderboard") {
     return miniPreview();
+  }
+
+  if (input.kind === "manager") {
+    const id = Number(input.ref_id || href.split("/").pop());
+    if (Number.isFinite(id) && id > 0) {
+      const preview = await managerPreview(id, input.title, href).catch(
+        () => null,
+      );
+      if (preview) return preview;
+    }
+    return {
+      kind: "manager",
+      title: input.title || "实时战绩快照",
+      subtitle: "完整排名与阵容需登录后查看",
+      href,
+      items: [],
+    };
   }
 
   const insight = insightFromPath(href);

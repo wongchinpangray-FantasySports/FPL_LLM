@@ -3,6 +3,7 @@ import { fplGet } from "@/lib/fpl";
 
 /** Trimmed bootstrap payload — only what Manager benchmarks need (smaller cache entry). */
 export type CachedBootstrapEvents = {
+  total_players?: number;
   events: Array<{
     id: number;
     average_entry_score?: number;
@@ -11,10 +12,16 @@ export type CachedBootstrapEvents = {
 
 /** Single-flight cached bootstrap for GW averages (~large JSON); safe to share across requests. */
 async function fetchBootstrapEventAverages(): Promise<CachedBootstrapEvents> {
-  const raw = await fplGet<{ events?: CachedBootstrapEvents["events"] }>(
-    "/bootstrap-static/",
-  );
+  const raw = await fplGet<{
+    total_players?: number;
+    events?: CachedBootstrapEvents["events"];
+  }>("/bootstrap-static/");
+  const total =
+    typeof raw.total_players === "number" && raw.total_players > 0
+      ? Math.round(raw.total_players)
+      : undefined;
   return {
+    total_players: total,
     events:
       raw.events?.map((e) => ({
         id: e.id,
