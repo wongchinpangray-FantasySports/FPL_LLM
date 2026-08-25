@@ -19,7 +19,7 @@ import { RivalNameButton, RivalSquadDialog } from "@/components/fpl/mini-league/
 import { ManagerHistoryDialog } from "@/components/fpl/mini-league/manager-history-dialog";
 import { MiniLeagueKillerTools } from "@/components/fpl/mini-league/mini-league-tools";
 import { MiniLeagueBetaBanner } from "@/components/fpl/mini-league/mini-league-beta-banner";
-import { standingsPageForRank } from "@/lib/fpl/mini-league/math";
+import { resolveYourStandingsPage } from "@/lib/fpl/mini-league/math";
 import type { MiniLeagueBetaView } from "@/lib/fpl/mini-league/beta-types";
 import {
   FplPlayerPerformanceModal,
@@ -345,9 +345,11 @@ export function MiniLeagueApp({
     }
     const list = selectedParsed.format === "h2h" ? index.h2h : index.classic;
     const rank = list.find((l) => l.id === selectedParsed.id)?.rank ?? null;
-    setTablePage(standingsPageForRank(rank));
+    const located =
+      analysis?.league.id === selectedParsed.id ? analysis.yourStandingsPage : null;
+    setTablePage(resolveYourStandingsPage(located, rank));
     setTableData(null);
-  }, [leagueId, leagueFormat, index, selectedParsed]);
+  }, [leagueId, leagueFormat, index, selectedParsed, analysis]);
 
   useEffect(() => {
     if (!entryId || !leagueId || tab !== "table") return;
@@ -815,11 +817,20 @@ export function MiniLeagueApp({
                       {tableLoading ? ` · ${t("loadingStandings")}` : ""}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {selected?.rank ? (
+                      {selected?.rank || analysis?.yourStandingsPage ? (
                         <button
                           type="button"
                           disabled={tableLoading}
-                          onClick={() => setTablePage(standingsPageForRank(selected.rank))}
+                          onClick={() =>
+                            setTablePage(
+                              resolveYourStandingsPage(
+                                analysis?.league.id === leagueId
+                                  ? analysis.yourStandingsPage
+                                  : null,
+                                selected?.rank,
+                              ),
+                            )
+                          }
                           className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
                         >
                           {t("tableJumpYou")}

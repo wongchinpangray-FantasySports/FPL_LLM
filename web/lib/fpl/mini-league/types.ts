@@ -89,6 +89,7 @@ export type MiniLeagueAnalysis = {
   memberCountExact: boolean;
   sampledManagers: number;
   sampleIncomplete: boolean;
+  yourStandingsPage: number | null;
   you: MiniLeagueStandingRow | null;
   leader: MiniLeagueStandingRow | null;
   gapToLeader: number | null;

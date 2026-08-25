@@ -65,9 +65,9 @@ export function standingsPagesForWindow(
 }
 
 /**
- * Managers to plot in tools: you, up to 10 immediately above, 10 immediately below.
- * Does not inject overall #1 — in a huge public league that person is not a rival
- * you can plan around this week.
+ * Managers to plot in tools: you, up to 10 immediately above, 10 immediately below
+ * in FPL table order. Do not sort by rank — tied ranks would scramble neighbors.
+ * Does not inject overall #1, and does not fall back to the top of the wrong page.
  */
 export function pickRivalSample<T extends { entry: number; rank: number }>(
   standings: T[],
@@ -78,18 +78,13 @@ export function pickRivalSample<T extends { entry: number; rank: number }>(
   const behind = clampRivalWindow(opts?.behind, RIVAL_WINDOW_BEHIND);
   const windowSize = ahead + behind + 1;
   const allIfAtMost = opts?.allIfAtMost ?? windowSize;
-  const sorted = [...standings].sort((a, b) => a.rank - b.rank || a.entry - b.entry);
-  if (sorted.length <= allIfAtMost) return sorted;
-
-  const youIdx = sorted.findIndex((row) => row.entry === entryId);
-  if (youIdx < 0) {
-    const cap = Math.min(windowSize, opts?.maxTotal ?? windowSize, sorted.length);
-    return sorted.slice(0, cap);
-  }
+  const youIdx = standings.findIndex((row) => row.entry === entryId);
+  if (youIdx < 0) return [];
+  if (standings.length <= allIfAtMost) return [...standings];
 
   const from = Math.max(0, youIdx - ahead);
-  const to = Math.min(sorted.length, youIdx + 1 + behind);
-  return sorted.slice(from, to);
+  const to = Math.min(standings.length, youIdx + 1 + behind);
+  return standings.slice(from, to);
 }
 
 export function pointsToCatch(
@@ -109,13 +104,85 @@ export function sortMovers(rows: MiniLeagueStandingRow[]): MiniLeagueStandingRow
 }
 
 export const STANDINGS_PAGE_SIZE = 50;
+export const STANDINGS_SCAN_BATCH = 4;
+export const STANDINGS_SCAN_MAX_PAGES = 24;
 
+/**
+ * Hint page from `entry_rank`. FPL rank is a competition rank with ties, so the
+ * actual row can sit many pages later (Chelsea #1560 was on page 38, not 32).
+ */
 export function standingsPageForRank(
   rank: number | null | undefined,
   pageSize = STANDINGS_PAGE_SIZE,
 ): number {
   if (rank == null || !Number.isFinite(rank) || rank < 1) return 1;
   return Math.max(1, Math.ceil(rank / pageSize));
+}
+
+export function resolveYourStandingsPage(
+  locatedPage: number | null | undefined,
+  rank: number | null | undefined,
+): number {
+  if (locatedPage != null && Number.isFinite(locatedPage) && locatedPage >= 1) {
+    return Math.floor(locatedPage);
+  }
+  return standingsPageForRank(rank);
+}
+
+/** Next FPL `page_standings` values to fetch while walking forward from `hint`. */
+export function nextStandingsScanPages(
+  collectedPages: number[],
+  hint: number,
+  batch = STANDINGS_SCAN_BATCH,
+): number[] {
+  const safeHint = Math.max(1, Math.floor(hint) || 1);
+  const size = Math.max(1, Math.floor(batch) || STANDINGS_SCAN_BATCH);
+  const atOrAfterHint = collectedPages.filter((page) => page >= safeHint);
+  const lastPage = atOrAfterHint.length ? Math.max(...atOrAfterHint) : safeHint - 1;
+  return Array.from({ length: size }, (_, i) => lastPage + i + 1).filter((page) => page >= 1);
+}
+
+export function shouldContinueStandingsScan(opts: {
+  found: boolean;
+  scanned: number;
+  maxPages?: number;
+  frontierLoaded: boolean;
+  frontierHasNext: boolean | undefined;
+  lastRank: number | null | undefined;
+  youRank: number | null | undefined;
+}): boolean {
+  if (opts.found) return false;
+  if (opts.scanned >= (opts.maxPages ?? STANDINGS_SCAN_MAX_PAGES)) return false;
+  if (opts.frontierLoaded) {
+    if (!opts.frontierHasNext) return false;
+    const lastRank = Number(opts.lastRank);
+    const youRank = opts.youRank;
+    if (
+      youRank != null &&
+      Number.isFinite(youRank) &&
+      youRank > 0 &&
+      Number.isFinite(lastRank) &&
+      lastRank > youRank
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Pages needed so 10-above / 10-below of a located row are present. */
+export function neighborStandingsPages(
+  page: number,
+  indexOnPage: number,
+  pageLength: number,
+): number[] {
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  const pages = new Set<number>([safePage]);
+  if (indexOnPage < RIVAL_WINDOW_AHEAD && safePage > 1) pages.add(safePage - 1);
+  if (indexOnPage + RIVAL_WINDOW_BEHIND >= Math.max(0, pageLength)) {
+    pages.add(safePage + 1);
+  }
+  return [...pages].sort((a, b) => a - b);
 }
 
 export type ChipKind = "wildcard" | "freehit" | "bboost" | "3xc";

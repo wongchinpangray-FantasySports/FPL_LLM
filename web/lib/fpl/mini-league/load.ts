@@ -20,16 +20,21 @@ import {
   classifyClassicLeague,
   emptyChipSlots,
   gwSwingRows,
+  neighborStandingsPages,
+  nextStandingsScanPages,
   pickRivalSample,
   pointsToCatch,
   rankChartGwWindow,
   rankChartRole,
   rankMove,
   reconstructSampleRanks,
+  shouldContinueStandingsScan,
   sortMovers,
   squadDiffPct,
   STANDINGS_PAGE_SIZE,
-  standingsPagesForWindow,
+  STANDINGS_SCAN_BATCH,
+  STANDINGS_SCAN_MAX_PAGES,
+  standingsPageForRank,
   swingTally,
   type HistoryGwTotals,
 } from "@/lib/fpl/mini-league/math";
@@ -341,24 +346,6 @@ async function fetchStandingsPage(
   };
 }
 
-async function fetchStandingsPages(
-  leagueId: number,
-  pages: number[],
-  format: MiniLeagueFormat,
-): Promise<Array<Awaited<ReturnType<typeof fetchStandingsPage>>>> {
-  const unique = [...new Set(pages.filter((page) => Number.isFinite(page) && page >= 1))];
-  const packs = await Promise.all(
-    unique.map(async (page) => {
-      try {
-        return await fetchStandingsPage(leagueId, page, format);
-      } catch {
-        return null;
-      }
-    }),
-  );
-  return packs.filter((pack): pack is NonNullable<typeof pack> => pack != null);
-}
-
 function mergeStandingResults(
   packs: Array<{ results: StandingsResult[] }>,
 ): StandingsResult[] {
@@ -373,6 +360,124 @@ function mergeStandingResults(
     }
   }
   return out;
+}
+
+type StandingsPack = Awaited<ReturnType<typeof fetchStandingsPage>>;
+
+function packHasEntry(pack: StandingsPack, entryId: number): number {
+  return (pack.results ?? []).findIndex((row) => Number(row.entry) === entryId);
+}
+
+async function collectStandingsPages(
+  leagueId: number,
+  format: MiniLeagueFormat,
+  pages: number[],
+  collected: Map<number, StandingsPack>,
+): Promise<void> {
+  const missing = [
+    ...new Set(pages.filter((page) => Number.isFinite(page) && page >= 1 && !collected.has(page))),
+  ];
+  if (!missing.length) return;
+  const packs = await Promise.all(
+    missing.map(async (page) => {
+      try {
+        return { requested: page, pack: await fetchStandingsPage(leagueId, page, format) };
+      } catch {
+        return { requested: page, pack: null };
+      }
+    }),
+  );
+  for (const { requested, pack } of packs) {
+    if (pack) collected.set(requested, pack);
+  }
+}
+
+function findEntryInCollected(
+  collected: Map<number, StandingsPack>,
+  entryId: number,
+): { page: number; index: number } | null {
+  const pages = [...collected.keys()].sort((a, b) => a - b);
+  for (const page of pages) {
+    const pack = collected.get(page);
+    if (!pack) continue;
+    const index = packHasEntry(pack, entryId);
+    if (index >= 0) return { page, index };
+  }
+  return null;
+}
+
+function frontierAfterHint(
+  collected: Map<number, StandingsPack>,
+  hint: number,
+): StandingsPack | null {
+  const pages = [...collected.keys()].filter((page) => page >= hint);
+  if (!pages.length) return null;
+  return collected.get(Math.max(...pages)) ?? null;
+}
+
+/**
+ * FPL `entry_rank` is a competition rank with ties, not a row index.
+ * Rank 1560 can sit many pages after ceil(1560/50) when hundreds share that rank.
+ * Scan forward from the hint page until this entry appears.
+ */
+async function locateEntryStandingsPages(
+  leagueId: number,
+  entryId: number,
+  youRank: number | null,
+  format: MiniLeagueFormat,
+  page1: StandingsPack,
+): Promise<{ collected: Map<number, StandingsPack>; hit: { page: number; index: number } | null }> {
+  const collected = new Map<number, StandingsPack>();
+  collected.set(1, page1);
+  const hint = standingsPageForRank(youRank);
+  await collectStandingsPages(
+    leagueId,
+    format,
+    hint > 1 ? [hint - 1, hint] : [hint],
+    collected,
+  );
+
+  let scanned = 0;
+  while (true) {
+    const frontier = frontierAfterHint(collected, hint);
+    if (
+      !shouldContinueStandingsScan({
+        found: findEntryInCollected(collected, entryId) != null,
+        scanned,
+        maxPages: STANDINGS_SCAN_MAX_PAGES,
+        frontierLoaded: frontier != null,
+        frontierHasNext: frontier?.hasNext,
+        lastRank: frontier?.results.at(-1)?.rank ?? null,
+        youRank,
+      })
+    ) {
+      break;
+    }
+    const nextPages = nextStandingsScanPages([...collected.keys()], hint, STANDINGS_SCAN_BATCH);
+    const sizeBefore = collected.size;
+    await collectStandingsPages(leagueId, format, nextPages, collected);
+    scanned += STANDINGS_SCAN_BATCH;
+    if (collected.size === sizeBefore) break;
+  }
+
+  const hit = findEntryInCollected(collected, entryId);
+  if (hit) {
+    const pack = collected.get(hit.page);
+    const neighbors = new Set([
+      ...neighborStandingsPages(hit.page, hit.index, pack?.results.length ?? 0),
+      hit.page - 1,
+      hit.page,
+      hit.page + 1,
+    ]);
+    await collectStandingsPages(
+      leagueId,
+      format,
+      [...neighbors].filter((page) => page >= 1),
+      collected,
+    );
+  }
+
+  return { collected, hit };
 }
 
 type LeagueWindow = {
@@ -399,6 +504,7 @@ type LeagueWindow = {
   sampleRows: MiniLeagueStandingRow[];
   memberCount: number;
   memberCountExact: boolean;
+  yourStandingsPage: number | null;
 };
 
 async function loadLeagueWindow(
@@ -417,19 +523,27 @@ async function loadLeagueWindow(
       ? entry.leagues?.h2h?.find((l) => l.id === leagueId)
       : entry.leagues?.classic?.find((l) => l.id === leagueId);
   const youRank = leagueFromEntry?.entry_rank ?? null;
-  const windowPages = standingsPagesForWindow(youRank);
-  const extraPages = windowPages.filter((page) => page !== 1);
-  const extraPacks = extraPages.length
-    ? await fetchStandingsPages(leagueId, extraPages, format)
-    : [];
+  const { collected, hit } = await locateEntryStandingsPages(
+    leagueId,
+    entryId,
+    youRank,
+    format,
+    page1,
+  );
 
-  const aroundPacks = windowPages.includes(1) ? [page1, ...extraPacks] : extraPacks.length ? extraPacks : [page1];
+  const aroundPages = hit
+    ? [hit.page - 1, hit.page, hit.page + 1].filter((page) => page >= 1 && collected.has(page))
+    : [];
+  const aroundPacks = aroundPages
+    .map((page) => collected.get(page))
+    .filter((pack): pack is StandingsPack => pack != null);
   const aroundRaw = mergeStandingResults(aroundPacks);
   const standings = aroundRaw
     .map((row) => standingRow(row, entryId))
-    .filter((row): row is MiniLeagueStandingRow => row != null)
-    .sort((a, b) => a.rank - b.rank || a.entry - b.entry);
+    .filter((row): row is MiniLeagueStandingRow => row != null);
 
+  // Keep FPL table order (not rank-then-entry). Ties share a rank, so sorting
+  // by rank would scramble the 10-above / 10-below neighbors.
   const leaderRaw = page1.results[0];
   const leader =
     (leaderRaw ? standingRow(leaderRaw, entryId) : null) ?? standings[0] ?? null;
@@ -443,7 +557,12 @@ async function loadLeagueWindow(
   const memberCountExact = !page1.hasNext;
   const memberCount = memberCountExact
     ? page1.results.length
-    : Math.max(youRank ?? 0, ...standings.map((row) => row.rank), STANDINGS_PAGE_SIZE);
+    : Math.max(
+        youRank ?? 0,
+        hit ? hit.page * STANDINGS_PAGE_SIZE : 0,
+        ...standings.map((row) => row.rank),
+        STANDINGS_PAGE_SIZE,
+      );
 
   return {
     gw,
@@ -458,6 +577,7 @@ async function loadLeagueWindow(
     sampleRows,
     memberCount,
     memberCountExact,
+    yourStandingsPage: hit?.page ?? null,
   };
 }
 
@@ -571,6 +691,7 @@ export async function loadMiniLeagueAnalysis(
     sampleRows,
     memberCount,
     memberCountExact,
+    yourStandingsPage,
   } = window;
 
   const league: MiniLeagueSummary = toSummary(
@@ -675,9 +796,10 @@ export async function loadMiniLeagueAnalysis(
     .sort((a, b) => a.owners - b.owners || (b.xp ?? 0) - (a.xp ?? 0));
   const missingTemplate = template.filter((p) => !p.youOwn);
 
-  const aboveYou = you
-    ? sampleRows.filter((row) => row.rank < you.rank)
-    : sampleRows.filter((row) => row.rank === 1);
+  const youSampleIdx = you
+    ? sampleRows.findIndex((row) => row.entry === you.entry)
+    : -1;
+  const aboveYou = youSampleIdx > 0 ? sampleRows.slice(0, youSampleIdx) : [];
   const aboveSet = new Set(aboveYou.map((row) => row.entry));
   const aboveSquads = sampledWithSquad.filter((s) => aboveSet.has(s.entry));
   const aboveCount = Math.max(aboveSquads.length, 1);
@@ -765,6 +887,7 @@ export async function loadMiniLeagueAnalysis(
     memberCountExact,
     sampledManagers: sampledWithSquad.length,
     sampleIncomplete,
+    yourStandingsPage,
     you,
     leader,
     gapToLeader: you && leader ? Math.max(0, leader.total - you.total) : null,
