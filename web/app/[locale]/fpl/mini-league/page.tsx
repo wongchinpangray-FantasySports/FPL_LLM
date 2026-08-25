@@ -39,7 +39,7 @@ export default async function MiniLeaguePage({ params }: Props) {
         </span>
       }
     >
-      {!allowed && enforce ? (
+      {!localPreview && !allowed && enforce ? (
         <InsightsPaywall
           title={t("paywallTitle")}
           body={t("paywallBody")}

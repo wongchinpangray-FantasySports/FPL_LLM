@@ -67,6 +67,12 @@ export async function getInsightsAccessSummary(userId?: string | null): Promise<
 export async function canAccessPremiumFeature(
   userId?: string | null,
 ): Promise<boolean> {
+  if (
+    process.env.NODE_ENV === "development" &&
+    process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1"
+  ) {
+    return true;
+  }
   if (!isInsightsPremiumEnforced()) return true;
   const plan = await getUserInsightsPlan(userId ?? null);
   return plan === "premium";
