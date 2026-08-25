@@ -53,6 +53,28 @@ const ROLE_STROKE: Record<MiniLeagueRankChartRole, string> = {
   nearby: "rgb(148 163 184)",
 };
 
+const SERIES_PALETTE = [
+  "rgb(45 212 191)",
+  "rgb(251 191 36)",
+  "rgb(244 114 182)",
+  "rgb(96 165 250)",
+  "rgb(167 139 250)",
+  "rgb(251 146 60)",
+  "rgb(74 222 128)",
+  "rgb(248 113 113)",
+  "rgb(125 211 252)",
+  "rgb(250 204 21)",
+];
+
+function seriesStroke(
+  s: { entry: number; isYou: boolean; role: MiniLeagueRankChartRole },
+  index: number,
+): string {
+  if (s.isYou) return SERIES_PALETTE[0]!;
+  if (s.role === "leader") return SERIES_PALETTE[1]!;
+  return SERIES_PALETTE[2 + (index % (SERIES_PALETTE.length - 2))]!;
+}
+
 function tr(t: MiniLeagueT, key: string): string {
   return t(key as Parameters<MiniLeagueT>[0]);
 }
@@ -250,6 +272,8 @@ function RankMultiChart({
     teamName: string;
     isYou: boolean;
     role: MiniLeagueRankChartRole;
+    color: string;
+    rank?: number;
     values: Array<{ x: number; y: number }>;
   }>;
   xLabels: string[];
@@ -268,7 +292,7 @@ function RankMultiChart({
   const lo = Math.max(higherIsBetter ? 0 : 1, min - pad);
   const hi = max + pad;
 
-  const padRect = { l: 46, r: 14, t: 16, b: 36 };
+  const padRect = { l: 46, r: 36, t: 16, b: 36 };
   const W = 640;
   const H = 220;
   const innerW = W - padRect.l - padRect.r;
@@ -321,7 +345,8 @@ function RankMultiChart({
             : scaleYRank(pt.y, lo, hi, padRect.t, padRect.t + innerH);
           return { x, y };
         });
-        const stroke = ROLE_STROKE[s.role];
+        const stroke = s.color || ROLE_STROKE[s.role];
+        const last = pts[pts.length - 1];
         return (
           <g key={s.entry}>
             {pts.length >= 2 ? (
@@ -337,10 +362,23 @@ function RankMultiChart({
                 key={`${s.entry}-${i}`}
                 cx={p.x}
                 cy={p.y}
-                r={s.isYou ? 4 : 3}
+                r={s.isYou ? 5 : 3.5}
                 fill={stroke}
+                stroke="rgb(15 23 42)"
+                strokeWidth="1"
               />
             ))}
+            {last && s.rank != null ? (
+              <text
+                x={last.x + (s.isYou ? 8 : 7)}
+                y={last.y + 3}
+                fill={stroke}
+                fontSize="10"
+                fontWeight={s.isYou ? 700 : 500}
+              >
+                #{s.rank}
+              </text>
+            ) : null}
           </g>
         );
       })}
@@ -589,11 +627,13 @@ export function MiniLeagueKillerTools({
 
   const mlChartSeries = useMemo(() => {
     const rows = toolsData?.rankChart.miniLeague ?? [];
-    return rows.map((s) => ({
+    return rows.map((s, i) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
+      rank: s.rank,
+      color: seriesStroke(s, i),
       values: chartGws.flatMap((event, i) => {
         const pt = s.points?.find((p) => p.event === event);
         if (pt?.rank == null || pt.rank <= 0) return [];
@@ -604,11 +644,13 @@ export function MiniLeagueKillerTools({
 
   const ptsChartSeries = useMemo(() => {
     const rows = toolsData?.rankChart.miniLeague ?? [];
-    return rows.map((s) => ({
+    return rows.map((s, i) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
+      rank: s.rank,
+      color: seriesStroke(s, i),
       values: chartGws.flatMap((event, i) => {
         const pt = s.points?.find((p) => p.event === event);
         if (pt?.points == null || !Number.isFinite(pt.points)) return [];
@@ -619,11 +661,13 @@ export function MiniLeagueKillerTools({
 
   const orChart = useMemo(() => {
     const rows = toolsData?.rankChart.overall ?? [];
-    const series = rows.map((s) => ({
+    const series = rows.map((s, i) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
+      rank: toolsData?.rankChart.miniLeague.find((m) => m.entry === s.entry)?.rank,
+      color: seriesStroke(s, i),
       values: chartGws.flatMap((event, i) => {
         const pt = s.points.find((p) => p.event === event);
         if (pt?.overallRank == null || pt.overallRank <= 0) return [];
@@ -760,12 +804,13 @@ export function MiniLeagueKillerTools({
                 </div>
               </div>
               <ul className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                {toolsData.rankChart.miniLeague.map((s) => (
+                {toolsData.rankChart.miniLeague.map((s, i) => (
                   <li key={s.entry} className="flex items-center gap-1.5">
                     <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: ROLE_STROKE[s.role] }}
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ background: seriesStroke(s, i) }}
                     />
+                    <span className="tabular-nums text-foreground">#{s.rank}</span>
                     <RivalNameButton
                       name={s.teamName}
                       onClick={() => onOpenSquad(s.entry)}
@@ -800,6 +845,9 @@ export function MiniLeagueKillerTools({
                         className={cn("border-t border-border/60", row.isYou && "bg-brand-accent/10")}
                       >
                         <td className="px-3 py-2">
+                          <span className="mr-1.5 tabular-nums text-xs text-muted-foreground">
+                            #{row.rank}
+                          </span>
                           <RivalNameButton name={row.teamName} onClick={() => onOpenSquad(row.entry)} />
                           {row.isYou ? (
                             <span className="ml-1.5 text-[10px] uppercase text-brand-accent">

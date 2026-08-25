@@ -38,23 +38,29 @@ export function classifyClassicLeague(
 export function pickRivalSample<T extends { entry: number; rank: number }>(
   standings: T[],
   entryId: number,
-  opts?: { maxAbove?: number; maxBelow?: number; allIfAtMost?: number },
+  opts?: { maxTotal?: number; allIfAtMost?: number },
 ): T[] {
-  const maxAbove = opts?.maxAbove ?? 10;
-  const maxBelow = opts?.maxBelow ?? 3;
-  const allIfAtMost = opts?.allIfAtMost ?? 40;
+  const maxTotal = Math.max(2, Math.min(12, opts?.maxTotal ?? 10));
+  const allIfAtMost = opts?.allIfAtMost ?? maxTotal;
   if (standings.length <= allIfAtMost) return standings;
 
   const youIdx = standings.findIndex((row) => row.entry === entryId);
-  if (youIdx < 0) return standings.slice(0, Math.min(8, standings.length));
+  if (youIdx < 0) return standings.slice(0, Math.min(maxTotal, standings.length));
 
-  const start = Math.max(0, youIdx - maxAbove);
-  const end = Math.min(standings.length, youIdx + 1 + maxBelow);
-  const slice = standings.slice(start, end);
-  if (start > 0 && standings[0] && !slice.some((row) => row.entry === standings[0]!.entry)) {
-    return [standings[0], ...slice];
+  const seen = new Set<number>();
+  const out: T[] = [];
+  const push = (row: T | undefined) => {
+    if (!row || seen.has(row.entry) || out.length >= maxTotal) return;
+    seen.add(row.entry);
+    out.push(row);
+  };
+  push(standings[youIdx]);
+  push(standings[0]);
+  for (let d = 1; out.length < maxTotal && d < standings.length; d++) {
+    push(standings[youIdx - d]);
+    push(standings[youIdx + d]);
   }
-  return slice;
+  return out.sort((a, b) => a.rank - b.rank || a.entry - b.entry);
 }
 
 export function pointsToCatch(

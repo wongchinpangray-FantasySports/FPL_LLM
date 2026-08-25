@@ -2528,7 +2528,7 @@
     "toolsRankLast": "Last GW",
     "toolsRankNow": "GW{n}",
     "toolsRankEmpty": "No gameweek history yet this season.",
-    "toolsChipHint": "Green = they still have a chip you already used. Amber = they already played a chip you still have. Circle = still available.",
+    "toolsChipHint": "Up to 10 managers (you, the leader, and nearby ranks). Green = they still have a chip you already used. Amber = they already played a chip you still have. Circle = still available.",
     "toolsChipStill": "Still holding a chip you used",
     "toolsChipSpent": "Already played a chip you still have",
     "toolsLiveNotStarted": "This gameweek has not started yet. Captains and players still to play decide whether you can overtake — not last GW totals.",
@@ -2566,7 +2566,7 @@
       "template": "Template cover",
       "xp": "Highest 3GW xP swing"
     },
-    "toolsFxHint": "GW{from}–{to}: the big number in each cell is starter FDR (1 green = easier, 5 red = harder). xP shows when the model is available.",
+    "toolsFxHint": "GW{from}–{to}: the big number is each manager's current starting XI fixture difficulty. FDR = official FPL Fixture Difficulty Rating (1 green = easiest, 5 red = hardest), averaged across the clubs in that starting 11 — not the bench, not an empty fixture grid. xP shows when the model is available.",
     "toolsFxRunBetterYou": "Whose run is better: yours. Next {n} GWs starter FDR {you} (lower is easier).",
     "toolsFxRunBetterThem": "Whose run is better: {name} (avg FDR {them}). Yours is {you}.",
     "toolsFxRunRank": "Fixture run ranking (avg FDR, lower is easier)",
@@ -2610,7 +2610,7 @@
       },
       "fixtures": {
         "title": "Fixture overlap",
-        "body": "Next 5 GWs of FDR, and whose run is better."
+        "body": "Next 5 GWs of starter-XI FDR, and whose run is easier."
       },
       "h2h": {
         "title": "H2H league",

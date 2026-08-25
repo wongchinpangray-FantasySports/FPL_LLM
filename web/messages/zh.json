@@ -2554,7 +2554,7 @@
     "toolsRankLast": "上周",
     "toolsRankNow": "GW{n}",
     "toolsRankEmpty": "本赛季还没有轮次记录。",
-    "toolsChipHint": "绿色：对方还留着你已经用过的芯片。琥珀色：对方已经用了你还留着的芯片。圆圈：尚未使用。",
+    "toolsChipHint": "最多对比 10 位经理（你、榜首、以及名次附近）。绿色：对方还留着你已经用过的芯片。琥珀色：对方已经用了你还留着的芯片。圆圈：尚未使用。",
     "toolsChipStill": "仍持有你已用过的芯片",
     "toolsChipSpent": "已用掉你还留着的芯片",
     "toolsLiveNotStarted": "本轮尚未开始。下面先看队长和未踢完人数——这才决定周末能不能超车，不是上轮总分。",
@@ -2592,7 +2592,7 @@
       "template": "模板补齐",
       "xp": "未来 3 轮 xP 提升最大"
     },
-    "toolsFxHint": "GW{from}–{to}：格子里的大数字是首发平均 FDR（1 绿最好踢，5 红最难）。xP 有数据才显示。",
+    "toolsFxHint": "GW{from}–{to}：格子里的大数字是每位经理【当前首发 11 人】接下来面对的平均赛程难度。FDR = Fixture Difficulty Rating（FPL 官方 1–5：1 绿最好踢，5 红最难）。按你现在阵容的首发俱乐部算，不是替补，也不是空阵容。xP 有模型数据才显示。",
     "toolsFxRunBetterYou": "谁赛程更好：你。未来 {n} 轮首发平均 FDR {you}（越低越好踢）。",
     "toolsFxRunBetterThem": "谁赛程更好：{name}（平均 FDR {them}）。你是 {you}。",
     "toolsFxRunRank": "赛程难度排名（平均 FDR，越低越好）",
@@ -2636,7 +2636,7 @@
       },
       "fixtures": {
         "title": "赛程重叠",
-        "body": "未来 5 轮 FDR 表，以及谁赛程更好。"
+        "body": "未来 5 轮：按当前首发 11 人算的 FDR（赛程难度），以及谁更好踢。"
       },
       "h2h": {
         "title": "头对头联赛",

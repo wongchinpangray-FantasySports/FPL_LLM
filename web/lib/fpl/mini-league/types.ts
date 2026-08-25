@@ -192,6 +192,7 @@ export type MiniLeagueChipRow = {
   teamName: string;
   managerName: string;
   isYou: boolean;
+  rank: number;
   role: MiniLeagueRankChartRole;
   slots: MiniLeagueChipSlots;
 };

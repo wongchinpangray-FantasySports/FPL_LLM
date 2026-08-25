@@ -836,15 +836,26 @@ export async function loadMiniLeagueStandingsPage(
     .filter((row): row is MiniLeagueStandingRow => row != null)
     .sort((a, b) => a.rank - b.rank);
 
-  const entryIds = [...new Set([youEntryId, ...rows.map((row) => row.entry)])];
-  const picksList = await mapPool(entryIds, PICKS_CONCURRENCY, async (entry) => {
-    const picks = await fetchPicks(entry, gw);
-    return {
-      entry,
-      ids: (picks?.picks ?? []).map((p) => p.element),
-    };
-  });
-  const idsByEntry = new Map(picksList.map((p) => [p.entry, p.ids]));
+  const idsByEntry = new Map<number, number[]>();
+  try {
+    const youPicks = await fetchPicks(youEntryId, gw);
+    const youIds = (youPicks?.picks ?? []).map((p) => p.element);
+    idsByEntry.set(youEntryId, youIds);
+    // A full 50-row page used to fire 50 FPL /picks calls and 403 the table.
+    if (rows.length <= 12 && youIds.length) {
+      const extra = await mapPool(
+        rows.filter((row) => row.entry !== youEntryId).map((row) => row.entry),
+        PICKS_CONCURRENCY,
+        async (entry) => ({
+          entry,
+          ids: ((await fetchPicks(entry, gw))?.picks ?? []).map((p) => p.element),
+        }),
+      );
+      for (const pack of extra) idsByEntry.set(pack.entry, pack.ids);
+    }
+  } catch {
+    /* standings still render without squad-diff */
+  }
   const youIds = idsByEntry.get(youEntryId) ?? [];
 
   return {
@@ -970,6 +981,7 @@ async function fetchHistoryPack(entryId: number): Promise<HistoryPack | null> {
 }
 
 function pickOverallEntries(ctx: StandingsContext, youEntryId: number): MiniLeagueStandingRow[] {
+  if (ctx.sampleRows.length) return ctx.sampleRows;
   const out: MiniLeagueStandingRow[] = [];
   const seen = new Set<number>();
   const push = (row: MiniLeagueStandingRow | null | undefined) => {
@@ -981,11 +993,7 @@ function pickOverallEntries(ctx: StandingsContext, youEntryId: number): MiniLeag
   push(ctx.leader);
   push(ctx.nextRival);
   push(ctx.below);
-  for (const row of ctx.sampleRows) {
-    if (out.length >= 5) break;
-    push(row);
-  }
-  return out.slice(0, 5);
+  return out;
 }
 
 function seriesRole(
@@ -1445,7 +1453,6 @@ export async function loadMiniLeagueTools(
 ): Promise<MiniLeagueToolsPayload> {
   const ctx = await loadStandingsContext(entryId, leagueId, format);
   const picksList = await loadSamplePicks(ctx.sampleRows, ctx.gw);
-  const overallRows = pickOverallEntries(ctx, entryId);
   const historyTargets = ctx.sampleRows;
   const histories = await mapPool(historyTargets, PICKS_CONCURRENCY, (row) =>
     fetchHistoryPack(row.entry),
@@ -1456,7 +1463,7 @@ export async function loadMiniLeagueTools(
   }
 
   const gws = rankChartGwWindow(ctx.gw);
-  const plotRows = [...overallRows];
+  const plotRows = ctx.sampleRows.length ? ctx.sampleRows : pickOverallEntries(ctx, entryId);
   const historyMap = new Map<number, HistoryGwTotals[]>();
   for (const row of plotRows) {
     historyMap.set(row.entry, packToTotals(historyByEntry.get(row.entry) ?? null));
@@ -1510,6 +1517,7 @@ export async function loadMiniLeagueTools(
       teamName: row.entryName,
       managerName: row.playerName,
       isYou: row.isYou,
+      rank: row.rank,
       role: seriesRole(row, ctx, entryId),
       slots: pack ? chipSlotsFromUsed(pack.chips) : emptyChipSlots(),
     };
