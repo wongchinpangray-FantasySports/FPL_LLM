@@ -389,6 +389,20 @@ export function MiniLeagueApp({
     };
   }, [entryId, leagueId, leagueFormat, tab, tablePage, t]);
 
+  const tableFallback = useMemo((): MiniLeagueStandingsPage | null => {
+    if (!analysis?.standings.length) return null;
+    const page = analysis.yourStandingsPage ?? tablePage ?? 1;
+    return {
+      format: leagueFormat,
+      page,
+      pageSize: analysis.standings.length,
+      hasNext: false,
+      hasPrev: page > 1,
+      rows: analysis.standings,
+    };
+  }, [analysis, leagueFormat, tablePage]);
+  const visibleTable = tableData ?? tableFallback;
+
   const openRival = useCallback(
     (rivalId: number) => {
       if (!entryId || !Number.isFinite(rivalId)) return;
@@ -791,22 +805,25 @@ export function MiniLeagueApp({
                   {tableError}
                 </p>
               ) : null}
-              {tableLoading && !tableData ? (
+              {tableLoading && !visibleTable ? (
                 <p className="text-sm text-muted-foreground">{t("loadingStandings")}</p>
               ) : null}
-              {tableData ? (
+              {visibleTable ? (
                 <>
+                  {!tableData && tableFallback ? (
+                    <p className="text-xs text-amber-200/90">{t("tableFallback")}</p>
+                  ) : null}
                   <StandingsTable
-                    rows={tableData.rows}
-                    h2h={tableData.format === "h2h"}
+                    rows={visibleTable.rows}
+                    h2h={visibleTable.format === "h2h"}
                     onOpenSquad={(row) => openRival(row.entry)}
                     onOpenHistory={(row) => openHistory(row.entry)}
                     labels={{
                       rank: t("colRank"),
                       team: t("colTeam"),
                       manager: t("colManager"),
-                      gw: tableData.format === "h2h" ? t("colPointsFor") : t("colGw"),
-                      total: tableData.format === "h2h" ? t("colH2h") : t("colTotal"),
+                      gw: visibleTable.format === "h2h" ? t("colPointsFor") : t("colGw"),
+                      total: visibleTable.format === "h2h" ? t("colH2h") : t("colTotal"),
                       squadDiff: t("colSquadDiff"),
                       you: t("youBadge"),
                     }}
@@ -814,14 +831,14 @@ export function MiniLeagueApp({
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                     <button
                       type="button"
-                      disabled={!tableData.hasPrev || tableLoading}
+                      disabled={!visibleTable.hasPrev || tableLoading || !tableData}
                       onClick={() => setTablePage((p) => Math.max(1, p - 1))}
                       className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
                     >
                       {t("pagePrev")}
                     </button>
                     <p className="text-xs text-muted-foreground">
-                      {t("pageStatus", { n: tableData.page })}
+                      {t("pageStatus", { n: visibleTable.page })}
                       {tableLoading ? ` · ${t("loadingStandings")}` : ""}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -846,7 +863,7 @@ export function MiniLeagueApp({
                       ) : null}
                       <button
                         type="button"
-                        disabled={!tableData.hasNext || tableLoading}
+                        disabled={!tableData?.hasNext || tableLoading}
                         onClick={() => setTablePage((p) => p + 1)}
                         className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
                       >
@@ -1003,7 +1020,7 @@ export function MiniLeagueApp({
         </>
       ) : null}
 
-      {index && leagueId ? (
+      {index && leagueId && tab !== "table" ? (
         <MiniLeagueKillerTools
           entryId={entryId}
           leagueId={leagueId}

@@ -943,7 +943,9 @@ export function MiniLeagueKillerTools({
                                 {cell.fdrAvg != null ? cell.fdrAvg.toFixed(1) : "—"}
                               </span>
                               <span className="block text-[10px] text-muted-foreground">
-                                {cell.matches === 0
+                                {!cell.known
+                                  ? "—"
+                                  : cell.matches === 0
                                   ? t("toolsFxBlank")
                                   : cell.matches > 1
                                     ? t("toolsFxDgw", { n: cell.matches })

@@ -11,6 +11,8 @@ import {
   nextStandingsScanPages,
   overlayChipSlots,
   pickRivalSample,
+  publishedPicksGw,
+  fixtureWindowStart,
   resolveYourStandingsPage,
   shouldContinueStandingsScan,
   standingsPageForRank,
@@ -119,6 +121,26 @@ function main(): void {
     chipSlotsFromUsed([{ name: "bboost", event: 1 }]),
   );
   assert.equal(fromPicks.bb1.used, true);
+
+  assert.equal(
+    publishedPicksGw({ current: 1, next: 2, currentFinished: true, nextIsCurrent: false }),
+    1,
+    "GW1 finished / GW2 not started: use GW1 picks, not the 404 next GW",
+  );
+  assert.equal(
+    publishedPicksGw({ current: 2, next: 3, currentFinished: false, nextIsCurrent: false }),
+    2,
+  );
+  assert.equal(
+    publishedPicksGw({ current: 1, next: 2, currentFinished: true, nextIsCurrent: true }),
+    2,
+  );
+  assert.equal(
+    fixtureWindowStart({ current: 1, next: 2, currentFinished: true }),
+    2,
+    "fixture overlap starts at the upcoming GW after a finished GW1",
+  );
+  assert.equal(fixtureWindowStart({ current: 2, next: 3, currentFinished: false }), 2);
 
   console.log("mini-league-window-self-test: ok");
 }

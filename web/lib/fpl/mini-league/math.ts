@@ -348,6 +348,35 @@ export function squadDiffPct(youIds: number[], themIds: number[]): number | null
 /** Always 5 ticks so early-season rank charts are not stretched across two points. */
 export const RANK_CHART_SPAN = 5;
 
+/**
+ * Last gameweek whose picks FPL has published.
+ * After GW1 finishes, bootstrap still has `is_next` on GW2 and `/event/2/picks/` 404s
+ * until the deadline — using `next` here doubles FPL calls and blanks captain/chips.
+ */
+export function publishedPicksGw(opts: {
+  current: number;
+  next: number;
+  currentFinished?: boolean;
+  nextIsCurrent?: boolean;
+}): number {
+  const current = Math.max(1, Math.min(38, Math.floor(Number(opts.current)) || 1));
+  const next = Math.max(1, Math.min(38, Math.floor(Number(opts.next)) || current));
+  if (opts.nextIsCurrent) return next;
+  return current;
+}
+
+/** First GW of the fixture-overlap window: the live GW, or the next one if current is finished. */
+export function fixtureWindowStart(opts: {
+  current: number;
+  next: number;
+  currentFinished?: boolean;
+}): number {
+  const current = Math.max(1, Math.min(38, Math.floor(Number(opts.current)) || 1));
+  const next = Math.max(current, Math.min(38, Math.floor(Number(opts.next)) || current));
+  if (opts.currentFinished) return next;
+  return current;
+}
+
 export function rankChartGwWindow(
   currentGw: number,
   span = RANK_CHART_SPAN,

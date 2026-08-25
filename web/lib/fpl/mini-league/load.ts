@@ -23,9 +23,11 @@ import {
   gwSwingRows,
   neighborStandingsPages,
   nextStandingsScanPages,
+  fixtureWindowStart,
   overlayChipSlots,
   pickRivalSample,
   pointsToCatch,
+  publishedPicksGw,
   rankChartGwWindow,
   rankChartRole,
   rankMove,
@@ -86,6 +88,39 @@ const PICKS_CONCURRENCY = 6;
 const HISTORY_CONCURRENCY = 3;
 const TEMPLATE_PCT = 0.4;
 const TEMPLATE_MIN_OWNERS = 2;
+const MEMO_TTL_MS = 45_000;
+
+type MiniLeagueGws = {
+  current: number;
+  next: number;
+  picksGw: number;
+  fixtureGw: number;
+};
+
+type HistoryPack = {
+  entry: number;
+  current: FplHistoryResponse["current"];
+  chips: FplHistoryResponse["chips"];
+};
+
+type MemoEntry<T> = { at: number; value: T };
+
+const windowCache = new Map<string, MemoEntry<LeagueWindow>>();
+const windowInflight = new Map<string, Promise<LeagueWindow>>();
+const picksCache = new Map<string, MemoEntry<FplPicksResponse | null>>();
+const picksInflight = new Map<string, Promise<FplPicksResponse | null>>();
+const historyCache = new Map<string, MemoEntry<HistoryPack | null>>();
+const historyInflight = new Map<string, Promise<HistoryPack | null>>();
+
+function memoGet<T>(map: Map<string, MemoEntry<T>>, key: string): T | undefined {
+  const hit = map.get(key);
+  if (!hit) return undefined;
+  if (Date.now() - hit.at > MEMO_TTL_MS) {
+    map.delete(key);
+    return undefined;
+  }
+  return hit.value;
+}
 
 async function resolveGwFromBootstrap(): Promise<{ current: number; next: number }> {
   const boot = await getFplBootstrapStatic();
@@ -97,17 +132,41 @@ async function resolveGwFromBootstrap(): Promise<{ current: number; next: number
   return { current, next };
 }
 
-/** Prefer DB gameweek, then official bootstrap-static. */
+/** Prefer official bootstrap so Mini League does not follow a stale `gameweeks` row. */
 async function resolveGw(): Promise<{ current: number; next: number }> {
   try {
-    return await resolveCurrentGw();
+    return await resolveGwFromBootstrap();
   } catch {
     try {
-      return await resolveGwFromBootstrap();
+      return await resolveCurrentGw();
     } catch {
       return { current: 1, next: 1 };
     }
   }
+}
+
+async function resolveMiniLeagueGws(): Promise<MiniLeagueGws> {
+  await getFplBootstrapStatic().catch(() => null);
+  const { current, next } = await resolveGw();
+  let currentFinished = false;
+  let nextIsCurrent = false;
+  try {
+    const boot = await getFplBootstrapStatic();
+    const cur = (boot.events ?? []).find((e) => Number(e.id) === current);
+    const nxt = (boot.events ?? []).find((e) => Number(e.id) === next);
+    currentFinished = Boolean(cur?.finished);
+    nextIsCurrent = Boolean(nxt?.is_current);
+  } catch {
+    /* publishedPicksGw falls back to `current` */
+  }
+  const picksGw = publishedPicksGw({ current, next, currentFinished, nextIsCurrent });
+  const fixtureGw = fixtureWindowStart({ current, next, currentFinished });
+  return {
+    current: current || 1,
+    next: next || current || 1,
+    picksGw,
+    fixtureGw,
+  };
 }
 
 type ClassicStandingsApi = {
@@ -498,8 +557,9 @@ async function locateEntryStandingsPages(
   return { collected, hit };
 }
 
-type LeagueWindow = {
+interface LeagueWindow {
   gw: number;
+  fixtureGw: number;
   youRank: number | null;
   leagueFromEntry:
     | {
@@ -525,17 +585,18 @@ type LeagueWindow = {
   yourStandingsPage: number | null;
 };
 
-async function loadLeagueWindow(
+async function loadLeagueWindowFresh(
   entryId: number,
   leagueId: number,
   format: MiniLeagueFormat,
 ): Promise<LeagueWindow> {
-  const [{ current, next }, page1, entry] = await Promise.all([
-    resolveGw(),
+  const [gws, page1, entry] = await Promise.all([
+    resolveMiniLeagueGws(),
     fetchStandingsPage(leagueId, 1, format),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
-  const gw = next || current || 1;
+  const gw = gws.picksGw;
+  const fixtureGw = gws.fixtureGw;
   const leagueFromEntry =
     format === "h2h"
       ? entry.leagues?.h2h?.find((l) => l.id === leagueId)
@@ -587,6 +648,7 @@ async function loadLeagueWindow(
 
   return {
     gw,
+    fixtureGw,
     youRank,
     leagueFromEntry,
     leagueMeta: page1.league,
@@ -600,6 +662,32 @@ async function loadLeagueWindow(
     memberCountExact,
     yourStandingsPage: hit?.page ?? null,
   };
+}
+
+function leagueWindowKey(entryId: number, leagueId: number, format: MiniLeagueFormat): string {
+  return `${format}:${leagueId}:${entryId}`;
+}
+
+async function loadLeagueWindow(
+  entryId: number,
+  leagueId: number,
+  format: MiniLeagueFormat,
+): Promise<LeagueWindow> {
+  const key = leagueWindowKey(entryId, leagueId, format);
+  const cached = memoGet(windowCache, key);
+  if (cached) return cached;
+  const inflight = windowInflight.get(key);
+  if (inflight) return inflight;
+  const pending = loadLeagueWindowFresh(entryId, leagueId, format)
+    .then((value) => {
+      windowCache.set(key, { at: Date.now(), value });
+      return value;
+    })
+    .finally(() => {
+      windowInflight.delete(key);
+    });
+  windowInflight.set(key, pending);
+  return pending;
 }
 
 function formatFixture(oppShort: string | undefined, home: boolean | undefined): string | null {
@@ -620,7 +708,7 @@ async function stampFixtures(refs: MiniLeaguePlayerRef[]): Promise<void> {
   }
 }
 
-async function fetchPicks(
+async function fetchPicksUncached(
   entryId: number,
   gw: number,
 ): Promise<FplPicksResponse | null> {
@@ -636,6 +724,27 @@ async function fetchPicks(
     }
     return null;
   }
+}
+
+async function fetchPicks(
+  entryId: number,
+  gw: number,
+): Promise<FplPicksResponse | null> {
+  const key = `${entryId}:${gw}`;
+  const cached = memoGet(picksCache, key);
+  if (cached !== undefined) return cached;
+  const inflight = picksInflight.get(key);
+  if (inflight) return inflight;
+  const pending = fetchPicksUncached(entryId, gw)
+    .then((value) => {
+      picksCache.set(key, { at: Date.now(), value });
+      return value;
+    })
+    .finally(() => {
+      picksInflight.delete(key);
+    });
+  picksInflight.set(key, pending);
+  return pending;
 }
 
 function healthKind(
@@ -959,8 +1068,8 @@ async function loadPlayerBundle(ids: number[]): Promise<{
 
   let xpById = new Map<number, number>();
   try {
-    const { current, next } = await resolveGw();
-    const gw = next || current || 1;
+    const gws = await resolveMiniLeagueGws();
+    const gw = gws.picksGw;
     const projections = await projectPlayers(unique, {
       currentGw: gw,
       fromGw: gw,
@@ -1011,8 +1120,8 @@ export async function loadRivalCompare(
   youEntryId: number,
   rivalEntryId: number,
 ): Promise<MiniLeagueRivalCompare> {
-  const { current, next } = await resolveGw();
-  const gw = next || current || 1;
+  const gws = await resolveMiniLeagueGws();
+  const gw = gws.picksGw;
   const [youEntry, rivalEntry, youPicks, rivalPicks] = await Promise.all([
     fplGet<FplEntry>(`/entry/${youEntryId}/`),
     fplGet<FplEntry>(`/entry/${rivalEntryId}/`),
@@ -1058,11 +1167,11 @@ export async function loadMiniLeagueStandingsPage(
   format: MiniLeagueFormat = "classic",
 ): Promise<MiniLeagueStandingsPage> {
   const safePage = Math.max(1, Math.floor(page) || 1);
-  const [{ current, next }, pack] = await Promise.all([
-    resolveGw(),
+  const [gwsResolved, pack] = await Promise.all([
+    resolveMiniLeagueGws(),
     fetchStandingsPage(leagueId, safePage, format),
   ]);
-  const gw = next || current || 1;
+  const gw = gwsResolved.picksGw;
   const rows = (pack.results ?? [])
     .map((row, i) =>
       standingRow(row, youEntryId, null, (safePage - 1) * STANDINGS_PAGE_SIZE + i + 1),
@@ -1139,6 +1248,7 @@ export async function loadManagerHistory(
 
 type StandingsContext = {
   gw: number;
+  fixtureGw: number;
   standings: MiniLeagueStandingRow[];
   you: MiniLeagueStandingRow | null;
   leader: MiniLeagueStandingRow | null;
@@ -1155,6 +1265,7 @@ async function loadStandingsContext(
   const window = await loadLeagueWindow(entryId, leagueId, format);
   return {
     gw: window.gw,
+    fixtureGw: window.fixtureGw,
     standings: window.standings,
     you: window.you,
     leader: window.leader,
@@ -1164,13 +1275,7 @@ async function loadStandingsContext(
   };
 }
 
-type HistoryPack = {
-  entry: number;
-  current: FplHistoryResponse["current"];
-  chips: FplHistoryResponse["chips"];
-};
-
-async function fetchHistoryPack(entryId: number): Promise<HistoryPack | null> {
+async function fetchHistoryPackUncached(entryId: number): Promise<HistoryPack | null> {
   try {
     const history = await fplGet<FplHistoryResponse>(`/entry/${entryId}/history/`);
     return {
@@ -1181,6 +1286,24 @@ async function fetchHistoryPack(entryId: number): Promise<HistoryPack | null> {
   } catch {
     return null;
   }
+}
+
+async function fetchHistoryPack(entryId: number): Promise<HistoryPack | null> {
+  const key = String(entryId);
+  const cached = memoGet(historyCache, key);
+  if (cached !== undefined) return cached;
+  const inflight = historyInflight.get(key);
+  if (inflight) return inflight;
+  const pending = fetchHistoryPackUncached(entryId)
+    .then((value) => {
+      historyCache.set(key, { at: Date.now(), value });
+      return value;
+    })
+    .finally(() => {
+      historyInflight.delete(key);
+    });
+  historyInflight.set(key, pending);
+  return pending;
 }
 
 function pickOverallEntries(ctx: StandingsContext, youEntryId: number): MiniLeagueStandingRow[] {
@@ -1298,6 +1421,31 @@ function totalsFromPicks(picks: RivalPicks | undefined): HistoryGwTotals[] {
   ];
 }
 
+function totalsFromStandings(row: MiniLeagueStandingRow, event: number): HistoryGwTotals[] {
+  if (!Number.isFinite(row.total) || event < 1) return [];
+  return [
+    {
+      event,
+      points: Number.isFinite(row.eventTotal) ? row.eventTotal : 0,
+      total: row.total,
+      overallRank: null,
+    },
+  ];
+}
+
+function bestHistoryTotals(
+  pack: HistoryPack | null,
+  picks: RivalPicks | undefined,
+  row: MiniLeagueStandingRow | undefined,
+  event: number,
+): HistoryGwTotals[] {
+  const fromHistory = packToTotals(pack);
+  if (fromHistory.length) return fromHistory;
+  const fromPicks = totalsFromPicks(picks);
+  if (fromPicks.length) return fromPicks;
+  return row ? totalsFromStandings(row, event) : [];
+}
+
 function chipShort(name: string | null | undefined): string | null {
   if (!name) return null;
   const kind = classifyChipName(name);
@@ -1324,9 +1472,10 @@ async function loadFplFixturesWindow(
     const event = Number(row.event);
     return Number.isFinite(event) && event >= fromGw && event <= toGw;
   };
+  let rows: FplFixtureRow[] = [];
   try {
     const all = await fplGet<FplFixtureRow[]>("/fixtures/", { timeoutMs: 15_000, retries: 2 });
-    return (all ?? []).filter(inWindow);
+    rows = (all ?? []).filter(inWindow);
   } catch {
     const gws: number[] = [];
     for (let event = fromGw; event <= toGw; event++) gws.push(event);
@@ -1337,7 +1486,21 @@ async function loadFplFixturesWindow(
         ),
       ),
     );
-    return packs.flat().filter(inWindow);
+    rows = packs.flat().filter(inWindow);
+  }
+  if (rows.length) return rows;
+  try {
+    const season = await getCurrentFplSeason();
+    const db = await loadFixturesWindow(fromGw, toGw, season);
+    return db.map((fx) => ({
+      event: fx.gw,
+      team_h: fx.home_team_id,
+      team_a: fx.away_team_id,
+      team_h_difficulty: fx.home_fdr ?? undefined,
+      team_a_difficulty: fx.away_fdr ?? undefined,
+    }));
+  } catch {
+    return [];
   }
 }
 
@@ -1473,12 +1636,18 @@ async function buildFixtureRuns(
       if (Number(row.event) !== event) return false;
       return Number(row.team_h) === teamId || Number(row.team_a) === teamId;
     });
+  const knownGws = new Set(
+    fplFx
+      .map((row) => Number(row.event))
+      .filter((event) => Number.isFinite(event) && event > 0),
+  );
 
   return runRows.map((row) => {
     const picks = picksList.find((p) => p.entry === row.entry);
     const ids = picks?.starterIds.length ? picks.starterIds : picks?.ids ?? [];
     const captainId = picks?.captainId ?? null;
     const cells = gws.map((event) => {
+      const known = knownGws.has(event);
       const perPlayer = ids.map((id) => {
         const teamId = metaById.get(id)?.team_id;
         if (teamId == null) return 0;
@@ -1519,6 +1688,7 @@ async function buildFixtureRuns(
         matches,
         fdrAvg: fdrN ? Math.round((fdrSum / fdrN) * 10) / 10 : null,
         xp,
+        known,
       };
     });
     const xpParts = cells.map((c) => c.xp).filter((n): n is number => n != null);
@@ -1708,10 +1878,14 @@ export async function loadMiniLeagueTools(
   const picksByEntry = new Map(picksList.map((p) => [p.entry, p]));
   const historyMap = new Map<number, HistoryGwTotals[]>();
   for (const row of plotRows) {
-    const fromHistory = packToTotals(historyByEntry.get(row.entry) ?? null);
     historyMap.set(
       row.entry,
-      fromHistory.length ? fromHistory : totalsFromPicks(picksByEntry.get(row.entry)),
+      bestHistoryTotals(
+        historyByEntry.get(row.entry) ?? null,
+        picksByEntry.get(row.entry),
+        row,
+        ctx.gw,
+      ),
     );
   }
   const rankedGws = gws.filter((event) => event <= ctx.gw);
@@ -1782,7 +1956,7 @@ export async function loadMiniLeagueTools(
   const fixtures = await buildFixtureOverlap(
     entryId,
     picksList,
-    ctx.gw,
+    ctx.fixtureGw,
     plotRows.map((row) => ({
       entry: row.entry,
       teamName: row.entryName,
@@ -1810,7 +1984,7 @@ export async function loadMiniLeagueLive(
   const uniqueTargets = pickOverallEntries(ctx, entryId);
 
   const [{ pointsById, fixtures, status }, picksList] = await Promise.all([
-    loadLiveEvent(ctx.gw),
+    loadLiveEvent(ctx.fixtureGw),
     mapPool(uniqueTargets, PICKS_CONCURRENCY, async (row) => ({
       entry: row.entry,
       picks: await fetchPicks(row.entry, ctx.gw),
@@ -1884,7 +2058,7 @@ export async function loadMiniLeagueLive(
     .filter((n): n is number => n != null);
 
   return {
-    gw: ctx.gw,
+    gw: ctx.fixtureGw,
     status,
     you: toLive(ctx.you),
     above: toLive(ctx.nextRival),
@@ -1900,15 +2074,27 @@ export async function loadBeatRival(
   youEntryId: number,
   rivalEntryId: number,
 ): Promise<MiniLeagueBeatRival> {
-  const [{ current, next }, compare, youHist, rivalHist] = await Promise.all([
-    resolveGw(),
+  const [gwsResolved, compare, youHist, rivalHist] = await Promise.all([
+    resolveMiniLeagueGws(),
     loadRivalCompare(youEntryId, rivalEntryId),
     fetchHistoryPack(youEntryId),
     fetchHistoryPack(rivalEntryId),
   ]);
-  const gw = next || current || 1;
+  const gw = gwsResolved.picksGw;
   const gws = rankChartGwWindow(gw);
-  const swings = gwSwingRows(packToTotals(youHist), packToTotals(rivalHist), gws);
+  const youPicks = rivalPicksFromResponse(
+    youEntryId,
+    await fetchPicks(youEntryId, gw),
+  );
+  const rivalPicks = rivalPicksFromResponse(
+    rivalEntryId,
+    await fetchPicks(rivalEntryId, gw),
+  );
+  const swings = gwSwingRows(
+    bestHistoryTotals(youHist, youPicks, undefined, gw),
+    bestHistoryTotals(rivalHist, rivalPicks, undefined, gw),
+    gws,
+  );
   const tally = swingTally(swings);
   const youIds = compare.you.picks.map((p) => p.fplId);
   const rivalIds = compare.rival.picks.map((p) => p.fplId);
@@ -2027,11 +2213,12 @@ export async function loadH2hMatchup(
   leagueId: number,
   format: MiniLeagueFormat = "h2h",
 ): Promise<MiniLeagueH2hPayload> {
-  const [{ current, next }, entry] = await Promise.all([
-    resolveGw(),
+  const [gwsResolved, entry] = await Promise.all([
+    resolveMiniLeagueGws(),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
-  const gw = next || current || 1;
+  const gw = gwsResolved.picksGw;
+  const matchGw = gwsResolved.fixtureGw;
   const gws = rankChartGwWindow(gw);
 
   if (format === "classic") {
@@ -2048,7 +2235,11 @@ export async function loadH2hMatchup(
       captainRef(entryId, gw),
       captainRef(opp.entry, gw),
     ]);
-    const form = gwSwingRows(packToTotals(youHist), packToTotals(oppHist), gws);
+    const form = gwSwingRows(
+      bestHistoryTotals(youHist, undefined, ctx.you ?? undefined, gw),
+      bestHistoryTotals(oppHist, undefined, opp, gw),
+      gws,
+    );
     const tally = swingTally(form);
     const youPoints = ctx.you?.eventTotal ?? null;
     const themPoints = opp.eventTotal;
@@ -2088,7 +2279,7 @@ export async function loadH2hMatchup(
 
   const league = entry.leagues?.h2h?.find((l) => l.id === leagueId);
   const leagueName = league?.name ?? `League ${leagueId}`;
-  const match = await findH2hMatch(leagueId, entryId, gw);
+  const match = await findH2hMatch(leagueId, entryId, matchGw);
 
   if (!match) {
     return emptyH2hPayload(leagueId, leagueName, gw, "h2h");
@@ -2111,7 +2302,11 @@ export async function loadH2hMatchup(
   ]);
   const form = isBye
     ? []
-    : gwSwingRows(packToTotals(youHist), packToTotals(oppHist), gws);
+    : gwSwingRows(
+        bestHistoryTotals(youHist, undefined, undefined, gw),
+        bestHistoryTotals(oppHist, undefined, undefined, gw),
+        gws,
+      );
   const tally = swingTally(form);
 
   const youName = youAre1

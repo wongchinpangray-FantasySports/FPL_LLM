@@ -261,6 +261,8 @@ export type MiniLeagueFixtureRunCell = {
   matches: number;
   fdrAvg: number | null;
   xp: number | null;
+  /** False when we have no fixture list for this GW (missing data, not a blank). */
+  known: boolean;
 };
 
 export type MiniLeagueFixtureRun = {
