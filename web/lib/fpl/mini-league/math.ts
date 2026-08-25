@@ -218,3 +218,100 @@ export function squadDiffPct(youIds: number[], themIds: number[]): number | null
   const denom = 15;
   return Math.round((100 * (denom - Math.min(shared, denom))) / denom);
 }
+
+/** Always 5 ticks so early-season rank charts are not stretched across two points. */
+export const RANK_CHART_SPAN = 5;
+
+export function rankChartGwWindow(
+  currentGw: number,
+  span = RANK_CHART_SPAN,
+): number[] {
+  const gw = Math.max(1, Math.min(38, Math.floor(Number(currentGw)) || 1));
+  const n = Math.max(2, Math.min(8, Math.floor(span) || RANK_CHART_SPAN));
+  const from = gw < n ? 1 : gw - n + 1;
+  const gws: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const event = from + i;
+    if (event >= 1 && event <= 38) gws.push(event);
+  }
+  while (gws.length < n && (gws[0] ?? 1) > 1) {
+    gws.unshift((gws[0] ?? 1) - 1);
+  }
+  return gws;
+}
+
+export type HistoryGwTotals = {
+  event: number;
+  points: number;
+  total: number;
+  overallRank: number | null;
+};
+
+/** Rank managers against each other from season totals at each GW (sample only). */
+export function reconstructSampleRanks(
+  histories: Map<number, HistoryGwTotals[]>,
+  gws: number[],
+): Map<number, Map<number, number>> {
+  const byEntry = new Map<number, Map<number, number>>();
+  for (const event of gws) {
+    const rows: Array<{ entry: number; total: number }> = [];
+    for (const [entry, pts] of histories) {
+      const hit = pts.find((p) => p.event === event);
+      if (hit && Number.isFinite(hit.total)) {
+        rows.push({ entry, total: hit.total });
+      }
+    }
+    rows.sort((a, b) => b.total - a.total || a.entry - b.entry);
+    rows.forEach((row, i) => {
+      let map = byEntry.get(row.entry);
+      if (!map) {
+        map = new Map();
+        byEntry.set(row.entry, map);
+      }
+      map.set(event, i + 1);
+    });
+  }
+  return byEntry;
+}
+
+export type GwSwingRow = {
+  event: number;
+  youPoints: number | null;
+  rivalPoints: number | null;
+  delta: number | null;
+};
+
+export function gwSwingRows(
+  you: HistoryGwTotals[],
+  rival: HistoryGwTotals[],
+  gws: number[],
+): GwSwingRow[] {
+  const youBy = new Map(you.map((r) => [r.event, r]));
+  const themBy = new Map(rival.map((r) => [r.event, r]));
+  return gws.map((event) => {
+    const yp = youBy.get(event)?.points;
+    const tp = themBy.get(event)?.points;
+    const youPoints = yp != null && Number.isFinite(yp) ? yp : null;
+    const rivalPoints = tp != null && Number.isFinite(tp) ? tp : null;
+    const delta =
+      youPoints != null && rivalPoints != null ? youPoints - rivalPoints : null;
+    return { event, youPoints, rivalPoints, delta };
+  });
+}
+
+export function swingTally(rows: GwSwingRow[]): {
+  youWon: number;
+  theyWon: number;
+  draws: number;
+} {
+  let youWon = 0;
+  let theyWon = 0;
+  let draws = 0;
+  for (const row of rows) {
+    if (row.delta == null) continue;
+    if (row.delta > 0) youWon += 1;
+    else if (row.delta < 0) theyWon += 1;
+    else draws += 1;
+  }
+  return { youWon, theyWon, draws };
+}

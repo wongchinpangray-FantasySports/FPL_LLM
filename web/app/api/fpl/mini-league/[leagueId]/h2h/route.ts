@@ -55,7 +55,9 @@ export async function GET(
       return NextResponse.json({ error: "premium_required" }, { status: 402 });
     }
     const entryId = await resolveEntryId(req);
-    const data = await loadH2hMatchup(entryId, leagueId);
+    const url = new URL(req.url);
+    const format = url.searchParams.get("format") === "h2h" ? "h2h" : "classic";
+    const data = await loadH2hMatchup(entryId, leagueId, format);
     return NextResponse.json(data);
   } catch (err) {
     const status = err instanceof FplAccessError ? err.status : 500;

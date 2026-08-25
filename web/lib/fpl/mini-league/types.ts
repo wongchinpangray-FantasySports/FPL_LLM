@@ -196,6 +196,13 @@ export type MiniLeagueChipRow = {
   slots: MiniLeagueChipSlots;
 };
 
+export type MiniLeagueChartPoint = {
+  event: number;
+  rank: number | null;
+  points: number | null;
+  overallRank: number | null;
+};
+
 export type MiniLeagueRankSeries = {
   entry: number;
   teamName: string;
@@ -204,6 +211,7 @@ export type MiniLeagueRankSeries = {
   role: MiniLeagueRankChartRole;
   lastRank: number | null;
   rank: number;
+  points: MiniLeagueChartPoint[];
 };
 
 export type MiniLeagueOverallSeries = {
@@ -217,6 +225,7 @@ export type MiniLeagueOverallSeries = {
 
 export type MiniLeagueRankChart = {
   gw: number;
+  gws: number[];
   miniLeague: MiniLeagueRankSeries[];
   overall: MiniLeagueOverallSeries[];
 };
@@ -242,10 +251,27 @@ export type MiniLeagueFixtureSameOpp = {
   yourCount: number;
 };
 
+export type MiniLeagueFixtureRunCell = {
+  event: number;
+  matches: number;
+  fdrAvg: number | null;
+  xp: number | null;
+};
+
+export type MiniLeagueFixtureRun = {
+  entry: number;
+  teamName: string;
+  isYou: boolean;
+  role: MiniLeagueRankChartRole;
+  cells: MiniLeagueFixtureRunCell[];
+  xpTotal: number | null;
+};
+
 export type MiniLeagueFixtureOverlap = {
   fromGw: number;
   toGw: number;
   gws: number[];
+  runs: MiniLeagueFixtureRun[];
   sharedDgw: MiniLeagueFixtureClubShare[];
   blanks: MiniLeagueFixtureBlank[];
   sameOpp: MiniLeagueFixtureSameOpp[];
@@ -272,6 +298,8 @@ export type MiniLeagueLiveManager = {
   livePoints: number | null;
   remaining: number | null;
   playing: number | null;
+  captain: MiniLeaguePlayerRef | null;
+  chip: string | null;
 };
 
 export type MiniLeagueLivePayload = {
@@ -280,6 +308,8 @@ export type MiniLeagueLivePayload = {
   you: MiniLeagueLiveManager | null;
   above: MiniLeagueLiveManager | null;
   below: MiniLeagueLiveManager | null;
+  sample: MiniLeagueLiveManager[];
+  avgRemaining: number | null;
 };
 
 export type MiniLeagueBeatReason = "rival_cover" | "template" | "xp";
@@ -291,30 +321,39 @@ export type MiniLeagueBeatSuggestion = {
   xpDelta: number | null;
 };
 
+export type MiniLeagueGwSwing = {
+  event: number;
+  youPoints: number | null;
+  rivalPoints: number | null;
+  delta: number | null;
+};
+
 export type MiniLeagueBeatRival = MiniLeagueRivalCompare & {
   squadDiffPct: number | null;
   suggestion: MiniLeagueBeatSuggestion | null;
+  gws: number[];
+  swings: MiniLeagueGwSwing[];
+  youWon: number;
+  theyWon: number;
+  draws: number;
 };
 
 export type MiniLeagueH2hLean = "you" | "them" | "even";
 
+export type MiniLeagueH2hSide = {
+  entry: number;
+  teamName: string;
+  managerName: string;
+  points: number | null;
+  chips: MiniLeagueChipSlots;
+  captain: MiniLeaguePlayerRef | null;
+};
+
 export type MiniLeagueH2hMatchup = {
   gw: number;
   isBye: boolean;
-  you: {
-    entry: number;
-    teamName: string;
-    managerName: string;
-    points: number | null;
-    chips: MiniLeagueChipSlots;
-  };
-  opponent: {
-    entry: number;
-    teamName: string;
-    managerName: string;
-    points: number | null;
-    chips: MiniLeagueChipSlots;
-  } | null;
+  you: MiniLeagueH2hSide;
+  opponent: MiniLeagueH2hSide | null;
   lean: MiniLeagueH2hLean;
 };
 
@@ -322,5 +361,9 @@ export type MiniLeagueH2hPayload = {
   leagueId: number;
   leagueName: string;
   gw: number;
+  mode: "h2h" | "race";
   matchup: MiniLeagueH2hMatchup | null;
+  form: MiniLeagueGwSwing[];
+  youWon: number;
+  theyWon: number;
 };

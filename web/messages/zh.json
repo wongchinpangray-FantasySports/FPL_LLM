@@ -2540,21 +2540,23 @@
     "movesHint": "本轮该联赛排名跃升与下滑最大的经理。",
     "movesEmpty": "本轮还没有排名变动记录。",
     "toolsTitle": "小联赛大杀器工具",
-    "toolsHint": "点开一张卡片即可分析本联赛：排名曲线、芯片、实时得分、一转方案、赛程重叠与头对头。",
+    "toolsHint": "点开一张卡片即可分析本联赛：近 5 轮排名赛、芯片、未踢完人数、1v1 得分、赛程 xP，以及本周对决。",
     "toolsAria": "小联赛大杀器工具",
     "toolsLoading": "正在加载这个工具…",
     "toolsError": "无法从 FPL 加载这个工具。",
-    "toolsRankMlTitle": "小联赛排名",
-    "toolsRankMlHint": "上一轮已公布排名 vs 本轮排名。FPL 没有提供每周小联赛历史接口，所以每位经理只有两个点。",
+    "toolsRankMlTitle": "小联赛排名赛（样本）",
+    "toolsRankMlHint": "用这几位经理的赛季总分重建近 5 轮相对名次。未来轮次留空，横轴固定 5 格，避免两点被拉得很怪。",
+    "toolsRankPtsTitle": "轮次得分",
+    "toolsRankPtsHint": "同一 5 轮谁实际拿分。越高越好。",
     "toolsRankOrTitle": "总排名",
-    "toolsRankOrHint": "你和几位追赶对象的官方总排名（按轮次）。",
+    "toolsRankOrHint": "同一 5 轮的官方总排名。",
     "toolsRankLast": "上周",
     "toolsRankNow": "GW{n}",
-    "toolsRankEmpty": "本赛季还没有总排名历史。",
+    "toolsRankEmpty": "本赛季还没有轮次记录。",
     "toolsChipHint": "绿色：对方还留着你已经用过的芯片。琥珀色：对方已经用了你还留着的芯片。圆圈：尚未使用。",
     "toolsChipStill": "仍持有你已用过的芯片",
     "toolsChipSpent": "已用掉你还留着的芯片",
-    "toolsLiveNotStarted": "本轮尚未开始。下面显示上一轮得分。",
+    "toolsLiveNotStarted": "本轮尚未开始。开赛前最有用的是队长和还有多少人要踢。",
     "toolsLiveFinished": "本轮已结束。下面显示本轮得分。",
     "toolsLivePts": "实时分",
     "toolsLastGw": "上轮",
@@ -2562,8 +2564,13 @@
     "toolsLiveGap": "相对上一名的实时分差：{n} 分（正数表示对方领先）。",
     "toolsLiveAbove": "上一名",
     "toolsLiveBelow": "下一名",
+    "toolsLiveWhy": "作用：未踢完的人和队长决定本周末你会不会超车，不只是三张比分卡。",
+    "toolsLiveLeft": "未踢完",
+    "toolsLiveLeftVsAvg": "你还有 {you} 人未踢完，样本平均 {avg} 人。",
     "toolsBeatSelect": "对手",
-    "toolsBeatGap": "相对你 {n} 分 · 阵容差异 {diff}",
+    "toolsBeatGap": "相对你 {n} 分（正数表示对方领先）",
+    "toolsBeatForm": "近 5 轮：你赢 {you} 场，对方赢 {them} 场。",
+    "toolsSwingDelta": "分差",
     "toolsBeatSuggest": "推荐的一转",
     "toolsBeatOut": "卖出",
     "toolsBeatIn": "买入",
@@ -2574,26 +2581,31 @@
       "template": "模板补齐",
       "xp": "未来 3 轮 xP 提升最大"
     },
-    "toolsFxHint": "GW{from}–{to}：共享的双赛、你的后卫/门将空轮，以及面对同一对手的防线。",
-    "toolsFxEmpty": "这个窗口里没有双赛、空轮或堆叠的后卫/门将对位。",
+    "toolsFxHint": "GW{from}–{to}：你和追赶对象的首发 xP 与赛程难度。颜色是 FDR（绿色更好踢）。",
+    "toolsFxEmpty": "这个窗口还画不出赛程表。",
+    "toolsFxXpTotal": "xP",
+    "toolsFxBlank": "空轮",
+    "toolsFxDgw": "双赛×{n}",
     "toolsFxSharedDgw": "{n} 位对手和你共享 {team} 在 GW{gw} 的双赛",
     "toolsFxBlankDef": "你有 {n} 名后卫/门将在 GW{gw} 空轮",
     "toolsFxSameOpp": "你有 {n} 名后卫/门将在 GW{gw} 对阵 {opp}",
-    "toolsH2hClassicHint": "当前是经典联赛。切换到头对头联赛即可看到本轮对阵。",
+    "toolsH2hClassicHint": "你也有头对头联赛，可从这里切过去看官方对阵。",
     "toolsH2hNoLeagues": "这支队伍没有参加头对头联赛。",
     "toolsH2hSwitch": "打开这个头对头联赛",
-    "toolsH2hMatchup": "GW{gw} 对阵",
+    "toolsH2hMatchup": "GW{gw} 对决",
     "toolsH2hBye": "本轮轮空，没有对手。",
     "toolsH2hOpp": "对手",
     "toolsH2hChips": "剩余芯片",
-    "toolsH2hNoMatch": "还没有找到本轮的头对头对阵。",
+    "toolsH2hNoMatch": "还没有找到本周对决的对手。",
     "toolsH2hLeanYou": "倾向：按已列出的分数你领先（不是胜率）。",
     "toolsH2hLeanThem": "倾向：按已列出的分数对方领先（不是胜率）。",
     "toolsH2hLeanEven": "倾向：双方分数持平。",
+    "toolsH2hWhy": "本轮头对头对阵、队长、芯片，以及近 5 轮谁赢更多。",
+    "toolsH2hRaceWhy": "经典联赛：本周对决你正在追的那个人（队长 + 近 5 轮得分）。",
     "soon": {
       "rankHistory": {
         "title": "赛季排名曲线",
-        "body": "上周 vs 本轮的小联赛排名，以及你和邻近对手的总排名。"
+        "body": "近 5 轮你、榜首与邻近对手的相对名次，以及轮次得分。"
       },
       "chips": {
         "title": "芯片追踪",
@@ -2601,19 +2613,19 @@
       },
       "liveGw": {
         "title": "实时对位",
-        "body": "对比紧邻你上下名的实时得分；若本轮未开始或已结束，则显示上轮分数。"
+        "body": "队长、芯片、还有多少人未踢完——本周末会不会超车。"
       },
       "beatRival": {
         "title": "单挑某位对手",
-        "body": "针对一名经理看阵容差，并用 3 轮 xP 给出一转买入/卖出。"
+        "body": "近 5 轮谁多拿分，再用 3 轮 xP 给一转。"
       },
       "fixtures": {
-        "title": "赛程重叠",
-        "body": "谁和你同 DGW / 空轮 / 防线覆盖，判断联赛何时会洗牌。"
+        "title": "赛程走势",
+        "body": "未来 5 轮首发 xP 和难度，对比你正在追的经理。"
       },
       "h2h": {
-        "title": "头对头联赛",
-        "body": "本轮对阵、剩余芯片，以及简单的分数倾向；也可从这里切到头对头联赛。"
+        "title": "本周对决",
+        "body": "有头对头就看本轮对阵；经典联赛则 1v1 追赶对象。"
       }
     }
   }

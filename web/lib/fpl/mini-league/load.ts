@@ -16,29 +16,39 @@ import {
 import { getCurrentFplSeason } from "@/lib/fpl-season";
 import {
   chipSlotsFromUsed,
+  classifyChipName,
   classifyClassicLeague,
   emptyChipSlots,
+  gwSwingRows,
   pickRivalSample,
   pointsToCatch,
+  rankChartGwWindow,
   rankChartRole,
   rankMove,
+  reconstructSampleRanks,
   sortMovers,
   squadDiffPct,
   STANDINGS_PAGE_SIZE,
   standingsPageForRank,
+  swingTally,
+  type HistoryGwTotals,
 } from "@/lib/fpl/mini-league/math";
 import type {
   MiniLeagueAnalysis,
   MiniLeagueBeatRival,
   MiniLeagueBeatSuggestion,
   MiniLeagueChipRow,
+  MiniLeagueChipSlots,
   MiniLeagueFixtureBlank,
   MiniLeagueFixtureClubShare,
   MiniLeagueFixtureOverlap,
+  MiniLeagueFixtureRun,
   MiniLeagueFixtureSameOpp,
+  MiniLeagueGwSwing,
   MiniLeagueFormat,
   MiniLeagueH2hLean,
   MiniLeagueH2hPayload,
+  MiniLeagueH2hSide,
   MiniLeagueHealthFlag,
   MiniLeagueIndex,
   MiniLeagueLiveManager,
@@ -50,6 +60,7 @@ import type {
   MiniLeagueOverallSeries,
   MiniLeaguePlayerRef,
   MiniLeagueRankChart,
+  MiniLeagueRankChartRole,
   MiniLeagueRankSeries,
   MiniLeagueRivalCompare,
   MiniLeagueSellIdea,
@@ -193,7 +204,25 @@ type RivalPicks = {
   entry: number;
   captainId: number | null;
   ids: number[];
+  starterIds: number[];
+  chip: string | null;
 };
+
+function emptyRivalPicks(entry: number): RivalPicks {
+  return { entry, captainId: null, ids: [], starterIds: [], chip: null };
+}
+
+function rivalPicksFromResponse(entry: number, picks: FplPicksResponse | null): RivalPicks {
+  if (!picks?.picks?.length) return emptyRivalPicks(entry);
+  const captain = picks.picks.find((p) => p.is_captain);
+  return {
+    entry,
+    captainId: captain?.element ?? null,
+    ids: picks.picks.map((p) => p.element),
+    starterIds: picks.picks.filter((p) => p.position <= 11).map((p) => p.element),
+    chip: picks.active_chip ?? null,
+  };
+}
 
 async function mapPool<T, R>(
   items: T[],
@@ -471,34 +500,13 @@ export async function loadMiniLeagueAnalysis(
     ? sampleRows.length < standings.length
     : true;
 
-  const picksList = await mapPool(sampleRows, PICKS_CONCURRENCY, async (row) => {
-    const picks = await fetchPicks(row.entry, gw);
-    if (!picks?.picks?.length) {
-      return { entry: row.entry, captainId: null, ids: [] } satisfies RivalPicks;
-    }
-    const captain = picks.picks.find((p) => p.is_captain);
-    return {
-      entry: row.entry,
-      captainId: captain?.element ?? null,
-      ids: picks.picks.map((p) => p.element),
-    } satisfies RivalPicks;
-  });
+  const picksList = await mapPool(sampleRows, PICKS_CONCURRENCY, async (row) =>
+    rivalPicksFromResponse(row.entry, await fetchPicks(row.entry, gw)),
+  );
 
-  let yourPicks = picksList.find((p) => p.entry === entryId) ?? {
-    entry: entryId,
-    captainId: null,
-    ids: [] as number[],
-  };
+  let yourPicks = picksList.find((p) => p.entry === entryId) ?? emptyRivalPicks(entryId);
   if (!yourPicks.ids.length) {
-    const fallback = await fetchPicks(entryId, gw);
-    if (fallback?.picks?.length) {
-      const captain = fallback.picks.find((p) => p.is_captain);
-      yourPicks = {
-        entry: entryId,
-        captainId: captain?.element ?? null,
-        ids: fallback.picks.map((p) => p.element),
-      };
-    }
+    yourPicks = rivalPicksFromResponse(entryId, await fetchPicks(entryId, gw));
   }
   const yourSet = new Set(yourPicks.ids);
   const sampledWithSquad = picksList.filter((p) => p.ids.length > 0);
@@ -1055,6 +1063,44 @@ function unfinishedTeamIds(fixtures: LiveFixtureApi[]): Set<number> {
   return out;
 }
 
+function packToTotals(pack: HistoryPack | null): HistoryGwTotals[] {
+  return (pack?.current ?? []).map((row) => ({
+    event: row.event,
+    points: row.points,
+    total: row.total_points,
+    overallRank: row.overall_rank ?? null,
+  }));
+}
+
+function chipShort(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const kind = classifyChipName(name);
+  if (kind === "wildcard") return "WC";
+  if (kind === "freehit") return "FH";
+  if (kind === "bboost") return "BB";
+  if (kind === "3xc") return "TC";
+  return name.toUpperCase();
+}
+
+type FplFixtureRow = {
+  event?: number;
+  team_h?: number;
+  team_a?: number;
+  team_h_difficulty?: number;
+  team_a_difficulty?: number;
+};
+
+async function loadFplFixturesWindow(
+  fromGw: number,
+  toGw: number,
+): Promise<FplFixtureRow[]> {
+  const all = await fplGet<FplFixtureRow[]>("/fixtures/").catch(() => [] as FplFixtureRow[]);
+  return (all ?? []).filter((row) => {
+    const event = Number(row.event);
+    return Number.isFinite(event) && event >= fromGw && event <= toGw;
+  });
+}
+
 function scoreLivePicks(
   picks: FplPicksResponse | null,
   pointsById: Map<number, number>,
@@ -1109,17 +1155,127 @@ async function loadSamplePicks(
   sampleRows: MiniLeagueStandingRow[],
   gw: number,
 ): Promise<RivalPicks[]> {
-  return mapPool(sampleRows, PICKS_CONCURRENCY, async (row) => {
-    const picks = await fetchPicks(row.entry, gw);
-    if (!picks?.picks?.length) {
-      return { entry: row.entry, captainId: null, ids: [] } satisfies RivalPicks;
+  return mapPool(sampleRows, PICKS_CONCURRENCY, async (row) =>
+    rivalPicksFromResponse(row.entry, await fetchPicks(row.entry, gw)),
+  );
+}
+
+async function buildFixtureRuns(
+  picksList: RivalPicks[],
+  runRows: Array<{
+    entry: number;
+    teamName: string;
+    isYou: boolean;
+    role: MiniLeagueRankChartRole;
+  }>,
+  gws: number[],
+  currentGw: number,
+): Promise<MiniLeagueFixtureRun[]> {
+  if (!runRows.length) return [];
+  const fromGw = gws[0] ?? currentGw;
+  const toGw = gws[gws.length - 1] ?? currentGw;
+  const starterIds = [
+    ...new Set(
+      runRows.flatMap((row) => {
+        const picks = picksList.find((p) => p.entry === row.entry);
+        return picks?.starterIds.length ? picks.starterIds : picks?.ids ?? [];
+      }),
+    ),
+  ];
+  const [fplFx, metaById] = await Promise.all([
+    loadFplFixturesWindow(fromGw, toGw),
+    (async () => {
+      const map = new Map<number, PlayerMeta>();
+      if (starterIds.length) {
+        try {
+          const extra = await loadMetaFromBootstrap(starterIds);
+          for (const [id, row] of extra) map.set(id, row);
+        } catch {
+          /* names optional */
+        }
+      }
+      return map;
+    })(),
+  ]);
+
+  let xpByPlayerGw = new Map<number, Map<number, number>>();
+  try {
+    const projections = await projectPlayers(starterIds, {
+      currentGw,
+      fromGw,
+      toGw,
+    });
+    for (const [id, proj] of projections) {
+      const byGw = new Map<number, number>();
+      for (const fx of proj.fixtures) {
+        byGw.set(fx.gw, (byGw.get(fx.gw) ?? 0) + fx.xp_total);
+      }
+      xpByPlayerGw.set(id, byGw);
     }
-    const captain = picks.picks.find((p) => p.is_captain);
+  } catch {
+    xpByPlayerGw = new Map();
+  }
+
+  const fxFor = (teamId: number, event: number) =>
+    fplFx.filter((row) => {
+      if (Number(row.event) !== event) return false;
+      return Number(row.team_h) === teamId || Number(row.team_a) === teamId;
+    });
+
+  return runRows.map((row) => {
+    const picks = picksList.find((p) => p.entry === row.entry);
+    const ids = picks?.starterIds.length ? picks.starterIds : picks?.ids ?? [];
+    const captainId = picks?.captainId ?? null;
+    const cells = gws.map((event) => {
+      const teams = new Set<number>();
+      for (const id of ids) {
+        const teamId = metaById.get(id)?.team_id;
+        if (teamId != null) teams.add(teamId);
+      }
+      let matches = 0;
+      let fdrSum = 0;
+      let fdrN = 0;
+      for (const teamId of teams) {
+        const list = fxFor(teamId, event);
+        matches += list.length;
+        for (const fx of list) {
+          const fdr =
+            Number(fx.team_h) === teamId
+              ? Number(fx.team_h_difficulty)
+              : Number(fx.team_a_difficulty);
+          if (Number.isFinite(fdr) && fdr > 0) {
+            fdrSum += fdr;
+            fdrN += 1;
+          }
+        }
+      }
+      let xp: number | null = null;
+      let xpSum = 0;
+      let xpN = 0;
+      for (const id of ids) {
+        const val = xpByPlayerGw.get(id)?.get(event);
+        if (val == null || !Number.isFinite(val)) continue;
+        xpSum += val;
+        xpN += 1;
+        if (captainId === id) xpSum += val;
+      }
+      if (xpN) xp = Math.round(xpSum * 10) / 10;
+      return {
+        event,
+        matches,
+        fdrAvg: fdrN ? Math.round((fdrSum / fdrN) * 10) / 10 : null,
+        xp,
+      };
+    });
+    const xpParts = cells.map((c) => c.xp).filter((n): n is number => n != null);
     return {
       entry: row.entry,
-      captainId: captain?.element ?? null,
-      ids: picks.picks.map((p) => p.element),
-    } satisfies RivalPicks;
+      teamName: row.teamName,
+      isYou: row.isYou,
+      role: row.role,
+      cells,
+      xpTotal: xpParts.length ? Math.round(xpParts.reduce((a, b) => a + b, 0) * 10) / 10 : null,
+    };
   });
 }
 
@@ -1127,12 +1283,19 @@ async function buildFixtureOverlap(
   youEntryId: number,
   picksList: RivalPicks[],
   gw: number,
+  runRows: Array<{
+    entry: number;
+    teamName: string;
+    isYou: boolean;
+    role: MiniLeagueRankChartRole;
+  }>,
 ): Promise<MiniLeagueFixtureOverlap> {
   const fromGw = gw;
-  const toGw = Math.min(38, gw + 5);
+  const toGw = Math.min(38, gw + 4);
   const gws: number[] = [];
   for (let n = fromGw; n <= toGw; n++) gws.push(n);
 
+  const runs = await buildFixtureRuns(picksList, runRows, gws, gw);
   const yourPicks = picksList.find((p) => p.entry === youEntryId);
   const yourIds = yourPicks?.ids ?? [];
   const allIds = [...new Set(picksList.flatMap((p) => p.ids))];
@@ -1140,6 +1303,7 @@ async function buildFixtureOverlap(
     fromGw,
     toGw,
     gws,
+    runs,
     sharedDgw: [],
     blanks: [],
     sameOpp: [],
@@ -1262,7 +1426,7 @@ async function buildFixtureOverlap(
     }
   }
 
-  return { fromGw, toGw, gws, sharedDgw, blanks, sameOpp };
+  return { fromGw, toGw, gws, runs, sharedDgw, blanks, sameOpp };
 }
 
 export async function loadMiniLeagueTools(
@@ -1282,10 +1446,28 @@ export async function loadMiniLeagueTools(
     if (pack) historyByEntry.set(pack.entry, pack);
   }
 
-  const miniLeague: MiniLeagueRankSeries[] = ctx.sampleRows
-    .filter((row) => overallRows.some((r) => r.entry === row.entry) || row.isYou)
-    .slice(0, 8)
-    .map((row) => ({
+  const gws = rankChartGwWindow(ctx.gw);
+  const plotRows = [...overallRows];
+  const historyMap = new Map<number, HistoryGwTotals[]>();
+  for (const row of plotRows) {
+    historyMap.set(row.entry, packToTotals(historyByEntry.get(row.entry) ?? null));
+  }
+  const rankedGws = gws.filter((event) => event <= ctx.gw);
+  const sampleRanks = reconstructSampleRanks(historyMap, rankedGws);
+
+  const miniLeague: MiniLeagueRankSeries[] = plotRows.map((row) => {
+    const hist = historyMap.get(row.entry) ?? [];
+    const rec = sampleRanks.get(row.entry);
+      const points = gws.map((event) => {
+      const hit = hist.find((p) => p.event === event);
+      return {
+        event,
+        rank: rec?.get(event) ?? null,
+        points: hit?.points ?? null,
+        overallRank: hit?.overallRank ?? null,
+      };
+    });
+    return {
       entry: row.entry,
       teamName: row.entryName,
       managerName: row.playerName,
@@ -1293,40 +1475,24 @@ export async function loadMiniLeagueTools(
       role: seriesRole(row, ctx, entryId),
       lastRank: row.lastRank,
       rank: row.rank,
-    }));
-
-  // Always include you / leader / next even if sample filter dropped them.
-  const ensure = [...overallRows];
-  for (const row of ensure) {
-    if (!miniLeague.some((s) => s.entry === row.entry)) {
-      miniLeague.push({
-        entry: row.entry,
-        teamName: row.entryName,
-        managerName: row.playerName,
-        isYou: row.isYou,
-        role: seriesRole(row, ctx, entryId),
-        lastRank: row.lastRank,
-        rank: row.rank,
-      });
-    }
-  }
-
-  const overall: MiniLeagueOverallSeries[] = overallRows.map((row) => {
-    const pack = historyByEntry.get(row.entry);
-    return {
-      entry: row.entry,
-      teamName: row.entryName,
-      managerName: row.playerName,
-      isYou: row.isYou,
-      role: seriesRole(row, ctx, entryId),
-      points: (pack?.current ?? []).map((r) => ({
-        event: r.event,
-        overallRank: r.overall_rank ?? null,
-      })),
+      points,
     };
   });
 
-  const rankChart: MiniLeagueRankChart = { gw: ctx.gw, miniLeague, overall };
+  const overall: MiniLeagueOverallSeries[] = plotRows.map((row) => ({
+    entry: row.entry,
+    teamName: row.entryName,
+    managerName: row.playerName,
+    isYou: row.isYou,
+    role: seriesRole(row, ctx, entryId),
+    points: gws.map((event) => ({
+      event,
+      overallRank:
+        historyMap.get(row.entry)?.find((p) => p.event === event)?.overallRank ?? null,
+    })),
+  }));
+
+  const rankChart: MiniLeagueRankChart = { gw: ctx.gw, gws, miniLeague, overall };
 
   const chips: MiniLeagueChipRow[] = ctx.sampleRows.map((row) => {
     const pack = historyByEntry.get(row.entry);
@@ -1340,7 +1506,17 @@ export async function loadMiniLeagueTools(
     };
   });
 
-  const fixtures = await buildFixtureOverlap(entryId, picksList, ctx.gw);
+  const fixtures = await buildFixtureOverlap(
+    entryId,
+    picksList,
+    ctx.gw,
+    plotRows.map((row) => ({
+      entry: row.entry,
+      teamName: row.entryName,
+      isYou: row.isYou,
+      role: seriesRole(row, ctx, entryId),
+    })),
+  );
 
   return {
     gw: ctx.gw,
@@ -1358,16 +1534,7 @@ export async function loadMiniLeagueLive(
   format: MiniLeagueFormat = "classic",
 ): Promise<MiniLeagueLivePayload> {
   const ctx = await loadStandingsContext(entryId, leagueId, format);
-  const targets = [ctx.you, ctx.nextRival, ctx.below].filter(
-    (row): row is MiniLeagueStandingRow => row != null,
-  );
-  const uniqueTargets: MiniLeagueStandingRow[] = [];
-  const seen = new Set<number>();
-  for (const row of targets) {
-    if (seen.has(row.entry)) continue;
-    seen.add(row.entry);
-    uniqueTargets.push(row);
-  }
+  const uniqueTargets = pickOverallEntries(ctx, entryId);
 
   const [{ pointsById, fixtures, status }, picksList] = await Promise.all([
     loadLiveEvent(ctx.gw),
@@ -1389,15 +1556,17 @@ export async function loadMiniLeagueLive(
     }
   }
   const teamByPlayer = new Map<number, number>();
+  const metaById = new Map<number, PlayerMeta>();
   for (const [id, row] of players) {
     if (row.team_id != null && Number.isFinite(row.team_id)) {
       teamByPlayer.set(id, Number(row.team_id));
     }
   }
-  if (allIds.length && teamByPlayer.size === 0) {
+  if (allIds.length) {
     try {
       const extra = await loadMetaFromBootstrap(allIds);
       for (const [id, row] of extra) {
+        metaById.set(id, row);
         if (row.team_id != null) teamByPlayer.set(id, row.team_id);
       }
     } catch {
@@ -1409,12 +1578,9 @@ export async function loadMiniLeagueLive(
 
   const toLive = (row: MiniLeagueStandingRow | null): MiniLeagueLiveManager | null => {
     if (!row) return null;
-    const scored = scoreLivePicks(
-      picksByEntry.get(row.entry) ?? null,
-      pointsById,
-      teamByPlayer,
-      liveTeams,
-    );
+    const picks = picksByEntry.get(row.entry) ?? null;
+    const scored = scoreLivePicks(picks, pointsById, teamByPlayer, liveTeams);
+    const capId = picks?.picks.find((x) => x.is_captain)?.element ?? null;
     return {
       entry: row.entry,
       teamName: row.entryName,
@@ -1423,10 +1589,19 @@ export async function loadMiniLeagueLive(
       isYou: row.isYou,
       lastGwPoints: row.eventTotal,
       livePoints: status === "not_started" ? null : scored.livePoints,
-      remaining: status === "live" ? scored.remaining : null,
-      playing: status === "not_started" ? null : scored.playing,
+      remaining: status === "finished" ? 0 : liveTeams.size ? scored.remaining : null,
+      playing: scored.playing,
+      captain: capId != null ? toRef(metaById.get(capId), capId, null) : null,
+      chip: chipShort(picks?.active_chip ?? null),
     };
   };
+
+  const sample = uniqueTargets
+    .map((row) => toLive(row))
+    .filter((row): row is MiniLeagueLiveManager => row != null);
+  const remainingVals = sample
+    .map((row) => row.remaining)
+    .filter((n): n is number => n != null);
 
   return {
     gw: ctx.gw,
@@ -1434,6 +1609,10 @@ export async function loadMiniLeagueLive(
     you: toLive(ctx.you),
     above: toLive(ctx.nextRival),
     below: toLive(ctx.below),
+    sample,
+    avgRemaining: remainingVals.length
+      ? Math.round((remainingVals.reduce((a, b) => a + b, 0) / remainingVals.length) * 10) / 10
+      : null,
   };
 }
 
@@ -1441,7 +1620,16 @@ export async function loadBeatRival(
   youEntryId: number,
   rivalEntryId: number,
 ): Promise<MiniLeagueBeatRival> {
-  const compare = await loadRivalCompare(youEntryId, rivalEntryId);
+  const [{ current, next }, compare, youHist, rivalHist] = await Promise.all([
+    resolveGw(),
+    loadRivalCompare(youEntryId, rivalEntryId),
+    fetchHistoryPack(youEntryId),
+    fetchHistoryPack(rivalEntryId),
+  ]);
+  const gw = next || current || 1;
+  const gws = rankChartGwWindow(gw);
+  const swings = gwSwingRows(packToTotals(youHist), packToTotals(rivalHist), gws);
+  const tally = swingTally(swings);
   const youIds = compare.you.picks.map((p) => p.fplId);
   const rivalIds = compare.rival.picks.map((p) => p.fplId);
   const suggestion = suggestBeatTransfer(
@@ -1452,6 +1640,11 @@ export async function loadBeatRival(
     ...compare,
     squadDiffPct: squadDiffPct(youIds, rivalIds),
     suggestion,
+    gws,
+    swings,
+    youWon: tally.youWon,
+    theyWon: tally.theyWon,
+    draws: tally.draws,
   };
 }
 
@@ -1529,21 +1722,96 @@ async function findH2hMatch(
   return null;
 }
 
+async function captainRef(
+  entryId: number,
+  gw: number,
+): Promise<MiniLeaguePlayerRef | null> {
+  const picks = await fetchPicks(entryId, gw);
+  const capId = picks?.picks.find((p) => p.is_captain)?.element ?? null;
+  if (capId == null) return null;
+  const meta = await loadMetaFromBootstrap([capId]).catch(() => new Map<number, PlayerMeta>());
+  return toRef(meta.get(capId), capId, null);
+}
+
+function emptyH2hPayload(
+  leagueId: number,
+  leagueName: string,
+  gw: number,
+  mode: MiniLeagueH2hPayload["mode"],
+): MiniLeagueH2hPayload {
+  return { leagueId, leagueName, gw, mode, matchup: null, form: [], youWon: 0, theyWon: 0 };
+}
+
 export async function loadH2hMatchup(
   entryId: number,
   leagueId: number,
+  format: MiniLeagueFormat = "h2h",
 ): Promise<MiniLeagueH2hPayload> {
   const [{ current, next }, entry] = await Promise.all([
     resolveGw(),
     fplGet<FplEntry>(`/entry/${entryId}/`),
   ]);
   const gw = next || current || 1;
+  const gws = rankChartGwWindow(gw);
+
+  if (format === "classic") {
+    const ctx = await loadStandingsContext(entryId, leagueId, "classic");
+    const leagueName =
+      entry.leagues?.classic?.find((l) => l.id === leagueId)?.name ?? `League ${leagueId}`;
+    const opp = ctx.nextRival ?? (ctx.leader && !ctx.leader.isYou ? ctx.leader : ctx.below);
+    if (!opp) {
+      return emptyH2hPayload(leagueId, leagueName, gw, "race");
+    }
+    const [youHist, oppHist, youCap, oppCap] = await Promise.all([
+      fetchHistoryPack(entryId),
+      fetchHistoryPack(opp.entry),
+      captainRef(entryId, gw),
+      captainRef(opp.entry, gw),
+    ]);
+    const form = gwSwingRows(packToTotals(youHist), packToTotals(oppHist), gws);
+    const tally = swingTally(form);
+    const youPoints = ctx.you?.eventTotal ?? null;
+    const themPoints = opp.eventTotal;
+    const youSide: MiniLeagueH2hSide = {
+      entry: entryId,
+      teamName: ctx.you?.entryName ?? entry.name,
+      managerName: ctx.you?.playerName ?? managerNameOf(entry),
+      points: youPoints,
+      chips: youHist ? chipSlotsFromUsed(youHist.chips) : emptyChipSlots(),
+      captain: youCap,
+    };
+    const oppSide: MiniLeagueH2hSide = {
+      entry: opp.entry,
+      teamName: opp.entryName,
+      managerName: opp.playerName,
+      points: themPoints,
+      chips: oppHist ? chipSlotsFromUsed(oppHist.chips) : emptyChipSlots(),
+      captain: oppCap,
+    };
+    return {
+      leagueId,
+      leagueName,
+      gw,
+      mode: "race",
+      matchup: {
+        gw,
+        isBye: false,
+        you: youSide,
+        opponent: oppSide,
+        lean: h2hLean(youPoints, themPoints),
+      },
+      form,
+      youWon: tally.youWon,
+      theyWon: tally.theyWon,
+    };
+  }
+
   const league = entry.leagues?.h2h?.find((l) => l.id === leagueId);
   const leagueName = league?.name ?? `League ${leagueId}`;
   const match = await findH2hMatch(leagueId, entryId, gw);
 
   if (!match) {
-    return { leagueId, leagueName, gw, matchup: null };
+    return emptyH2hPayload(leagueId, leagueName, gw, "h2h");
   }
 
   const youAre1 = Number(match.entry_1) === entryId;
@@ -1555,9 +1823,16 @@ export async function loadH2hMatchup(
   const youPoints = Number.isFinite(youPts) ? youPts : null;
   const themPoints = Number.isFinite(themPts) ? themPts : null;
 
-  const youHist = await fetchHistoryPack(entryId);
-  const oppHist =
-    !isBye && Number.isFinite(oppEntry) ? await fetchHistoryPack(oppEntry) : null;
+  const [youHist, oppHist, youCap, oppCap] = await Promise.all([
+    fetchHistoryPack(entryId),
+    !isBye && Number.isFinite(oppEntry) ? fetchHistoryPack(oppEntry) : Promise.resolve(null),
+    captainRef(entryId, gw),
+    !isBye && Number.isFinite(oppEntry) ? captainRef(oppEntry, gw) : Promise.resolve(null),
+  ]);
+  const form = isBye
+    ? []
+    : gwSwingRows(packToTotals(youHist), packToTotals(oppHist), gws);
+  const tally = swingTally(form);
 
   const youName = youAre1
     ? String(match.entry_1_name ?? entry.name)
@@ -1570,6 +1845,7 @@ export async function loadH2hMatchup(
     leagueId,
     leagueName,
     gw: Number(match.event) || gw,
+    mode: "h2h",
     matchup: {
       gw: Number(match.event) || gw,
       isBye,
@@ -1579,6 +1855,7 @@ export async function loadH2hMatchup(
         managerName: youManager,
         points: youPoints,
         chips: youHist ? chipSlotsFromUsed(youHist.chips) : emptyChipSlots(),
+        captain: youCap,
       },
       opponent: isBye
         ? null
@@ -1592,8 +1869,12 @@ export async function loadH2hMatchup(
               "—",
             points: themPoints,
             chips: oppHist ? chipSlotsFromUsed(oppHist.chips) : emptyChipSlots(),
+            captain: oppCap,
           },
       lean: isBye ? "you" : h2hLean(youPoints, themPoints),
     },
+    form,
+    youWon: tally.youWon,
+    theyWon: tally.theyWon,
   };
 }

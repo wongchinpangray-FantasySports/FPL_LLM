@@ -2514,21 +2514,23 @@
     "movesHint": "Biggest rank jumps and drops this gameweek in this league.",
     "movesEmpty": "No rank movement recorded yet this gameweek.",
     "toolsTitle": "Mini League Killer tools",
-    "toolsHint": "Open a card to analyse this league — rank chart, chips, live scores, a one-transfer plan, fixtures, and H2H.",
+    "toolsHint": "Open a card to analyse this league — 5-GW rank race, chips, live remaining, 1v1 form, fixture xP, and this week's duel.",
     "toolsAria": "Mini League Killer tools",
     "toolsLoading": "Loading this tool…",
     "toolsError": "Could not load this tool from FPL.",
-    "toolsRankMlTitle": "Mini-league rank",
-    "toolsRankMlHint": "Last published rank vs this gameweek. FPL does not expose week-by-week mini-league history, so this is two points per manager.",
+    "toolsRankMlTitle": "Mini-league race (sample)",
+    "toolsRankMlHint": "Relative rank among these plotted managers over 5 gameweeks, rebuilt from their season totals. Future GWs stay empty so the axis does not stretch.",
+    "toolsRankPtsTitle": "Gameweek points",
+    "toolsRankPtsHint": "Same 5 gameweeks — who actually scored. Higher is better.",
     "toolsRankOrTitle": "Overall rank",
-    "toolsRankOrHint": "Official overall rank by gameweek for you and a few hunt targets.",
+    "toolsRankOrHint": "Official overall rank for the same 5 gameweeks.",
     "toolsRankLast": "Last GW",
     "toolsRankNow": "GW{n}",
-    "toolsRankEmpty": "No overall rank history yet this season.",
+    "toolsRankEmpty": "No gameweek history yet this season.",
     "toolsChipHint": "Green = they still have a chip you already used. Amber = they already played a chip you still have. Circle = still available.",
     "toolsChipStill": "Still holding a chip you used",
     "toolsChipSpent": "Already played a chip you still have",
-    "toolsLiveNotStarted": "This gameweek has not started yet. Showing last GW points.",
+    "toolsLiveNotStarted": "This gameweek has not started yet. Captains and players still to play are the useful signal before kickoff.",
     "toolsLiveFinished": "This gameweek is finished. Showing those points.",
     "toolsLivePts": "live pts",
     "toolsLastGw": "last GW",
@@ -2536,8 +2538,13 @@
     "toolsLiveGap": "Live gap to the manager above: {n} pts (positive = they are ahead).",
     "toolsLiveAbove": "Above you",
     "toolsLiveBelow": "Below you",
+    "toolsLiveWhy": "Impact: remaining players and captains decide whether you overtake this weekend — not just the three cards.",
+    "toolsLiveLeft": "Left",
+    "toolsLiveLeftVsAvg": "You have {you} still to play vs {avg} sample average.",
     "toolsBeatSelect": "Rival",
-    "toolsBeatGap": "{n} pts vs you · squad diff {diff}",
+    "toolsBeatGap": "{n} pts vs you (positive = they are ahead)",
+    "toolsBeatForm": "Last 5 GWs: you won {you}, they won {them}.",
+    "toolsSwingDelta": "Δ",
     "toolsBeatSuggest": "One recommended transfer",
     "toolsBeatOut": "Out",
     "toolsBeatIn": "In",
@@ -2548,26 +2555,31 @@
       "template": "Template cover",
       "xp": "Highest 3GW xP swing"
     },
-    "toolsFxHint": "GW{from}–{to}: shared doubles, your DEF/GKP blanks, and defenders facing the same opponent.",
-    "toolsFxEmpty": "No doubles, blanks, or stacked DEF/GKP opponents in this window.",
+    "toolsFxHint": "GW{from}–{to}: starter xP and fixture difficulty vs the managers you are racing. Colour = FDR (green easier).",
+    "toolsFxEmpty": "Could not build a fixture run yet for this window.",
+    "toolsFxXpTotal": "xP",
+    "toolsFxBlank": "blank",
+    "toolsFxDgw": "DGW×{n}",
     "toolsFxSharedDgw": "{n} rivals share your {team} DGW in GW{gw}",
     "toolsFxBlankDef": "{n} of your DEF/GKP blank in GW{gw}",
     "toolsFxSameOpp": "{n} of your DEF/GKP face {opp} in GW{gw}",
-    "toolsH2hClassicHint": "This is a classic league. Switch to an H2H league to see this week's matchup.",
+    "toolsH2hClassicHint": "You also have H2H leagues — switch here for the official H2H fixture.",
     "toolsH2hNoLeagues": "You are not in a head-to-head league on this team.",
     "toolsH2hSwitch": "Open this H2H league",
-    "toolsH2hMatchup": "GW{gw} matchup",
+    "toolsH2hMatchup": "GW{gw} duel",
     "toolsH2hBye": "Bye this gameweek — no opponent.",
     "toolsH2hOpp": "Opponent",
     "toolsH2hChips": "Chips left",
-    "toolsH2hNoMatch": "No H2H fixture found for this gameweek yet.",
+    "toolsH2hNoMatch": "No rival found for this week's duel yet.",
     "toolsH2hLeanYou": "Lean: you are ahead on the listed points (not a win probability).",
     "toolsH2hLeanThem": "Lean: they are ahead on the listed points (not a win probability).",
     "toolsH2hLeanEven": "Lean: even on the listed points.",
+    "toolsH2hWhy": "This week's H2H fixture, captains, chips, and who won the last 5 GWs.",
+    "toolsH2hRaceWhy": "Classic league: this week's duel vs the manager you are chasing (captains + 5GW form).",
     "soon": {
       "rankHistory": {
         "title": "Season rank chart",
-        "body": "Last GW vs this GW mini-league rank, plus overall rank for you and nearby rivals."
+        "body": "5-GW rank race among you, the leader and nearby rivals — plus GW points."
       },
       "chips": {
         "title": "Chip tracker",
@@ -2575,19 +2587,19 @@
       },
       "liveGw": {
         "title": "Live vs rivals",
-        "body": "Live points vs the managers immediately above and below you, or last GW when fixtures are idle."
+        "body": "Captains, chips, and players still to play — will you overtake this weekend?"
       },
       "beatRival": {
         "title": "Beat this rival",
-        "body": "Squad gap vs one manager, plus a single transfer in/out scored with 3GW xP."
+        "body": "Who won the last 5 GWs vs one manager, plus a single 3GW xP transfer."
       },
       "fixtures": {
-        "title": "Fixture overlap",
-        "body": "Who shares your DGWs, blanks, and defence coverage — so you know when the league will move."
+        "title": "Fixture run",
+        "body": "Next 5 GWs of starter xP and FDR vs the managers you are racing."
       },
       "h2h": {
-        "title": "Head-to-head leagues",
-        "body": "This week's matchup, chips remaining, and a simple points lean — or switch to an H2H league."
+        "title": "This week's duel",
+        "body": "H2H fixture when you have one; otherwise a 1v1 vs the manager you are chasing."
       }
     }
   }
