@@ -1227,18 +1227,20 @@ async function buildFixtureRuns(
     const ids = picks?.starterIds.length ? picks.starterIds : picks?.ids ?? [];
     const captainId = picks?.captainId ?? null;
     const cells = gws.map((event) => {
-      const teams = new Set<number>();
-      for (const id of ids) {
+      const perPlayer = ids.map((id) => {
         const teamId = metaById.get(id)?.team_id;
-        if (teamId != null) teams.add(teamId);
-      }
-      let matches = 0;
+        if (teamId == null) return 0;
+        return fxFor(teamId, event).length;
+      });
+      const matches = perPlayer.length ? Math.max(...perPlayer) : 0;
       let fdrSum = 0;
       let fdrN = 0;
-      for (const teamId of teams) {
-        const list = fxFor(teamId, event);
-        matches += list.length;
-        for (const fx of list) {
+      const seenTeams = new Set<number>();
+      for (const id of ids) {
+        const teamId = metaById.get(id)?.team_id;
+        if (teamId == null || seenTeams.has(teamId)) continue;
+        seenTeams.add(teamId);
+        for (const fx of fxFor(teamId, event)) {
           const fdr =
             Number(fx.team_h) === teamId
               ? Number(fx.team_h_difficulty)
@@ -1450,7 +1452,16 @@ export async function loadMiniLeagueTools(
   const plotRows = [...overallRows];
   const historyMap = new Map<number, HistoryGwTotals[]>();
   for (const row of plotRows) {
-    historyMap.set(row.entry, packToTotals(historyByEntry.get(row.entry) ?? null));
+    const hist = packToTotals(historyByEntry.get(row.entry) ?? null);
+    if (!hist.some((p) => p.event === ctx.gw) && Number.isFinite(row.total)) {
+      hist.push({
+        event: ctx.gw,
+        points: row.eventTotal,
+        total: row.total,
+        overallRank: null,
+      });
+    }
+    historyMap.set(row.entry, hist);
   }
   const rankedGws = gws.filter((event) => event <= ctx.gw);
   const sampleRanks = reconstructSampleRanks(historyMap, rankedGws);
