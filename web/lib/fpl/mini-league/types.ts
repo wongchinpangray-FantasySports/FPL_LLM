@@ -31,6 +31,7 @@ export type MiniLeagueStandingRow = {
   total: number;
   pointsFor: number | null;
   squadDiffPct: number | null;
+  tablePos: number | null;
   isYou: boolean;
 };
 
@@ -194,6 +195,7 @@ export type MiniLeagueChipRow = {
   managerName: string;
   isYou: boolean;
   rank: number;
+  tablePos: number | null;
   role: MiniLeagueRankChartRole;
   slots: MiniLeagueChipSlots;
 };
@@ -213,6 +215,7 @@ export type MiniLeagueRankSeries = {
   role: MiniLeagueRankChartRole;
   lastRank: number | null;
   rank: number;
+  tablePos: number | null;
   points: MiniLeagueChartPoint[];
 };
 

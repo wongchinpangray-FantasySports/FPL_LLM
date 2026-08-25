@@ -14,6 +14,7 @@ import {
   resolveCurrentGw,
 } from "@/lib/xp";
 import { getCurrentFplSeason } from "@/lib/fpl-season";
+import { getFplBootstrapStatic } from "@/lib/fpl/bootstrap-cache";
 import {
   chipSlotsFromUsed,
   classifyChipName,
@@ -22,6 +23,7 @@ import {
   gwSwingRows,
   neighborStandingsPages,
   nextStandingsScanPages,
+  overlayChipSlots,
   pickRivalSample,
   pointsToCatch,
   rankChartGwWindow,
@@ -81,13 +83,12 @@ import type {
 } from "@/lib/fpl/mini-league/types";
 
 const PICKS_CONCURRENCY = 6;
+const HISTORY_CONCURRENCY = 3;
 const TEMPLATE_PCT = 0.4;
 const TEMPLATE_MIN_OWNERS = 2;
 
 async function resolveGwFromBootstrap(): Promise<{ current: number; next: number }> {
-  const boot = await fplGet<{
-    events?: Array<{ id?: number; is_current?: boolean; is_next?: boolean }>;
-  }>("/bootstrap-static/");
+  const boot = await getFplBootstrapStatic();
   const events = boot.events ?? [];
   const cur = events.find((e) => e.is_current);
   const nxt = events.find((e) => e.is_next);
@@ -152,19 +153,7 @@ const POS_BY_TYPE = ["", "GKP", "DEF", "MID", "FWD"] as const;
 async function loadMetaFromBootstrap(ids: number[]): Promise<Map<number, PlayerMeta>> {
   const want = new Set(ids.filter((id) => Number.isFinite(id) && id > 0));
   if (!want.size) return new Map();
-  const boot = await fplGet<{
-    elements?: Array<{
-      id?: number;
-      web_name?: string;
-      team?: number;
-      element_type?: number;
-      now_cost?: number;
-      status?: string;
-      chance_of_playing_this_round?: number | null;
-      news?: string;
-    }>;
-    teams?: Array<{ id?: number; short_name?: string }>;
-  }>("/bootstrap-static/");
+  const boot = await getFplBootstrapStatic();
   const teamName = new Map<number, string>();
   for (const team of boot.teams ?? []) {
     const id = Number(team.id);
@@ -194,11 +183,19 @@ async function loadMetaFromBootstrap(ids: number[]): Promise<Map<number, PlayerM
   return out;
 }
 
+function metaIncomplete(meta: PlayerMeta | undefined): boolean {
+  if (!meta) return true;
+  const name = meta.web_name?.trim() ?? "";
+  if (!name || /^#\d+$/.test(name)) return true;
+  if (meta.team_id == null || !Number.isFinite(meta.team_id)) return true;
+  return false;
+}
+
 async function fillMissingMeta(
   metaById: Map<number, PlayerMeta>,
   ids: number[],
 ): Promise<void> {
-  const missing = [...new Set(ids)].filter((id) => id > 0 && !metaById.has(id));
+  const missing = [...new Set(ids)].filter((id) => id > 0 && metaIncomplete(metaById.get(id)));
   if (!missing.length) return;
   try {
     const extra = await loadMetaFromBootstrap(missing);
@@ -214,21 +211,40 @@ type RivalPicks = {
   ids: number[];
   starterIds: number[];
   chip: string | null;
+  event: number | null;
+  points: number | null;
+  total: number | null;
 };
 
 function emptyRivalPicks(entry: number): RivalPicks {
-  return { entry, captainId: null, ids: [], starterIds: [], chip: null };
+  return {
+    entry,
+    captainId: null,
+    ids: [],
+    starterIds: [],
+    chip: null,
+    event: null,
+    points: null,
+    total: null,
+  };
 }
 
 function rivalPicksFromResponse(entry: number, picks: FplPicksResponse | null): RivalPicks {
   if (!picks?.picks?.length) return emptyRivalPicks(entry);
   const captain = picks.picks.find((p) => p.is_captain);
+  const eh = picks.entry_history;
+  const event = Number(eh?.event);
+  const points = Number(eh?.points);
+  const total = Number(eh?.total_points);
   return {
     entry,
     captainId: captain?.element ?? null,
     ids: picks.picks.map((p) => p.element),
     starterIds: picks.picks.filter((p) => p.position <= 11).map((p) => p.element),
     chip: picks.active_chip ?? null,
+    event: Number.isFinite(event) && event > 0 ? event : null,
+    points: Number.isFinite(points) ? points : null,
+    total: Number.isFinite(total) ? total : null,
   };
 }
 
@@ -298,6 +314,7 @@ function standingRow(
   raw: StandingsResult,
   youEntryId: number,
   squadDiff: number | null = null,
+  tablePos: number | null = null,
 ): MiniLeagueStandingRow | null {
   const entry = Number(raw?.entry);
   const rank = Number(raw?.rank);
@@ -318,6 +335,7 @@ function standingRow(
     total: Number(raw?.total) || 0,
     pointsFor: Number.isFinite(pointsForRaw) ? pointsForRaw : null,
     squadDiffPct: squadDiff,
+    tablePos,
     isYou: entry === youEntryId,
   };
 }
@@ -538,8 +556,11 @@ async function loadLeagueWindow(
     .map((page) => collected.get(page))
     .filter((pack): pack is StandingsPack => pack != null);
   const aroundRaw = mergeStandingResults(aroundPacks);
+  const startPos = aroundPages[0]
+    ? (aroundPages[0] - 1) * STANDINGS_PAGE_SIZE + 1
+    : 1;
   const standings = aroundRaw
-    .map((row) => standingRow(row, entryId))
+    .map((row, i) => standingRow(row, entryId, null, startPos + i))
     .filter((row): row is MiniLeagueStandingRow => row != null);
 
   // Keep FPL table order (not rank-then-entry). Ties share a rank, so sorting
@@ -1043,9 +1064,10 @@ export async function loadMiniLeagueStandingsPage(
   ]);
   const gw = next || current || 1;
   const rows = (pack.results ?? [])
-    .map((row) => standingRow(row, youEntryId))
-    .filter((row): row is MiniLeagueStandingRow => row != null)
-    .sort((a, b) => a.rank - b.rank);
+    .map((row, i) =>
+      standingRow(row, youEntryId, null, (safePage - 1) * STANDINGS_PAGE_SIZE + i + 1),
+    )
+    .filter((row): row is MiniLeagueStandingRow => row != null);
 
   const idsByEntry = new Map<number, number[]>();
   try {
@@ -1264,6 +1286,18 @@ function packToTotals(pack: HistoryPack | null): HistoryGwTotals[] {
   }));
 }
 
+function totalsFromPicks(picks: RivalPicks | undefined): HistoryGwTotals[] {
+  if (!picks || picks.event == null || picks.total == null) return [];
+  return [
+    {
+      event: picks.event,
+      points: picks.points ?? 0,
+      total: picks.total,
+      overallRank: null,
+    },
+  ];
+}
+
 function chipShort(name: string | null | undefined): string | null {
   if (!name) return null;
   const kind = classifyChipName(name);
@@ -1286,11 +1320,25 @@ async function loadFplFixturesWindow(
   fromGw: number,
   toGw: number,
 ): Promise<FplFixtureRow[]> {
-  const all = await fplGet<FplFixtureRow[]>("/fixtures/").catch(() => [] as FplFixtureRow[]);
-  return (all ?? []).filter((row) => {
+  const inWindow = (row: FplFixtureRow) => {
     const event = Number(row.event);
     return Number.isFinite(event) && event >= fromGw && event <= toGw;
-  });
+  };
+  try {
+    const all = await fplGet<FplFixtureRow[]>("/fixtures/", { timeoutMs: 15_000, retries: 2 });
+    return (all ?? []).filter(inWindow);
+  } catch {
+    const gws: number[] = [];
+    for (let event = fromGw; event <= toGw; event++) gws.push(event);
+    const packs = await Promise.all(
+      gws.map((event) =>
+        fplGet<FplFixtureRow[]>(`/fixtures/?event=${event}`, { retries: 1 }).catch(
+          () => [] as FplFixtureRow[],
+        ),
+      ),
+    );
+    return packs.flat().filter(inWindow);
+  }
 }
 
 function scoreLivePicks(
@@ -1378,14 +1426,26 @@ async function buildFixtureRuns(
     loadFplFixturesWindow(fromGw, toGw),
     (async () => {
       const map = new Map<number, PlayerMeta>();
-      if (starterIds.length) {
-        try {
-          const extra = await loadMetaFromBootstrap(starterIds);
-          for (const [id, row] of extra) map.set(id, row);
-        } catch {
-          /* names optional */
+      if (!starterIds.length) return map;
+      try {
+        const db = await loadPlayers(starterIds);
+        for (const [id, p] of db) {
+          map.set(id, {
+            fpl_id: id,
+            web_name: p.web_name ?? null,
+            team: p.team ?? null,
+            team_id: p.team_id ?? null,
+            position: p.position ?? null,
+            base_price: p.base_price ?? null,
+            status: p.status ?? null,
+            chance_of_playing: p.chance_of_playing ?? null,
+            news: null,
+          });
         }
+      } catch {
+        /* bootstrap overlay still runs */
       }
+      await fillMissingMeta(map, starterIds);
       return map;
     })(),
   ]);
@@ -1635,7 +1695,7 @@ export async function loadMiniLeagueTools(
   const ctx = await loadStandingsContext(entryId, leagueId, format);
   const picksList = await loadSamplePicks(ctx.sampleRows, ctx.gw);
   const historyTargets = ctx.sampleRows;
-  const histories = await mapPool(historyTargets, PICKS_CONCURRENCY, (row) =>
+  const histories = await mapPool(historyTargets, HISTORY_CONCURRENCY, (row) =>
     fetchHistoryPack(row.entry),
   );
   const historyByEntry = new Map<number, HistoryPack>();
@@ -1645,9 +1705,14 @@ export async function loadMiniLeagueTools(
 
   const gws = rankChartGwWindow(ctx.gw);
   const plotRows = ctx.sampleRows.length ? ctx.sampleRows : pickOverallEntries(ctx, entryId);
+  const picksByEntry = new Map(picksList.map((p) => [p.entry, p]));
   const historyMap = new Map<number, HistoryGwTotals[]>();
   for (const row of plotRows) {
-    historyMap.set(row.entry, packToTotals(historyByEntry.get(row.entry) ?? null));
+    const fromHistory = packToTotals(historyByEntry.get(row.entry) ?? null);
+    historyMap.set(
+      row.entry,
+      fromHistory.length ? fromHistory : totalsFromPicks(picksByEntry.get(row.entry)),
+    );
   }
   const rankedGws = gws.filter((event) => event <= ctx.gw);
   const sampleRanks = reconstructSampleRanks(historyMap, rankedGws);
@@ -1655,7 +1720,7 @@ export async function loadMiniLeagueTools(
   const miniLeague: MiniLeagueRankSeries[] = plotRows.map((row) => {
     const hist = historyMap.get(row.entry) ?? [];
     const rec = sampleRanks.get(row.entry);
-      const points = gws.map((event) => {
+    const points = gws.map((event) => {
       const hit = hist.find((p) => p.event === event);
       return {
         event,
@@ -1672,6 +1737,7 @@ export async function loadMiniLeagueTools(
       role: seriesRole(row, ctx, entryId),
       lastRank: row.lastRank,
       rank: row.rank,
+      tablePos: row.tablePos,
       points,
     };
   });
@@ -1693,14 +1759,23 @@ export async function loadMiniLeagueTools(
 
   const chips: MiniLeagueChipRow[] = ctx.sampleRows.map((row) => {
     const pack = historyByEntry.get(row.entry);
+    const picks = picksByEntry.get(row.entry);
+    let slots = pack ? chipSlotsFromUsed(pack.chips) : emptyChipSlots();
+    if (picks?.chip) {
+      slots = overlayChipSlots(
+        slots,
+        chipSlotsFromUsed([{ name: picks.chip, event: picks.event ?? ctx.gw }]),
+      );
+    }
     return {
       entry: row.entry,
       teamName: row.entryName,
       managerName: row.playerName,
       isYou: row.isYou,
       rank: row.rank,
+      tablePos: row.tablePos,
       role: seriesRole(row, ctx, entryId),
-      slots: pack ? chipSlotsFromUsed(pack.chips) : emptyChipSlots(),
+      slots,
     };
   });
 

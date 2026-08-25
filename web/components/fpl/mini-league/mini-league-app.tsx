@@ -185,7 +185,10 @@ function StandingsTable({
             >
               <td className="px-3 py-2 tabular-nums">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{row.rank}</span>
+                  <span className="font-medium">{row.tablePos ?? row.rank}</span>
+                  {row.tablePos != null && row.tablePos !== row.rank ? (
+                    <span className="text-[10px] text-muted-foreground">FPL #{row.rank}</span>
+                  ) : null}
                   <RankChip dir={row.rankDir} delta={row.rankDelta} />
                 </div>
               </td>
@@ -347,9 +350,14 @@ export function MiniLeagueApp({
     const rank = list.find((l) => l.id === selectedParsed.id)?.rank ?? null;
     const located =
       analysis?.league.id === selectedParsed.id ? analysis.yourStandingsPage : null;
-    setTablePage(resolveYourStandingsPage(located, rank));
-    setTableData(null);
+    const nextPage = resolveYourStandingsPage(located, rank);
+    setTablePage((prev) => (prev === nextPage ? prev : nextPage));
   }, [leagueId, leagueFormat, index, selectedParsed, analysis]);
+
+  useEffect(() => {
+    setTableData(null);
+    setTableError(null);
+  }, [leagueId, leagueFormat]);
 
   useEffect(() => {
     if (!entryId || !leagueId || tab !== "table") return;

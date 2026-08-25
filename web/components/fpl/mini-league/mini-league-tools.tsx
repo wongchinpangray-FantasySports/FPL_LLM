@@ -810,7 +810,7 @@ export function MiniLeagueKillerTools({
                       className="inline-block h-2.5 w-2.5 rounded-full"
                       style={{ background: seriesStroke(s, i) }}
                     />
-                    <span className="tabular-nums text-foreground">#{s.rank}</span>
+                    <span className="tabular-nums text-foreground">#{s.tablePos ?? s.rank}</span>
                     <RivalNameButton
                       name={s.teamName}
                       onClick={() => onOpenSquad(s.entry)}
@@ -846,7 +846,7 @@ export function MiniLeagueKillerTools({
                       >
                         <td className="px-3 py-2">
                           <span className="mr-1.5 tabular-nums text-xs text-muted-foreground">
-                            #{row.rank}
+                            #{row.tablePos ?? row.rank}
                           </span>
                           <RivalNameButton name={row.teamName} onClick={() => onOpenSquad(row.entry)} />
                           {row.isYou ? (

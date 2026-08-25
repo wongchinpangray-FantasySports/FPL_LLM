@@ -45,24 +45,56 @@ function fplHeaders(): Record<string, string> {
 
 const FPL_FETCH_TIMEOUT_MS = 10_000;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryFplStatus(status: number): boolean {
+  return status === 403 || status === 408 || status === 429 || status >= 500;
+}
+
 export async function fplGet<T = unknown>(
   path: string,
-  opts?: { cacheBust?: boolean },
+  opts?: { cacheBust?: boolean; timeoutMs?: number; retries?: number },
 ): Promise<T> {
   let url = `${FPL_BASE}${path}`;
   if (opts?.cacheBust) {
     url += path.includes("?") ? "&" : "?";
     url += `_=${Date.now()}`;
   }
-  const res = await fetch(url, {
-    headers: fplHeaders(),
-    cache: "no-store",
-    signal: AbortSignal.timeout(FPL_FETCH_TIMEOUT_MS),
-  });
-  if (!res.ok) {
-    throw new Error(`FPL ${path} -> ${res.status}`);
+  const timeoutMs = Math.max(3_000, opts?.timeoutMs ?? FPL_FETCH_TIMEOUT_MS);
+  const retries = Math.max(0, opts?.retries ?? 2);
+  let lastError: Error = new Error(`FPL ${path} failed`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: fplHeaders(),
+        cache: "no-store",
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!res.ok) {
+        lastError = new Error(`FPL ${path} -> ${res.status}`);
+        if (res.status === 404 || !shouldRetryFplStatus(res.status) || attempt >= retries) {
+          throw lastError;
+        }
+      } else {
+        return (await res.json()) as T;
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(`FPL ${path} failed`);
+      const statusMatch = /-> (\d+)$/.exec(lastError.message);
+      const status = statusMatch ? Number(statusMatch[1]) : 0;
+      if (
+        status === 404 ||
+        (status > 0 && !shouldRetryFplStatus(status)) ||
+        attempt >= retries
+      ) {
+        throw lastError;
+      }
+    }
+    await sleep(350 * (attempt + 1));
   }
-  return (await res.json()) as T;
+  throw lastError;
 }
 
 /**

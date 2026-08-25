@@ -5,8 +5,11 @@
  */
 import assert from "node:assert/strict";
 import {
+  chipSlotsFromUsed,
+  classifyChipName,
   neighborStandingsPages,
   nextStandingsScanPages,
+  overlayChipSlots,
   pickRivalSample,
   resolveYourStandingsPage,
   shouldContinueStandingsScan,
@@ -104,6 +107,18 @@ function main(): void {
 
   assert.equal(resolveYourStandingsPage(38, 1560), 38);
   assert.equal(resolveYourStandingsPage(null, 1560), 32);
+
+  assert.equal(classifyChipName("bboost"), "bboost");
+  assert.equal(classifyChipName("bb"), "bboost");
+  const bbGw1 = chipSlotsFromUsed([{ name: "bboost", event: 1 }]);
+  assert.equal(bbGw1.bb1.used, true);
+  assert.equal(bbGw1.bb1.event, 1);
+  assert.equal(bbGw1.bb2.used, false);
+  const fromPicks = overlayChipSlots(
+    chipSlotsFromUsed([]),
+    chipSlotsFromUsed([{ name: "bboost", event: 1 }]),
+  );
+  assert.equal(fromPicks.bb1.used, true);
 
   console.log("mini-league-window-self-test: ok");
 }

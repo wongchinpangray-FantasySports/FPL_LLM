@@ -211,11 +211,21 @@ function chipNameKey(name: string | null | undefined): string {
 export function classifyChipName(name: string): ChipKind | null {
   const id = chipNameKey(name);
   if (id === "wildcard" || id === "wc") return "wildcard";
-  if (id === "freehit" || id === "ff") return "freehit";
-  if (id === "bboost" || id === "benchboost" || (id.includes("bench") && id.includes("boost"))) {
+  if (id === "freehit" || id === "ff" || id === "fh") return "freehit";
+  if (
+    id === "bboost" ||
+    id === "bb" ||
+    id === "benchboost" ||
+    (id.includes("bench") && id.includes("boost"))
+  ) {
     return "bboost";
   }
-  if (id === "3xc" || id === "triplecaptain" || id.includes("triplecaptain")) {
+  if (
+    id === "3xc" ||
+    id === "tc" ||
+    id === "triplecaptain" ||
+    id.includes("triplecaptain")
+  ) {
     return "3xc";
   }
   return null;
@@ -277,6 +287,20 @@ export function chipSlotsFromUsed(
     else slots.tc2 = status;
   }
   return slots;
+}
+
+export function overlayChipSlots(base: ChipSlots, extra: ChipSlots): ChipSlots {
+  const pick = (a: ChipSlotStatus, b: ChipSlotStatus): ChipSlotStatus => (a.used ? a : b);
+  return {
+    wc1: pick(base.wc1, extra.wc1),
+    wc2: pick(base.wc2, extra.wc2),
+    fh1: pick(base.fh1, extra.fh1),
+    fh2: pick(base.fh2, extra.fh2),
+    bb1: pick(base.bb1, extra.bb1),
+    bb2: pick(base.bb2, extra.bb2),
+    tc1: pick(base.tc1, extra.tc1),
+    tc2: pick(base.tc2, extra.tc2),
+  };
 }
 
 export function remainingFromSlots(slots: ChipSlots): {
