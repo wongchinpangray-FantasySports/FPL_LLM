@@ -14,13 +14,14 @@ import type {
   MiniLeagueIndex,
   MiniLeagueLiveManager,
   MiniLeagueLivePayload,
-  MiniLeagueMovesPayload,
   MiniLeaguePlayerRef,
+  MiniLeagueStandingRow,
   MiniLeagueRankChartRole,
   MiniLeagueSummary,
   MiniLeagueToolId,
   MiniLeagueToolsPayload,
 } from "@/lib/fpl/mini-league/types";
+import { rankChartGwWindow } from "@/lib/fpl/mini-league/math";
 import { RivalNameButton } from "@/components/fpl/mini-league/rival-squad-dialog";
 
 type MiniLeagueT = ReturnType<typeof useTranslations<"miniLeague">>;
@@ -29,7 +30,7 @@ const TOOL_IDS: MiniLeagueToolId[] = [
   "rankHistory",
   "chips",
   "liveGw",
-  "leagueMoves",
+  "beatRival",
   "fixtures",
   "h2h",
 ];
@@ -143,6 +144,46 @@ function fdrClass(fdr: number | null): string {
   if (fdr <= 2) return "text-emerald-400";
   if (fdr >= 4) return "text-rose-300";
   return "text-amber-300";
+}
+
+function TransferSuggestBox({
+  beatData,
+  t,
+  onInspect,
+}: {
+  beatData: MiniLeagueBeatRival;
+  t: MiniLeagueT;
+  onInspect: (fplId: number) => void;
+}) {
+  if (!beatData.suggestion) {
+    return <p className="text-sm text-muted-foreground">{t("toolsBeatNoSuggest")}</p>;
+  }
+  const s = beatData.suggestion;
+  return (
+    <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/5 px-3 py-3">
+      <h4 className="text-sm font-semibold">{t("toolsBeatSuggest")}</h4>
+      <p className="mt-2 text-sm">
+        {t("toolsBeatOut")}:{" "}
+        <PlayerLink fplId={s.out.fplId} name={s.out.webName} onInspect={onInspect} />
+        <span className="ml-1.5 text-xs text-muted-foreground">
+          {playerBits(s.out)}
+          {s.out.xp != null ? ` · ${s.out.xp.toFixed(1)} xP` : ""}
+        </span>
+      </p>
+      <p className="mt-1 text-sm">
+        {t("toolsBeatIn")}:{" "}
+        <PlayerLink fplId={s.in.fplId} name={s.in.webName} onInspect={onInspect} />
+        <span className="ml-1.5 text-xs text-muted-foreground">
+          {playerBits(s.in)}
+          {s.in.xp != null ? ` · ${s.in.xp.toFixed(1)} xP` : ""}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-brand-accent">
+        {tr(t, `toolsBeatReason.${s.reason}`)}
+        {s.xpDelta != null ? ` · ${s.xpDelta > 0 ? "+" : ""}${s.xpDelta} xP` : ""}
+      </p>
+    </div>
+  );
 }
 
 function SwingTable({
@@ -384,19 +425,17 @@ export function MiniLeagueKillerTools({
   onOpenSquad: (entry: number) => void;
 }) {
   const t = useTranslations("miniLeague");
-  const [tool, setTool] = useState<MiniLeagueToolId | null>(null);
+  const [tool, setTool] = useState<MiniLeagueToolId | null>("rankHistory");
   const [toolsData, setToolsData] = useState<MiniLeagueToolsPayload | null>(null);
   const [toolsLoading, setToolsLoading] = useState(false);
   const [toolsError, setToolsError] = useState<string | null>(null);
   const [liveData, setLiveData] = useState<MiniLeagueLivePayload | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
-  const [movesData, setMovesData] = useState<MiniLeagueMovesPayload | null>(null);
-  const [movesLoading, setMovesLoading] = useState(false);
-  const [movesError, setMovesError] = useState<string | null>(null);
   const [beatData, setBeatData] = useState<MiniLeagueBeatRival | null>(null);
   const [beatLoading, setBeatLoading] = useState(false);
   const [beatError, setBeatError] = useState<string | null>(null);
+  const [pickedRivalId, setPickedRivalId] = useState<number | null>(null);
   const [h2hData, setH2hData] = useState<MiniLeagueH2hPayload | null>(null);
   const [h2hLoading, setH2hLoading] = useState(false);
   const [h2hError, setH2hError] = useState<string | null>(null);
@@ -406,10 +445,9 @@ export function MiniLeagueKillerTools({
     setToolsError(null);
     setLiveData(null);
     setLiveError(null);
-    setMovesData(null);
-    setMovesError(null);
     setBeatData(null);
     setBeatError(null);
+    setPickedRivalId(null);
     setH2hData(null);
     setH2hError(null);
   }, [leagueId, leagueFormat]);
@@ -465,29 +503,17 @@ export function MiniLeagueKillerTools({
     };
   }, [tool, leagueId, leagueFormat, entryId, t]);
 
-  useEffect(() => {
-    if (tool !== "leagueMoves" || !leagueId) return;
-    let cancelled = false;
-    setMovesLoading(true);
-    setMovesError(null);
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/fpl/mini-league/${leagueId}/moves${qs(entryId, { format: leagueFormat })}`,
-        );
-        const data = (await res.json()) as MiniLeagueMovesPayload & { error?: string };
-        if (!res.ok) throw new Error(data.error ?? t("toolsError"));
-        if (!cancelled) setMovesData(data);
-      } catch (err) {
-        if (!cancelled) setMovesError(err instanceof Error ? err.message : t("toolsError"));
-      } finally {
-        if (!cancelled) setMovesLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [tool, leagueId, leagueFormat, entryId, t]);
+  const rivalOptions = useMemo(() => {
+    const rows = (analysis?.standings ?? []) as MiniLeagueStandingRow[];
+    return rows.filter((row) => row.entry !== entryId && !row.isYou);
+  }, [analysis, entryId]);
+
+  const defaultRivalId = useMemo(() => {
+    const rows = (analysis?.standings ?? []) as MiniLeagueStandingRow[];
+    const youIdx = rows.findIndex((row) => row.entry === entryId || row.isYou);
+    if (youIdx > 0) return rows[youIdx - 1]?.entry ?? null;
+    return rivalOptions[0]?.entry ?? null;
+  }, [analysis, entryId, rivalOptions]);
 
   const h2hLeagueId = leagueId;
 
@@ -516,16 +542,24 @@ export function MiniLeagueKillerTools({
   }, [tool, h2hLeagueId, leagueFormat, entryId, t]);
 
   const duelRivalId = h2hData?.matchup?.opponent?.entry ?? null;
+  const beatRivalId =
+    tool === "beatRival" ? (pickedRivalId ?? defaultRivalId) : tool === "h2h" ? duelRivalId : null;
 
   useEffect(() => {
-    if (tool !== "h2h" || !leagueId || duelRivalId == null) return;
+    if (tool !== "h2h" && tool !== "beatRival") return;
+    if (!leagueId || beatRivalId == null) {
+      setBeatData(null);
+      setBeatError(null);
+      return;
+    }
     let cancelled = false;
     setBeatLoading(true);
     setBeatError(null);
+    setBeatData(null);
     void (async () => {
       try {
         const res = await fetch(
-          `/api/fpl/mini-league/${leagueId}/beat-rival${qs(entryId, { rival: duelRivalId })}`,
+          `/api/fpl/mini-league/${leagueId}/beat-rival${qs(entryId, { rival: beatRivalId })}`,
         );
         const data = (await res.json()) as MiniLeagueBeatRival & { error?: string };
         if (!res.ok) throw new Error(data.error ?? t("toolsError"));
@@ -542,7 +576,7 @@ export function MiniLeagueKillerTools({
     return () => {
       cancelled = true;
     };
-  }, [tool, leagueId, entryId, duelRivalId, t]);
+  }, [tool, leagueId, entryId, beatRivalId, t]);
 
   const selectTool = useCallback((id: MiniLeagueToolId) => {
     setTool((prev) => (prev === id ? prev : id));
@@ -550,66 +584,89 @@ export function MiniLeagueKillerTools({
 
   const youChips = toolsData?.chips.find((c) => c.isYou) ?? null;
 
-  const chartGws = toolsData?.rankChart.gws ?? [];
+  const chartGws = useMemo(() => rankChartGwWindow(toolsData?.gw ?? 1), [toolsData?.gw]);
   const chartLabels = chartGws.map((event) => `GW${event}`);
 
   const mlChartSeries = useMemo(() => {
     const rows = toolsData?.rankChart.miniLeague ?? [];
-    const gws = toolsData?.rankChart.gws ?? [];
     return rows.map((s) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
-      values: gws.flatMap((event, i) => {
+      values: chartGws.flatMap((event, i) => {
         const pt = s.points?.find((p) => p.event === event);
         if (pt?.rank == null || pt.rank <= 0) return [];
         return [{ x: i, y: pt.rank }];
       }),
     }));
-  }, [toolsData]);
+  }, [toolsData, chartGws]);
 
   const ptsChartSeries = useMemo(() => {
     const rows = toolsData?.rankChart.miniLeague ?? [];
-    const gws = toolsData?.rankChart.gws ?? [];
     return rows.map((s) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
-      values: gws.flatMap((event, i) => {
+      values: chartGws.flatMap((event, i) => {
         const pt = s.points?.find((p) => p.event === event);
         if (pt?.points == null || !Number.isFinite(pt.points)) return [];
         return [{ x: i, y: pt.points }];
       }),
     }));
-  }, [toolsData]);
+  }, [toolsData, chartGws]);
 
   const orChart = useMemo(() => {
     const rows = toolsData?.rankChart.overall ?? [];
-    const gws = toolsData?.rankChart.gws ?? [];
     const series = rows.map((s) => ({
       entry: s.entry,
       teamName: s.teamName,
       isYou: s.isYou,
       role: s.role,
-      values: gws.flatMap((event, i) => {
+      values: chartGws.flatMap((event, i) => {
         const pt = s.points.find((p) => p.event === event);
         if (pt?.overallRank == null || pt.overallRank <= 0) return [];
         return [{ x: i, y: pt.overallRank }];
       }),
     }));
     return {
-      labels: gws.map((e) => `GW${e}`),
+      labels: chartLabels,
       series,
     };
-  }, [toolsData]);
+  }, [toolsData, chartGws, chartLabels]);
 
   const live = liveData?.status === "live";
   const liveGap =
     live && liveData?.you?.livePoints != null && liveData.above?.livePoints != null
       ? liveData.above.livePoints - liveData.you.livePoints
       : null;
+  const overtakeGap = (() => {
+    if (!liveData?.you) return null;
+    const youPts = live ? liveData.you.livePoints : liveData.you.lastGwPoints;
+    if (liveData.above) {
+      const themPts = live ? liveData.above.livePoints : liveData.above.lastGwPoints;
+      if (youPts == null || themPts == null) return null;
+      return { kind: "chase" as const, gap: themPts - youPts };
+    }
+    if (liveData.below) {
+      const themPts = live ? liveData.below.livePoints : liveData.below.lastGwPoints;
+      if (youPts == null || themPts == null) return null;
+      return { kind: "lead" as const, gap: youPts - themPts };
+    }
+    return null;
+  })();
+
+  const fxRunsRanked = useMemo(() => {
+    const runs = toolsData?.fixtures.runs ?? [];
+    return [...runs].sort((a, b) => {
+      const af = a.fdrAvg ?? 99;
+      const bf = b.fdrAvg ?? 99;
+      return af - bf || a.entry - b.entry;
+    });
+  }, [toolsData]);
+  const fxBest = fxRunsRanked.find((row) => row.fdrAvg != null) ?? null;
+  const fxYou = toolsData?.fixtures.runs.find((row) => row.isYou) ?? null;
 
   return (
     <section className="rounded-xl border border-border bg-card/30 p-4">
@@ -657,7 +714,7 @@ export function MiniLeagueKillerTools({
                   {mlChartSeries.some((s) => s.values.length) ? (
                     <RankMultiChart
                       series={mlChartSeries}
-                      xLabels={chartLabels.length ? chartLabels : [t("toolsRankLast"), t("toolsRankNow", { n: toolsData.gw })]}
+                      xLabels={chartLabels}
                       ysFor={(s) => s.values.map((v) => v.y)}
                     />
                   ) : (
@@ -771,6 +828,33 @@ export function MiniLeagueKillerTools({
               <p className="text-xs text-muted-foreground">
                 {t("toolsFxHint", { from: toolsData.fixtures.fromGw, to: toolsData.fixtures.toGw })}
               </p>
+              {fxBest && fxYou ? (
+                <p className="text-sm font-semibold text-foreground">
+                  {fxBest.isYou
+                    ? t("toolsFxRunBetterYou", {
+                        n: toolsData.fixtures.gws.length,
+                        you: fxYou.fdrAvg ?? "—",
+                      })
+                    : t("toolsFxRunBetterThem", {
+                        name: fxBest.teamName,
+                        them: fxBest.fdrAvg ?? "—",
+                        you: fxYou.fdrAvg ?? "—",
+                      })}
+                </p>
+              ) : null}
+              {fxRunsRanked.length ? (
+                <ol className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <li className="font-medium text-foreground">{t("toolsFxRunRank")}:</li>
+                  {fxRunsRanked.map((row, i) => (
+                    <li key={row.entry}>
+                      {i + 1}. {row.teamName}
+                      {row.isYou ? ` (${t("youBadge")})` : ""}
+                      {" · FDR "}
+                      <span className={fdrClass(row.fdrAvg)}>{row.fdrAvg ?? "—"}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
               {toolsData.fixtures.runs.length ? (
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <table className="w-full min-w-[32rem] text-left text-sm">
@@ -782,6 +866,7 @@ export function MiniLeagueKillerTools({
                             GW{event}
                           </th>
                         ))}
+                        <th className="px-2 py-2 text-center font-medium">{t("toolsFxColFdr")}</th>
                         <th className="px-2 py-2 text-center font-medium">{t("toolsFxXpTotal")}</th>
                       </tr>
                     </thead>
@@ -801,20 +886,22 @@ export function MiniLeagueKillerTools({
                           </td>
                           {row.cells.map((cell) => (
                             <td key={cell.event} className="px-2 py-2 text-center">
-                              <span className={cn("tabular-nums text-xs", fdrClass(cell.fdrAvg))}>
-                                {cell.xp != null ? cell.xp.toFixed(1) : "—"}
+                              <span className={cn("text-sm font-semibold tabular-nums", fdrClass(cell.fdrAvg))}>
+                                {cell.fdrAvg != null ? cell.fdrAvg.toFixed(1) : "—"}
                               </span>
                               <span className="block text-[10px] text-muted-foreground">
                                 {cell.matches === 0
                                   ? t("toolsFxBlank")
                                   : cell.matches > 1
                                     ? t("toolsFxDgw", { n: cell.matches })
-                                    : cell.fdrAvg != null
-                                      ? `FDR ${cell.fdrAvg}`
-                                      : "—"}
+                                    : "FDR"}
+                                {cell.xp != null ? ` · ${cell.xp.toFixed(1)} xP` : ""}
                               </span>
                             </td>
                           ))}
+                          <td className={cn("px-2 py-2 text-center text-sm font-semibold tabular-nums", fdrClass(row.fdrAvg))}>
+                            {row.fdrAvg != null ? row.fdrAvg.toFixed(1) : "—"}
+                          </td>
                           <td className="px-2 py-2 text-center tabular-nums text-sm">
                             {row.xpTotal != null ? row.xpTotal.toFixed(1) : "—"}
                           </td>
@@ -863,6 +950,20 @@ export function MiniLeagueKillerTools({
                     <p className="text-sm text-muted-foreground">{t("toolsLiveFinished")}</p>
                   ) : null}
                   <p className="text-xs text-muted-foreground">{t("toolsLiveWhy")}</p>
+                  {overtakeGap ? (
+                    <p className="text-sm font-semibold text-foreground">
+                      {overtakeGap.kind === "chase"
+                        ? t("toolsLiveOvertake", {
+                            gap: overtakeGap.gap,
+                            youLeft: liveData.you?.remaining ?? "—",
+                            themLeft: liveData.above?.remaining ?? "—",
+                          })
+                        : t("toolsLiveOvertakeLead", {
+                            gap: overtakeGap.gap,
+                            youLeft: liveData.you?.remaining ?? "—",
+                          })}
+                    </p>
+                  ) : null}
                   {live && liveGap != null ? (
                     <p className="text-sm text-foreground">
                       {t("toolsLiveGap", { n: liveGap })}
@@ -876,28 +977,9 @@ export function MiniLeagueKillerTools({
                       })}
                     </p>
                   ) : null}
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div>
-                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t("toolsLiveAbove")}
-                      </p>
-                      <LiveCard row={liveData.above} t={t} onOpenSquad={onOpenSquad} live={live} />
-                    </div>
-                    <div>
-                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t("youBadge")}
-                      </p>
-                      <LiveCard row={liveData.you} t={t} onOpenSquad={onOpenSquad} live={live} />
-                    </div>
-                    <div>
-                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t("toolsLiveBelow")}
-                      </p>
-                      <LiveCard row={liveData.below} t={t} onOpenSquad={onOpenSquad} live={live} />
-                    </div>
-                  </div>
                   {liveData.sample.length ? (
                     <div className="overflow-x-auto rounded-lg border border-border">
+                      <p className="px-3 pt-2 text-xs text-muted-foreground">{t("toolsLiveTableHint")}</p>
                       <table className="w-full min-w-[28rem] text-left text-sm">
                         <thead className="bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
                           <tr>
@@ -934,7 +1016,7 @@ export function MiniLeagueKillerTools({
                               <td className="px-3 py-2 tabular-nums">
                                 {live && row.livePoints != null ? row.livePoints : row.lastGwPoints}
                               </td>
-                              <td className="px-3 py-2 tabular-nums text-muted-foreground">
+                              <td className="px-3 py-2 tabular-nums font-medium text-foreground">
                                 {row.remaining != null ? `${row.remaining}/${row.playing ?? "—"}` : "—"}
                               </td>
                             </tr>
@@ -943,83 +1025,71 @@ export function MiniLeagueKillerTools({
                       </table>
                     </div>
                   ) : null}
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {t("toolsLiveAbove")}
+                      </p>
+                      <LiveCard row={liveData.above} t={t} onOpenSquad={onOpenSquad} live={live} />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {t("youBadge")}
+                      </p>
+                      <LiveCard row={liveData.you} t={t} onOpenSquad={onOpenSquad} live={live} />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {t("toolsLiveBelow")}
+                      </p>
+                      <LiveCard row={liveData.below} t={t} onOpenSquad={onOpenSquad} live={live} />
+                    </div>
+                  </div>
                 </>
               ) : null}
             </div>
           ) : null}
 
-          {tool === "leagueMoves" ? (
+          {tool === "beatRival" ? (
             <div className="flex flex-col gap-3">
-              {movesLoading && !movesData ? (
+              {rivalOptions.length ? (
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-xs text-muted-foreground">{t("toolsBeatPick")}</span>
+                  <select
+                    className="max-w-md rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                    value={String(pickedRivalId ?? defaultRivalId ?? "")}
+                    onChange={(e) => setPickedRivalId(Number(e.target.value))}
+                  >
+                    {rivalOptions.map((row) => (
+                      <option key={row.entry} value={row.entry}>
+                        #{row.rank} · {row.entryName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("toolsBeatNoRivals")}</p>
+              )}
+              {beatLoading && !beatData ? (
                 <p className="text-sm text-muted-foreground">{t("toolsLoading")}</p>
               ) : null}
-              {movesError ? <p className="text-sm text-rose-200">{movesError}</p> : null}
-              {movesData ? (
+              {beatError ? <p className="text-sm text-rose-200">{beatError}</p> : null}
+              {beatData ? (
                 <>
-                  <p className="text-xs text-muted-foreground">
-                    {t("toolsMovesHint", {
-                      gw: movesData.gw,
-                      n: movesData.moved,
-                      sampled: movesData.sampled,
-                    })}
+                  <p className="text-sm text-foreground">
+                    {beatData.pointsGap != null ? t("toolsBeatGap", { n: beatData.pointsGap }) : null}
                   </p>
-                  {movesData.yourMoves.length ? (
-                    <ul className="text-sm">
-                      {movesData.yourMoves.map((row, i) => (
-                        <li key={`${row.out.fplId}-${row.inn.fplId}-${i}`}>
-                          {t("toolsBeatOut")}:{" "}
-                          <PlayerLink fplId={row.out.fplId} name={row.out.webName} onInspect={onInspect} />
-                          {" → "}
-                          {t("toolsBeatIn")}:{" "}
-                          <PlayerLink fplId={row.inn.fplId} name={row.inn.webName} onInspect={onInspect} />
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {!movesData.broughtIn.length && !movesData.sold.length ? (
-                    <p className="text-sm text-muted-foreground">{t("toolsMovesEmpty")}</p>
-                  ) : (
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <div>
-                        <h4 className="text-sm font-semibold">{t("toolsMovesIn")}</h4>
-                        <ul className="mt-2 flex flex-col gap-1.5 text-sm">
-                          {movesData.broughtIn.map((p) => (
-                            <li key={p.fplId} className="flex items-baseline justify-between gap-3">
-                              <span>
-                                <PlayerLink fplId={p.fplId} name={p.webName} onInspect={onInspect} />
-                                <span className="ml-1.5 text-xs text-muted-foreground">
-                                  {playerBits(p)}
-                                  {p.youDid ? ` · ${t("youBadge")}` : ""}
-                                </span>
-                              </span>
-                              <span className="tabular-nums text-xs text-muted-foreground">
-                                {t("toolsMovesCount", { n: p.count })}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold">{t("toolsMovesOut")}</h4>
-                        <ul className="mt-2 flex flex-col gap-1.5 text-sm">
-                          {movesData.sold.map((p) => (
-                            <li key={p.fplId} className="flex items-baseline justify-between gap-3">
-                              <span>
-                                <PlayerLink fplId={p.fplId} name={p.webName} onInspect={onInspect} />
-                                <span className="ml-1.5 text-xs text-muted-foreground">
-                                  {playerBits(p)}
-                                  {p.youDid ? ` · ${t("youBadge")}` : ""}
-                                </span>
-                              </span>
-                              <span className="tabular-nums text-xs text-muted-foreground">
-                                {t("toolsMovesCount", { n: p.count })}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                  <div>
+                    <h4 className="text-sm font-semibold">{t("toolsBeatSwingTitle")}</h4>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("toolsBeatSwingHint")}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t("toolsBeatForm", { you: beatData.youWon, them: beatData.theyWon })}
+                    </p>
+                    <div className="mt-2">
+                      <SwingTable rows={beatData.swings} t={t} />
                     </div>
-                  )}
+                  </div>
+                  <TransferSuggestBox beatData={beatData} t={t} onInspect={onInspect} />
                 </>
               ) : null}
             </div>
@@ -1119,46 +1189,7 @@ export function MiniLeagueKillerTools({
                   {beatLoading && !beatData ? (
                     <p className="text-sm text-muted-foreground">{t("toolsLoading")}</p>
                   ) : null}
-                  {beatError ? <p className="text-xs text-muted-foreground">{beatError}</p> : null}
-                  {beatData?.suggestion ? (
-                    <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/5 px-3 py-3">
-                      <h4 className="text-sm font-semibold">{t("toolsBeatSuggest")}</h4>
-                      <p className="mt-2 text-sm">
-                        {t("toolsBeatOut")}:{" "}
-                        <PlayerLink
-                          fplId={beatData.suggestion.out.fplId}
-                          name={beatData.suggestion.out.webName}
-                          onInspect={onInspect}
-                        />
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {playerBits(beatData.suggestion.out)}
-                          {beatData.suggestion.out.xp != null
-                            ? ` · ${beatData.suggestion.out.xp.toFixed(1)} xP`
-                            : ""}
-                        </span>
-                      </p>
-                      <p className="mt-1 text-sm">
-                        {t("toolsBeatIn")}:{" "}
-                        <PlayerLink
-                          fplId={beatData.suggestion.in.fplId}
-                          name={beatData.suggestion.in.webName}
-                          onInspect={onInspect}
-                        />
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {playerBits(beatData.suggestion.in)}
-                          {beatData.suggestion.in.xp != null
-                            ? ` · ${beatData.suggestion.in.xp.toFixed(1)} xP`
-                            : ""}
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-brand-accent">
-                        {tr(t, `toolsBeatReason.${beatData.suggestion.reason}`)}
-                        {beatData.suggestion.xpDelta != null
-                          ? ` · ${beatData.suggestion.xpDelta > 0 ? "+" : ""}${beatData.suggestion.xpDelta} xP`
-                          : ""}
-                      </p>
-                    </div>
-                  ) : null}
+                  {beatData ? <TransferSuggestBox beatData={beatData} t={t} onInspect={onInspect} /> : null}
                 </div>
               ) : null}
               {leagueFormat !== "h2h" && index.h2h.length ? (

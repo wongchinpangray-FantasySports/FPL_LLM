@@ -231,8 +231,8 @@ export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null 
     }
   }, []);
   const entryId =
-    linkedEntryId ??
     queryEntry ??
+    linkedEntryId ??
     (stored && /^\d+$/.test(stored) ? Number(stored) : null);
 
   const [index, setIndex] = useState<MiniLeagueIndex | null>(null);

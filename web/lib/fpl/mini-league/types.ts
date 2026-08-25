@@ -165,7 +165,7 @@ export type MiniLeagueToolId =
   | "rankHistory"
   | "chips"
   | "liveGw"
-  | "leagueMoves"
+  | "beatRival"
   | "fixtures"
   | "h2h";
 
@@ -265,6 +265,7 @@ export type MiniLeagueFixtureRun = {
   role: MiniLeagueRankChartRole;
   cells: MiniLeagueFixtureRunCell[];
   xpTotal: number | null;
+  fdrAvg: number | null;
 };
 
 export type MiniLeagueFixtureOverlap = {

@@ -2540,12 +2540,12 @@
     "movesHint": "本轮该联赛排名跃升与下滑最大的经理。",
     "movesEmpty": "本轮还没有排名变动记录。",
     "toolsTitle": "小联赛大杀器工具",
-    "toolsHint": "点开卡片：近 5 轮排名赛、芯片库存、本轮未踢完、本周转会潮、谁赛程更好、本周 1v1。",
+    "toolsHint": "点开卡片看工作台。排名曲线横轴固定近 5 轮；单挑看 5 轮得分差；赛程看 FDR 和谁更好踢。",
     "toolsAria": "小联赛大杀器工具",
     "toolsLoading": "正在加载这个工具…",
     "toolsError": "无法从 FPL 加载这个工具。",
-    "toolsRankMlTitle": "小联赛排名赛（样本）",
-    "toolsRankMlHint": "用这几位经理的赛季总分重建近 5 轮相对名次。未来轮次留空，横轴固定 5 格，避免两点被拉得很怪。",
+    "toolsRankMlTitle": "小联赛排名（近 5 轮）",
+    "toolsRankMlHint": "横轴固定 GW 共 5 格（赛季初是 GW1–5，未踢的轮次留空）。不是「上周 vs 本周」两点。",
     "toolsRankPtsTitle": "轮次得分",
     "toolsRankPtsHint": "同一 5 轮谁实际拿分。越高越好。",
     "toolsRankOrTitle": "总排名",
@@ -2556,8 +2556,11 @@
     "toolsChipHint": "绿色：对方还留着你已经用过的芯片。琥珀色：对方已经用了你还留着的芯片。圆圈：尚未使用。",
     "toolsChipStill": "仍持有你已用过的芯片",
     "toolsChipSpent": "已用掉你还留着的芯片",
-    "toolsLiveNotStarted": "本轮尚未开始。开赛前最有用的是队长和还有多少人要踢。",
+    "toolsLiveNotStarted": "本轮尚未开始。下面先看队长和未踢完人数——这才决定周末能不能超车，不是上轮总分。",
     "toolsLiveFinished": "本轮已结束。下面显示本轮得分。",
+    "toolsLiveOvertake": "要追上上一名还差 {gap} 分。你还有 {youLeft} 人未踢完，对方 {themLeft} 人。",
+    "toolsLiveOvertakeLead": "你领先下一名 {gap} 分。你还有 {youLeft} 人未踢完。",
+    "toolsLiveTableHint": "样本经理的队长、芯片、未踢完人数。",
     "toolsLivePts": "实时分",
     "toolsLastGw": "上轮",
     "toolsRemaining": "还有 {n} / {playing} 人未踢完",
@@ -2572,6 +2575,9 @@
     "toolsMovesIn": "引入",
     "toolsMovesOut": "卖出",
     "toolsMovesCount": "{n} 人",
+    "toolsBeatPick": "选择对手",
+    "toolsBeatSwingTitle": "近 5 轮得分差",
+    "toolsBeatSwingHint": "每一轮你和对方的实得分，以及分差（正数 = 你赢这一轮）。",
     "toolsBeatGap": "相对你 {n} 分（正数表示对方领先）",
     "toolsBeatForm": "近 5 轮：你赢 {you} 场，对方赢 {them} 场。",
     "toolsSwingDelta": "分差",
@@ -2585,7 +2591,11 @@
       "template": "模板补齐",
       "xp": "未来 3 轮 xP 提升最大"
     },
-    "toolsFxHint": "GW{from}–{to}：你和追赶对象的首发 xP 与赛程难度。颜色是 FDR（绿色更好踢）。",
+    "toolsFxHint": "GW{from}–{to}：格子里的大数字是首发平均 FDR（1 绿最好踢，5 红最难）。xP 有数据才显示。",
+    "toolsFxRunBetterYou": "谁赛程更好：你。未来 {n} 轮首发平均 FDR {you}（越低越好踢）。",
+    "toolsFxRunBetterThem": "谁赛程更好：{name}（平均 FDR {them}）。你是 {you}。",
+    "toolsFxRunRank": "赛程难度排名（平均 FDR，越低越好）",
+    "toolsFxColFdr": "均 FDR",
     "toolsFxEmpty": "这个窗口还画不出赛程表。",
     "toolsFxXpTotal": "xP",
     "toolsFxBlank": "空轮",
@@ -2608,28 +2618,28 @@
     "toolsH2hRaceWhy": "经典联赛：本周对决你正在追的那个人（队长 + 近 5 轮得分）。",
     "soon": {
       "rankHistory": {
-        "title": "近5轮排名赛",
-        "body": "你、榜首与邻近对手的相对名次和轮次得分。"
+        "title": "赛季排名曲线",
+        "body": "近 5 轮相对名次和得分。横轴固定 5 格，不是上周 vs 本周两点。"
       },
       "chips": {
-        "title": "芯片库存",
+        "title": "芯片追踪",
         "body": "谁还留着 WC / FH / BB / TC，谁已经用掉了。"
       },
       "liveGw": {
-        "title": "本轮未踢完",
-        "body": "队长和还有多少人未踢完——本周末会不会超车。"
+        "title": "实时对位",
+        "body": "上一名 / 你 / 下一名，加上队长、未踢完人数、会不会超车。"
       },
-      "leagueMoves": {
-        "title": "本周转会潮",
-        "body": "样本里本轮实际转了谁，不是模板拥有率。"
+      "beatRival": {
+        "title": "单挑某位对手",
+        "body": "近 5 轮得分差（scoreswing）和一转，不是阵容独有名单。"
       },
       "fixtures": {
-        "title": "谁赛程更好",
-        "body": "未来 5 轮 FDR（和 xP），对比你正在追的经理。"
+        "title": "赛程重叠",
+        "body": "未来 5 轮 FDR 表，以及谁赛程更好。"
       },
       "h2h": {
-        "title": "本周1v1",
-        "body": "对决你正在追的人，或头对头对阵：近5轮、芯片、一转。"
+        "title": "头对头联赛",
+        "body": "本周对阵、芯片、近 5 轮谁赢。"
       }
     }
   }

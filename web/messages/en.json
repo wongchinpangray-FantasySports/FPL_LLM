@@ -2514,12 +2514,12 @@
     "movesHint": "Biggest rank jumps and drops this gameweek in this league.",
     "movesEmpty": "No rank movement recorded yet this gameweek.",
     "toolsTitle": "Mini League Killer tools",
-    "toolsHint": "Open a card: 5-GW rank race, chip bank, who still has to play, this week's transfers, fixture run, and this week's 1v1.",
+    "toolsHint": "Open a card. Ranking curve is a fixed 5-GW axis; Beat a rival is 5-GW score swing; Fixture overlap is FDR and whose run is easier.",
     "toolsAria": "Mini League Killer tools",
     "toolsLoading": "Loading this tool…",
     "toolsError": "Could not load this tool from FPL.",
-    "toolsRankMlTitle": "Mini-league race (sample)",
-    "toolsRankMlHint": "Relative rank among these plotted managers over 5 gameweeks, rebuilt from their season totals. Future GWs stay empty so the axis does not stretch.",
+    "toolsRankMlTitle": "Mini-league rank (last 5 GWs)",
+    "toolsRankMlHint": "X-axis is always 5 gameweeks (GW1–5 early season; unfinished weeks stay empty). Not a two-point last-week vs now chart.",
     "toolsRankPtsTitle": "Gameweek points",
     "toolsRankPtsHint": "Same 5 gameweeks — who actually scored. Higher is better.",
     "toolsRankOrTitle": "Overall rank",
@@ -2530,8 +2530,11 @@
     "toolsChipHint": "Green = they still have a chip you already used. Amber = they already played a chip you still have. Circle = still available.",
     "toolsChipStill": "Still holding a chip you used",
     "toolsChipSpent": "Already played a chip you still have",
-    "toolsLiveNotStarted": "This gameweek has not started yet. Captains and players still to play are the useful signal before kickoff.",
+    "toolsLiveNotStarted": "This gameweek has not started yet. Captains and players still to play decide whether you can overtake — not last GW totals.",
     "toolsLiveFinished": "This gameweek is finished. Showing those points.",
+    "toolsLiveOvertake": "You need {gap} more points to catch the manager above. You have {youLeft} still to play, they have {themLeft}.",
+    "toolsLiveOvertakeLead": "You lead the manager below by {gap} pts. You have {youLeft} still to play.",
+    "toolsLiveTableHint": "Captains, chips, and remaining players in the sample.",
     "toolsLivePts": "live pts",
     "toolsLastGw": "last GW",
     "toolsRemaining": "{n} of {playing} still to play",
@@ -2546,6 +2549,9 @@
     "toolsMovesIn": "Brought in",
     "toolsMovesOut": "Sold",
     "toolsMovesCount": "{n} managers",
+    "toolsBeatPick": "Pick a rival",
+    "toolsBeatSwingTitle": "5-GW score swing",
+    "toolsBeatSwingHint": "Gameweek points for you vs them, and the swing (positive = you won that GW).",
     "toolsBeatGap": "{n} pts vs you (positive = they are ahead)",
     "toolsBeatForm": "Last 5 GWs: you won {you}, they won {them}.",
     "toolsSwingDelta": "Δ",
@@ -2559,7 +2565,11 @@
       "template": "Template cover",
       "xp": "Highest 3GW xP swing"
     },
-    "toolsFxHint": "GW{from}–{to}: starter xP and fixture difficulty vs the managers you are racing. Colour = FDR (green easier).",
+    "toolsFxHint": "GW{from}–{to}: the big number in each cell is starter FDR (1 green = easier, 5 red = harder). xP shows when the model is available.",
+    "toolsFxRunBetterYou": "Whose run is better: yours. Next {n} GWs starter FDR {you} (lower is easier).",
+    "toolsFxRunBetterThem": "Whose run is better: {name} (avg FDR {them}). Yours is {you}.",
+    "toolsFxRunRank": "Fixture run ranking (avg FDR, lower is easier)",
+    "toolsFxColFdr": "Avg FDR",
     "toolsFxEmpty": "Could not build a fixture run yet for this window.",
     "toolsFxXpTotal": "xP",
     "toolsFxBlank": "blank",
@@ -2582,28 +2592,28 @@
     "toolsH2hRaceWhy": "Classic league: this week's duel vs the manager you are chasing (captains + 5GW form).",
     "soon": {
       "rankHistory": {
-        "title": "5-GW rank race",
-        "body": "Relative rank and GW points for you, the leader, and nearby rivals."
+        "title": "Season ranking curve",
+        "body": "Last 5 GWs of relative rank and points. The x-axis is always 5 ticks, not last week vs now."
       },
       "chips": {
-        "title": "Chip bank",
+        "title": "Chip tracker",
         "body": "Who still has WC / FH / BB / TC — and who already spent them."
       },
       "liveGw": {
-        "title": "Still to play",
-        "body": "Captains and remaining players. This is how you overtake this weekend."
+        "title": "Live matchup",
+        "body": "Manager above / you / below, plus captains, remaining players, and whether you can overtake."
       },
-      "leagueMoves": {
-        "title": "This week's transfers",
-        "body": "What the sample actually transferred in this GW — not template ownership."
+      "beatRival": {
+        "title": "Beat a rival",
+        "body": "5-GW score swing and one transfer — not the exclusive-squad lists."
       },
       "fixtures": {
-        "title": "Who has the better run",
-        "body": "Next 5 GWs of FDR (and xP) vs the managers you are racing."
+        "title": "Fixture overlap",
+        "body": "Next 5 GWs of FDR, and whose run is better."
       },
       "h2h": {
-        "title": "This week's 1v1",
-        "body": "Vs the manager you are chasing, or your H2H fixture: form, chips, one transfer."
+        "title": "H2H league",
+        "body": "This week's fixture, chips, and who won the last 5 GWs."
       }
     }
   }

@@ -1273,6 +1273,7 @@ async function buildFixtureRuns(
       };
     });
     const xpParts = cells.map((c) => c.xp).filter((n): n is number => n != null);
+    const fdrParts = cells.map((c) => c.fdrAvg).filter((n): n is number => n != null);
     return {
       entry: row.entry,
       teamName: row.teamName,
@@ -1280,6 +1281,9 @@ async function buildFixtureRuns(
       role: row.role,
       cells,
       xpTotal: xpParts.length ? Math.round(xpParts.reduce((a, b) => a + b, 0) * 10) / 10 : null,
+      fdrAvg: fdrParts.length
+        ? Math.round((fdrParts.reduce((a, b) => a + b, 0) / fdrParts.length) * 10) / 10
+        : null,
     };
   });
 }
@@ -1594,7 +1598,14 @@ export async function loadMiniLeagueLive(
       isYou: row.isYou,
       lastGwPoints: row.eventTotal,
       livePoints: status === "not_started" ? null : scored.livePoints,
-      remaining: status === "finished" ? 0 : liveTeams.size ? scored.remaining : null,
+      remaining:
+        status === "finished"
+          ? 0
+          : !teamByPlayer.size
+            ? status === "not_started"
+              ? scored.playing
+              : null
+            : scored.remaining,
       playing: scored.playing,
       captain: capId != null ? toRef(metaById.get(capId), capId, null) : null,
       chip: chipShort(picks?.active_chip ?? null),
