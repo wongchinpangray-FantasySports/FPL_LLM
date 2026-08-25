@@ -29,7 +29,7 @@ import {
   sortMovers,
   squadDiffPct,
   STANDINGS_PAGE_SIZE,
-  standingsPageForRank,
+  standingsPagesForWindow,
   swingTally,
   type HistoryGwTotals,
 } from "@/lib/fpl/mini-league/math";
@@ -341,6 +341,126 @@ async function fetchStandingsPage(
   };
 }
 
+async function fetchStandingsPages(
+  leagueId: number,
+  pages: number[],
+  format: MiniLeagueFormat,
+): Promise<Array<Awaited<ReturnType<typeof fetchStandingsPage>>>> {
+  const unique = [...new Set(pages.filter((page) => Number.isFinite(page) && page >= 1))];
+  const packs = await Promise.all(
+    unique.map(async (page) => {
+      try {
+        return await fetchStandingsPage(leagueId, page, format);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return packs.filter((pack): pack is NonNullable<typeof pack> => pack != null);
+}
+
+function mergeStandingResults(
+  packs: Array<{ results: StandingsResult[] }>,
+): StandingsResult[] {
+  const seen = new Set<number>();
+  const out: StandingsResult[] = [];
+  for (const pack of packs) {
+    for (const row of pack.results ?? []) {
+      const id = Number(row.entry);
+      if (!Number.isFinite(id) || id <= 0 || seen.has(id)) continue;
+      seen.add(id);
+      out.push(row);
+    }
+  }
+  return out;
+}
+
+type LeagueWindow = {
+  gw: number;
+  youRank: number | null;
+  leagueFromEntry:
+    | {
+        id?: number;
+        name?: string | null;
+        league_type?: string | null;
+        scoring?: string | null;
+        start_event?: number | null;
+        closed?: boolean;
+        entry_rank?: number | null;
+        entry_last_rank?: number | null;
+      }
+    | undefined;
+  leagueMeta: ClassicStandingsApi["league"];
+  standings: MiniLeagueStandingRow[];
+  you: MiniLeagueStandingRow | null;
+  leader: MiniLeagueStandingRow | null;
+  nextRival: MiniLeagueStandingRow | null;
+  below: MiniLeagueStandingRow | null;
+  sampleRows: MiniLeagueStandingRow[];
+  memberCount: number;
+  memberCountExact: boolean;
+};
+
+async function loadLeagueWindow(
+  entryId: number,
+  leagueId: number,
+  format: MiniLeagueFormat,
+): Promise<LeagueWindow> {
+  const [{ current, next }, page1, entry] = await Promise.all([
+    resolveGw(),
+    fetchStandingsPage(leagueId, 1, format),
+    fplGet<FplEntry>(`/entry/${entryId}/`),
+  ]);
+  const gw = next || current || 1;
+  const leagueFromEntry =
+    format === "h2h"
+      ? entry.leagues?.h2h?.find((l) => l.id === leagueId)
+      : entry.leagues?.classic?.find((l) => l.id === leagueId);
+  const youRank = leagueFromEntry?.entry_rank ?? null;
+  const windowPages = standingsPagesForWindow(youRank);
+  const extraPages = windowPages.filter((page) => page !== 1);
+  const extraPacks = extraPages.length
+    ? await fetchStandingsPages(leagueId, extraPages, format)
+    : [];
+
+  const aroundPacks = windowPages.includes(1) ? [page1, ...extraPacks] : extraPacks.length ? extraPacks : [page1];
+  const aroundRaw = mergeStandingResults(aroundPacks);
+  const standings = aroundRaw
+    .map((row) => standingRow(row, entryId))
+    .filter((row): row is MiniLeagueStandingRow => row != null)
+    .sort((a, b) => a.rank - b.rank || a.entry - b.entry);
+
+  const leaderRaw = page1.results[0];
+  const leader =
+    (leaderRaw ? standingRow(leaderRaw, entryId) : null) ?? standings[0] ?? null;
+
+  const you = standings.find((row) => row.isYou) ?? null;
+  const youIdx = you ? standings.findIndex((row) => row.entry === you.entry) : -1;
+  const nextRival = youIdx > 0 ? standings[youIdx - 1] ?? null : null;
+  const below = youIdx >= 0 ? standings[youIdx + 1] ?? null : null;
+  const sampleRows = pickRivalSample(standings, entryId);
+
+  const memberCountExact = !page1.hasNext;
+  const memberCount = memberCountExact
+    ? page1.results.length
+    : Math.max(youRank ?? 0, ...standings.map((row) => row.rank), STANDINGS_PAGE_SIZE);
+
+  return {
+    gw,
+    youRank,
+    leagueFromEntry,
+    leagueMeta: page1.league,
+    standings,
+    you,
+    leader,
+    nextRival,
+    below,
+    sampleRows,
+    memberCount,
+    memberCountExact,
+  };
+}
+
 function formatFixture(oppShort: string | undefined, home: boolean | undefined): string | null {
   if (!oppShort) return null;
   return `${oppShort} (${home ? "H" : "A"})`;
@@ -411,7 +531,6 @@ export async function loadMiniLeagueIndex(entryId: number): Promise<MiniLeagueIn
   const classic = (entry.leagues?.classic ?? [])
     .filter((league) => Number.isFinite(league.id) && league.name)
     .map((league) => toSummary(league, "classic"))
-    .filter((league) => league.kind !== "overall")
     .sort((a, b) => {
       const kindOrder = { mini: 0, public: 1, overall: 2 };
       const kd = kindOrder[a.kind] - kindOrder[b.kind];
@@ -439,51 +558,26 @@ export async function loadMiniLeagueAnalysis(
   leagueId: number,
   format: MiniLeagueFormat = "classic",
 ): Promise<MiniLeagueAnalysis> {
-  const [{ current, next }, page1, entry] = await Promise.all([
-    resolveGw(),
-    fetchStandingsPage(leagueId, 1, format),
-    fplGet<FplEntry>(`/entry/${entryId}/`),
-  ]);
-  const gw = next || current || 1;
+  const window = await loadLeagueWindow(entryId, leagueId, format);
+  const {
+    gw,
+    youRank,
+    leagueFromEntry,
+    leagueMeta,
+    standings,
+    you,
+    leader,
+    nextRival,
+    sampleRows,
+    memberCount,
+    memberCountExact,
+  } = window;
 
-  const leagueFromEntry =
-    format === "h2h"
-      ? entry.leagues?.h2h?.find((l) => l.id === leagueId)
-      : entry.leagues?.classic?.find((l) => l.id === leagueId);
-  const youRank = leagueFromEntry?.entry_rank ?? null;
-  const yourPage = standingsPageForRank(youRank);
-
-  const extraPage =
-    yourPage > 1 ? await fetchStandingsPage(leagueId, yourPage, format) : null;
-
-  const mergedRaw = [...page1.results];
-  if (extraPage) {
-    const seen = new Set(mergedRaw.map((r) => Number(r.entry)));
-    for (const row of extraPage.results) {
-      const id = Number(row.entry);
-      if (!seen.has(id)) {
-        seen.add(id);
-        mergedRaw.push(row);
-      }
-    }
-  }
-
-  const standings = mergedRaw
-    .map((row) => standingRow(row, entryId))
-    .filter((row): row is MiniLeagueStandingRow => row != null)
-    .sort((a, b) => a.rank - b.rank);
-
-  const you = standings.find((row) => row.isYou) ?? null;
-  const leader = standings[0] ?? null;
-  const youIdx = you ? standings.findIndex((row) => row.entry === you.entry) : -1;
-  const nextRival = youIdx > 0 ? standings[youIdx - 1] ?? null : null;
-
-  const leagueMeta = page1.league;
   const league: MiniLeagueSummary = toSummary(
     {
       id: leagueId,
-      name: leagueMeta?.name ?? leagueFromEntry?.name ?? `League ${leagueId}`,
-      league_type: leagueMeta?.league_type ?? leagueFromEntry?.league_type,
+      name: leagueMeta?.name || leagueFromEntry?.name || `League ${leagueId}`,
+      league_type: leagueMeta?.league_type || leagueFromEntry?.league_type || undefined,
       scoring: leagueMeta?.scoring ?? leagueFromEntry?.scoring,
       start_event: leagueMeta?.start_event ?? leagueFromEntry?.start_event,
       closed: leagueMeta?.closed ?? leagueFromEntry?.closed,
@@ -493,12 +587,6 @@ export async function loadMiniLeagueAnalysis(
     format,
   );
 
-  const memberCountExact = !page1.hasNext;
-  const memberCount = memberCountExact
-    ? page1.results.length
-    : Math.max(youRank ?? 0, ...standings.map((row) => row.rank), STANDINGS_PAGE_SIZE);
-
-  const sampleRows = pickRivalSample(standings, entryId);
   const sampleIncomplete = memberCountExact
     ? sampleRows.length < standings.length
     : true;
@@ -682,7 +770,7 @@ export async function loadMiniLeagueAnalysis(
     gapToLeader: you && leader ? Math.max(0, leader.total - you.total) : null,
     gapToNext: you && nextRival ? Math.max(0, nextRival.total - you.total) : null,
     pointsToCatchNext: you && nextRival ? pointsToCatch(you.total, nextRival.total) : null,
-    standings,
+    standings: sampleRows,
     movers: sortMovers(standings).slice(0, 8),
     template: template.slice(0, 12),
     differentials: differentials.slice(0, 10),
@@ -919,46 +1007,16 @@ async function loadStandingsContext(
   leagueId: number,
   format: MiniLeagueFormat,
 ): Promise<StandingsContext> {
-  const [{ current, next }, page1, entry] = await Promise.all([
-    resolveGw(),
-    fetchStandingsPage(leagueId, 1, format),
-    fplGet<FplEntry>(`/entry/${entryId}/`),
-  ]);
-  const gw = next || current || 1;
-  const leagueFromEntry =
-    format === "h2h"
-      ? entry.leagues?.h2h?.find((l) => l.id === leagueId)
-      : entry.leagues?.classic?.find((l) => l.id === leagueId);
-  const youRank = leagueFromEntry?.entry_rank ?? null;
-  const yourPage = standingsPageForRank(youRank);
-  const extraPage =
-    yourPage > 1 ? await fetchStandingsPage(leagueId, yourPage, format) : null;
-
-  const mergedRaw = [...page1.results];
-  if (extraPage) {
-    const seen = new Set(mergedRaw.map((r) => Number(r.entry)));
-    for (const row of extraPage.results) {
-      const id = Number(row.entry);
-      if (!seen.has(id)) {
-        seen.add(id);
-        mergedRaw.push(row);
-      }
-    }
-  }
-
-  const standings = mergedRaw
-    .map((row) => standingRow(row, entryId))
-    .filter((row): row is MiniLeagueStandingRow => row != null)
-    .sort((a, b) => a.rank - b.rank);
-
-  const you = standings.find((row) => row.isYou) ?? null;
-  const leader = standings[0] ?? null;
-  const youIdx = you ? standings.findIndex((row) => row.entry === you.entry) : -1;
-  const nextRival = youIdx > 0 ? standings[youIdx - 1] ?? null : null;
-  const below = youIdx >= 0 ? standings[youIdx + 1] ?? null : null;
-  const sampleRows = pickRivalSample(standings, entryId);
-
-  return { gw, standings, you, leader, nextRival, below, sampleRows };
+  const window = await loadLeagueWindow(entryId, leagueId, format);
+  return {
+    gw: window.gw,
+    standings: window.standings,
+    you: window.you,
+    leader: window.leader,
+    nextRival: window.nextRival,
+    below: window.below,
+    sampleRows: window.sampleRows,
+  };
 }
 
 type HistoryPack = {
@@ -1924,7 +1982,7 @@ export async function loadLeagueMoves(
   format: MiniLeagueFormat = "classic",
 ): Promise<MiniLeagueMovesPayload> {
   const ctx = await loadStandingsContext(entryId, leagueId, format);
-  const targets = ctx.sampleRows.slice(0, 14);
+  const targets = ctx.sampleRows;
   const packs = await mapPool(targets, PICKS_CONCURRENCY, async (row) => {
     const all = await fetchTransfers(row.entry);
     const thisGw = all.filter((t) => Number(t.event) === ctx.gw);

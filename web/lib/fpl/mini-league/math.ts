@@ -35,32 +35,61 @@ export function classifyClassicLeague(
   return "public";
 }
 
+export const RIVAL_WINDOW_AHEAD = 10;
+export const RIVAL_WINDOW_BEHIND = 10;
+
+export function clampRivalWindow(raw: unknown, fallback: number): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(25, Math.max(0, Math.round(n)));
+}
+
+/**
+ * FPL standings pages needed so `ahead` ranks above and `behind` below `rank`
+ * are present. Never walks the full 10k table.
+ */
+export function standingsPagesForWindow(
+  rank: number | null | undefined,
+  opts?: { ahead?: number; behind?: number; pageSize?: number },
+): number[] {
+  const pageSize = Math.max(1, opts?.pageSize ?? STANDINGS_PAGE_SIZE);
+  const ahead = clampRivalWindow(opts?.ahead, RIVAL_WINDOW_AHEAD);
+  const behind = clampRivalWindow(opts?.behind, RIVAL_WINDOW_BEHIND);
+  const yourPage = standingsPageForRank(rank, pageSize);
+  if (rank == null || !Number.isFinite(rank) || rank < 1) return [yourPage];
+  const pos = ((Math.floor(rank) - 1) % pageSize) + 1;
+  const pages = new Set<number>([yourPage]);
+  if (pos <= ahead && yourPage > 1) pages.add(yourPage - 1);
+  if (pos + behind > pageSize) pages.add(yourPage + 1);
+  return [...pages].sort((a, b) => a - b);
+}
+
+/**
+ * Managers to plot in tools: you, up to 10 immediately above, 10 immediately below.
+ * Does not inject overall #1 — in a huge public league that person is not a rival
+ * you can plan around this week.
+ */
 export function pickRivalSample<T extends { entry: number; rank: number }>(
   standings: T[],
   entryId: number,
-  opts?: { maxTotal?: number; allIfAtMost?: number },
+  opts?: { ahead?: number; behind?: number; allIfAtMost?: number; maxTotal?: number },
 ): T[] {
-  const maxTotal = Math.max(2, Math.min(12, opts?.maxTotal ?? 10));
-  const allIfAtMost = opts?.allIfAtMost ?? maxTotal;
-  if (standings.length <= allIfAtMost) return standings;
+  const ahead = clampRivalWindow(opts?.ahead, RIVAL_WINDOW_AHEAD);
+  const behind = clampRivalWindow(opts?.behind, RIVAL_WINDOW_BEHIND);
+  const windowSize = ahead + behind + 1;
+  const allIfAtMost = opts?.allIfAtMost ?? windowSize;
+  const sorted = [...standings].sort((a, b) => a.rank - b.rank || a.entry - b.entry);
+  if (sorted.length <= allIfAtMost) return sorted;
 
-  const youIdx = standings.findIndex((row) => row.entry === entryId);
-  if (youIdx < 0) return standings.slice(0, Math.min(maxTotal, standings.length));
-
-  const seen = new Set<number>();
-  const out: T[] = [];
-  const push = (row: T | undefined) => {
-    if (!row || seen.has(row.entry) || out.length >= maxTotal) return;
-    seen.add(row.entry);
-    out.push(row);
-  };
-  push(standings[youIdx]);
-  push(standings[0]);
-  for (let d = 1; out.length < maxTotal && d < standings.length; d++) {
-    push(standings[youIdx - d]);
-    push(standings[youIdx + d]);
+  const youIdx = sorted.findIndex((row) => row.entry === entryId);
+  if (youIdx < 0) {
+    const cap = Math.min(windowSize, opts?.maxTotal ?? windowSize, sorted.length);
+    return sorted.slice(0, cap);
   }
-  return out.sort((a, b) => a.rank - b.rank || a.entry - b.entry);
+
+  const from = Math.max(0, youIdx - ahead);
+  const to = Math.min(sorted.length, youIdx + 1 + behind);
+  return sorted.slice(from, to);
 }
 
 export function pointsToCatch(

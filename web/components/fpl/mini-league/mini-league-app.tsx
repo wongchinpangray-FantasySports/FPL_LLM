@@ -19,6 +19,7 @@ import { RivalNameButton, RivalSquadDialog } from "@/components/fpl/mini-league/
 import { ManagerHistoryDialog } from "@/components/fpl/mini-league/manager-history-dialog";
 import { MiniLeagueKillerTools } from "@/components/fpl/mini-league/mini-league-tools";
 import { MiniLeagueBetaBanner } from "@/components/fpl/mini-league/mini-league-beta-banner";
+import { standingsPageForRank } from "@/lib/fpl/mini-league/math";
 import type { MiniLeagueBetaView } from "@/lib/fpl/mini-league/beta-types";
 import {
   FplPlayerPerformanceModal,
@@ -337,9 +338,16 @@ export function MiniLeagueApp({
   }, [entryId, leagueId, leagueFormat, t]);
 
   useEffect(() => {
-    setTablePage(1);
+    if (!index || !selectedParsed) {
+      setTablePage(1);
+      setTableData(null);
+      return;
+    }
+    const list = selectedParsed.format === "h2h" ? index.h2h : index.classic;
+    const rank = list.find((l) => l.id === selectedParsed.id)?.rank ?? null;
+    setTablePage(standingsPageForRank(rank));
     setTableData(null);
-  }, [leagueId, leagueFormat]);
+  }, [leagueId, leagueFormat, index, selectedParsed]);
 
   useEffect(() => {
     if (!entryId || !leagueId || tab !== "table") return;
@@ -589,7 +597,6 @@ export function MiniLeagueApp({
             value={selectedKey ?? ""}
             onChange={(e) => {
               setSelectedKey(e.target.value || null);
-              setTablePage(1);
               setTableData(null);
               setTableError(null);
             }}
@@ -598,7 +605,7 @@ export function MiniLeagueApp({
               <optgroup label={t("leagueClassic")}>
                 {index.classic.map((league) => (
                   <option key={leagueKey("classic", league.id)} value={leagueKey("classic", league.id)}>
-                    {`${league.name} · #${rankLabel(league.rank)}${league.kind === "public" ? ` · ${t("kindPublic")}` : ""}`}
+                    {`${league.name} · #${rankLabel(league.rank)}${league.kind === "public" ? ` · ${t("kindPublic")}` : league.kind === "overall" ? ` · ${t("kindOverall")}` : ""}`}
                   </option>
                 ))}
               </optgroup>
@@ -618,6 +625,7 @@ export function MiniLeagueApp({
           <p className="text-xs text-muted-foreground">
             {selected.format === "h2h" ? t("leagueH2h") : t("leagueClassic")}
             {selected.kind === "public" ? ` · ${t("kindPublic")}` : ""}
+            {selected.kind === "overall" ? ` · ${t("kindOverall")}` : ""}
             {` · #${rankLabel(selected.rank)}`}
           </p>
         ) : null}
@@ -793,7 +801,7 @@ export function MiniLeagueApp({
                       you: t("youBadge"),
                     }}
                   />
-                  <div className="flex items-center justify-between gap-3 pt-1">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                     <button
                       type="button"
                       disabled={!tableData.hasPrev || tableLoading}
@@ -806,14 +814,26 @@ export function MiniLeagueApp({
                       {t("pageStatus", { n: tableData.page })}
                       {tableLoading ? ` · ${t("loadingStandings")}` : ""}
                     </p>
-                    <button
-                      type="button"
-                      disabled={!tableData.hasNext || tableLoading}
-                      onClick={() => setTablePage((p) => p + 1)}
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
-                    >
-                      {t("pageNext")}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      {selected?.rank ? (
+                        <button
+                          type="button"
+                          disabled={tableLoading}
+                          onClick={() => setTablePage(standingsPageForRank(selected.rank))}
+                          className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
+                        >
+                          {t("tableJumpYou")}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={!tableData.hasNext || tableLoading}
+                        onClick={() => setTablePage((p) => p + 1)}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-40"
+                      >
+                        {t("pageNext")}
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : null}
@@ -973,7 +993,6 @@ export function MiniLeagueApp({
           index={index}
           onSelectLeague={(key) => {
             setSelectedKey(key);
-            setTablePage(1);
             setTableData(null);
             setTableError(null);
           }}
