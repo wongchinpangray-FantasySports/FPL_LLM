@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { FplAccessError, requireFplEntryAccess } from "@/lib/auth/fpl-access";
 import { getAuthUser, getUserProfile } from "@/lib/auth/session";
-import { canAccessPremiumFeature, isInsightsPremiumEnforced } from "@/lib/fpl/insights/access";
+import {
+  allowLocalMiniLeaguePreview as allowLocalPreview,
+  miniLeagueApiGate,
+} from "@/lib/fpl/mini-league/api-guard";
 import { loadManagerHistory } from "@/lib/fpl/mini-league/load";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function allowLocalPreview(): boolean {
-  return (
-    process.env.NODE_ENV === "development" &&
-    process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1"
-  );
-}
 
 async function resolveYouEntryId(req: Request): Promise<number> {
   const url = new URL(req.url);
@@ -47,13 +43,8 @@ export async function GET(
 
   try {
     const user = await getAuthUser();
-    if (!allowLocalPreview() && !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const allowed = await canAccessPremiumFeature(user?.id);
-    if (!allowed && isInsightsPremiumEnforced()) {
-      return NextResponse.json({ error: "premium_required" }, { status: 402 });
-    }
+    const denied = await miniLeagueApiGate(user);
+    if (denied) return denied;
     await resolveYouEntryId(req);
     const data = await loadManagerHistory(historyEntryId);
     return NextResponse.json(data);

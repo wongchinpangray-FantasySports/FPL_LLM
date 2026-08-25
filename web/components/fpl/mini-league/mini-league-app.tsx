@@ -18,6 +18,8 @@ import type {
 import { RivalNameButton, RivalSquadDialog } from "@/components/fpl/mini-league/rival-squad-dialog";
 import { ManagerHistoryDialog } from "@/components/fpl/mini-league/manager-history-dialog";
 import { MiniLeagueKillerTools } from "@/components/fpl/mini-league/mini-league-tools";
+import { MiniLeagueBetaBanner } from "@/components/fpl/mini-league/mini-league-beta-banner";
+import type { MiniLeagueBetaView } from "@/lib/fpl/mini-league/beta-types";
 import {
   FplPlayerPerformanceModal,
   type PlayerPerformanceProfile,
@@ -216,7 +218,13 @@ function StandingsTable({
   );
 }
 
-export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null }) {
+export function MiniLeagueApp({
+  linkedEntryId,
+  beta,
+}: {
+  linkedEntryId: number | null;
+  beta?: MiniLeagueBetaView | null;
+}) {
   const t = useTranslations("miniLeague");
   const tPlayer = useTranslations("playerPage");
   const tModal = useTranslations("fplInsights.playerModal");
@@ -547,9 +555,12 @@ export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null 
 
   if (indexError) {
     return (
-      <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-        {indexError}
-      </p>
+      <div className="flex flex-col gap-4">
+        {beta ? <MiniLeagueBetaBanner beta={beta} /> : null}
+        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          {indexError}
+        </p>
+      </div>
     );
   }
 
@@ -564,6 +575,7 @@ export function MiniLeagueApp({ linkedEntryId }: { linkedEntryId: number | null 
 
   return (
     <div className="flex flex-col gap-5">
+      {beta ? <MiniLeagueBetaBanner beta={beta} /> : null}
       <section className="flex flex-col gap-2">
         <p className="text-xs text-muted-foreground">
           {t("playingAs", { team: index?.teamName ?? `#${entryId}` })}

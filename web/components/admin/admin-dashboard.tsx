@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
 import { AdminScoutArticlesPanel } from "@/components/admin/admin-scout-articles-panel";
 import { AdminScoutTrialPanel } from "@/components/admin/admin-scout-trial-panel";
+import { AdminMiniLeagueBetaPanel } from "@/components/admin/admin-mini-league-beta-panel";
 
-type Tab = "users" | "articles" | "trial";
+type Tab = "users" | "articles" | "trial" | "miniLeagueBeta";
 
 export function AdminDashboard({ locale }: { locale: string }) {
   const t = useTranslations("adminScout");
@@ -21,6 +22,7 @@ export function AdminDashboard({ locale }: { locale: string }) {
           [
             ["articles", t("tabArticles")],
             ["trial", t("tabTrial")],
+            ["miniLeagueBeta", t("tabMiniLeagueBeta")],
             ["users", tUsers("title")],
           ] as const
         ).map(([id, label]) => (
@@ -43,6 +45,7 @@ export function AdminDashboard({ locale }: { locale: string }) {
       {tab === "users" ? <AdminUsersPanel locale={locale} /> : null}
       {tab === "articles" ? <AdminScoutArticlesPanel locale={locale} /> : null}
       {tab === "trial" ? <AdminScoutTrialPanel locale={locale} /> : null}
+      {tab === "miniLeagueBeta" ? <AdminMiniLeagueBetaPanel locale={locale} /> : null}
     </div>
   );
 }
