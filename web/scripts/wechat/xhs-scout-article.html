@@ -177,12 +177,38 @@
       .footer {
         margin-top: 10px; padding-top: 12px; flex-shrink: 0;
         border-top: 1px solid rgba(255,255,255,0.1);
-        display: flex; justify-content: space-between; align-items: center; gap: 12px;
-        font-size: 16px; font-weight: 700;
+        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        font-size: 15px; font-weight: 700;
         color: rgba(244,244,245,0.48);
       }
+      .footer-left {
+        display: flex; align-items: center; gap: 12px; min-width: 0;
+      }
+      .ffs-logo {
+        height: 44px; width: auto; max-width: 210px;
+        object-fit: contain; flex-shrink: 0; border-radius: 6px;
+      }
+      .ffs-mark {
+        flex-shrink: 0; font-family: Inter, sans-serif;
+        font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+        color: rgba(244,244,245,0.45);
+      }
+      .footer-copy { line-height: 1.35; min-width: 0; }
       .footer strong { color: #00ff87; font-weight: 800; }
-      .footer .src { font-family: Inter, sans-serif; font-size: 15px; }
+      .footer .src { font-family: Inter, sans-serif; font-size: 13px; }
+      .cta-bar {
+        flex-shrink: 0; max-width: 52%;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 10px 16px 10px 18px;
+        border-radius: 14px; background: #00ff87; color: #0b0a0f;
+      }
+      .cta-bar .cta {
+        font-size: 18px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.2;
+      }
+      .cta-bar .url {
+        margin-top: 2px; font-family: Inter, sans-serif;
+        font-size: 14px; font-weight: 700; opacity: 0.72;
+      }
 
       #measure-root {
         position: absolute; left: -2400px; top: 0;
@@ -246,10 +272,26 @@
       window.renderPage = function (data) {
         const isCover = data.kind === "cover";
         const pageLabel = `第 ${data.page}/${data.total}`;
+        const logoSrc = data.logoSrc || "";
+        const ctaLabel = data.ctaLabel || "来 Faleague 读 Scout 中文 →";
+        const ctaUrl = data.ctaUrl || "faleague-ai.com/scout";
+        const logoHtml = logoSrc
+          ? `<img class="ffs-logo" src="${esc(logoSrc)}" alt="Powered by FFS">`
+          : `<div class="ffs-mark">Powered by FFS</div>`;
         const footer = `
           <div class="footer">
-            <span>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></span>
-            <span>中文 <strong>faleague</strong></span>
+            <div class="footer-left">
+              ${logoHtml}
+              <div class="footer-copy">
+                <div>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></div>
+              </div>
+            </div>
+            <div class="cta-bar">
+              <div>
+                <div class="cta">${esc(ctaLabel)}</div>
+                <div class="url">${esc(ctaUrl)}</div>
+              </div>
+            </div>
           </div>`;
         const chips = `
           <div class="chips">
@@ -266,7 +308,7 @@
               <h1 class="${titleClass(data.title)}">${esc(data.title)}</h1>
               ${data.subtitle ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
               ${data.heroSrc ? `<div class="hero-img"><img src="${esc(data.heroSrc)}" alt=""></div>` : ""}
-              <div class="swipe">左滑阅读全文 · 原文 <em>Fantasy Football Scout</em> · 中文 Faleague</div>
+              <div class="swipe">左滑阅读全文 · 完整中文 <em>${esc(ctaUrl)}</em></div>
             </div>`;
         } else {
           inner = `
