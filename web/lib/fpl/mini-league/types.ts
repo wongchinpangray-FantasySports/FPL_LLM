@@ -165,7 +165,7 @@ export type MiniLeagueToolId =
   | "rankHistory"
   | "chips"
   | "liveGw"
-  | "beatRival"
+  | "leagueMoves"
   | "fixtures"
   | "h2h";
 
@@ -355,6 +355,29 @@ export type MiniLeagueH2hMatchup = {
   you: MiniLeagueH2hSide;
   opponent: MiniLeagueH2hSide | null;
   lean: MiniLeagueH2hLean;
+};
+
+export type MiniLeagueMoveBoardRow = MiniLeaguePlayerRef & {
+  count: number;
+  youDid: boolean;
+  managers: string[];
+};
+
+export type MiniLeagueManagerMove = {
+  entry: number;
+  teamName: string;
+  isYou: boolean;
+  inn: MiniLeaguePlayerRef;
+  out: MiniLeaguePlayerRef;
+};
+
+export type MiniLeagueMovesPayload = {
+  gw: number;
+  sampled: number;
+  moved: number;
+  broughtIn: MiniLeagueMoveBoardRow[];
+  sold: MiniLeagueMoveBoardRow[];
+  yourMoves: MiniLeagueManagerMove[];
 };
 
 export type MiniLeagueH2hPayload = {

@@ -55,7 +55,10 @@ import type {
   MiniLeagueLivePayload,
   MiniLeagueLiveStatus,
   MiniLeagueManagerHistory,
+  MiniLeagueManagerMove,
   MiniLeagueManagerSquad,
+  MiniLeagueMoveBoardRow,
+  MiniLeagueMovesPayload,
   MiniLeagueOwnedPlayer,
   MiniLeagueOverallSeries,
   MiniLeaguePlayerRef,
@@ -1878,5 +1881,107 @@ export async function loadH2hMatchup(
     form,
     youWon: tally.youWon,
     theyWon: tally.theyWon,
+  };
+}
+
+type FplTransferRow = {
+  element_in?: number;
+  element_out?: number;
+  event?: number;
+};
+
+async function fetchTransfers(entryId: number): Promise<FplTransferRow[]> {
+  try {
+    const rows = await fplGet<FplTransferRow[]>(`/entry/${entryId}/transfers/`);
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function loadLeagueMoves(
+  entryId: number,
+  leagueId: number,
+  format: MiniLeagueFormat = "classic",
+): Promise<MiniLeagueMovesPayload> {
+  const ctx = await loadStandingsContext(entryId, leagueId, format);
+  const targets = ctx.sampleRows.slice(0, 14);
+  const packs = await mapPool(targets, PICKS_CONCURRENCY, async (row) => {
+    const all = await fetchTransfers(row.entry);
+    const thisGw = all.filter((t) => Number(t.event) === ctx.gw);
+    const prevGw = all.filter((t) => Number(t.event) === ctx.gw - 1);
+    return { row, thisGw, prevGw };
+  });
+  const usePrev = packs.every((p) => p.thisGw.length === 0) && ctx.gw > 1;
+  const eventUsed = usePrev ? ctx.gw - 1 : ctx.gw;
+  const withMoves = packs.map((p) => ({
+    row: p.row,
+    transfers: usePrev ? p.prevGw : p.thisGw,
+  }));
+
+  const allIds: number[] = [];
+  for (const pack of withMoves) {
+    for (const t of pack.transfers) {
+      const inn = Number(t.element_in);
+      const out = Number(t.element_out);
+      if (Number.isFinite(inn) && inn > 0) allIds.push(inn);
+      if (Number.isFinite(out) && out > 0) allIds.push(out);
+    }
+  }
+  const unique = [...new Set(allIds)];
+  const { metaById, xpById } = unique.length
+    ? await loadPlayerBundle(unique)
+    : { metaById: new Map<number, PlayerMeta>(), xpById: new Map<number, number>() };
+
+  type Agg = { count: number; youDid: boolean; managers: string[]; fplId: number };
+  const inAgg = new Map<number, Agg>();
+  const outAgg = new Map<number, Agg>();
+  const bump = (map: Map<number, Agg>, fplId: number, isYou: boolean, teamName: string) => {
+    const cur = map.get(fplId) ?? { count: 0, youDid: false, managers: [], fplId };
+    cur.count += 1;
+    if (isYou) cur.youDid = true;
+    if (cur.managers.length < 4) cur.managers.push(teamName);
+    map.set(fplId, cur);
+  };
+
+  const yourMoves: MiniLeagueManagerMove[] = [];
+  let moved = 0;
+  for (const pack of withMoves) {
+    if (pack.transfers.length) moved += 1;
+    for (const t of pack.transfers) {
+      const inn = Number(t.element_in);
+      const out = Number(t.element_out);
+      if (Number.isFinite(inn) && inn > 0) bump(inAgg, inn, pack.row.isYou, pack.row.entryName);
+      if (Number.isFinite(out) && out > 0) bump(outAgg, out, pack.row.isYou, pack.row.entryName);
+      if (pack.row.isYou && Number.isFinite(inn) && Number.isFinite(out)) {
+        yourMoves.push({
+          entry: pack.row.entry,
+          teamName: pack.row.entryName,
+          isYou: true,
+          inn: toRef(metaById.get(inn), inn, xpById.get(inn) ?? null),
+          out: toRef(metaById.get(out), out, xpById.get(out) ?? null),
+        });
+      }
+    }
+  }
+
+  const toBoard = (map: Map<number, Agg>): MiniLeagueMoveBoardRow[] =>
+    [...map.values()]
+      .sort((a, b) => b.count - a.count || a.fplId - b.fplId)
+      .slice(0, 8)
+      .map((row) => ({
+        ...toRef(metaById.get(row.fplId), row.fplId, xpById.get(row.fplId) ?? null),
+        count: row.count,
+        youDid: row.youDid,
+        managers: row.managers,
+      }));
+
+  return {
+    gw: eventUsed,
+    sampled: targets.length,
+    moved,
+    broughtIn: toBoard(inAgg),
+    sold: toBoard(outAgg),
+    yourMoves,
   };
 }

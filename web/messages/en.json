@@ -2514,7 +2514,7 @@
     "movesHint": "Biggest rank jumps and drops this gameweek in this league.",
     "movesEmpty": "No rank movement recorded yet this gameweek.",
     "toolsTitle": "Mini League Killer tools",
-    "toolsHint": "Open a card to analyse this league — 5-GW rank race, chips, live remaining, 1v1 form, fixture xP, and this week's duel.",
+    "toolsHint": "Open a card: 5-GW rank race, chip bank, who still has to play, this week's transfers, fixture run, and this week's 1v1.",
     "toolsAria": "Mini League Killer tools",
     "toolsLoading": "Loading this tool…",
     "toolsError": "Could not load this tool from FPL.",
@@ -2541,7 +2541,11 @@
     "toolsLiveWhy": "Impact: remaining players and captains decide whether you overtake this weekend — not just the three cards.",
     "toolsLiveLeft": "Left",
     "toolsLiveLeftVsAvg": "You have {you} still to play vs {avg} sample average.",
-    "toolsBeatSelect": "Rival",
+    "toolsMovesHint": "GW{gw}: {n} of {sampled} sampled managers already transferred.",
+    "toolsMovesEmpty": "Nobody in the sample has transferred for this gameweek yet.",
+    "toolsMovesIn": "Brought in",
+    "toolsMovesOut": "Sold",
+    "toolsMovesCount": "{n} managers",
     "toolsBeatGap": "{n} pts vs you (positive = they are ahead)",
     "toolsBeatForm": "Last 5 GWs: you won {you}, they won {them}.",
     "toolsSwingDelta": "Δ",
@@ -2578,28 +2582,28 @@
     "toolsH2hRaceWhy": "Classic league: this week's duel vs the manager you are chasing (captains + 5GW form).",
     "soon": {
       "rankHistory": {
-        "title": "Season rank chart",
-        "body": "5-GW rank race among you, the leader and nearby rivals — plus GW points."
+        "title": "5-GW rank race",
+        "body": "Relative rank and GW points for you, the leader, and nearby rivals."
       },
       "chips": {
-        "title": "Chip tracker",
-        "body": "Who has already played WC / FH / BB / TC — and who can still swing a week."
+        "title": "Chip bank",
+        "body": "Who still has WC / FH / BB / TC — and who already spent them."
       },
       "liveGw": {
-        "title": "Live vs rivals",
-        "body": "Captains, chips, and players still to play — will you overtake this weekend?"
+        "title": "Still to play",
+        "body": "Captains and remaining players. This is how you overtake this weekend."
       },
-      "beatRival": {
-        "title": "Beat this rival",
-        "body": "Who won the last 5 GWs vs one manager, plus a single 3GW xP transfer."
+      "leagueMoves": {
+        "title": "This week's transfers",
+        "body": "What the sample actually transferred in this GW — not template ownership."
       },
       "fixtures": {
-        "title": "Fixture run",
-        "body": "Next 5 GWs of starter xP and FDR vs the managers you are racing."
+        "title": "Who has the better run",
+        "body": "Next 5 GWs of FDR (and xP) vs the managers you are racing."
       },
       "h2h": {
-        "title": "This week's duel",
-        "body": "H2H fixture when you have one; otherwise a 1v1 vs the manager you are chasing."
+        "title": "This week's 1v1",
+        "body": "Vs the manager you are chasing, or your H2H fixture: form, chips, one transfer."
       }
     }
   }

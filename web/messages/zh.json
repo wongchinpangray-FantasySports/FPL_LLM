@@ -2540,7 +2540,7 @@
     "movesHint": "本轮该联赛排名跃升与下滑最大的经理。",
     "movesEmpty": "本轮还没有排名变动记录。",
     "toolsTitle": "小联赛大杀器工具",
-    "toolsHint": "点开一张卡片即可分析本联赛：近 5 轮排名赛、芯片、未踢完人数、1v1 得分、赛程 xP，以及本周对决。",
+    "toolsHint": "点开卡片：近 5 轮排名赛、芯片库存、本轮未踢完、本周转会潮、谁赛程更好、本周 1v1。",
     "toolsAria": "小联赛大杀器工具",
     "toolsLoading": "正在加载这个工具…",
     "toolsError": "无法从 FPL 加载这个工具。",
@@ -2567,7 +2567,11 @@
     "toolsLiveWhy": "作用：未踢完的人和队长决定本周末你会不会超车，不只是三张比分卡。",
     "toolsLiveLeft": "未踢完",
     "toolsLiveLeftVsAvg": "你还有 {you} 人未踢完，样本平均 {avg} 人。",
-    "toolsBeatSelect": "对手",
+    "toolsMovesHint": "GW{gw}：样本 {sampled} 人里已有 {n} 人转会。",
+    "toolsMovesEmpty": "这个样本里本轮还没有人转会。",
+    "toolsMovesIn": "引入",
+    "toolsMovesOut": "卖出",
+    "toolsMovesCount": "{n} 人",
     "toolsBeatGap": "相对你 {n} 分（正数表示对方领先）",
     "toolsBeatForm": "近 5 轮：你赢 {you} 场，对方赢 {them} 场。",
     "toolsSwingDelta": "分差",
@@ -2604,28 +2608,28 @@
     "toolsH2hRaceWhy": "经典联赛：本周对决你正在追的那个人（队长 + 近 5 轮得分）。",
     "soon": {
       "rankHistory": {
-        "title": "赛季排名曲线",
-        "body": "近 5 轮你、榜首与邻近对手的相对名次，以及轮次得分。"
+        "title": "近5轮排名赛",
+        "body": "你、榜首与邻近对手的相对名次和轮次得分。"
       },
       "chips": {
-        "title": "芯片追踪",
-        "body": "谁已经用过 WC / FH / BB / TC，谁还能在关键周翻盘。"
+        "title": "芯片库存",
+        "body": "谁还留着 WC / FH / BB / TC，谁已经用掉了。"
       },
       "liveGw": {
-        "title": "实时对位",
-        "body": "队长、芯片、还有多少人未踢完——本周末会不会超车。"
+        "title": "本轮未踢完",
+        "body": "队长和还有多少人未踢完——本周末会不会超车。"
       },
-      "beatRival": {
-        "title": "单挑某位对手",
-        "body": "近 5 轮谁多拿分，再用 3 轮 xP 给一转。"
+      "leagueMoves": {
+        "title": "本周转会潮",
+        "body": "样本里本轮实际转了谁，不是模板拥有率。"
       },
       "fixtures": {
-        "title": "赛程走势",
-        "body": "未来 5 轮首发 xP 和难度，对比你正在追的经理。"
+        "title": "谁赛程更好",
+        "body": "未来 5 轮 FDR（和 xP），对比你正在追的经理。"
       },
       "h2h": {
-        "title": "本周对决",
-        "body": "有头对头就看本轮对阵；经典联赛则 1v1 追赶对象。"
+        "title": "本周1v1",
+        "body": "对决你正在追的人，或头对头对阵：近5轮、芯片、一转。"
       }
     }
   }

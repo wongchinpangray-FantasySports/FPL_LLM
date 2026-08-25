@@ -14,14 +14,13 @@ import type {
   MiniLeagueIndex,
   MiniLeagueLiveManager,
   MiniLeagueLivePayload,
+  MiniLeagueMovesPayload,
   MiniLeaguePlayerRef,
   MiniLeagueRankChartRole,
-  MiniLeagueStandingRow,
   MiniLeagueSummary,
   MiniLeagueToolId,
   MiniLeagueToolsPayload,
 } from "@/lib/fpl/mini-league/types";
-import { pickRivalSample } from "@/lib/fpl/mini-league/math";
 import { RivalNameButton } from "@/components/fpl/mini-league/rival-squad-dialog";
 
 type MiniLeagueT = ReturnType<typeof useTranslations<"miniLeague">>;
@@ -30,7 +29,7 @@ const TOOL_IDS: MiniLeagueToolId[] = [
   "rankHistory",
   "chips",
   "liveGw",
-  "beatRival",
+  "leagueMoves",
   "fixtures",
   "h2h",
 ];
@@ -97,13 +96,6 @@ function PlayerLink({
       {name}
     </button>
   );
-}
-
-function defaultRivalId(analysis: MiniLeagueAnalysis | null, sample: MiniLeagueStandingRow[]): number | null {
-  const pool = (sample.length ? sample : analysis?.standings ?? []).filter((r) => !r.isYou);
-  if (!pool.length) return null;
-  if (analysis?.leader && !analysis.leader.isYou) return analysis.leader.entry;
-  return pool[0]?.entry ?? null;
 }
 
 function ChipCell({
@@ -399,7 +391,9 @@ export function MiniLeagueKillerTools({
   const [liveData, setLiveData] = useState<MiniLeagueLivePayload | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
-  const [beatId, setBeatId] = useState<number | null>(null);
+  const [movesData, setMovesData] = useState<MiniLeagueMovesPayload | null>(null);
+  const [movesLoading, setMovesLoading] = useState(false);
+  const [movesError, setMovesError] = useState<string | null>(null);
   const [beatData, setBeatData] = useState<MiniLeagueBeatRival | null>(null);
   const [beatLoading, setBeatLoading] = useState(false);
   const [beatError, setBeatError] = useState<string | null>(null);
@@ -412,7 +406,8 @@ export function MiniLeagueKillerTools({
     setToolsError(null);
     setLiveData(null);
     setLiveError(null);
-    setBeatId(null);
+    setMovesData(null);
+    setMovesError(null);
     setBeatData(null);
     setBeatError(null);
     setH2hData(null);
@@ -470,54 +465,29 @@ export function MiniLeagueKillerTools({
     };
   }, [tool, leagueId, leagueFormat, entryId, t]);
 
-  const rivalOptions = useMemo(() => {
-    const fromTools = toolsData?.sample ?? [];
-    const fromAnalysis = analysis?.standings ?? [];
-    const source = fromTools.length ? fromTools : pickRivalSample(fromAnalysis, entryId);
-    const rows = source.filter((r) => !r.isYou);
-    const seen = new Set<number>();
-    const out: MiniLeagueStandingRow[] = [];
-    for (const row of rows) {
-      if (seen.has(row.entry)) continue;
-      seen.add(row.entry);
-      out.push(row);
-    }
-    return out;
-  }, [toolsData, analysis, entryId]);
-
   useEffect(() => {
-    if (tool !== "beatRival") return;
-    if (beatId != null) return;
-    const next = defaultRivalId(analysis, rivalOptions);
-    if (next) setBeatId(next);
-  }, [tool, beatId, analysis, rivalOptions]);
-
-  useEffect(() => {
-    if (tool !== "beatRival" || !leagueId || beatId == null) return;
+    if (tool !== "leagueMoves" || !leagueId) return;
     let cancelled = false;
-    setBeatLoading(true);
-    setBeatError(null);
+    setMovesLoading(true);
+    setMovesError(null);
     void (async () => {
       try {
         const res = await fetch(
-          `/api/fpl/mini-league/${leagueId}/beat-rival${qs(entryId, { rival: beatId })}`,
+          `/api/fpl/mini-league/${leagueId}/moves${qs(entryId, { format: leagueFormat })}`,
         );
-        const data = (await res.json()) as MiniLeagueBeatRival & { error?: string };
+        const data = (await res.json()) as MiniLeagueMovesPayload & { error?: string };
         if (!res.ok) throw new Error(data.error ?? t("toolsError"));
-        if (!cancelled) setBeatData(data);
+        if (!cancelled) setMovesData(data);
       } catch (err) {
-        if (!cancelled) {
-          setBeatData(null);
-          setBeatError(err instanceof Error ? err.message : t("toolsError"));
-        }
+        if (!cancelled) setMovesError(err instanceof Error ? err.message : t("toolsError"));
       } finally {
-        if (!cancelled) setBeatLoading(false);
+        if (!cancelled) setMovesLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [tool, leagueId, entryId, beatId, t]);
+  }, [tool, leagueId, leagueFormat, entryId, t]);
 
   const h2hLeagueId = leagueId;
 
@@ -544,6 +514,35 @@ export function MiniLeagueKillerTools({
       cancelled = true;
     };
   }, [tool, h2hLeagueId, leagueFormat, entryId, t]);
+
+  const duelRivalId = h2hData?.matchup?.opponent?.entry ?? null;
+
+  useEffect(() => {
+    if (tool !== "h2h" || !leagueId || duelRivalId == null) return;
+    let cancelled = false;
+    setBeatLoading(true);
+    setBeatError(null);
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/fpl/mini-league/${leagueId}/beat-rival${qs(entryId, { rival: duelRivalId })}`,
+        );
+        const data = (await res.json()) as MiniLeagueBeatRival & { error?: string };
+        if (!res.ok) throw new Error(data.error ?? t("toolsError"));
+        if (!cancelled) setBeatData(data);
+      } catch (err) {
+        if (!cancelled) {
+          setBeatData(null);
+          setBeatError(err instanceof Error ? err.message : t("toolsError"));
+        }
+      } finally {
+        if (!cancelled) setBeatLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tool, leagueId, entryId, duelRivalId, t]);
 
   const selectTool = useCallback((id: MiniLeagueToolId) => {
     setTool((prev) => (prev === id ? prev : id));
@@ -949,89 +948,77 @@ export function MiniLeagueKillerTools({
             </div>
           ) : null}
 
-          {tool === "beatRival" ? (
+          {tool === "leagueMoves" ? (
             <div className="flex flex-col gap-3">
-              <label className="flex max-w-md flex-col gap-1">
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {t("toolsBeatSelect")}
-                </span>
-                <select
-                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
-                  value={beatId ?? ""}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    setBeatId(Number.isFinite(n) && n > 0 ? n : null);
-                    setBeatData(null);
-                  }}
-                >
-                  {rivalOptions.map((row) => (
-                    <option key={row.entry} value={row.entry}>
-                      {`#${row.rank} · ${row.entryName}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {rivalOptions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("toolsBeatNoRivals")}</p>
-              ) : null}
-              {beatLoading && !beatData ? (
+              {movesLoading && !movesData ? (
                 <p className="text-sm text-muted-foreground">{t("toolsLoading")}</p>
               ) : null}
-              {beatError ? <p className="text-sm text-rose-200">{beatError}</p> : null}
-              {beatData ? (
+              {movesError ? <p className="text-sm text-rose-200">{movesError}</p> : null}
+              {movesData ? (
                 <>
-                  <p className="text-sm text-muted-foreground">
-                    {t("toolsBeatGap", {
-                      n: beatData.pointsGap ?? 0,
-                    })}
-                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {t("toolsBeatForm", {
-                      you: beatData.youWon,
-                      them: beatData.theyWon,
+                    {t("toolsMovesHint", {
+                      gw: movesData.gw,
+                      n: movesData.moved,
+                      sampled: movesData.sampled,
                     })}
                   </p>
-                  <SwingTable rows={beatData.swings} t={t} />
-                  {beatData.suggestion ? (
-                    <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/5 px-3 py-3">
-                      <h4 className="text-sm font-semibold">{t("toolsBeatSuggest")}</h4>
-                      <p className="mt-2 text-sm">
-                        {t("toolsBeatOut")}:{" "}
-                        <PlayerLink
-                          fplId={beatData.suggestion.out.fplId}
-                          name={beatData.suggestion.out.webName}
-                          onInspect={onInspect}
-                        />
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {playerBits(beatData.suggestion.out)}
-                          {beatData.suggestion.out.xp != null
-                            ? ` · ${beatData.suggestion.out.xp.toFixed(1)} xP`
-                            : ""}
-                        </span>
-                      </p>
-                      <p className="mt-1 text-sm">
-                        {t("toolsBeatIn")}:{" "}
-                        <PlayerLink
-                          fplId={beatData.suggestion.in.fplId}
-                          name={beatData.suggestion.in.webName}
-                          onInspect={onInspect}
-                        />
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {playerBits(beatData.suggestion.in)}
-                          {beatData.suggestion.in.xp != null
-                            ? ` · ${beatData.suggestion.in.xp.toFixed(1)} xP`
-                            : ""}
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-brand-accent">
-                        {tr(t, `toolsBeatReason.${beatData.suggestion.reason}`)}
-                        {beatData.suggestion.xpDelta != null
-                          ? ` · ${beatData.suggestion.xpDelta > 0 ? "+" : ""}${beatData.suggestion.xpDelta} xP`
-                          : ""}
-                      </p>
-                    </div>
+                  {movesData.yourMoves.length ? (
+                    <ul className="text-sm">
+                      {movesData.yourMoves.map((row, i) => (
+                        <li key={`${row.out.fplId}-${row.inn.fplId}-${i}`}>
+                          {t("toolsBeatOut")}:{" "}
+                          <PlayerLink fplId={row.out.fplId} name={row.out.webName} onInspect={onInspect} />
+                          {" → "}
+                          {t("toolsBeatIn")}:{" "}
+                          <PlayerLink fplId={row.inn.fplId} name={row.inn.webName} onInspect={onInspect} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {!movesData.broughtIn.length && !movesData.sold.length ? (
+                    <p className="text-sm text-muted-foreground">{t("toolsMovesEmpty")}</p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">{t("toolsBeatNoSuggest")}</p>
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <div>
+                        <h4 className="text-sm font-semibold">{t("toolsMovesIn")}</h4>
+                        <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+                          {movesData.broughtIn.map((p) => (
+                            <li key={p.fplId} className="flex items-baseline justify-between gap-3">
+                              <span>
+                                <PlayerLink fplId={p.fplId} name={p.webName} onInspect={onInspect} />
+                                <span className="ml-1.5 text-xs text-muted-foreground">
+                                  {playerBits(p)}
+                                  {p.youDid ? ` · ${t("youBadge")}` : ""}
+                                </span>
+                              </span>
+                              <span className="tabular-nums text-xs text-muted-foreground">
+                                {t("toolsMovesCount", { n: p.count })}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold">{t("toolsMovesOut")}</h4>
+                        <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+                          {movesData.sold.map((p) => (
+                            <li key={p.fplId} className="flex items-baseline justify-between gap-3">
+                              <span>
+                                <PlayerLink fplId={p.fplId} name={p.webName} onInspect={onInspect} />
+                                <span className="ml-1.5 text-xs text-muted-foreground">
+                                  {playerBits(p)}
+                                  {p.youDid ? ` · ${t("youBadge")}` : ""}
+                                </span>
+                              </span>
+                              <span className="tabular-nums text-xs text-muted-foreground">
+                                {t("toolsMovesCount", { n: p.count })}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   )}
                 </>
               ) : null}
@@ -1128,6 +1115,49 @@ export function MiniLeagueKillerTools({
                       </p>
                       <SwingTable rows={h2hData.form} t={t} />
                     </>
+                  ) : null}
+                  {beatLoading && !beatData ? (
+                    <p className="text-sm text-muted-foreground">{t("toolsLoading")}</p>
+                  ) : null}
+                  {beatError ? <p className="text-xs text-muted-foreground">{beatError}</p> : null}
+                  {beatData?.suggestion ? (
+                    <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/5 px-3 py-3">
+                      <h4 className="text-sm font-semibold">{t("toolsBeatSuggest")}</h4>
+                      <p className="mt-2 text-sm">
+                        {t("toolsBeatOut")}:{" "}
+                        <PlayerLink
+                          fplId={beatData.suggestion.out.fplId}
+                          name={beatData.suggestion.out.webName}
+                          onInspect={onInspect}
+                        />
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          {playerBits(beatData.suggestion.out)}
+                          {beatData.suggestion.out.xp != null
+                            ? ` · ${beatData.suggestion.out.xp.toFixed(1)} xP`
+                            : ""}
+                        </span>
+                      </p>
+                      <p className="mt-1 text-sm">
+                        {t("toolsBeatIn")}:{" "}
+                        <PlayerLink
+                          fplId={beatData.suggestion.in.fplId}
+                          name={beatData.suggestion.in.webName}
+                          onInspect={onInspect}
+                        />
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          {playerBits(beatData.suggestion.in)}
+                          {beatData.suggestion.in.xp != null
+                            ? ` · ${beatData.suggestion.in.xp.toFixed(1)} xP`
+                            : ""}
+                        </span>
+                      </p>
+                      <p className="mt-1 text-xs text-brand-accent">
+                        {tr(t, `toolsBeatReason.${beatData.suggestion.reason}`)}
+                        {beatData.suggestion.xpDelta != null
+                          ? ` · ${beatData.suggestion.xpDelta > 0 ? "+" : ""}${beatData.suggestion.xpDelta} xP`
+                          : ""}
+                      </p>
+                    </div>
                   ) : null}
                 </div>
               ) : null}
