@@ -1452,16 +1452,7 @@ export async function loadMiniLeagueTools(
   const plotRows = [...overallRows];
   const historyMap = new Map<number, HistoryGwTotals[]>();
   for (const row of plotRows) {
-    const hist = packToTotals(historyByEntry.get(row.entry) ?? null);
-    if (!hist.some((p) => p.event === ctx.gw) && Number.isFinite(row.total)) {
-      hist.push({
-        event: ctx.gw,
-        points: row.eventTotal,
-        total: row.total,
-        overallRank: null,
-      });
-    }
-    historyMap.set(row.entry, hist);
+    historyMap.set(row.entry, packToTotals(historyByEntry.get(row.entry) ?? null));
   }
   const rankedGws = gws.filter((event) => event <= ctx.gw);
   const sampleRanks = reconstructSampleRanks(historyMap, rankedGws);
