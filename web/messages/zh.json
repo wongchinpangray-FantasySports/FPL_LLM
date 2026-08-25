@@ -2540,6 +2540,7 @@
     "movesHint": "本轮该联赛排名跃升与下滑最大的经理。",
     "movesEmpty": "本轮还没有排名变动记录。",
     "toolsTitle": "小联赛大杀器工具",
+    "toolsBadge": "5GW · FDR",
     "toolsHint": "点开卡片看工作台。排名曲线横轴固定近 5 轮；单挑看 5 轮得分差；赛程看 FDR 和谁更好踢。",
     "toolsAria": "小联赛大杀器工具",
     "toolsLoading": "正在加载这个工具…",

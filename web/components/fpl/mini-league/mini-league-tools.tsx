@@ -670,7 +670,12 @@ export function MiniLeagueKillerTools({
 
   return (
     <section className="rounded-xl border border-border bg-card/30 p-4">
-      <h3 className="text-sm font-semibold">{t("toolsTitle")}</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-semibold">{t("toolsTitle")}</h3>
+        <span className="rounded-full border border-brand-accent/40 bg-brand-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
+          {t("toolsBadge")}
+        </span>
+      </div>
       <p className="mt-1 text-xs text-muted-foreground">{t("toolsHint")}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="tablist" aria-label={t("toolsAria")}>
         {TOOL_IDS.map((id) => {

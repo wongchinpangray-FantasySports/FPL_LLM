@@ -2514,6 +2514,7 @@
     "movesHint": "Biggest rank jumps and drops this gameweek in this league.",
     "movesEmpty": "No rank movement recorded yet this gameweek.",
     "toolsTitle": "Mini League Killer tools",
+    "toolsBadge": "5GW · FDR",
     "toolsHint": "Open a card. Ranking curve is a fixed 5-GW axis; Beat a rival is 5-GW score swing; Fixture overlap is FDR and whose run is easier.",
     "toolsAria": "Mini League Killer tools",
     "toolsLoading": "Loading this tool…",
