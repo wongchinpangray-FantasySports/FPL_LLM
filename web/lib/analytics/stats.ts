@@ -1,0 +1,421 @@
+import { getServerSupabase } from "@/lib/supabase";
+import { isMissingSiteEventsTable } from "@/lib/analytics/store";
+import type {
+  SiteActivityStats,
+  SiteDailyPoint,
+  SiteEventRow,
+  SiteFeature,
+  SiteFeatureStat,
+  SiteLoginBucket,
+  SiteProductCounts,
+} from "@/lib/analytics/types";
+import { SITE_FEATURES } from "@/lib/analytics/types";
+
+const EVENT_PAGE_SIZE = 1000;
+const EVENT_CAP = 40000;
+const PROFILE_PAGE_SIZE = 1000;
+
+type ProfileSnap = {
+  created_at: string;
+  last_login_date: string | null;
+  login_days: number;
+  fpl_entry_id: number | null;
+  onboarding_completed_at: string | null;
+  insights_plan: string | null;
+};
+
+export function utcDay(iso: string | Date): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+export function rangeWindow(
+  days: number,
+  now = new Date(),
+): { from: string; to: string; days: number } {
+  const safeDays = days === 7 || days === 90 ? days : 30;
+  const to = now;
+  const from = new Date(Date.UTC(
+    to.getUTCFullYear(),
+    to.getUTCMonth(),
+    to.getUTCDate() - (safeDays - 1),
+  ));
+  return { from: from.toISOString(), to: to.toISOString(), days: safeDays };
+}
+
+function emptyDays(fromIso: string, days: number): SiteDailyPoint[] {
+  const start = utcDay(fromIso);
+  if (!start) return [];
+  const [y, m, d] = start.split("-").map(Number);
+  const out: SiteDailyPoint[] = [];
+  for (let i = 0; i < days; i++) {
+    const date = new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10);
+    out.push({
+      date,
+      pageviews: 0,
+      visitors: 0,
+      signed_in: 0,
+      new_users: 0,
+    });
+  }
+  return out;
+}
+
+function loginBucket(days: number): SiteLoginBucket["bucket"] {
+  if (days <= 1) return "1";
+  if (days <= 7) return "2_7";
+  if (days <= 30) return "8_30";
+  return "31_plus";
+}
+
+export function aggregateSiteActivity(input: {
+  from: string;
+  to: string;
+  days: number;
+  events: SiteEventRow[];
+  profiles: ProfileSnap[];
+  products: SiteProductCounts;
+  truncated: boolean;
+  tableMissing: boolean;
+}): SiteActivityStats {
+  const { from, to, days, events, profiles, products, truncated, tableMissing } =
+    input;
+  const daily = emptyDays(from, days);
+  const dayIndex = new Map(daily.map((row, i) => [row.date, i]));
+
+  const visitorsAll = new Set<string>();
+  const signedInVisitors = new Set<string>();
+  const visitorDays = new Map<string, Set<string>>();
+  const visitorsByDay = new Map<string, Set<string>>();
+  const signedByDay = new Map<string, Set<string>>();
+  const featureMap = new Map<
+    string,
+    { pageviews: number; visitors: Set<string>; signedIn: Set<string> }
+  >();
+
+  let anonymousPageviews = 0;
+  let signedInPageviews = 0;
+
+  for (const row of events) {
+    const day = utcDay(row.created_at);
+    const idx = dayIndex.get(day);
+    const visitorKey = row.visitor_id || row.user_id || null;
+    if (idx != null) daily[idx]!.pageviews += 1;
+
+    if (row.user_id) {
+      signedInPageviews += 1;
+      signedInVisitors.add(row.user_id);
+      if (day) {
+        let signed = signedByDay.get(day);
+        if (!signed) {
+          signed = new Set();
+          signedByDay.set(day, signed);
+        }
+        signed.add(row.user_id);
+      }
+    } else {
+      anonymousPageviews += 1;
+    }
+
+    if (visitorKey) {
+      visitorsAll.add(visitorKey);
+      let daysSet = visitorDays.get(visitorKey);
+      if (!daysSet) {
+        daysSet = new Set();
+        visitorDays.set(visitorKey, daysSet);
+      }
+      if (day) daysSet.add(day);
+      if (day) {
+        let set = visitorsByDay.get(day);
+        if (!set) {
+          set = new Set();
+          visitorsByDay.set(day, set);
+        }
+        set.add(visitorKey);
+      }
+    }
+
+    const feature = row.feature || "other";
+    let bucket = featureMap.get(feature);
+    if (!bucket) {
+      bucket = { pageviews: 0, visitors: new Set(), signedIn: new Set() };
+      featureMap.set(feature, bucket);
+    }
+    bucket.pageviews += 1;
+    if (visitorKey) bucket.visitors.add(visitorKey);
+    if (row.user_id) bucket.signedIn.add(row.user_id);
+  }
+
+  for (const [day, set] of visitorsByDay) {
+    const idx = dayIndex.get(day);
+    if (idx != null) daily[idx]!.visitors = set.size;
+  }
+  for (const [day, set] of signedByDay) {
+    const idx = dayIndex.get(day);
+    if (idx != null) daily[idx]!.signed_in = set.size;
+  }
+
+  const fromDay = utcDay(from);
+  const toDay = utcDay(to);
+  const today = utcDay(new Date());
+  const d7 = utcDay(new Date(Date.now() - 6 * 86400000));
+  const d30 = utcDay(new Date(Date.now() - 29 * 86400000));
+
+  let newUsers = 0;
+  let onboarded = 0;
+  let fplLinked = 0;
+  let proUsers = 0;
+  let activeToday = 0;
+  let active7d = 0;
+  let active30d = 0;
+  const buckets: Record<SiteLoginBucket["bucket"], number> = {
+    "1": 0,
+    "2_7": 0,
+    "8_30": 0,
+    "31_plus": 0,
+  };
+
+  for (const p of profiles) {
+    const created = utcDay(p.created_at);
+    if (created && created >= fromDay && created <= toDay) {
+      newUsers += 1;
+      const idx = dayIndex.get(created);
+      if (idx != null) daily[idx]!.new_users += 1;
+    }
+    if (p.onboarding_completed_at) onboarded += 1;
+    if (p.fpl_entry_id != null) fplLinked += 1;
+    if (p.insights_plan === "premium") proUsers += 1;
+    const last = p.last_login_date ? String(p.last_login_date).slice(0, 10) : "";
+    if (last === today) activeToday += 1;
+    if (last && last >= d7) active7d += 1;
+    if (last && last >= d30) active30d += 1;
+    buckets[loginBucket(p.login_days || 0)] += 1;
+  }
+
+  let multiDay = 0;
+  let singleDay = 0;
+  for (const daysSet of visitorDays.values()) {
+    if (daysSet.size >= 2) multiDay += 1;
+    else singleDay += 1;
+  }
+
+  const uniqueVisitors = visitorsAll.size;
+  const features: SiteFeatureStat[] = [...featureMap.entries()]
+    .map(([feature, bucket]) => ({
+      feature: (SITE_FEATURES as readonly string[]).includes(feature)
+        ? (feature as SiteFeature)
+        : "other",
+      pageviews: bucket.pageviews,
+      visitors: bucket.visitors.size,
+      signed_in: bucket.signedIn.size,
+    }))
+    .sort((a, b) => b.pageviews - a.pageviews || a.feature.localeCompare(b.feature));
+
+  const eventDau = visitorsByDay.get(today)?.size ?? 0;
+
+  return {
+    from,
+    to,
+    days,
+    table_missing: tableMissing,
+    truncated,
+    pageviews: events.length,
+    unique_visitors: uniqueVisitors,
+    signed_in_visitors: signedInVisitors.size,
+    anonymous_pageviews: anonymousPageviews,
+    signed_in_pageviews: signedInPageviews,
+    multi_day_visitors: multiDay,
+    single_day_visitors: singleDay,
+    avg_views_per_visitor:
+      uniqueVisitors > 0
+        ? Math.round((events.length / uniqueVisitors) * 10) / 10
+        : 0,
+    dau: Math.max(eventDau, activeToday),
+    wau: active7d,
+    mau: active30d,
+    stickiness: 0,
+    total_users: profiles.length,
+    new_users: newUsers,
+    onboarded_users: onboarded,
+    fpl_linked_users: fplLinked,
+    pro_users: proUsers,
+    active_today: activeToday,
+    active_7d: active7d,
+    active_30d: active30d,
+    daily,
+    features,
+    login_buckets: (["1", "2_7", "8_30", "31_plus"] as const).map((bucket) => ({
+      bucket,
+      users: buckets[bucket],
+    })),
+    products,
+  };
+}
+
+function withStickiness(stats: SiteActivityStats): SiteActivityStats {
+  const stickiness =
+    stats.active_30d > 0
+      ? Math.round((stats.active_today / stats.active_30d) * 100)
+      : 0;
+  return { ...stats, stickiness };
+}
+
+async function fetchAllProfiles(): Promise<ProfileSnap[]> {
+  const supa = getServerSupabase();
+  const out: ProfileSnap[] = [];
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supa
+      .from("profiles")
+      .select(
+        "created_at,last_login_date,login_days,fpl_entry_id,onboarding_completed_at,insights_plan",
+      )
+      .order("created_at", { ascending: true })
+      .range(offset, offset + PROFILE_PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as ProfileSnap[];
+    out.push(...rows);
+    if (rows.length < PROFILE_PAGE_SIZE) break;
+    offset += PROFILE_PAGE_SIZE;
+    if (offset > 50000) break;
+  }
+  return out;
+}
+
+async function fetchSiteEvents(
+  from: string,
+  to: string,
+): Promise<{ rows: SiteEventRow[]; truncated: boolean; tableMissing: boolean }> {
+  const supa = getServerSupabase();
+  const rows: SiteEventRow[] = [];
+  let offset = 0;
+  while (rows.length < EVENT_CAP) {
+    const { data, error } = await supa
+      .from("site_events")
+      .select("created_at,path,feature,visitor_id,user_id")
+      .gte("created_at", from)
+      .lt("created_at", to)
+      .order("created_at", { ascending: true })
+      .range(offset, offset + EVENT_PAGE_SIZE - 1);
+    if (error) {
+      if (isMissingSiteEventsTable(error)) {
+        return { rows: [], truncated: false, tableMissing: true };
+      }
+      throw new Error(error.message);
+    }
+    const batch = (data ?? []) as SiteEventRow[];
+    rows.push(...batch);
+    if (batch.length < EVENT_PAGE_SIZE) {
+      return { rows, truncated: false, tableMissing: false };
+    }
+    offset += EVENT_PAGE_SIZE;
+  }
+  return { rows, truncated: true, tableMissing: false };
+}
+
+async function countTable(
+  table: string,
+  column = "created_at",
+  from?: string,
+  to?: string,
+): Promise<number> {
+  try {
+    const supa = getServerSupabase();
+    let q = supa.from(table).select("id", { count: "exact", head: true });
+    if (from) q = q.gte(column, from);
+    if (to) q = q.lt(column, to);
+    const { count, error } = await q;
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function countStar(table: string): Promise<number> {
+  try {
+    const supa = getServerSupabase();
+    const { count, error } = await supa
+      .from(table)
+      .select("*", { count: "exact", head: true });
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function loadProductCounts(
+  from: string,
+  to: string,
+): Promise<SiteProductCounts> {
+  const [
+    squad_builder_drafts,
+    chat_sessions,
+    chat_messages,
+    mini_entries,
+    mini_profiles,
+    share_links,
+    share_views,
+    scout_pageviews,
+  ] = await Promise.all([
+    countStar("user_squad_builder_drafts"),
+    countStar("chat_sessions"),
+    countTable("chat_messages", "created_at", from, to),
+    countStar("mini_entries"),
+    countStar("mini_profiles"),
+    countStar("share_links"),
+    countStar("share_views"),
+    countScoutPageviews(from, to),
+  ]);
+  return {
+    squad_builder_drafts,
+    chat_sessions,
+    chat_messages,
+    mini_entries,
+    mini_profiles,
+    share_links,
+    share_views,
+    scout_pageviews,
+  };
+}
+
+async function countScoutPageviews(from: string, to: string): Promise<number> {
+  try {
+    const supa = getServerSupabase();
+    const { count, error } = await supa
+      .from("scout_events")
+      .select("id", { count: "exact", head: true })
+      .eq("event_type", "pageview")
+      .gte("created_at", from)
+      .lt("created_at", to);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function loadSiteActivityStats(opts: {
+  days: number;
+}): Promise<SiteActivityStats> {
+  const window = rangeWindow(opts.days);
+  const [profiles, events, products] = await Promise.all([
+    fetchAllProfiles(),
+    fetchSiteEvents(window.from, window.to),
+    loadProductCounts(window.from, window.to),
+  ]);
+  return withStickiness(
+    aggregateSiteActivity({
+      from: window.from,
+      to: window.to,
+      days: window.days,
+      events: events.rows,
+      profiles,
+      products,
+      truncated: events.truncated,
+      tableMissing: events.tableMissing,
+    }),
+  );
+}

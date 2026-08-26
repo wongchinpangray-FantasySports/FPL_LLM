@@ -7,6 +7,7 @@ import { LocaleHtmlLang } from "@/components/locale-html-lang";
 import { HomeSignupPrompt } from "@/components/auth/signup-prompt-modal";
 import { SignupPromptProvider } from "@/components/auth/signup-prompt-context";
 import { SiteHeader } from "@/components/site-header";
+import { SitePageview } from "@/components/analytics/site-pageview";
 
 type Props = {
   children: React.ReactNode;
@@ -41,6 +42,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LocaleHtmlLang locale={locale} />
       <SignupPromptProvider>
         <HomeSignupPrompt />
+        <SitePageview />
         <SiteHeader />
         <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
           {children}
