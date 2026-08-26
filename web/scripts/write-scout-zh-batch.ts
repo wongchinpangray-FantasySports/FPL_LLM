@@ -129,7 +129,7 @@ async function dumpQueue(articles: ScoutArticle[]): Promise<void> {
   );
 }
 
-async function applyFromFiles(slugFilter: string[]): Promise<void> {
+async function applyFromFiles(slugFilter: string[]): Promise<string[]> {
   const dry = process.argv.includes("--dry");
   const root = queueRoot();
   const slugs = slugFilter.length
