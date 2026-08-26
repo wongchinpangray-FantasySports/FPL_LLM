@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build",
-    "preview:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "build:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build && node scripts/patch-opennext-og.mjs --rewrite",
+    "preview:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build && node scripts/patch-opennext-og.mjs --rewrite && opennextjs-cloudflare preview",
+    "deploy:cloudflare": "node scripts/patch-opennext-og.mjs && opennextjs-cloudflare build && node scripts/patch-opennext-og.mjs --rewrite && opennextjs-cloudflare deploy",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
