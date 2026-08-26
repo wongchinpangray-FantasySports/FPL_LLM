@@ -473,6 +473,8 @@ export interface NextFixtureOpponent {
   gw: number;
   opp_short: string;
   home: boolean;
+  /** Fixture difficulty for this player's team (1 easy – 5 hard). */
+  fdr?: number | null;
 }
 
 /**
@@ -535,6 +537,7 @@ export async function nextFixtureForPlayers(
       gw: first.gw,
       opp_short: opp?.short ?? "?",
       home: isHome,
+      fdr: isHome ? first.home_fdr : first.away_fdr,
     });
   }
 

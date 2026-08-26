@@ -156,6 +156,10 @@ export function PlannerApp({
   const [searching, setSearching] = useState(false);
   /** Shown inside the replace-player modal when a pick would break FPL squad rules */
   const [swapNotice, setSwapNotice] = useState<string | null>(null);
+  const [swapRecs, setSwapRecs] = useState<
+    import("@/lib/planner/swap-recommendations").SwapRecommendation[]
+  >([]);
+  const [swapRecsLoading, setSwapRecsLoading] = useState(false);
 
   const [horizon, setHorizon] = useState(5);
   /** Separate draft so clearing / retyping GW count works on mobile (controlled number would snap back). */
@@ -218,8 +222,51 @@ export function PlannerApp({
   }, [xiBenchMode]);
 
   useEffect(() => {
-    if (swapSlot == null) setSwapNotice(null);
-  }, [swapSlot]);
+    if (swapSlot == null) {
+      setSwapNotice(null);
+      setSwapRecs([]);
+      setSwapRecsLoading(false);
+      return;
+    }
+    const out = picks.find((p) => p.slot === swapSlot);
+    const position = out?.position;
+    if (!position || !["GKP", "DEF", "MID", "FWD"].includes(position)) {
+      setSwapRecs([]);
+      return;
+    }
+    let cancelled = false;
+    setSwapRecsLoading(true);
+    setSwapRecs([]);
+    const excludeIds = picks.map((p) => p.fpl_id);
+    void fetch("/api/planner/swap-recs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        position,
+        excludeIds,
+        horizon,
+      }),
+    })
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          recommendations?: import("@/lib/planner/swap-recommendations").SwapRecommendation[];
+          error?: string;
+        };
+        if (!res.ok) throw new Error(data.error ?? "failed");
+        if (!cancelled) setSwapRecs(data.recommendations ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSwapRecs([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSwapRecsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Only refetch when the slot (and thus outgoing position) changes — not on every pick edit mid-modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [swapSlot, horizon]);
 
   useEffect(() => {
     if (!inspectCtx) {
@@ -1297,6 +1344,95 @@ export function PlannerApp({
             <p className="mt-2 text-[11px] text-muted-foreground">
               {t("searchHint")}
             </p>
+
+            <div className="mt-3">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("swapRecsTitle")}
+              </p>
+              {swapRecsLoading ? (
+                <p className="text-xs text-muted-foreground">{t("swapRecsLoading")}</p>
+              ) : swapRecs.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("swapRecsEmpty")}</p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {swapRecs.map((rec) => {
+                    const bankAfter = swapBudget(
+                      bank,
+                      picks.find((p) => p.slot === swapSlot)?.base_price ?? 0,
+                      rec.base_price,
+                    );
+                    const over = bankAfter < -0.05;
+                    const kindLabel =
+                      rec.kind === "xp"
+                        ? t("swapRecKindXp")
+                        : rec.kind === "dc"
+                          ? t("swapRecKindDc")
+                          : t("swapRecKindThreat");
+                    const fx = rec.next
+                      ? `${rec.next.opp_short} (${rec.next.home ? "H" : "A"})${
+                          rec.next.fdr != null ? ` · FDR ${rec.next.fdr}` : ""
+                        }`
+                      : "—";
+                    return (
+                      <li key={`${rec.kind}-${rec.fpl_id}`}>
+                        <button
+                          type="button"
+                          className="w-full rounded-lg border border-brand-accent/25 bg-brand-accent/5 px-3 py-2 text-left text-sm transition-colors hover:border-brand-accent/45 hover:bg-brand-accent/10"
+                          onClick={() =>
+                            applySwap(swapSlot, {
+                              fpl_id: rec.fpl_id,
+                              web_name: rec.web_name,
+                              name: rec.web_name,
+                              team: rec.team,
+                              team_id: rec.team_id,
+                              position: rec.position,
+                              base_price: rec.base_price,
+                              status: "a",
+                              form: null,
+                              total_points: null,
+                              minutes: null,
+                              selected_by_percent: null,
+                              points_per_game: null,
+                              ict_index: null,
+                              goals_scored: null,
+                              assists: null,
+                              expected_goals: null,
+                              expected_assists: null,
+                            })
+                          }
+                        >
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span className="rounded bg-brand-accent/15 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
+                              {kindLabel}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {rec.web_name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {rec.team} · £{rec.base_price?.toFixed(1) ?? "?"}m
+                            </span>
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            {rec.metric_label} {rec.metric_value} · {fx}
+                            {" · "}
+                            <span
+                              className={
+                                over ? "text-amber-300" : "text-brand-accent/90"
+                              }
+                            >
+                              {t("swapBankAfter", {
+                                bank: bankAfter.toFixed(1),
+                              })}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
             {swapNotice ? (
               <div
                 role="alert"
