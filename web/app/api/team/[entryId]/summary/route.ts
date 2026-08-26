@@ -36,6 +36,7 @@ function squadPreview(picks: FplSquadPick[] | undefined) {
     captain: captain?.web_name ?? captain?.name ?? null,
     starters,
     starter_names: starters.map((s) => s.name),
+    fpl_ids: list.map((p) => p.fpl_id),
   };
 }
 

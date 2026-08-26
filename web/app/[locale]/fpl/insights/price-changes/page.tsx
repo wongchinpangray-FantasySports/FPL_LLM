@@ -53,7 +53,7 @@ export default async function PriceChangesPage({ params }: Props) {
           rows={data.rows}
           gw={data.gw}
           labels={{
-            intro: t("priceChanges.intro"),
+            intro: t("priceChanges.intro", { gw: data.gw }),
             tabRecent: t("priceChanges.tabRecent"),
             tabRisers: t("priceChanges.tabRisers"),
             tabFallers: t("priceChanges.tabFallers"),

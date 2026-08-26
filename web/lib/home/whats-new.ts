@@ -1,5 +1,6 @@
 /**
- * Home sidebar “What’s new” feed: price rises/falls, injury flags, FFS articles.
+ * Home sidebar “What’s new” feed: price rises/falls, injury flags, FFS articles,
+ * and near rise/fall pressure for personalisation on the client.
  */
 
 import { unstable_cache } from "next/cache";
@@ -8,6 +9,11 @@ import { shanghaiDateIso } from "@/lib/fpl/wechat-daily-card";
 import { getServerSupabase } from "@/lib/supabase";
 import { listPublishedScoutArticles } from "@/lib/scout/store";
 import { withIsolateCache } from "@/lib/worker-isolate-cache";
+import {
+  loadPriceForecastRaw,
+  PRICE_FORECAST_WATCH,
+  type PriceForecastRow,
+} from "@/lib/fpl/insights/price-forecast";
 
 export type WhatsNewPriceItem = {
   kind: "price";
@@ -41,10 +47,23 @@ export type WhatsNewArticleItem = {
   published_at: string | null;
 };
 
+export type WhatsNewWatchItem = {
+  kind: "watch";
+  fpl_id: number;
+  web_name: string;
+  team: string;
+  direction: "rise" | "fall";
+  /** 0–1+ progress toward a £0.1 move. */
+  progress: number;
+  status: "likely_rise" | "watch_rise" | "likely_fall" | "watch_fall";
+  href: string;
+};
+
 export type WhatsNewItem =
   | WhatsNewPriceItem
   | WhatsNewInjuryItem
-  | WhatsNewArticleItem;
+  | WhatsNewArticleItem
+  | WhatsNewWatchItem;
 
 export type WhatsNewData = {
   /** Asia/Shanghai calendar date YYYY-MM-DD */
@@ -117,7 +136,6 @@ function buildFromBootstrap(
         num(el.chance_of_playing_this_round) ??
         num(el.chance_of_playing_next_round);
       const news = String(el.news ?? "").trim();
-      // Skip quiet long-term absences with no news / 0% and no note.
       if (status === "i" && !news && (chance == null || chance === 0)) continue;
       injuries.push({
         kind: "injury",
@@ -202,13 +220,63 @@ async function loadFromDb(): Promise<{
   return { prices: [], injuries };
 }
 
+function toWatchItem(row: PriceForecastRow): WhatsNewWatchItem | null {
+  if (
+    row.status !== "likely_rise" &&
+    row.status !== "watch_rise" &&
+    row.status !== "likely_fall" &&
+    row.status !== "watch_fall"
+  ) {
+    return null;
+  }
+  if (Math.abs(row.progress) < PRICE_FORECAST_WATCH) return null;
+  return {
+    kind: "watch",
+    fpl_id: row.fpl_id,
+    web_name: row.web_name,
+    team: row.team_short || row.team,
+    direction: row.progress >= 0 ? "rise" : "fall",
+    progress: Math.round(Math.abs(row.progress) * 100) / 100,
+    status: row.status,
+    href: `/player/${row.fpl_id}`,
+  };
+}
+
+async function loadWatchItems(): Promise<WhatsNewWatchItem[]> {
+  try {
+    const forecast = await loadPriceForecastRaw();
+    const pool = [
+      ...forecast.likely_rise,
+      ...forecast.watch_rise,
+      ...forecast.likely_fall,
+      ...forecast.watch_fall,
+    ];
+    const seen = new Set<number>();
+    const items: WhatsNewWatchItem[] = [];
+    for (const row of pool.sort(
+      (a, b) => Math.abs(b.progress) - Math.abs(a.progress),
+    )) {
+      if (seen.has(row.fpl_id)) continue;
+      const item = toWatchItem(row);
+      if (!item) continue;
+      seen.add(row.fpl_id);
+      items.push(item);
+      if (items.length >= 40) break;
+    }
+    return items;
+  } catch {
+    return [];
+  }
+}
+
 async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   const date = shanghaiDateIso();
   const date_label = dateLabelFromIso(date);
 
-  const [live, articles] = await Promise.all([
+  const [live, articles, watches] = await Promise.all([
     loadFromLiveBootstrap(),
     listPublishedScoutArticles(8).catch(() => []),
+    loadWatchItems(),
   ]);
 
   let prices = live?.prices ?? [];
@@ -235,7 +303,6 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
     published_at: a.source_published_at,
   }));
 
-  // Cap list length for a scannable sidebar.
   const rises = prices.filter((p) => p.direction === "rise").slice(0, 5);
   const falls = prices.filter((p) => p.direction === "fall").slice(0, 5);
   const injurySlice = injuries.slice(0, 8);
@@ -243,6 +310,7 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   const items: WhatsNewItem[] = [
     ...rises,
     ...falls,
+    ...watches,
     ...injurySlice,
     ...articleItems,
   ];
@@ -250,12 +318,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v1"], {
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v2"], {
   revalidate: 180,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v1", 180_000, () =>
+  return withIsolateCache("home-whats-new-v2", 180_000, () =>
     loadWhatsNewCached(),
   );
 }

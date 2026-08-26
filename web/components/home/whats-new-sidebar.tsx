@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { useEntryId } from "@/components/entry-id-context";
+import { ShareButton } from "@/components/share/share-button";
 import type { WhatsNewData, WhatsNewItem } from "@/lib/home/whats-new";
 
 function fmtDelta(delta: number): string {
@@ -19,7 +21,22 @@ function articleTitle(
   return item.title_en;
 }
 
-function WhatsNewRow({ item }: { item: WhatsNewItem }) {
+function InSquadBadge() {
+  const t = useTranslations("home");
+  return (
+    <span className="ml-1.5 inline-flex shrink-0 rounded bg-brand-accent/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-brand-accent">
+      {t("whatsNewInSquad")}
+    </span>
+  );
+}
+
+function WhatsNewRow({
+  item,
+  inSquad,
+}: {
+  item: WhatsNewItem;
+  inSquad: boolean;
+}) {
   const t = useTranslations("home");
   const locale = useLocale();
 
@@ -40,9 +57,10 @@ function WhatsNewRow({ item }: { item: WhatsNewItem }) {
           {rise ? "↑" : "↓"}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-foreground">
-            {item.web_name}
-            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          <span className="flex items-center truncate text-sm font-medium text-foreground">
+            <span className="truncate">{item.web_name}</span>
+            {inSquad ? <InSquadBadge /> : null}
+            <span className="ml-1.5 shrink-0 text-xs font-normal text-muted-foreground">
               {item.team}
             </span>
           </span>
@@ -54,6 +72,52 @@ function WhatsNewRow({ item }: { item: WhatsNewItem }) {
           >
             {rise ? t("whatsNewPriceRise") : t("whatsNewPriceFall")} ·{" "}
             {fmtDelta(item.delta)}
+          </span>
+        </span>
+      </Link>
+    );
+  }
+
+  if (item.kind === "watch") {
+    const rise = item.direction === "rise";
+    const likely =
+      item.status === "likely_rise" || item.status === "likely_fall";
+    return (
+      <Link
+        href={item.href}
+        className="flex items-start gap-2.5 py-2 no-underline transition-colors hover:opacity-90"
+      >
+        <span
+          className={cn(
+            "mt-0.5 shrink-0 text-[10px] font-semibold uppercase tracking-wide",
+            rise ? "text-emerald-400" : "text-rose-400",
+          )}
+          aria-hidden
+        >
+          {rise ? "↗" : "↘"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center truncate text-sm font-medium text-foreground">
+            <span className="truncate">{item.web_name}</span>
+            <InSquadBadge />
+            <span className="ml-1.5 shrink-0 text-xs font-normal text-muted-foreground">
+              {item.team}
+            </span>
+          </span>
+          <span
+            className={cn(
+              "mt-0.5 block text-[11px] tabular-nums",
+              rise ? "text-emerald-400/90" : "text-rose-400/90",
+            )}
+          >
+            {likely
+              ? rise
+                ? t("whatsNewWatchLikelyRise")
+                : t("whatsNewWatchLikelyFall")
+              : rise
+                ? t("whatsNewWatchRise")
+                : t("whatsNewWatchFall")}{" "}
+            · {Math.round(item.progress * 100)}%
           </span>
         </span>
       </Link>
@@ -80,9 +144,10 @@ function WhatsNewRow({ item }: { item: WhatsNewItem }) {
           !
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-foreground">
-            {item.web_name}
-            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          <span className="flex items-center truncate text-sm font-medium text-foreground">
+            <span className="truncate">{item.web_name}</span>
+            {inSquad ? <InSquadBadge /> : null}
+            <span className="ml-1.5 shrink-0 text-xs font-normal text-muted-foreground">
               {item.team}
             </span>
           </span>
@@ -124,9 +189,11 @@ function WhatsNewRow({ item }: { item: WhatsNewItem }) {
 
 export function WhatsNewSidebar() {
   const t = useTranslations("home");
+  const { entryId } = useEntryId();
   const [data, setData] = useState<WhatsNewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [squadIds, setSquadIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -147,23 +214,68 @@ export function WhatsNewSidebar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!entryId) {
+      setSquadIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/team/${entryId}/summary`)
+      .then(async (res) => {
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          squad?: { fpl_ids?: number[]; starters?: { fpl_id: number }[] };
+        };
+        const ids =
+          json.squad?.fpl_ids ??
+          json.squad?.starters?.map((s) => s.fpl_id) ??
+          [];
+        if (!cancelled) setSquadIds(new Set(ids.filter((n) => Number.isFinite(n))));
+      })
+      .catch(() => {
+        if (!cancelled) setSquadIds(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entryId]);
+
   const prices = data?.items.filter((i) => i.kind === "price") ?? [];
   const injuries = data?.items.filter((i) => i.kind === "injury") ?? [];
   const articles = data?.items.filter((i) => i.kind === "article") ?? [];
+  const squadWatches = useMemo(() => {
+    if (!squadIds.size) return [];
+    return (data?.items.filter((i) => i.kind === "watch") ?? [])
+      .filter((i) => i.kind === "watch" && squadIds.has(i.fpl_id))
+      .slice(0, 8);
+  }, [data, squadIds]);
+
   const empty =
-    !loading && !error && prices.length === 0 && injuries.length === 0 && articles.length === 0;
+    !loading &&
+    !error &&
+    prices.length === 0 &&
+    injuries.length === 0 &&
+    articles.length === 0 &&
+    squadWatches.length === 0;
+
+  const shareTitle = t("whatsNewShareTitle", {
+    date: data?.date_label ?? "—.—",
+  });
 
   return (
     <aside className="home-hub-card overflow-hidden rounded-xl border border-border bg-card/40 lg:sticky lg:top-[4.5rem] lg:self-start">
-      <div className="border-b border-border/70 px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">
-          {t("whatsNewTitle", {
-            date: data?.date_label ?? "—.—",
-          })}
-        </h2>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {t("whatsNewHint")}
-        </p>
+      <div className="flex items-start justify-between gap-2 border-b border-border/70 px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-foreground">
+            {t("whatsNewTitle", {
+              date: data?.date_label ?? "—.—",
+            })}
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {t("whatsNewHint")}
+          </p>
+        </div>
+        <ShareButton compact path="/" title={shareTitle} />
       </div>
 
       <div className="px-4 py-2">
@@ -196,8 +308,44 @@ export function WhatsNewSidebar() {
                   </Link>
                 </div>
                 {prices.map((item) => (
-                  <WhatsNewRow key={`p-${item.fpl_id}`} item={item} />
+                  <WhatsNewRow
+                    key={`p-${item.fpl_id}`}
+                    item={item}
+                    inSquad={squadIds.has(item.fpl_id)}
+                  />
                 ))}
+              </section>
+            ) : null}
+
+            {entryId && squadWatches.length > 0 ? (
+              <section className="py-1.5">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {t("whatsNewWatchSection")}
+                  </p>
+                  <Link
+                    href="/fpl/insights/price-forecast"
+                    className="text-[11px] font-medium text-brand-accent no-underline hover:underline"
+                  >
+                    {t("whatsNewSeeAll")}
+                  </Link>
+                </div>
+                {squadWatches.map((item) => (
+                  <WhatsNewRow
+                    key={`w-${item.fpl_id}`}
+                    item={item}
+                    inSquad
+                  />
+                ))}
+              </section>
+            ) : entryId && !loading ? (
+              <section className="py-1.5">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {t("whatsNewWatchSection")}
+                </p>
+                <p className="py-2 text-[11px] text-muted-foreground">
+                  {t("whatsNewWatchEmpty")}
+                </p>
               </section>
             ) : null}
 
@@ -207,7 +355,11 @@ export function WhatsNewSidebar() {
                   {t("whatsNewInjurySection")}
                 </p>
                 {injuries.map((item) => (
-                  <WhatsNewRow key={`i-${item.fpl_id}`} item={item} />
+                  <WhatsNewRow
+                    key={`i-${item.fpl_id}`}
+                    item={item}
+                    inSquad={squadIds.has(item.fpl_id)}
+                  />
                 ))}
               </section>
             ) : null}
@@ -226,7 +378,11 @@ export function WhatsNewSidebar() {
                   </Link>
                 </div>
                 {articles.map((item) => (
-                  <WhatsNewRow key={`a-${item.id}`} item={item} />
+                  <WhatsNewRow
+                    key={`a-${item.id}`}
+                    item={item}
+                    inSquad={false}
+                  />
                 ))}
               </section>
             ) : null}
