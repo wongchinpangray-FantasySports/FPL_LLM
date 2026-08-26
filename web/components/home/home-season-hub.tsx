@@ -830,6 +830,9 @@ export function HomeSeasonSections() {
         loading={loading}
         error={error}
       />
+
+      <FfscoutArticlesSection />
+
       <SquadHealthBlock
         entryId={entryId}
         data={data}
@@ -908,8 +911,6 @@ export function HomeSeasonSections() {
           ))}
         </div>
       </SectionShell>
-
-      <FfscoutArticlesSection />
     </div>
   );
 }

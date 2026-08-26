@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /**
- * Render Xiaohongshu (小红书) 3:4 carousel PNGs from translated Scout articles.
+ * Render Xiaohongshu 3:4 carousel PNGs from translated Scout articles.
+ *
+ * Default is a **teaser feed** (cover of titles + images, then one page per
+ * article with a filled teaser + bottom image). Full-article carousels are
+ * opt-in via `--full`.
  *
  *   cd web
  *   npx tsx scripts/scout-xhs-pages.ts
- *   npx tsx scripts/scout-xhs-pages.ts --slug=fpl-notes-iraola-on-szoboszlai-pen-wissa-back-to-his-best
- *   npx tsx scripts/scout-xhs-pages.ts --latest=5
- *   npx tsx scripts/scout-xhs-pages.ts --requested
+ *   npx tsx scripts/scout-xhs-pages.ts --slugs=a,b,c,d
+ *   npx tsx scripts/scout-xhs-pages.ts --all
+ *   npx tsx scripts/scout-xhs-pages.ts --full --slug=one-article
  *   npx tsx scripts/scout-xhs-pages.ts --dry
  *
- * Default: recent local ZH (last 5 days), skip paywall leftovers, cap 8,
- * prioritize FPL Notes + GW1. Output: output/scout-xhs/<slug>/01.png …
+ * After Cursor translate `--apply`, the writer also runs this teaser step
+ * for the slugs just written (unless `--no-xhs`).
  */
 import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -25,6 +29,8 @@ import {
   XHS_WIDTH,
   articleBlocks,
   buildCaption,
+  buildTeaserCaption,
+  buildTeaserCards,
   dropHeroFromBlocks,
   ffsLogoPath,
   gwTag,
@@ -35,6 +41,11 @@ import {
   scoutXhsOutRoot,
   selectScoutXhsArticles,
   seriesLabel,
+  stripVisibleUrlText,
+  chunkArticles,
+  publishedAtMs,
+  skipReasonFor,
+  TEASER_MAX_ARTICLES,
   type LocalScoutZh,
   type ScoutXhsBlock,
 } from "../lib/scout/xhs-pages";
@@ -42,15 +53,15 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const templatePath = join(__dirname, "wechat", "xhs-scout-article.html");
 
-/** Leave room for the FFS lockup + Faleague Scout CTA footer (no Premium QR). */
-const BODY_MAX_HEIGHT = 780;
+/** Leave room for the FFS lockup + plain-text attribution footer (no CTA / URL). */
+const BODY_MAX_HEIGHT = 800;
 
 let logoSrc = "";
 let ctaLabel = "";
 let ctaDisplay = "";
 
 function withAssets(data: Record<string, unknown>): Record<string, unknown> {
-  return { ...data, logoSrc, ctaLabel, ctaUrl: ctaDisplay };
+  return { ...data, logoSrc };
 }
 
 function flagStr(name: string): string | null {
@@ -128,7 +139,7 @@ function bodyPagePayload(
     kind: "body",
     page: pageNo,
     total,
-    title: article.title_zh,
+    title: stripVisibleUrlText(article.title_zh),
     seriesLabel: series,
     gwTag: gw,
     html: blocks.map((b) => b.html).join("\n"),
@@ -226,8 +237,8 @@ async function generateArticle(
       kind: "cover",
       page: 1,
       total: actualTotal,
-      title: article.title_zh,
-      subtitle: article.excerpt_zh,
+      title: stripVisibleUrlText(article.title_zh),
+      subtitle: stripVisibleUrlText(article.excerpt_zh),
       seriesLabel: series,
       gwTag: gw,
       heroSrc,
@@ -276,6 +287,193 @@ async function generateArticle(
   return { slug: article.slug, pages: actualTotal, dir };
 }
 
+function feedStamp(index = 1, { all = false } = {}): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  if (all) return `feed-all-${String(index).padStart(2, "0")}`;
+  return index > 1 ? `feed-${y}${m}${day}-${index}` : `feed-${y}${m}${day}`;
+}
+
+async function generateTeaserFeed(
+  page: import("playwright").Page,
+  articles: LocalScoutZh[],
+  outRoot: string,
+  stamp: string,
+): Promise<{ slug: string; pages: number; dir: string; titles: string[] }> {
+  const cards = buildTeaserCards(articles, TEASER_MAX_ARTICLES);
+  const dir = join(outRoot, stamp);
+  mkdirSync(dir, { recursive: true });
+  for (const name of readdirSync(dir)) {
+    if (/\.(png|jpg)$/i.test(name)) unlinkSync(join(dir, name));
+  }
+
+  const titles = cards.map((c) => c.title_zh);
+  const gw =
+    cards.map((c) => c.gwTag).find((g) => g) ??
+    gwTag(articles[0]?.slug ?? "", articles[0]?.title_zh ?? "", articles[0]?.title_en ?? "");
+  const total = cards.length + 2;
+
+  await renderOnePage(
+    page,
+    {
+      kind: "feed-cover",
+      page: 1,
+      total,
+      title: "Scout 中文精选",
+      seriesLabel: "精选",
+      gwTag: gw,
+      items: cards.map((c) => ({
+        title: c.title_zh,
+        heroSrc: c.heroSrc || logoSrc || "",
+      })),
+    },
+    join(dir, "01.png"),
+  );
+
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i]!;
+    const name = String(i + 2).padStart(2, "0") + ".png";
+    const chunks = card.parasHtml
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const base = {
+      kind: "teaser",
+      page: i + 2,
+      total,
+      title: card.title_zh,
+      seriesLabel: card.seriesLabel,
+      gwTag: card.gwTag,
+      heroSrc: card.heroSrc,
+    };
+    let html = chunks.join("\n");
+    while (chunks.length > 1) {
+      await page.evaluate((payload) => {
+        (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
+      }, withAssets({ ...base, html: chunks.join("\n") }));
+      try {
+        await page.evaluate(() =>
+          (window as unknown as { waitPageImages: () => Promise<void> }).waitPageImages(),
+        );
+      } catch {
+        /* optional */
+      }
+      const overflow = await pageOverflow(page);
+      if (overflow <= 20) {
+        html = chunks.join("\n");
+        break;
+      }
+      chunks.pop();
+      html = chunks.join("\n");
+    }
+    await renderOnePage(page, { ...base, html }, join(dir, name));
+  }
+
+  await renderOnePage(
+    page,
+    {
+      kind: "feed-close",
+      page: total,
+      total,
+      title: "完整文章在 Faleague",
+      subtitle: "去 Scout 中文专栏看全文、笔记和伤情。",
+      seriesLabel: "Scout 中文",
+      gwTag: gw,
+    },
+    join(dir, String(total).padStart(2, "0") + ".png"),
+  );
+
+  const caption = buildTeaserCaption(articles.slice(0, cards.length), ctaDisplay);
+  writeFileSync(join(dir, "caption.txt"), caption, "utf8");
+  writeFileSync(
+    join(dir, "manifest.json"),
+    JSON.stringify(
+      {
+        mode: "teaser",
+        slugs: cards.map((c) => c.slug),
+        titles,
+        pages: total,
+        cta_url: ctaDisplay,
+        output: dir,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  console.log(JSON.stringify({ ok: true, mode: "teaser", pages: total, dir, slugs: cards.map((c) => c.slug) }));
+  return { slug: stamp, pages: total, dir, titles };
+}
+
+async function loadDbTranslated(): Promise<LocalScoutZh[]> {
+  const { getServerSupabase } = await import("../lib/supabase");
+  const { hasRealScoutZh } = await import("../lib/scout/zh-status");
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("scout_articles")
+    .select(
+      "slug,title_zh,title_en,excerpt_zh,excerpt_en,author,series,source_url,source_published_at,status,body_html_zh,translate_requested_at",
+    )
+    .order("source_published_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  const out: LocalScoutZh[] = [];
+  for (const row of data ?? []) {
+    const title_en = String(row.title_en ?? "");
+    const title_zh = String(row.title_zh ?? "");
+    const body_html_zh = String(row.body_html_zh ?? "");
+    if (
+      !hasRealScoutZh({
+        title_en,
+        title_zh,
+        body_html_zh,
+        excerpt_zh: row.excerpt_zh ? String(row.excerpt_zh) : null,
+      })
+    ) {
+      continue;
+    }
+    const mapped: LocalScoutZh = {
+      slug: String(row.slug),
+      dir: "",
+      title_zh,
+      excerpt_zh: String(row.excerpt_zh ?? ""),
+      title_en,
+      excerpt_en: row.excerpt_en ? String(row.excerpt_en) : null,
+      author: row.author ? String(row.author) : null,
+      series: String(row.series ?? "other"),
+      source_url: String(row.source_url ?? ""),
+      source_published_at: row.source_published_at
+        ? String(row.source_published_at)
+        : null,
+      translate_requested_at: row.translate_requested_at
+        ? String(row.translate_requested_at)
+        : null,
+      status: String(row.status ?? "pending"),
+      body_html_zh,
+      zh_mtime_ms: row.source_published_at
+        ? Date.parse(String(row.source_published_at))
+        : 0,
+    };
+    if (skipReasonFor(mapped)) continue;
+    out.push(mapped);
+  }
+  return out;
+}
+
+function mergeZhSources(
+  local: LocalScoutZh[],
+  db: LocalScoutZh[],
+): LocalScoutZh[] {
+  const bySlug = new Map<string, LocalScoutZh>();
+  for (const a of db) bySlug.set(a.slug, a);
+  for (const a of local) bySlug.set(a.slug, a);
+  return [...bySlug.values()].sort(
+    (a, b) => publishedAtMs(b) - publishedAtMs(a),
+  );
+}
+
 async function loadRequestedSlugs(): Promise<string[]> {
   const { listScoutTranslateQueue } = await import("../lib/scout/store");
   const rows = await listScoutTranslateQueue();
@@ -293,42 +491,62 @@ async function main() {
   const dry = process.argv.includes("--dry");
   const force = process.argv.includes("--force");
   const requested = process.argv.includes("--requested");
+  const full = process.argv.includes("--full");
+  const teaser = !full;
   const slugs = parseSlugs();
   const latestRaw = flagStr("latest");
   const all = process.argv.includes("--all");
   const latest =
     latestRaw != null
-      ? parseIntFlag("latest", DEFAULT_LATEST)
+      ? parseIntFlag("latest", teaser ? TEASER_MAX_ARTICLES : DEFAULT_LATEST)
       : slugs.length && !requested
         ? null
-        : DEFAULT_LATEST;
+        : teaser
+          ? TEASER_MAX_ARTICLES
+          : DEFAULT_LATEST;
   const days =
     parseIntFlag(
       "days",
-      slugs.length || requested || latestRaw != null ? 0 : DEFAULT_DAYS,
-    ) ?? DEFAULT_DAYS;
+      slugs.length || requested || latestRaw != null || all ? 0 : teaser ? 21 : DEFAULT_DAYS,
+    ) ?? (teaser ? 21 : DEFAULT_DAYS);
 
   const local = loadLocalScoutZh();
+  let db: LocalScoutZh[] = [];
+  try {
+    db = await loadDbTranslated();
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        warn: "db_translated_unavailable",
+        message: err instanceof Error ? err.message : String(err),
+      }),
+    );
+  }
+  const pool = mergeZhSources(local, db);
   let slugFilter = slugs;
   if (requested && !slugFilter.length) {
     slugFilter = await loadRequestedSlugs();
   }
 
-  const picked = selectScoutXhsArticles(local, {
+  const picked = selectScoutXhsArticles(pool, {
     slugs: slugFilter.length ? slugFilter : undefined,
-    latest: latest ?? DEFAULT_LATEST,
-    days: slugFilter.length ? 0 : days,
+    latest: all ? 999 : (latest ?? (teaser ? TEASER_MAX_ARTICLES : DEFAULT_LATEST)),
+    days: slugFilter.length || all ? 0 : days,
     force,
   });
-  const cap = all ? 999 : (latest ?? DEFAULT_LATEST);
+  const cap = all
+    ? 999
+    : teaser
+      ? TEASER_MAX_ARTICLES
+      : (latest ?? DEFAULT_LATEST);
   const selected =
-    slugFilter.length && !requested
-      ? picked.selected
+    slugFilter.length
+      ? picked.selected.slice(0, all ? 999 : cap)
       : picked.selected.slice(0, cap);
   const skipped = picked.skipped;
 
   const summary = {
-    mode: dry ? "dry" : "render",
+    mode: dry ? "dry" : teaser ? "teaser" : "render",
     cta: { label: ctaLabel, url: ctaDisplay, href: cta.href },
     selected: selected.map((a) => a.slug),
     skipped: skipped.filter((s) => s.reason === "paywall" || s.reason === "not_found" || slugFilter.includes(s.slug)),
@@ -360,8 +578,26 @@ async function main() {
       /* fonts optional */
     }
 
-    for (const article of selected) {
-      results.push(await generateArticle(page, article, outRoot));
+    if (teaser) {
+      const groups = all
+        ? chunkArticles(selected, TEASER_MAX_ARTICLES)
+        : [selected];
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i]!;
+        if (!group.length) continue;
+        results.push(
+          await generateTeaserFeed(
+            page,
+            group,
+            outRoot,
+            feedStamp(i + 1, { all }),
+          ),
+        );
+      }
+    } else {
+      for (const article of selected) {
+        results.push(await generateArticle(page, article, outRoot));
+      }
     }
     await page.close();
   } finally {

@@ -28,6 +28,7 @@ import {
   isPlaceholderZh,
   scoutTranslateBadge,
 } from "../lib/scout/zh-status";
+import { extractTeaserParagraphs, chunkArticles } from "../lib/scout/xhs-pages";
 
 function testExtractSectionEntryContent() {
   const html = `
@@ -224,6 +225,41 @@ function testZhStatus() {
   assert.equal(displayScoutTitle(real), "利兹联球队指南");
 }
 
+function testTeaserParagraphs() {
+  const html = `
+    <p>我们为即将到来的一轮准备的「大巴阵」。</p>
+    <p>接下来的 Scout Squad 提名会帮助敲定人选。</p>
+    <p>第三段不应该出现。</p>
+  `;
+  const paras = extractTeaserParagraphs(html, "我们为即将到来的一轮准备的「大巴阵」。", 2);
+  assert.equal(paras.length, 2);
+  assert.match(paras[0]!, /大巴阵/);
+  assert.match(paras[1]!, /Scout Squad/);
+  assert.equal(paras.some((p) => /第三段/.test(p)), false);
+  const more = extractTeaserParagraphs(
+    `<p>第一段足够长可以留下，用来填满卡片。</p><p>第二段也要留下给页面填满内容。</p><p>第三段现在也应该留下，不再只截两段。</p>`,
+    "",
+    8,
+  );
+  assert.equal(more.length, 3);
+  // Excerpt should not duplicate the first body paragraph.
+  const dup = extractTeaserParagraphs(
+    "<p>我们为 Fantasy Premier League（FPL）第二轮整理了 Scout Picks「大巴阵」。</p><p>接下来的提名会帮助敲定人选。</p>",
+    "我们为即将到来的一轮准备的「大巴阵」。",
+    2,
+  );
+  assert.equal(dup.length, 2);
+  assert.match(dup[0]!, /Fantasy Premier League/);
+  assert.match(dup[1]!, /提名会帮助/);
+}
+
+function testChunkArticles() {
+  assert.deepEqual(chunkArticles([1, 2, 3, 4, 5], 4), [
+    [1, 2, 3, 4],
+    [5],
+  ]);
+}
+
 testExtractSectionEntryContent();
 testFfsFetchHelpers();
 testSanitize();
@@ -231,4 +267,6 @@ testSlugAndSeries();
 testRssParse();
 testGoAndScorecard();
 testZhStatus();
+testTeaserParagraphs();
+testChunkArticles();
 console.log("scout-self-test: ok (collect-only ingest, Cursor queue, no auto-publish)");

@@ -8,8 +8,10 @@
  * After writing output/scout-translate/<slug>/body_html_zh.html + meta.zh.json:
  *   npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=a,b
  *
+ * `--apply` also renders the XHS teaser feed for those slugs unless `--no-xhs`.
  * Does not publish. Does not call Gemini/OpenAI/DeepSeek.
  */
+import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadScriptEnv } from "./load-env";
@@ -226,6 +228,13 @@ async function applyFromFiles(slugFilter: string[]): Promise<void> {
   }
 
   console.log(JSON.stringify({ mode: "apply", dry, results }, null, 2));
+  return results
+    .map((row) =>
+      row && typeof row === "object" && "ok" in row && "slug" in row
+        ? String((row as { slug: string }).slug)
+        : "",
+    )
+    .filter(Boolean);
 }
 
 async function main() {
@@ -234,7 +243,16 @@ async function main() {
   const slugs = parseSlugs();
 
   if (apply) {
-    await applyFromFiles(slugs);
+    const written = await applyFromFiles(slugs);
+    const skipXhs = process.argv.includes("--no-xhs");
+    if (!skipXhs && written.length && !process.argv.includes("--dry")) {
+      const xhs = spawnSync(
+        "npx",
+        ["tsx", "scripts/scout-xhs-pages.ts", `--slugs=${written.join(",")}`],
+        { cwd: process.cwd(), stdio: "inherit", shell: true },
+      );
+      if (xhs.status) process.exit(xhs.status);
+    }
     return;
   }
 

@@ -11,6 +11,7 @@ import { HomeGuestLanding } from "@/components/home/home-guest-landing";
 import { DeadlineCountdown } from "@/components/home/deadline-countdown";
 import { HomeSeasonSections } from "@/components/home/home-season-hub";
 import { MatchdayTicker } from "@/components/home/matchday-ticker";
+import { WhatsNewSidebar } from "@/components/home/whats-new-sidebar";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
@@ -1160,41 +1161,9 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           ) : null}
         </div>
 
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-[4.5rem] lg:self-start">
-          <YourFootballSection
-            labels={{
-              title: t("yourFootballTitle"),
-              guestTitle: t("yourFootballGuestTitle"),
-              guestBody: t("yourFootballGuestBody"),
-              signUp: t("yourFootballSignUp"),
-              signIn: t("yourFootballSignIn"),
-              inboxCta: t("yourFootballInbox"),
-              empty: t("yourFootballEmpty"),
-              loading: t("loading"),
-              sectionNews: t("yourFootballSectionNews"),
-              sectionMessages: t("yourFootballSectionMessages"),
-              emptyNews: t("yourFootballEmptyNews"),
-              emptyMessages: t("yourFootballEmptyMessages"),
-            }}
-          />
-          <HomeNewsSidebar
-            news={hub.eplNews.length > 0 ? hub.eplNews : hub.news}
-            transfers={hub.transferNews}
-            fplTweets={hub.fplTweets}
-            fplDailyDigest={hub.fplDailyDigest}
-            labels={{
-              newsTitle: t("sidebarNews"),
-              transfersTitle: t("sidebarTransfers"),
-              fplXTitle: t("sidebarFplX"),
-              fplDailyTitle: t("sidebarFplDaily"),
-              seeAll: t("newsAll"),
-              seeTransfers: t("ctaTransfers"),
-              seeFplX: t("sidebarFplXSee"),
-              seeFplDaily: t("sidebarFplDailySee"),
-              empty: t("newsEmpty"),
-            }}
-          />
-        </aside>
+        <div className="flex flex-col gap-4">
+          <WhatsNewSidebar />
+        </div>
       </div>
     </div>
   );

@@ -71,7 +71,13 @@
         color: rgba(244,244,245,0.8);
       }
 
-      .cover-hero { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      .cover-hero {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .cover-hero > h1 { font-size: 36px; flex-shrink: 0; }
       h1 {
         font-size: 46px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.22;
       }
@@ -98,6 +104,104 @@
         font-size: 20px; font-weight: 800; color: rgba(244,244,245,0.55);
       }
       .swipe em { color: #00ff87; font-style: normal; }
+
+      .feed-grid {
+        margin-top: 18px;
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .feed-grid.cols-1 { grid-template-columns: 1fr; }
+      /* 3 cards: two on top, third full-width so landscape Scout photos keep the face. */
+      .feed-grid.cols-3 {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1.15fr 0.85fr;
+      }
+      .feed-grid.cols-3 .feed-card:nth-child(3) {
+        grid-column: 1 / -1;
+      }
+      .feed-grid.cols-3 .feed-card:nth-child(3) .thumb img {
+        object-position: center 18%;
+      }
+      .feed-card {
+        display: flex; flex-direction: column; min-height: 0;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+      .feed-card .card-head {
+        display: flex; gap: 10px; align-items: flex-start;
+        padding: 12px 14px 8px;
+        flex-shrink: 0;
+      }
+      .feed-card .idx {
+        flex-shrink: 0; font-family: Inter, sans-serif;
+        font-size: 16px; font-weight: 900; color: #00ff87;
+        padding-top: 3px; letter-spacing: 0.04em;
+      }
+      .feed-card h3 {
+        font-size: 20px; font-weight: 800; line-height: 1.28;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .feed-card .thumb {
+        flex: 1; min-height: 120px; background: rgba(0,0,0,0.28);
+        overflow: hidden;
+        position: relative;
+      }
+      .feed-card .thumb img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        display: block;
+      }
+      .feed-card .thumb.logo {
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,255,135,0.06);
+      }
+      .feed-card .thumb.logo img {
+        object-fit: contain; width: 72%; height: 72%;
+      }
+      .feed-card .thumb.empty {
+        min-height: 88px;
+        background: linear-gradient(180deg, rgba(0,255,135,0.08), rgba(255,255,255,0.03));
+      }
+      .teaser-page {
+        flex: 1; display: flex; flex-direction: column; min-height: 0;
+      }
+      .teaser-page h1 { flex-shrink: 0; font-size: 32px; }
+      .teaser-page h1.long { font-size: 28px; }
+      .teaser-page h1.longer { font-size: 24px; }
+      .teaser-copy {
+        padding-top: 10px !important;
+        flex: 1; min-height: 0; overflow: hidden;
+        font-size: 26px !important; line-height: 1.5 !important;
+      }
+      .teaser-copy p:last-child { margin-bottom: 0; }
+      .teaser-hero {
+        flex-shrink: 0;
+        margin-top: 12px;
+        height: 300px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(0,0,0,0.28);
+      }
+      .teaser-hero img {
+        width: 100%; height: 100%; object-fit: cover;
+        object-position: center top;
+        display: block;
+      }
+      .teaser-hero.hidden { display: none; }
+      .teaser-more {
+        margin-top: 8px; flex-shrink: 0;
+        font-size: 20px; font-weight: 800; color: rgba(244,244,245,0.5);
+      }
+      .teaser-more em { color: #00ff87; font-style: normal; }
+      .close-hero h1 { margin-top: 12px; }
 
       .body-kicker {
         flex-shrink: 0;
@@ -177,7 +281,7 @@
       .footer {
         margin-top: 10px; padding-top: 12px; flex-shrink: 0;
         border-top: 1px solid rgba(255,255,255,0.1);
-        display: flex; justify-content: space-between; align-items: center; gap: 16px;
+        display: flex; align-items: center; gap: 16px;
         font-size: 15px; font-weight: 700;
         color: rgba(244,244,245,0.48);
       }
@@ -195,20 +299,6 @@
       }
       .footer-copy { line-height: 1.35; min-width: 0; }
       .footer strong { color: #00ff87; font-weight: 800; }
-      .footer .src { font-family: Inter, sans-serif; font-size: 13px; }
-      .cta-bar {
-        flex-shrink: 0; max-width: 52%;
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 10px; padding: 10px 16px 10px 18px;
-        border-radius: 14px; background: #00ff87; color: #0b0a0f;
-      }
-      .cta-bar .cta {
-        font-size: 18px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.2;
-      }
-      .cta-bar .url {
-        margin-top: 2px; font-family: Inter, sans-serif;
-        font-size: 14px; font-weight: 700; opacity: 0.72;
-      }
 
       #measure-root {
         position: absolute; left: -2400px; top: 0;
@@ -273,8 +363,6 @@
         const isCover = data.kind === "cover";
         const pageLabel = `第 ${data.page}/${data.total}`;
         const logoSrc = data.logoSrc || "";
-        const ctaLabel = data.ctaLabel || "来 Faleague 读 Scout 中文 →";
-        const ctaUrl = data.ctaUrl || "faleague-ai.com/scout";
         const logoHtml = logoSrc
           ? `<img class="ffs-logo" src="${esc(logoSrc)}" alt="Powered by FFS">`
           : `<div class="ffs-mark">Powered by FFS</div>`;
@@ -283,13 +371,7 @@
             <div class="footer-left">
               ${logoHtml}
               <div class="footer-copy">
-                <div>${esc(pageLabel)} · 原文 <span class="src">fantasyfootballscout.co.uk</span></div>
-              </div>
-            </div>
-            <div class="cta-bar">
-              <div>
-                <div class="cta">${esc(ctaLabel)}</div>
-                <div class="url">${esc(ctaUrl)}</div>
+                <div>${esc(pageLabel)} · Fantasy Football Scout 中文 · Faleague</div>
               </div>
             </div>
           </div>`;
@@ -300,15 +382,55 @@
             <div class="chip muted">Fantasy Football Scout 中文</div>
           </div>`;
 
+        const showPitch = isCover || data.kind === "feed-cover" || data.kind === "feed-close";
         let inner = "";
-        if (isCover) {
+        if (data.kind === "feed-cover") {
+          const cards = data.items || [];
+          const cols = cards.length <= 2 ? "cols-1" : cards.length === 3 ? "cols-3" : "";
+          const items = cards.map((item, i) => {
+            const logoLike = /ffs-logo/i.test(item.heroSrc || "");
+            const thumb = item.heroSrc
+              ? `<div class="thumb${logoLike ? " logo" : ""}"><img src="${esc(item.heroSrc)}" alt=""></div>`
+              : `<div class="thumb empty"></div>`;
+            return `<li class="feed-card">
+              <div class="card-head"><span class="idx">${String(i + 1).padStart(2, "0")}</span><h3>${esc(item.title)}</h3></div>
+              ${thumb}
+            </li>`;
+          }).join("");
+          inner = `
+            ${chips}
+            <div class="cover-hero">
+              <h1 class="${titleClass(data.title)}">${esc(data.title)}</h1>
+              <ol class="feed-grid ${cols}">${items}</ol>
+              <div class="swipe">左滑看精选</div>
+            </div>`;
+        } else if (data.kind === "teaser") {
+          const hero = data.heroSrc
+            ? `<div class="teaser-hero"><img src="${esc(data.heroSrc)}" alt=""></div>`
+            : "";
+          inner = `
+            ${chips}
+            <div class="teaser-page">
+              <h1 class="${titleClass(data.title)}">${esc(data.title)}</h1>
+              <div class="body-copy teaser-copy">${data.html || ""}</div>
+              ${hero}
+              <div class="teaser-more">完整内容在 <em>Faleague Scout 中文</em></div>
+            </div>`;
+        } else if (data.kind === "feed-close") {
+          inner = `
+            <div class="cover-hero close-hero">
+              <h1>${esc(data.title || "完整文章在 Faleague")}</h1>
+              <div class="sub">${esc(data.subtitle || "去 Scout 中文专栏看全文、笔记和伤情。")}</div>
+              <div class="swipe"><em>Faleague</em> · Scout 中文</div>
+            </div>`;
+        } else if (isCover) {
           inner = `
             ${chips}
             <div class="cover-hero">
               <h1 class="${titleClass(data.title)}">${esc(data.title)}</h1>
               ${data.subtitle ? `<div class="sub">${esc(data.subtitle)}</div>` : ""}
               ${data.heroSrc ? `<div class="hero-img"><img src="${esc(data.heroSrc)}" alt=""></div>` : ""}
-              <div class="swipe">左滑阅读全文 · 完整中文 <em>${esc(ctaUrl)}</em></div>
+              <div class="swipe">左滑看精选</div>
             </div>`;
         } else {
           inner = `
@@ -318,7 +440,7 @@
 
         document.getElementById("root").innerHTML = `
           <div class="bg"></div>
-          ${isCover ? '<div class="pitch-stripe"></div>' : ""}
+          ${showPitch ? '<div class="pitch-stripe"></div>' : ""}
           <div class="wm">FFS</div>
           <div class="content">
             <div class="top">

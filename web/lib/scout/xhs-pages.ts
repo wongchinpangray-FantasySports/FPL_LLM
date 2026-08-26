@@ -12,14 +12,52 @@ export const XHS_HEIGHT = 1440;
 export const DEFAULT_LATEST = 8;
 export const DEFAULT_DAYS = 5;
 export const MAX_PAGES = 18;
+export const TEASER_MAX_ARTICLES = 4;
+export const TEASER_PARAS = 12;
+
+export function chunkArticles<T>(
+  items: T[],
+  size = TEASER_MAX_ARTICLES,
+): T[][] {
+  const n = Math.max(1, size);
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += n) out.push(items.slice(i, i + n));
+  return out;
+}
 
 /** FFS “Powered by” lockup on carousel pages (attribution only — not a Premium CTA). */
 export const FFS_LOGO_FILENAME = "ffs-logo.png";
 
-/** Public Scout listing on Faleague (localePrefix as-needed, default zh). */
+/**
+ * Caption-only Scout URL (XHS post body for Ray to paste).
+ * Never render this path, label, or origin on carousel PNGs.
+ */
 export const XHS_SCOUT_CTA_PATH = "/scout";
 export const XHS_SCOUT_CTA_LABEL = "来 Faleague 读 Scout 中文 →";
 export const DEFAULT_SITE_ORIGIN = "https://www.faleague-ai.com";
+
+const VISIBLE_URL_RE =
+  /https?:\/\/[^\s<]+|\bwww\.[^\s<]+|\b[a-z0-9][a-z0-9.-]*\.(?:co\.uk|com|net|org|io|ai)(?:\/[^\s<]*)?/gi;
+
+/** Strip URL-like tokens from plain text (titles, captions on-image). */
+export function stripVisibleUrlText(text: string): string {
+  return text
+    .replace(VISIBLE_URL_RE, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([，。！？、])/g, "$1")
+    .trim();
+}
+
+/**
+ * Keep inner copy, drop hrefs and any visible http/www/domain text.
+ * Image `src` attributes are left intact so figures still load.
+ */
+export function stripVisibleUrlsFromHtml(html: string): string {
+  const unwrapped = html.replace(/<a\b[^>]*>/gi, "").replace(/<\/a>/gi, "");
+  return unwrapped.replace(/>([^<]+)</g, (_m, text: string) => {
+    return `>${stripVisibleUrlText(text)}<`;
+  });
+}
 
 export function scoutPublicDir(cwd = process.cwd()): string {
   return join(cwd, "public", "scout");
@@ -71,6 +109,15 @@ export type LocalScoutZh = {
 export type ScoutXhsBlock = {
   html: string;
   kind: "heading" | "p" | "list" | "quote" | "figure" | "table" | "other";
+};
+
+export type ScoutTeaserCard = {
+  slug: string;
+  title_zh: string;
+  seriesLabel: string;
+  gwTag: string | null;
+  parasHtml: string;
+  heroSrc: string | null;
 };
 
 export type SkipReason =
@@ -179,18 +226,19 @@ export function articleBlocks(rawHtml: string): ScoutXhsBlock[] {
       const src = raw.match(/src=["']([^"']+)/i)?.[1] ?? "";
       if (isPromoImageSrc(src)) continue;
     }
-    const text = stripTags(raw);
+    const cleanHtml = stripVisibleUrlsFromHtml(raw);
+    const text = stripTags(cleanHtml);
     if (!text && kind !== "figure") continue;
     if (kind === "p" && !text.trim()) continue;
     if (kind === "p") {
-      blocks.push(...splitLongParagraph(raw));
+      blocks.push(...splitLongParagraph(cleanHtml));
       continue;
     }
     if (kind === "quote") {
-      blocks.push(...splitTallQuote(raw));
+      blocks.push(...splitTallQuote(cleanHtml));
       continue;
     }
-    blocks.push({ html: raw, kind });
+    blocks.push({ html: cleanHtml, kind });
   }
   return mergeRelatedReading(blocks);
 }
@@ -252,18 +300,22 @@ function mergeRelatedReading(blocks: ScoutXhsBlock[]): ScoutXhsBlock[] {
   });
 }
 
-export function pickHeroSrc(blocks: ScoutXhsBlock[]): string | null {
+export function pickHeroSrc(
+  blocks: ScoutXhsBlock[],
+  skipSrc?: string | null,
+): string | null {
+  const skip = skipSrc ?? "";
   for (const b of blocks) {
     if (b.kind !== "figure") continue;
     const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
-    if (!src || isPromoImageSrc(src)) continue;
+    if (!src || src === skip || isPromoImageSrc(src)) continue;
     if (/Screen-Shot/i.test(src)) continue;
     return src;
   }
   for (const b of blocks) {
     if (b.kind !== "figure") continue;
     const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
-    if (src && !isPromoImageSrc(src)) return src;
+    if (src && src !== skip && !isPromoImageSrc(src)) return src;
   }
   return null;
 }
@@ -486,6 +538,84 @@ export function packBlocksByHeight(
   return pages.length ? pages : [[]];
 }
 
+function looksLikeBoilerplatePara(text: string): boolean {
+  return (
+    text.length < 12 ||
+    /出现在 Best FPL Tips|appeared first on/i.test(text) ||
+    /加入 FFScout|Join FFScout/i.test(text)
+  );
+}
+
+/** First 1–2 real body paragraphs. Excerpt is fallback only if the body has no usable `<p>`. */
+export function extractTeaserParagraphs(
+  html: string,
+  excerptZh = "",
+  max = TEASER_PARAS,
+): string[] {
+  const excerpt = stripVisibleUrlText(excerptZh.trim());
+  const stripped = stripVisibleUrlsFromHtml(stripScoutAds(html));
+  const matches = stripped.match(/<(p|ul|ol|blockquote)\b[^>]*>[\s\S]*?<\/\1>/gi) ?? [];
+  const paras: string[] = [];
+  const seen = new Set<string>();
+
+  for (const raw of matches) {
+    if (paras.length >= max) break;
+    const text = stripVisibleUrlText(stripTags(raw)).trim();
+    if (text.length < 12 || looksLikeBoilerplatePara(text)) continue;
+    const key = text.slice(0, 18);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    paras.push(raw);
+  }
+
+  if (paras.length === 0 && excerpt && countCjk(excerpt) >= 8) {
+    paras.push(`<p>${excerpt}</p>`);
+  }
+  return paras.slice(0, max);
+}
+
+export function buildTeaserCards(
+  articles: LocalScoutZh[],
+  max = TEASER_MAX_ARTICLES,
+): ScoutTeaserCard[] {
+  return articles.slice(0, Math.max(1, max)).map((article) => {
+    const blocks = articleBlocks(article.body_html_zh);
+    const paras = extractTeaserParagraphs(
+      article.body_html_zh,
+      article.excerpt_zh,
+      TEASER_PARAS,
+    );
+    return {
+      slug: article.slug,
+      title_zh: stripVisibleUrlText(article.title_zh),
+      seriesLabel: seriesLabel(article.series, article.title_zh),
+      gwTag: gwTag(article.slug, article.title_zh, article.title_en),
+      parasHtml: paras.join("\n"),
+      heroSrc: pickHeroSrc(blocks),
+    };
+  });
+}
+
+/** XHS post body only — links stay here, never on the PNGs. */
+export function buildTeaserCaption(
+  articles: LocalScoutZh[],
+  ctaDisplay = resolveScoutCta().display,
+): string {
+  const titles = articles.map((a) => `· ${a.title_zh}`).join("\n");
+  const lines = [
+    "Scout 中文精选",
+    "",
+    titles,
+    "",
+    "图里只放标题和开头。完整中文请到 Faleague Scout 专栏阅读，注册后可持续跟笔记和伤情。",
+    `阅读入口：${ctaDisplay}`,
+    "",
+    "#FPL #英超 #FantasyFootballScout #Faleague #Scout中文",
+  ];
+  return lines.join("\n");
+}
+
+/** XHS post body only — links stay here, never on the PNGs. */
 export function buildCaption(
   article: LocalScoutZh,
   ctaDisplay = resolveScoutCta().display,
