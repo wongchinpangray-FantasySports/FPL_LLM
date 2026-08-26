@@ -1244,14 +1244,45 @@ export function PlannerApp({
           aria-modal="true"
         >
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <h3 className="font-semibold">
-                {t("replaceSlot", { slot: swapSlot })}
+                {(() => {
+                  const name = picks.find((p) => p.slot === swapSlot)?.web_name;
+                  return name
+                    ? t("replacePlayer", { name })
+                    : t("replaceSlot", { slot: swapSlot });
+                })()}
               </h3>
               <Button variant="ghost" size="sm" onClick={() => setSwapSlot(null)}>
                 {t("close")}
               </Button>
             </div>
+            {(() => {
+              const out = picks.find((p) => p.slot === swapSlot);
+              if (!out) return null;
+              const outPrice = out.base_price ?? 0;
+              return (
+                <div className="mb-3 rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-sm">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t("transferOut")}
+                  </p>
+                  <p className="mt-0.5 font-medium text-foreground">
+                    {out.web_name}
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      {out.team} · {out.position} · £{outPrice.toFixed(1)}m
+                    </span>
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-1.5 text-xs tabular-nums",
+                      bank < -0.05 ? "text-amber-300" : "text-muted-foreground",
+                    )}
+                  >
+                    {t("swapBankLeft", { bank: bank.toFixed(1) })}
+                  </p>
+                </div>
+              );
+            })()}
             <Input
               placeholder={t("searchPlaceholder")}
               value={searchQ}
@@ -1263,7 +1294,7 @@ export function PlannerApp({
               }}
               autoFocus
             />
-            <p className="text-[11px] text-muted-foreground mt-2">
+            <p className="mt-2 text-[11px] text-muted-foreground">
               {t("searchHint")}
             </p>
             {swapNotice ? (
@@ -1280,7 +1311,15 @@ export function PlannerApp({
                 <li className="text-sm text-muted-foreground">{t("searching")}</li>
               )}
               {!searching &&
-                searchHits.map((h) => (
+                searchHits.map((h) => {
+                  const out = picks.find((p) => p.slot === swapSlot);
+                  const bankAfter = swapBudget(
+                    bank,
+                    out?.base_price ?? 0,
+                    h.base_price,
+                  );
+                  const over = bankAfter < -0.05;
+                  return (
                   <li key={h.fpl_id}>
                     <button
                       type="button"
@@ -1310,9 +1349,21 @@ export function PlannerApp({
                           <span className="text-amber-300"> · {h.status}</span>
                         )}
                       </span>
+                      <span
+                        className={cn(
+                          "mt-0.5 block text-[11px] tabular-nums",
+                          over ? "text-amber-300" : "text-brand-accent/90",
+                        )}
+                      >
+                        {t("swapBankAfter", { bank: bankAfter.toFixed(1) })}
+                        {over
+                          ? ` · ${t("swapShortBy", { short: Math.abs(bankAfter).toFixed(1) })}`
+                          : ""}
+                      </span>
                     </button>
                   </li>
-                ))}
+                  );
+                })}
             </ul>
           </div>
         </div>
