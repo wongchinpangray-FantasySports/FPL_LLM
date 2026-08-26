@@ -148,15 +148,19 @@ export function getFplShirtCode(
   return Number.isFinite(n) ? n : null;
 }
 
-/** Official FPL kit image (66px webp). GK kits use the `_1` suffix. */
+/**
+ * Official FPL kit image (66px webp), served via same-origin proxy.
+ * Direct fantasy.premierleague.com URLs have no CORS headers, which breaks
+ * html-to-image / canvas export on the planner.
+ */
 export function getFplShirtUrl(
   shortName: string | null | undefined,
   position?: string | null,
 ): string | null {
   const code = getFplShirtCode(shortName);
   if (code == null) return null;
-  const gk = position === "GKP" || position === "GK" ? "_1" : "";
-  return `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${code}${gk}-66.webp`;
+  const gk = position === "GKP" || position === "GK" ? "1" : "0";
+  return `/api/assets/fpl-shirt?code=${code}&gk=${gk}`;
 }
 
 export type PitchCardKitStyle = {

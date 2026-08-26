@@ -803,28 +803,59 @@ export function PlannerApp({
 
   const scenarioPitchRef = useRef<HTMLDivElement>(null);
   const [pngBusy, setPngBusy] = useState(false);
+  const [pngError, setPngError] = useState<string | null>(null);
 
   const downloadScenarioPng = useCallback(async () => {
     const el = scenarioPitchRef.current;
     if (!el) return;
     setPngBusy(true);
+    setPngError(null);
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(el, {
+      // Ensure kit images are decoded before foreignObject snapshot.
+      const imgs = Array.from(el.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                }),
+        ),
+      );
+
+      const { toBlob } = await import("html-to-image");
+      const blob = await toBlob(el, {
         pixelRatio: 2,
         cacheBust: true,
         backgroundColor: "#052e16",
+        includeQueryParams: true,
+        filter: (node) =>
+          !(
+            node instanceof HTMLElement && node.hasAttribute("data-png-skip")
+          ),
+        // One broken shirt must not abort the whole export.
+        onImageErrorHandler: () => undefined,
       });
+      if (!blob) {
+        throw new Error("empty png blob");
+      }
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = dataUrl;
+      a.href = url;
       a.download = `fpl-planner-${entryId}.png`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("[planner] download pitch png", err);
+      setPngError(t("downloadScenarioPngFailed"));
     } finally {
       setPngBusy(false);
     }
-  }, [entryId]);
+  }, [entryId, t]);
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
@@ -1081,16 +1112,23 @@ export function PlannerApp({
             benchLabel={t("pitchBench")}
             benchGkAbbrev={t("pitchBenchGkAbbrev")}
             titleAction={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs"
-                disabled={pngBusy}
-                onClick={() => void downloadScenarioPng()}
-              >
-                {pngBusy ? t("downloadScenarioPngWorking") : t("downloadScenarioPng")}
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs"
+                  disabled={pngBusy}
+                  onClick={() => void downloadScenarioPng()}
+                >
+                  {pngBusy ? t("downloadScenarioPngWorking") : t("downloadScenarioPng")}
+                </Button>
+                {pngError ? (
+                  <p className="max-w-[11rem] text-right text-[10px] leading-snug text-red-400">
+                    {pngError}
+                  </p>
+                ) : null}
+              </div>
             }
             caption={
               bank < -0.05

@@ -250,6 +250,7 @@ function PitchCard({
                   "w-auto select-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.55)]",
                   compact ? "h-8 sm:h-9" : "h-11 sm:h-12",
                 )}
+                crossOrigin="anonymous"
                 onError={() => setShirtFailed(true)}
               />
             ) : (

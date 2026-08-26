@@ -195,6 +195,7 @@ function PlayerChip({
           height={87}
           loading="lazy"
           decoding="async"
+          crossOrigin="anonymous"
           className="mx-auto h-12 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)] sm:h-14"
           onError={() => setShirtFailed(true)}
         />
@@ -547,7 +548,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
             ) : null}
           </div>
           {titleAction ? (
-            <div className="shrink-0 pt-0.5">{titleAction}</div>
+            <div className="shrink-0 pt-0.5" data-png-skip="">
+              {titleAction}
+            </div>
           ) : null}
         </div>
 
