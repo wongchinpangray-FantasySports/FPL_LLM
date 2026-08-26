@@ -6,8 +6,6 @@ import {
   normalizeInsightPlayerRows,
 } from "@/lib/fpl/insights/dedupe";
 import {
-  reliableDefconPer90,
-  VALUE_BAND_MIN_DEFCON_MINUTES,
   type ValueBandPosition,
   type ValueBandRow,
 } from "@/lib/fpl/insights/value-bands";
@@ -16,9 +14,9 @@ import { projectPlayers, resolveCurrentGw, type PlayerProjection } from "@/lib/x
 export type PlayersExplorerRow = ValueBandRow & {
   goals: number | null;
   assists: number | null;
-  /** Season xG per 90; null until enough minutes (same gate as DC/90). */
+  /** Season xG per 90; null only when no minutes yet. */
   xg_per_90: number | null;
-  /** Season xA per 90; null until enough minutes. */
+  /** Season xA per 90; null only when no minutes yet. */
   xa_per_90: number | null;
 };
 
@@ -48,17 +46,32 @@ function isAvailablePlayer(status: string | null, chance: unknown): boolean {
   return true;
 }
 
-/** Rate stats need a meaningful sample — mirror DC/90 gating. */
-function reliablePer90(
+/** Per-90 from season totals whenever the player has any minutes. */
+function ratePer90(
   minutes: number,
   seasonTotal: number | null | undefined,
-  minMinutes = VALUE_BAND_MIN_DEFCON_MINUTES,
 ): number | null {
-  if (minutes < minMinutes) return null;
+  if (minutes <= 0) return null;
   if (seasonTotal == null || !Number.isFinite(seasonTotal) || seasonTotal < 0) {
     return null;
   }
   return Math.round((seasonTotal / minutes) * 90 * 100) / 100;
+}
+
+/**
+ * Prefer FPL's DC/90; otherwise derive from season DC. Show 0 when the rate is
+ * zero (attackers) instead of blanking the cell.
+ */
+function defconPer90(
+  minutes: number,
+  rawPer90: number | null | undefined,
+  seasonTotal: number | null | undefined,
+): number | null {
+  if (minutes <= 0) return null;
+  if (rawPer90 != null && Number.isFinite(rawPer90) && rawPer90 >= 0) {
+    return Math.round(rawPer90 * 10) / 10;
+  }
+  return ratePer90(minutes, seasonTotal);
 }
 
 /**
@@ -159,12 +172,13 @@ export async function loadPlayersExplorerRaw(
         threat: meta?.threat ?? null,
         goals: meta?.goals_scored ?? null,
         assists: meta?.assists ?? null,
-        xg_per_90: reliablePer90(mins, meta?.expected_goals),
-        xa_per_90: reliablePer90(mins, meta?.expected_assists),
+        xg_per_90: ratePer90(mins, meta?.expected_goals),
+        xa_per_90: ratePer90(mins, meta?.expected_assists),
         defensive_contribution: meta?.defensive_contribution ?? null,
-        defensive_contribution_per_90: reliableDefconPer90(
+        defensive_contribution_per_90: defconPer90(
           mins,
           meta?.defensive_contribution_per_90,
+          meta?.defensive_contribution,
         ),
         minutes: mins,
         preseason_goals: 0,
@@ -208,7 +222,7 @@ export async function loadPlayersExplorerCached(
   const h = Math.min(Math.max(horizon, 1), 8);
   return unstable_cache(
     async () => loadPlayersExplorerRaw(h),
-    [`players-explorer-v2-h${h}`],
+    [`players-explorer-v3-h${h}`],
     { revalidate: 300 },
   )();
 }
