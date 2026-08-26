@@ -13,7 +13,6 @@ import type {
 } from "@/lib/planner/top-xp-by-position";
 import { PlannerTopXpSidebar } from "@/components/planner/planner-top-xp-sidebar";
 import {
-  canAfford,
   swapBudget,
   validatePlannerSquad,
   validateXiFormation,
@@ -521,15 +520,6 @@ export function PlannerApp({
       return;
     }
     const newBank = swapBudget(bank, row.base_price, p.base_price);
-    if (!canAfford(newBank)) {
-      const need = (
-        (row.base_price ?? 0) -
-        (p.base_price ?? 0) +
-        bank
-      ).toFixed(1);
-      setSwapNotice(t("errBudget", { need, bank: bank.toFixed(1) }));
-      return;
-    }
 
     const next: Row = {
       ...row,
@@ -555,7 +545,14 @@ export function PlannerApp({
     setPicks(draft);
     setBank(newBank);
     setProjError(null);
-    setSwapNotice(null);
+    // Mock transfers may go over budget — keep the swap and surface a shortfall notice.
+    if (newBank < -0.05) {
+      setSwapNotice(
+        t("budgetShortfall", { short: Math.abs(newBank).toFixed(1) }),
+      );
+    } else {
+      setSwapNotice(null);
+    }
     if (captainId === row.fpl_id) setCaptainId(p.fpl_id);
     if (viceId === row.fpl_id) setViceId(p.fpl_id);
     setSwapSlot(null);
@@ -852,9 +849,21 @@ export function PlannerApp({
             <label className="mb-1 block text-[10px] uppercase text-muted-foreground">
               {t("bank")}
             </label>
-            <div className="rounded-lg border border-border bg-muted px-2 py-1.5 text-base font-semibold tabular-nums sm:px-3 sm:py-2 sm:text-lg">
+            <div
+              className={cn(
+                "rounded-lg border px-2 py-1.5 text-base font-semibold tabular-nums sm:px-3 sm:py-2 sm:text-lg",
+                bank < -0.05
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                  : "border-border bg-muted text-foreground",
+              )}
+            >
               £{bank.toFixed(1)}m
             </div>
+            {bank < -0.05 ? (
+              <p className="mt-1 text-[11px] leading-snug text-amber-300/90">
+                {t("budgetShortfall", { short: Math.abs(bank).toFixed(1) })}
+              </p>
+            ) : null}
           </div>
           <div className="min-w-0">
             <label className="mb-1 block text-[10px] uppercase text-muted-foreground">
@@ -1037,12 +1046,17 @@ export function PlannerApp({
               </Button>
             }
             caption={
-              changedFromFpl.size > 0
-                ? t("pitchPlanningCaptionDiff", {
+              bank < -0.05
+                ? t("pitchPlanningCaptionShortfall", {
+                    short: Math.abs(bank).toFixed(1),
                     n: changedFromFpl.size,
-                    bank: bank.toFixed(1),
                   })
-                : t("pitchPlanningCaptionSame", { bank: bank.toFixed(1) })
+                : changedFromFpl.size > 0
+                  ? t("pitchPlanningCaptionDiff", {
+                      n: changedFromFpl.size,
+                      bank: bank.toFixed(1),
+                    })
+                  : t("pitchPlanningCaptionSame", { bank: bank.toFixed(1) })
             }
             picks={picks}
             captainId={captainId}
