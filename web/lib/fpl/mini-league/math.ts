@@ -331,6 +331,31 @@ export function rankChartRole(
   return "nearby";
 }
 
+/**
+ * How many rival squads to fetch on a standings page.
+ * Small leagues (!hasNext) get everyone. A 50-row public page is capped so we
+ * do not 403 the table with 49 extra FPL picks calls.
+ */
+export const SQUAD_DIFF_RIVAL_CAP = 24;
+
+/** Entries whose picks we should load for the 阵容差异 % column. */
+export function pickSquadDiffEntries(
+  entries: number[],
+  youEntryId: number,
+  opts?: { hasNext?: boolean; cap?: number },
+): number[] {
+  const rivals = entries.filter((id) => id !== youEntryId && Number.isFinite(id) && id > 0);
+  const cap = Math.max(1, Math.floor(opts?.cap ?? SQUAD_DIFF_RIVAL_CAP));
+  if (!opts?.hasNext || rivals.length <= cap) return rivals;
+  const youIdx = entries.findIndex((id) => id === youEntryId);
+  if (youIdx < 0) return rivals.slice(0, cap);
+  const windowSize = cap + 1;
+  let start = Math.max(0, youIdx - Math.floor(cap / 2));
+  let end = Math.min(entries.length, start + windowSize);
+  start = Math.max(0, end - windowSize);
+  return entries.slice(start, end).filter((id) => id !== youEntryId);
+}
+
 /** How different a 15-man squad is vs yours: 0% identical, 100% no shared players. */
 export function squadDiffPct(youIds: number[], themIds: number[]): number | null {
   const you = [...new Set(youIds.filter((id) => Number.isFinite(id) && id > 0))];

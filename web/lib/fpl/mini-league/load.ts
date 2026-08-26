@@ -26,6 +26,7 @@ import {
   fixtureWindowStart,
   overlayChipSlots,
   pickRivalSample,
+  pickSquadDiffEntries,
   pointsToCatch,
   publishedPicksGw,
   rankChartGwWindow,
@@ -1009,6 +1010,19 @@ export async function loadMiniLeagueAnalysis(
     .filter((p) => p.captainOwners > 0)
     .sort((a, b) => b.captainOwners - a.captainOwners)[0] ?? null;
 
+  const idsByEntry = new Map(picksList.map((p) => [p.entry, p.ids]));
+  if (yourPicks.ids.length) idsByEntry.set(entryId, yourPicks.ids);
+  const withSquadDiff = (row: MiniLeagueStandingRow | null): MiniLeagueStandingRow | null => {
+    if (!row) return null;
+    return {
+      ...row,
+      squadDiffPct: squadDiffPct(yourPicks.ids, idsByEntry.get(row.entry) ?? []),
+    };
+  };
+  const standingsWithDiff = sampleRows
+    .map((row) => withSquadDiff(row))
+    .filter((row): row is MiniLeagueStandingRow => row != null);
+
   return {
     league,
     format,
@@ -1018,12 +1032,12 @@ export async function loadMiniLeagueAnalysis(
     sampledManagers: sampledWithSquad.length,
     sampleIncomplete,
     yourStandingsPage,
-    you,
-    leader,
+    you: withSquadDiff(you),
+    leader: withSquadDiff(leader),
     gapToLeader: you && leader ? Math.max(0, leader.total - you.total) : null,
     gapToNext: you && nextRival ? Math.max(0, nextRival.total - you.total) : null,
     pointsToCatchNext: you && nextRival ? pointsToCatch(you.total, nextRival.total) : null,
-    standings: sampleRows,
+    standings: standingsWithDiff,
     movers: sortMovers(standings).slice(0, 8),
     template: template.slice(0, 12),
     differentials: differentials.slice(0, 10),
@@ -1183,17 +1197,21 @@ export async function loadMiniLeagueStandingsPage(
     const youPicks = await fetchPicks(youEntryId, gw);
     const youIds = (youPicks?.picks ?? []).map((p) => p.element);
     idsByEntry.set(youEntryId, youIds);
-    // A full 50-row page used to fire 50 FPL /picks calls and 403 the table.
-    if (rows.length <= 12 && youIds.length) {
+    // Small leagues: every rival. Huge 50-row pages: nearby rivals only (avoid 403).
+    if (youIds.length) {
       const extra = await mapPool(
-        rows.filter((row) => row.entry !== youEntryId).map((row) => row.entry),
+        pickSquadDiffEntries(
+          rows.map((row) => row.entry),
+          youEntryId,
+          { hasNext: pack.hasNext },
+        ),
         PICKS_CONCURRENCY,
         async (entry) => ({
           entry,
           ids: ((await fetchPicks(entry, gw))?.picks ?? []).map((p) => p.element),
         }),
       );
-      for (const pack of extra) idsByEntry.set(pack.entry, pack.ids);
+      for (const loaded of extra) idsByEntry.set(loaded.entry, loaded.ids);
     }
   } catch {
     /* standings still render without squad-diff */

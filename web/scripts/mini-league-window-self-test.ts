@@ -13,6 +13,7 @@ import {
   pickRivalSample,
   publishedPicksGw,
   fixtureWindowStart,
+  pickSquadDiffEntries,
   resolveYourStandingsPage,
   shouldContinueStandingsScan,
   standingsPageForRank,
@@ -141,6 +142,19 @@ function main(): void {
     "fixture overlap starts at the upcoming GW after a finished GW1",
   );
   assert.equal(fixtureWindowStart({ current: 2, next: 3, currentFinished: false }), 2);
+
+  const ufpl = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+  assert.deepEqual(
+    pickSquadDiffEntries(ufpl, 1, { hasNext: false }),
+    ufpl.slice(1),
+    "13-team mini league must fetch every rival, not stop at 12 rows",
+  );
+  const huge = Array.from({ length: 50 }, (_, i) => i + 1);
+  const nearby = pickSquadDiffEntries(huge, 16, { hasNext: true, cap: 24 });
+  assert.equal(nearby.length, 24);
+  assert.equal(nearby.includes(16), false);
+  assert.ok(nearby.includes(4) && nearby.includes(28));
+  assert.equal(nearby.includes(50), false);
 
   console.log("mini-league-window-self-test: ok");
 }
