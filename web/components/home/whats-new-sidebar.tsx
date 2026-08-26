@@ -275,7 +275,11 @@ export function WhatsNewSidebar() {
             {t("whatsNewHint")}
           </p>
         </div>
-        <ShareButton compact path="/" title={shareTitle} />
+        <ShareButton
+          compact
+          path="/fpl/insights/price-changes"
+          title={shareTitle}
+        />
       </div>
 
       <div className="px-4 py-2">
