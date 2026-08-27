@@ -732,7 +732,13 @@ function FfscoutArticlesSection() {
   );
 }
 
-export function HomeSeasonSections() {
+export function HomeSeasonHubLayout({
+  sidebar,
+  footer,
+}: {
+  sidebar: ReactNode;
+  footer?: ReactNode;
+}) {
   const t = useTranslations("home");
   const { entryId } = useEntryId();
   const { data, loading, error } = useTeamSummary();
@@ -823,94 +829,106 @@ export function HomeSeasonSections() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
-      <PerformanceBlock
-        entryId={entryId}
-        data={data}
-        loading={loading}
-        error={error}
-      />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(20rem,24rem)] xl:grid-cols-[minmax(0,1fr)_26rem]">
+      <div className="order-1 flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
+        <PerformanceBlock
+          entryId={entryId}
+          data={data}
+          loading={loading}
+          error={error}
+        />
+      </div>
 
-      <FfscoutArticlesSection />
+      <div className="order-2 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:self-start">
+        {sidebar}
+      </div>
 
-      <SquadHealthBlock
-        entryId={entryId}
-        data={data}
-        loading={loading}
-        error={error}
-      />
+      <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
+        <FfscoutArticlesSection />
+      </div>
 
-      <SectionShell
-        eyebrow={t("seasonToolsEyebrow")}
-        title={t("seasonToolsTitle")}
-        description={t("seasonToolsDescription")}
-      >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <ToolGroup
-            title={t("seasonToolsManage")}
-            items={manageTop}
-            footer={
-              <>
-                <PlanBuildCard
-                  title={t("seasonToolPlanBuild")}
-                  body={t("seasonToolPlanBuildBody")}
-                  plannerHref={entryId ? `/planner/${entryId}` : "/planner"}
-                  plannerLabel={t("fplOpenPlanner")}
-                  builderHref="/squad-builder"
-                  builderLabel={t("fplOpenSquadBuilder")}
-                />
-                {manageBottom.map((item) => (
-                  <div
-                    key={item.href}
-                    className="border-t border-border/50 last:border-0"
-                  >
-                    <Link
-                      href={item.href}
-                      className="group flex items-start justify-between gap-3 px-3.5 py-2.5 no-underline transition-colors hover:bg-muted/40"
+      <div className="order-4 flex flex-col gap-8 lg:col-start-1 lg:row-start-3">
+        <SquadHealthBlock
+          entryId={entryId}
+          data={data}
+          loading={loading}
+          error={error}
+        />
+
+        <SectionShell
+          eyebrow={t("seasonToolsEyebrow")}
+          title={t("seasonToolsTitle")}
+          description={t("seasonToolsDescription")}
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ToolGroup
+              title={t("seasonToolsManage")}
+              items={manageTop}
+              footer={
+                <>
+                  <PlanBuildCard
+                    title={t("seasonToolPlanBuild")}
+                    body={t("seasonToolPlanBuildBody")}
+                    plannerHref={entryId ? `/planner/${entryId}` : "/planner"}
+                    plannerLabel={t("fplOpenPlanner")}
+                    builderHref="/squad-builder"
+                    builderLabel={t("fplOpenSquadBuilder")}
+                  />
+                  {manageBottom.map((item) => (
+                    <div
+                      key={item.href}
+                      className="border-t border-border/50 last:border-0"
                     >
-                      <span>
-                        <span className="block text-sm font-medium text-foreground group-hover:text-brand-accent">
-                          {item.label}
+                      <Link
+                        href={item.href}
+                        className="group flex items-start justify-between gap-3 px-3.5 py-2.5 no-underline transition-colors hover:bg-muted/40"
+                      >
+                        <span>
+                          <span className="block text-sm font-medium text-foreground group-hover:text-brand-accent">
+                            {item.label}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {item.body}
+                          </span>
                         </span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {item.body}
+                        <span className="shrink-0 pt-0.5 text-muted-foreground group-hover:text-brand-accent">
+                          →
                         </span>
-                      </span>
-                      <span className="shrink-0 pt-0.5 text-muted-foreground group-hover:text-brand-accent">
-                        →
-                      </span>
-                    </Link>
-                  </div>
-                ))}
-              </>
-            }
-          />
-          <ToolGroup title={t("seasonToolsDecide")} items={decideTools} />
-          <ToolGroup title={t("seasonToolsLearn")} items={learnTools} />
-        </div>
-      </SectionShell>
+                      </Link>
+                    </div>
+                  ))}
+                </>
+              }
+            />
+            <ToolGroup title={t("seasonToolsDecide")} items={decideTools} />
+            <ToolGroup title={t("seasonToolsLearn")} items={learnTools} />
+          </div>
+        </SectionShell>
 
-      <SectionShell
-        eyebrow={t("seasonStatsEyebrow")}
-        title={t("seasonStatsTitle")}
-        titleHref="/fpl/insights"
-        description={t("seasonStatsDescription")}
-      >
-        <div className="grid gap-2 sm:grid-cols-2">
-          {statsItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group rounded-xl border border-border bg-card/40 px-3.5 py-3 no-underline transition-colors hover:border-brand-accent/40 hover:bg-muted/30"
-            >
-              <p className="text-sm font-medium text-foreground group-hover:text-brand-accent">
-                {item.label}
-              </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{item.body}</p>
-            </Link>
-          ))}
-        </div>
-      </SectionShell>
+        <SectionShell
+          eyebrow={t("seasonStatsEyebrow")}
+          title={t("seasonStatsTitle")}
+          titleHref="/fpl/insights"
+          description={t("seasonStatsDescription")}
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            {statsItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group rounded-xl border border-border bg-card/40 px-3.5 py-3 no-underline transition-colors hover:border-brand-accent/40 hover:bg-muted/30"
+              >
+                <p className="text-sm font-medium text-foreground group-hover:text-brand-accent">
+                  {item.label}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.body}</p>
+              </Link>
+            ))}
+          </div>
+        </SectionShell>
+
+        {footer}
+      </div>
     </div>
   );
 }

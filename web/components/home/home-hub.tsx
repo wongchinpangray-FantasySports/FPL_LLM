@@ -9,7 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HomeGuestLanding } from "@/components/home/home-guest-landing";
 import { DeadlineCountdown } from "@/components/home/deadline-countdown";
-import { HomeSeasonSections } from "@/components/home/home-season-hub";
+import { HomeSeasonHubLayout } from "@/components/home/home-season-hub";
 import { MatchdayTicker } from "@/components/home/matchday-ticker";
 import { WhatsNewSidebar } from "@/components/home/whats-new-sidebar";
 import type { HomeHubData, HomeMatchSnippet, TodayTickerItem } from "@/lib/home/hub-data";
@@ -1152,19 +1152,14 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         </Link>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(20rem,24rem)] xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="flex flex-col gap-5">
-          <HomeSeasonSections />
-
-          {hubError ? (
+      <HomeSeasonHubLayout
+        sidebar={<WhatsNewSidebar />}
+        footer={
+          hubError ? (
             <p className="text-xs text-muted-foreground">{hubError}</p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <WhatsNewSidebar />
-        </div>
-      </div>
+          ) : null
+        }
+      />
     </div>
   );
 }

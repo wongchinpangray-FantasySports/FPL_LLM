@@ -6,6 +6,10 @@
 import { unstable_cache } from "next/cache";
 import { fplGet } from "@/lib/fpl";
 import { shanghaiDateIso } from "@/lib/fpl/wechat-daily-card";
+import {
+  dailyPriceDeltaTenths,
+  priceMapFromBootstrap,
+} from "@/lib/fpl/daily-price-snapshot";
 import { getServerSupabase } from "@/lib/supabase";
 import { listPublishedScoutArticles } from "@/lib/scout/store";
 import { withIsolateCache } from "@/lib/worker-isolate-cache";
@@ -81,7 +85,7 @@ type BootstrapElement = {
   news?: string;
   chance_of_playing_this_round?: number | null;
   chance_of_playing_next_round?: number | null;
-  cost_change_event?: number;
+  now_cost?: number;
 };
 
 type BootstrapTeam = {
@@ -105,6 +109,7 @@ function dateLabelFromIso(iso: string): string {
 function buildFromBootstrap(
   elements: BootstrapElement[],
   teamsById: Map<number, BootstrapTeam>,
+  dailyDeltaTenths: Map<number, number>,
 ): { prices: WhatsNewPriceItem[]; injuries: WhatsNewInjuryItem[] } {
   const prices: WhatsNewPriceItem[] = [];
   const injuries: WhatsNewInjuryItem[] = [];
@@ -116,8 +121,8 @@ function buildFromBootstrap(
     const name = el.web_name?.trim() || `#${el.id}`;
     const href = `/player/${el.id}`;
 
-    const deltaTenths = num(el.cost_change_event) ?? 0;
-    if (deltaTenths !== 0) {
+    const deltaTenths = dailyDeltaTenths.get(el.id);
+    if (deltaTenths != null && deltaTenths !== 0) {
       const delta = Math.round(deltaTenths) / 10;
       prices.push({
         kind: "price",
@@ -173,7 +178,10 @@ async function loadFromLiveBootstrap(): Promise<{
     const teamsById = new Map(
       (raw.teams ?? []).map((t) => [t.id, t] as const),
     );
-    return buildFromBootstrap(elements, teamsById);
+    const dailyDeltaTenths = await dailyPriceDeltaTenths(
+      priceMapFromBootstrap(elements),
+    );
+    return buildFromBootstrap(elements, teamsById, dailyDeltaTenths);
   } catch {
     return null;
   }
@@ -318,12 +326,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v2"], {
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v3"], {
   revalidate: 180,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v2", 180_000, () =>
+  return withIsolateCache("home-whats-new-v3", 180_000, () =>
     loadWhatsNewCached(),
   );
 }
