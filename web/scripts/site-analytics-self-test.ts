@@ -4,7 +4,7 @@ import {
   normalizeTrackedPath,
   shouldSkipTracking,
 } from "../lib/analytics/features";
-import { aggregateSiteActivity, rangeWindow, utcDay } from "../lib/analytics/stats";
+import { aggregateSiteActivity, percentChange, previousRangeWindow, rangeWindow, utcDay } from "../lib/analytics/stats";
 import type { SiteEventRow } from "../lib/analytics/types";
 
 function testPathMapping() {
@@ -35,6 +35,17 @@ function testRangeWindow() {
   const w30 = rangeWindow(30, now);
   assert.equal(utcDay(w30.from), "2026-07-28");
   assert.equal(rangeWindow(12, now).days, 30);
+}
+
+function testPercentChange() {
+  assert.equal(percentChange(120, 100), 20);
+  assert.equal(percentChange(80, 100), -20);
+  assert.equal(percentChange(0, 0), 0);
+  assert.equal(percentChange(10, 0), null);
+  const now = new Date("2026-08-26T12:00:00.000Z");
+  const prev = previousRangeWindow(7, now);
+  assert.equal(utcDay(prev.from), "2026-08-13");
+  assert.equal(utcDay(prev.to), "2026-08-20");
 }
 
 function testAggregate() {
@@ -126,5 +137,6 @@ function testAggregate() {
 
 testPathMapping();
 testRangeWindow();
+testPercentChange();
 testAggregate();
 console.log("site-analytics-self-test: ok");

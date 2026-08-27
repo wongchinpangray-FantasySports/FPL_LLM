@@ -3,6 +3,7 @@ import { isMissingSiteEventsTable } from "@/lib/analytics/store";
 import type {
   SiteActivityStats,
   SiteDailyPoint,
+  SiteDeltas,
   SiteEventRow,
   SiteFeature,
   SiteFeatureStat,
@@ -42,6 +43,55 @@ export function rangeWindow(
     to.getUTCDate() - (safeDays - 1),
   ));
   return { from: from.toISOString(), to: to.toISOString(), days: safeDays };
+}
+
+export function previousRangeWindow(
+  days: number,
+  now = new Date(),
+): { from: string; to: string; days: number } {
+  const current = rangeWindow(days, now);
+  const start = new Date(current.from);
+  const from = new Date(Date.UTC(
+    start.getUTCFullYear(),
+    start.getUTCMonth(),
+    start.getUTCDate() - current.days,
+  ));
+  return { from: from.toISOString(), to: current.from, days: current.days };
+}
+
+/** Percent change vs the previous equal-length window. Null if there is no baseline. */
+export function percentChange(current: number, previous: number): number | null {
+  if (previous === 0) return current === 0 ? 0 : null;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+const EMPTY_DELTAS: SiteDeltas = {
+  pageviews: null,
+  unique_visitors: null,
+  signed_in_visitors: null,
+  avg_views_per_visitor: null,
+  new_users: null,
+  total_users: null,
+  dau: null,
+  wau: null,
+  mau: null,
+  onboarded_users: null,
+  fpl_linked_users: null,
+  pro_users: null,
+  multi_day_visitors: null,
+};
+
+function emptyProducts(): SiteProductCounts {
+  return {
+    squad_builder_drafts: 0,
+    chat_sessions: 0,
+    chat_messages: 0,
+    mini_entries: 0,
+    mini_profiles: 0,
+    share_links: 0,
+    share_views: 0,
+    scout_pageviews: 0,
+  };
 }
 
 function emptyDays(fromIso: string, days: number): SiteDailyPoint[] {
@@ -250,6 +300,7 @@ export function aggregateSiteActivity(input: {
       users: buckets[bucket],
     })),
     products,
+    deltas: EMPTY_DELTAS,
   };
 }
 
@@ -259,6 +310,90 @@ function withStickiness(stats: SiteActivityStats): SiteActivityStats {
       ? Math.round((stats.active_today / stats.active_30d) * 100)
       : 0;
   return { ...stats, stickiness };
+}
+
+function snapshotBefore(
+  profiles: ProfileSnap[],
+  cutoffIso: string,
+): {
+  total: number;
+  onboarded: number;
+  fplLinked: number;
+  pro: number;
+  active7d: number;
+  active30d: number;
+} {
+  const cutoff = utcDay(cutoffIso);
+  const d7 = utcDay(new Date(Date.parse(cutoffIso) - 6 * 86400000));
+  const d30 = utcDay(new Date(Date.parse(cutoffIso) - 29 * 86400000));
+  let total = 0;
+  let onboarded = 0;
+  let fplLinked = 0;
+  let pro = 0;
+  let active7d = 0;
+  let active30d = 0;
+  for (const p of profiles) {
+    const created = utcDay(p.created_at);
+    if (!created || created >= cutoff) continue;
+    total += 1;
+    if (p.onboarding_completed_at && utcDay(p.onboarding_completed_at) < cutoff) {
+      onboarded += 1;
+    }
+    if (p.fpl_entry_id != null) fplLinked += 1;
+    if (p.insights_plan === "premium") pro += 1;
+    const last = p.last_login_date ? String(p.last_login_date).slice(0, 10) : "";
+    if (last && last < cutoff && last >= d7) active7d += 1;
+    if (last && last < cutoff && last >= d30) active30d += 1;
+  }
+  return { total, onboarded, fplLinked, pro, active7d, active30d };
+}
+
+function withDeltas(
+  current: SiteActivityStats,
+  previous: SiteActivityStats | null,
+  profiles: ProfileSnap[],
+): SiteActivityStats {
+  const prior = snapshotBefore(profiles, current.from);
+  const prevDay = current.daily.at(-2)?.visitors ?? null;
+  const lastDay = current.daily.at(-1)?.visitors ?? null;
+  const deltas: SiteDeltas = {
+    ...EMPTY_DELTAS,
+    total_users: percentChange(current.total_users, prior.total),
+    onboarded_users: percentChange(current.onboarded_users, prior.onboarded),
+    fpl_linked_users: percentChange(current.fpl_linked_users, prior.fplLinked),
+    pro_users: percentChange(current.pro_users, prior.pro),
+    wau: percentChange(current.wau, prior.active7d),
+    mau: percentChange(current.mau, prior.active30d),
+    dau:
+      prevDay != null && lastDay != null
+        ? percentChange(lastDay, prevDay)
+        : null,
+  };
+  if (!previous) return { ...current, deltas };
+  return {
+    ...current,
+    deltas: {
+      ...deltas,
+      pageviews: percentChange(current.pageviews, previous.pageviews),
+      unique_visitors: percentChange(
+        current.unique_visitors,
+        previous.unique_visitors,
+      ),
+      signed_in_visitors: percentChange(
+        current.signed_in_visitors,
+        previous.signed_in_visitors,
+      ),
+      avg_views_per_visitor: percentChange(
+        current.avg_views_per_visitor,
+        previous.avg_views_per_visitor,
+      ),
+      new_users: percentChange(current.new_users, previous.new_users),
+      multi_day_visitors: percentChange(
+        current.multi_day_visitors,
+        previous.multi_day_visitors,
+      ),
+    },
+  };
 }
 
 async function fetchAllProfiles(): Promise<ProfileSnap[]> {
@@ -401,12 +536,14 @@ export async function loadSiteActivityStats(opts: {
   days: number;
 }): Promise<SiteActivityStats> {
   const window = rangeWindow(opts.days);
-  const [profiles, events, products] = await Promise.all([
+  const prev = previousRangeWindow(opts.days);
+  const [profiles, events, products, prevEvents] = await Promise.all([
     fetchAllProfiles(),
     fetchSiteEvents(window.from, window.to),
     loadProductCounts(window.from, window.to),
+    fetchSiteEvents(prev.from, prev.to),
   ]);
-  return withStickiness(
+  const current = withStickiness(
     aggregateSiteActivity({
       from: window.from,
       to: window.to,
@@ -418,4 +555,18 @@ export async function loadSiteActivityStats(opts: {
       tableMissing: events.tableMissing,
     }),
   );
+  if (events.tableMissing || prevEvents.tableMissing) {
+    return withDeltas(current, null, profiles);
+  }
+  const previous = aggregateSiteActivity({
+    from: prev.from,
+    to: prev.to,
+    days: prev.days,
+    events: prevEvents.rows,
+    profiles,
+    products: emptyProducts(),
+    truncated: prevEvents.truncated,
+    tableMissing: prevEvents.tableMissing,
+  });
+  return withDeltas(current, previous, profiles);
 }

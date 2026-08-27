@@ -86,6 +86,22 @@ export type SiteProductCounts = {
   scout_pageviews: number;
 };
 
+export type SiteDeltas = {
+  pageviews: number | null;
+  unique_visitors: number | null;
+  signed_in_visitors: number | null;
+  avg_views_per_visitor: number | null;
+  new_users: number | null;
+  total_users: number | null;
+  dau: number | null;
+  wau: number | null;
+  mau: number | null;
+  onboarded_users: number | null;
+  fpl_linked_users: number | null;
+  pro_users: number | null;
+  multi_day_visitors: number | null;
+};
+
 export type SiteActivityStats = {
   from: string;
   to: string;
@@ -116,4 +132,5 @@ export type SiteActivityStats = {
   features: SiteFeatureStat[];
   login_buckets: SiteLoginBucket[];
   products: SiteProductCounts;
+  deltas: SiteDeltas;
 };

@@ -15,10 +15,12 @@ function StatCard({
   label,
   value,
   hint,
+  delta,
 }: {
   label: string;
   value: number | string;
   hint?: string;
+  delta?: number | null;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card/50 p-3">
@@ -28,10 +30,47 @@ function StatCard({
       <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
         {value}
       </p>
+      <DeltaLabel delta={delta} current={typeof value === "number" ? value : null} />
       {hint ? (
         <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
       ) : null}
     </div>
+  );
+}
+
+function DeltaLabel({
+  delta,
+  current,
+}: {
+  delta?: number | null;
+  current?: number | null;
+}) {
+  const t = useTranslations("adminScout.activity");
+  if (delta === undefined) return null;
+  if (delta === null) {
+    if (current != null && current > 0) {
+      return (
+        <p className="mt-0.5 text-[11px] font-medium text-amber-400">
+          {t("deltaNew")}
+        </p>
+      );
+    }
+    return null;
+  }
+  const up = delta > 0;
+  const down = delta < 0;
+  return (
+    <p
+      className={cn(
+        "mt-0.5 text-[11px] font-medium tabular-nums",
+        up && "text-emerald-400",
+        down && "text-rose-400",
+        !up && !down && "text-muted-foreground",
+      )}
+    >
+      {up ? "+" : ""}
+      {delta}% {t("vsPrevious")}
+    </p>
   );
 }
 
@@ -61,15 +100,15 @@ function DailyChart({
     <div>
       <div className="mb-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-brand-accent" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#00ff87]" />
           {labels.views}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-sky-400/80" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
           {labels.visitors}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-emerald-400/80" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
           {labels.joiners}
         </span>
       </div>
@@ -82,15 +121,15 @@ function DailyChart({
           >
             <div className="flex h-32 w-full items-end justify-center gap-px">
               <div
-                className="w-[40%] max-w-[10px] rounded-t bg-brand-accent/85"
+                className="w-[40%] max-w-[10px] rounded-t bg-[#00ff87]"
                 style={{ height: `${Math.max(d.pageviews ? 4 : 0, (d.pageviews / max) * 100)}%` }}
               />
               <div
-                className="w-[30%] max-w-[8px] rounded-t bg-sky-400/80"
+                className="w-[30%] max-w-[8px] rounded-t bg-amber-400"
                 style={{ height: `${Math.max(d.visitors ? 3 : 0, (d.visitors / max) * 100)}%` }}
               />
               <div
-                className="w-[25%] max-w-[7px] rounded-t bg-emerald-400/80"
+                className="w-[25%] max-w-[7px] rounded-t bg-violet-400"
                 style={{ height: `${Math.max(d.new_users ? 3 : 0, (d.new_users / max) * 100)}%` }}
               />
             </div>
@@ -115,9 +154,13 @@ function DailyChart({
 function FeatureBar({
   features,
   labelFor,
+  viewsLabel,
+  visitorsLabel,
 }: {
   features: SiteActivityStats["features"];
   labelFor: (feature: SiteFeature) => string;
+  viewsLabel: string;
+  visitorsLabel: string;
 }) {
   const max = Math.max(1, ...features.map((f) => f.pageviews));
   if (features.length === 0) return null;
@@ -127,13 +170,21 @@ function FeatureBar({
         <div key={row.feature}>
           <div className="mb-0.5 flex items-baseline justify-between gap-2 text-sm">
             <span className="truncate font-medium">{labelFor(row.feature)}</span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
-              {row.pageviews} · {row.visitors}
+            <span className="shrink-0 text-right text-[11px] leading-snug text-muted-foreground">
+              <span className="tabular-nums text-foreground">
+                {row.pageviews}
+              </span>{" "}
+              {viewsLabel}
+              <span className="mx-1 text-border">|</span>
+              <span className="tabular-nums text-foreground">
+                {row.visitors}
+              </span>{" "}
+              {visitorsLabel}
             </span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-brand-accent/80"
+              className="h-full rounded-full bg-[#00ff87]/80"
               style={{ width: `${Math.max(4, (row.pageviews / max) * 100)}%` }}
             />
           </div>
@@ -247,16 +298,26 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
           <div>
             <h3 className="mb-2 text-sm font-medium">{t("sectionTraffic")}</h3>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <StatCard label={t("kpiPageviews")} value={stats.pageviews} />
-              <StatCard label={t("kpiVisitors")} value={stats.unique_visitors} />
+              <StatCard
+                label={t("kpiPageviews")}
+                value={stats.pageviews}
+                delta={stats.deltas?.pageviews}
+              />
+              <StatCard
+                label={t("kpiVisitors")}
+                value={stats.unique_visitors}
+                delta={stats.deltas?.unique_visitors}
+              />
               <StatCard
                 label={t("kpiSignedIn")}
                 value={stats.signed_in_visitors}
                 hint={t("kpiSignedInHint", { n: stats.signed_in_pageviews })}
+                delta={stats.deltas?.signed_in_visitors}
               />
               <StatCard
                 label={t("kpiViewsPerVisitor")}
                 value={stats.avg_views_per_visitor}
+                delta={stats.deltas?.avg_views_per_visitor}
               />
             </div>
           </div>
@@ -264,33 +325,50 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
           <div>
             <h3 className="mb-2 text-sm font-medium">{t("sectionUsers")}</h3>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <StatCard label={t("kpiTotalUsers")} value={stats.total_users} />
-              <StatCard label={t("kpiNewUsers")} value={stats.new_users} />
+              <StatCard
+                label={t("kpiTotalUsers")}
+                value={stats.total_users}
+                delta={stats.deltas?.total_users}
+              />
+              <StatCard
+                label={t("kpiNewUsers")}
+                value={stats.new_users}
+                delta={stats.deltas?.new_users}
+              />
               <StatCard
                 label={t("kpiDau")}
                 value={stats.dau}
                 hint={t("kpiDauHint")}
+                delta={stats.deltas?.dau}
               />
               <StatCard
                 label={t("kpiWau")}
                 value={stats.wau}
                 hint={t("kpiMauHint", { n: stats.mau, pct: stats.stickiness })}
+                delta={stats.deltas?.wau}
               />
               <StatCard
                 label={t("kpiOnboarded")}
                 value={stats.onboarded_users}
                 hint={onboardedPct}
+                delta={stats.deltas?.onboarded_users}
               />
               <StatCard
                 label={t("kpiFplLinked")}
                 value={stats.fpl_linked_users}
                 hint={linkedPct}
+                delta={stats.deltas?.fpl_linked_users}
               />
-              <StatCard label={t("kpiPro")} value={stats.pro_users} />
+              <StatCard
+                label={t("kpiPro")}
+                value={stats.pro_users}
+                delta={stats.deltas?.pro_users}
+              />
               <StatCard
                 label={t("kpiReturning")}
                 value={stats.multi_day_visitors}
                 hint={t("kpiReturningHint", { n: stats.single_day_visitors })}
+                delta={stats.deltas?.multi_day_visitors}
               />
             </div>
           </div>
@@ -317,7 +395,12 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
               {stats.features.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noPageviews")}</p>
               ) : (
-                <FeatureBar features={stats.features} labelFor={featureLabel} />
+                <FeatureBar
+                  features={stats.features}
+                  labelFor={featureLabel}
+                  viewsLabel={t("featureViews")}
+                  visitorsLabel={t("featureVisitors")}
+                />
               )}
             </div>
 
