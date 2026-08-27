@@ -8,6 +8,7 @@ import { fplGet } from "@/lib/fpl";
 import { shanghaiDateIso } from "@/lib/fpl/wechat-daily-card";
 import {
   dailyPriceDeltaTenths,
+  eventDeltaMapFromBootstrap,
   priceMapFromBootstrap,
 } from "@/lib/fpl/daily-price-snapshot";
 import { getServerSupabase } from "@/lib/supabase";
@@ -86,6 +87,7 @@ type BootstrapElement = {
   chance_of_playing_this_round?: number | null;
   chance_of_playing_next_round?: number | null;
   now_cost?: number;
+  cost_change_event?: number;
 };
 
 type BootstrapTeam = {
@@ -180,6 +182,7 @@ async function loadFromLiveBootstrap(): Promise<{
     );
     const dailyDeltaTenths = await dailyPriceDeltaTenths(
       priceMapFromBootstrap(elements),
+      eventDeltaMapFromBootstrap(elements),
     );
     return buildFromBootstrap(elements, teamsById, dailyDeltaTenths);
   } catch {
@@ -326,12 +329,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v3"], {
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v4"], {
   revalidate: 180,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v3", 180_000, () =>
+  return withIsolateCache("home-whats-new-v4", 180_000, () =>
     loadWhatsNewCached(),
   );
 }
