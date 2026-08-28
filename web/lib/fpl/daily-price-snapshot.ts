@@ -1,22 +1,22 @@
 import { Redis } from "@upstash/redis";
-import { shanghaiDateIso } from "@/lib/fpl/wechat-daily-card";
+import {
+  shanghaiDateIso,
+  shanghaiYesterdayIso,
+} from "@/lib/fpl/wechat-daily-card";
 
 /** FPL bootstrap `now_cost` (tenths of £m) keyed by player id. */
 export type PriceSnapshot = Record<number, number>;
 
-type StickyFeed = {
-  /** Shanghai date when these moves were last detected. */
-  date: string;
-  /** Player id → delta in tenths of £m. */
+type DayFeed = {
+  /** Player id → delta in tenths of £m vs that day's opening snapshot. */
   deltas: Record<string, number>;
 };
 
-const TTL_SEC = 14 * 24 * 60 * 60;
-const SEEN_KEY = "fpl:price-seen-v2";
-const FEED_KEY = "fpl:price-daily-feed-v2";
+const TTL_SEC = 8 * 24 * 60 * 60;
 
-const memorySeen = new Map<string, PriceSnapshot>();
-const memoryFeed = new Map<string, StickyFeed>();
+const memoryOpen = new Map<string, PriceSnapshot>();
+const memoryClose = new Map<string, PriceSnapshot>();
+const memoryFeed = new Map<string, DayFeed>();
 
 function redis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -25,50 +25,93 @@ function redis(): Redis | null {
   return new Redis({ url, token });
 }
 
+function openKey(date: string): string {
+  return `fpl:price-open-v3:${date}`;
+}
+
+function closeKey(date: string): string {
+  return `fpl:price-close-v3:${date}`;
+}
+
+function feedKey(date: string): string {
+  return `fpl:price-feed-v3:${date}`;
+}
+
 function asSnapshot(raw: unknown): PriceSnapshot | null {
   if (!raw || typeof raw !== "object") return null;
   return raw as PriceSnapshot;
 }
 
-function asFeed(raw: unknown): StickyFeed | null {
+function asFeed(raw: unknown): DayFeed | null {
   if (!raw || typeof raw !== "object") return null;
-  const row = raw as StickyFeed;
-  if (!row.date || typeof row.deltas !== "object" || !row.deltas) return null;
+  const row = raw as DayFeed;
+  if (typeof row.deltas !== "object" || !row.deltas) return null;
   return row;
 }
 
-async function loadSeen(): Promise<PriceSnapshot | null> {
-  const mem = memorySeen.get(SEEN_KEY);
+async function loadSnapshot(
+  store: Map<string, PriceSnapshot>,
+  key: string,
+): Promise<PriceSnapshot | null> {
+  const mem = store.get(key);
   if (mem) return mem;
   const r = redis();
   if (!r) return null;
-  const raw = asSnapshot(await r.get(SEEN_KEY));
-  if (raw) memorySeen.set(SEEN_KEY, raw);
+  const raw = asSnapshot(await r.get(key));
+  if (raw) store.set(key, raw);
   return raw;
 }
 
-async function saveSeen(prices: PriceSnapshot): Promise<void> {
-  memorySeen.set(SEEN_KEY, prices);
+async function saveSnapshot(
+  store: Map<string, PriceSnapshot>,
+  key: string,
+  prices: PriceSnapshot,
+): Promise<void> {
+  store.set(key, prices);
   const r = redis();
   if (!r) return;
-  await r.set(SEEN_KEY, prices, { ex: TTL_SEC });
+  await r.set(key, prices, { ex: TTL_SEC });
 }
 
-async function loadFeed(): Promise<StickyFeed | null> {
-  const mem = memoryFeed.get(FEED_KEY);
+/** First observation of a Shanghai calendar day — pre-change baseline when captured early. */
+async function ensureOpenSnapshot(
+  date: string,
+  prices: PriceSnapshot,
+): Promise<void> {
+  const key = openKey(date);
+  if (memoryOpen.has(key)) return;
+
+  const r = redis();
+  if (r) {
+    const created = await r.setnx(key, prices);
+    if (created) await r.expire(key, TTL_SEC);
+    if (created) memoryOpen.set(key, prices);
+    return;
+  }
+
+  if (!memoryOpen.has(key)) {
+    memoryOpen.set(key, prices);
+  }
+}
+
+async function loadFeed(date: string): Promise<DayFeed | null> {
+  const key = feedKey(date);
+  const mem = memoryFeed.get(key);
   if (mem) return mem;
   const r = redis();
   if (!r) return null;
-  const raw = asFeed(await r.get(FEED_KEY));
-  if (raw) memoryFeed.set(FEED_KEY, raw);
+  const raw = asFeed(await r.get(key));
+  if (raw) memoryFeed.set(key, raw);
   return raw;
 }
 
-async function saveFeed(feed: StickyFeed): Promise<void> {
-  memoryFeed.set(FEED_KEY, feed);
+async function saveFeed(date: string, deltas: Map<number, number>): Promise<void> {
+  const feed: DayFeed = { deltas: mapToRecord(deltas) };
+  const key = feedKey(date);
+  memoryFeed.set(key, feed);
   const r = redis();
   if (!r) return;
-  await r.set(FEED_KEY, feed, { ex: TTL_SEC });
+  await r.set(key, feed, { ex: TTL_SEC });
 }
 
 function computeDeltas(
@@ -86,7 +129,7 @@ function computeDeltas(
   return deltas;
 }
 
-function feedToMap(feed: StickyFeed | null): Map<number, number> {
+function feedToMap(feed: DayFeed | null): Map<number, number> {
   const out = new Map<number, number>();
   if (!feed) return out;
   for (const [idStr, delta] of Object.entries(feed.deltas)) {
@@ -104,6 +147,22 @@ function mapToRecord(deltas: Map<number, number>): Record<string, number> {
   return out;
 }
 
+function pickBaseline(
+  current: PriceSnapshot,
+  open: PriceSnapshot | null,
+  yesterdayClose: PriceSnapshot | null,
+): PriceSnapshot | null {
+  if (open && Object.keys(open).length > 0) {
+    const vsOpen = computeDeltas(current, open);
+    if (vsOpen.size > 0) return open;
+    // Open may have been captured after today's window — try yesterday close.
+  }
+  if (yesterdayClose && Object.keys(yesterdayClose).length > 0) {
+    return yesterdayClose;
+  }
+  return open;
+}
+
 export function priceMapFromBootstrap(
   elements: { id: number; now_cost?: number }[],
 ): PriceSnapshot {
@@ -115,79 +174,40 @@ export function priceMapFromBootstrap(
   return out;
 }
 
-export function eventDeltaMapFromBootstrap(
-  elements: { id: number; cost_change_event?: number }[],
-): Map<number, number> {
-  const out = new Map<number, number>();
-  for (const el of elements) {
-    const delta = Number(el.cost_change_event);
-    if (!Number.isFinite(delta) || delta === 0) continue;
-    out.set(el.id, delta);
-  }
-  return out;
-}
-
 /**
- * Sticky daily price deltas for the home sidebar.
+ * Today's price movers only (Asia/Shanghai calendar day).
  *
- * When live prices move vs the last-seen snapshot, replace the feed with those
- * movers and stamp today's Shanghai date. Until the next non-zero move set
- * arrives, keep returning the previous feed (so today's rises/falls stay
- * visible overnight and into the next morning).
- *
- * If the feed is empty (e.g. first deploy after prices already moved), seed once
- * from FPL `cost_change_event` so the sidebar is not blank; the next real price
- * window replaces that seed with true day-to-day deltas.
+ * Compare live prices to this morning's opening snapshot (first request of the
+ * day), falling back to yesterday's closing prices when the open was captured
+ * too late. Persist the detected set under today's date so it stays visible
+ * for the rest of the day. A new calendar day starts empty until today's price
+ * window — yesterday's list is never carried over.
  */
 export async function dailyPriceDeltaTenths(
   current: PriceSnapshot,
-  eventSeed?: Map<number, number>,
 ): Promise<Map<number, number>> {
   const today = shanghaiDateIso();
-  const [seen, feed] = await Promise.all([loadSeen(), loadFeed()]);
+  const yesterday = shanghaiYesterdayIso();
 
-  if (!seen) {
-    await saveSeen(current);
-    if (feed && Object.keys(feed.deltas).length > 0) {
-      return feedToMap(feed);
+  await Promise.all([
+    ensureOpenSnapshot(today, current),
+    saveSnapshot(memoryClose, closeKey(today), current),
+  ]);
+
+  const [todayOpen, yesterdayClose] = await Promise.all([
+    loadSnapshot(memoryOpen, openKey(today)),
+    loadSnapshot(memoryClose, closeKey(yesterday)),
+  ]);
+
+  const baseline = pickBaseline(current, todayOpen, yesterdayClose);
+  if (baseline) {
+    const fresh = computeDeltas(current, baseline);
+    if (fresh.size > 0) {
+      await saveFeed(today, fresh);
+      return fresh;
     }
-    if (eventSeed && eventSeed.size > 0) {
-      const seeded: StickyFeed = {
-        date: today,
-        deltas: mapToRecord(eventSeed),
-      };
-      await saveFeed(seeded);
-      return new Map(eventSeed);
-    }
-    return new Map();
   }
 
-  const fresh = computeDeltas(current, seen);
-  if (fresh.size > 0) {
-    const next: StickyFeed = {
-      date: today,
-      deltas: mapToRecord(fresh),
-    };
-    await Promise.all([saveFeed(next), saveSeen(current)]);
-    return fresh;
-  }
-
-  // No new moves — keep last-seen in sync and keep showing the sticky feed.
-  await saveSeen(current);
-
-  if (feed && Object.keys(feed.deltas).length > 0) {
-    return feedToMap(feed);
-  }
-
-  // Feed never captured (missed baseline) — one-time event seed.
-  if (eventSeed && eventSeed.size > 0) {
-    const seeded: StickyFeed = {
-      date: today,
-      deltas: mapToRecord(eventSeed),
-    };
-    await saveFeed(seeded);
-    return new Map(eventSeed);
-  }
-
-  return new Map();
+  // Same-day sticky feed only — never reuse yesterday's movers.
+  return feedToMap(await loadFeed(today));
 }
