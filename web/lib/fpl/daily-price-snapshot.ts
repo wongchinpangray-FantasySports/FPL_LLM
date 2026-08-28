@@ -5,51 +5,86 @@ import {
 } from "@/lib/fpl/wechat-daily-card";
 
 /** FPL bootstrap `now_cost` (tenths of £m) keyed by player id. */
-export type PriceSnapshot = Record<number, number>;
+export type PriceSnapshot = Record<string, number>;
 
 type DayFeed = {
   deltas: Record<string, number>;
 };
 
+/** Compact snapshot: [[id, costTenths], ...] — much smaller than a keyed object. */
+type CompactSnapshot = [number, number][];
+
 const TTL_SEC = 10 * 24 * 60 * 60;
-const LAST_SEEN_KEY = "fpl:price-last-seen-v4";
-const LAST_SEEN_LEGACY = "fpl:price-seen-v2";
+const CLOSE_WRITE_MIN_MS = 30 * 60 * 1000;
 
 const memoryOpen = new Map<string, PriceSnapshot>();
 const memoryClose = new Map<string, PriceSnapshot>();
 const memoryFeed = new Map<string, DayFeed>();
-let memoryLastSeen: PriceSnapshot | null = null;
+let lastCloseWriteAt = 0;
 
 function redis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  return new Redis({ url, token });
+  try {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return null;
+    return new Redis({ url, token });
+  } catch {
+    return null;
+  }
 }
 
 function openKey(date: string): string {
-  return `fpl:price-open-v4:${date}`;
+  return `fpl:px-open-v5:${date}`;
 }
 
 function closeKey(date: string): string {
-  return `fpl:price-close-v4:${date}`;
+  return `fpl:px-close-v5:${date}`;
 }
 
 function closeKeyLegacy(date: string): string {
-  return `fpl:price-close-v3:${date}`;
-}
-
-function feedKeyLegacy(date: string): string {
-  return `fpl:price-feed-v3:${date}`;
+  return `fpl:price-close-v4:${date}`;
 }
 
 function feedKey(date: string): string {
+  return `fpl:px-feed-v5:${date}`;
+}
+
+function feedKeyLegacy(date: string): string {
   return `fpl:price-feed-v4:${date}`;
 }
 
-function asSnapshot(raw: unknown): PriceSnapshot | null {
-  if (!raw || typeof raw !== "object") return null;
-  return raw as PriceSnapshot;
+function toCompact(snapshot: PriceSnapshot): CompactSnapshot {
+  const out: CompactSnapshot = [];
+  for (const [id, cost] of Object.entries(snapshot)) {
+    const n = Number(id);
+    if (Number.isFinite(n) && Number.isFinite(cost)) out.push([n, cost]);
+  }
+  return out;
+}
+
+function fromCompact(raw: unknown): PriceSnapshot | null {
+  if (!raw) return null;
+  if (Array.isArray(raw)) {
+    const out: PriceSnapshot = {};
+    for (const row of raw) {
+      if (!Array.isArray(row) || row.length < 2) continue;
+      const id = Number(row[0]);
+      const cost = Number(row[1]);
+      if (!Number.isFinite(id) || !Number.isFinite(cost)) continue;
+      out[String(id)] = cost;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  if (typeof raw === "object") {
+    const out: PriceSnapshot = {};
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      const cost = Number(v);
+      if (!Number.isFinite(cost)) continue;
+      out[String(k)] = cost;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  return null;
 }
 
 function asFeed(raw: unknown): DayFeed | null {
@@ -67,9 +102,13 @@ async function loadSnapshot(
   if (mem) return mem;
   const r = redis();
   if (!r) return null;
-  const raw = asSnapshot(await r.get(key));
-  if (raw) store.set(key, raw);
-  return raw;
+  try {
+    const raw = fromCompact(await r.get(key));
+    if (raw) store.set(key, raw);
+    return raw;
+  } catch {
+    return null;
+  }
 }
 
 async function saveSnapshot(
@@ -80,67 +119,49 @@ async function saveSnapshot(
   store.set(key, prices);
   const r = redis();
   if (!r) return;
-  await r.set(key, prices, { ex: TTL_SEC });
+  try {
+    await r.set(key, toCompact(prices), { ex: TTL_SEC });
+  } catch {
+    /* ignore — never take down the Worker for Redis */
+  }
 }
 
-async function loadLastSeen(): Promise<PriceSnapshot | null> {
-  if (memoryLastSeen) return memoryLastSeen;
-  const r = redis();
-  if (!r) return null;
-  const raw =
-    asSnapshot(await r.get(LAST_SEEN_KEY)) ??
-    asSnapshot(await r.get(LAST_SEEN_LEGACY));
-  if (raw) memoryLastSeen = raw;
-  return raw;
-}
-
-async function saveLastSeen(prices: PriceSnapshot): Promise<void> {
-  memoryLastSeen = prices;
-  const r = redis();
-  if (!r) return;
-  await r.set(LAST_SEEN_KEY, prices, { ex: TTL_SEC });
-}
-
-async function loadYesterdayClose(
-  yesterday: string,
-): Promise<PriceSnapshot | null> {
-  return (
-    (await loadSnapshot(memoryClose, closeKey(yesterday))) ??
-    (await loadSnapshot(memoryClose, closeKeyLegacy(yesterday)))
-  );
-}
-
-/** First observation of a Shanghai calendar day — baseline for today's movers. */
+/** First observation of a Shanghai day — prefer yesterday close as pre-window baseline. */
 async function ensureOpenSnapshot(
   date: string,
   prices: PriceSnapshot,
-): Promise<void> {
+): Promise<PriceSnapshot> {
   const key = openKey(date);
-  if (memoryOpen.has(key)) return;
+  const existing = await loadSnapshot(memoryOpen, key);
+  if (existing) return existing;
 
-  const r = redis();
-  if (r) {
-    const existing = asSnapshot(await r.get(key));
-    if (existing) {
-      memoryOpen.set(key, existing);
-      return;
-    }
-  }
-
-  const yClose = await loadYesterdayClose(shanghaiYesterdayIso());
+  const yClose = await loadSnapshot(
+    memoryClose,
+    closeKey(shanghaiYesterdayIso()),
+  );
   const seed =
     yClose && Object.keys(yClose).length > 0 ? yClose : prices;
 
+  const r = redis();
   if (r) {
-    const created = await r.setnx(key, seed);
-    if (created) await r.expire(key, TTL_SEC);
-    if (created) memoryOpen.set(key, seed);
-    return;
+    try {
+      const created = await r.set(key, toCompact(seed), {
+        nx: true,
+        ex: TTL_SEC,
+      });
+      if (created) {
+        memoryOpen.set(key, seed);
+        return seed;
+      }
+      const after = await loadSnapshot(memoryOpen, key);
+      if (after) return after;
+    } catch {
+      /* fall through */
+    }
   }
 
-  if (!memoryOpen.has(key)) {
-    memoryOpen.set(key, seed);
-  }
+  memoryOpen.set(key, seed);
+  return seed;
 }
 
 async function loadFeed(date: string): Promise<Map<number, number>> {
@@ -152,10 +173,14 @@ async function loadFeed(date: string): Promise<Map<number, number>> {
     }
     const r = redis();
     if (!r) continue;
-    const raw = asFeed(await r.get(key));
-    if (raw) memoryFeed.set(key, raw);
-    const mapped = feedToMap(raw);
-    if (mapped.size > 0) return mapped;
+    try {
+      const raw = asFeed(await r.get(key));
+      if (raw) memoryFeed.set(key, raw);
+      const mapped = feedToMap(raw);
+      if (mapped.size > 0) return mapped;
+    } catch {
+      /* try next */
+    }
   }
   return new Map();
 }
@@ -166,7 +191,11 @@ async function saveFeed(date: string, deltas: Map<number, number>): Promise<void
   memoryFeed.set(key, feed);
   const r = redis();
   if (!r) return;
-  await r.set(key, feed, { ex: TTL_SEC });
+  try {
+    await r.set(key, feed, { ex: TTL_SEC });
+  } catch {
+    /* ignore */
+  }
 }
 
 function computeDeltas(
@@ -175,11 +204,10 @@ function computeDeltas(
 ): Map<number, number> {
   const deltas = new Map<number, number>();
   for (const [idStr, nowTenths] of Object.entries(current)) {
-    const id = Number(idStr);
-    const prev = baseline[id];
+    const prev = baseline[idStr];
     if (prev == null || !Number.isFinite(prev)) continue;
     const deltaTenths = nowTenths - prev;
-    if (deltaTenths !== 0) deltas.set(id, deltaTenths);
+    if (deltaTenths !== 0) deltas.set(Number(idStr), deltaTenths);
   }
   return deltas;
 }
@@ -214,27 +242,13 @@ function mergeDeltas(
   return out;
 }
 
-function pickDayBaseline(
-  current: PriceSnapshot,
-  todayOpen: PriceSnapshot | null,
-  yesterdayClose: PriceSnapshot | null,
-): PriceSnapshot | null {
-  if (todayOpen && Object.keys(todayOpen).length > 0) {
-    if (computeDeltas(current, todayOpen).size > 0) return todayOpen;
-  }
-  if (yesterdayClose && Object.keys(yesterdayClose).length > 0) {
-    return yesterdayClose;
-  }
-  return todayOpen;
-}
-
 export function priceMapFromBootstrap(
   elements: { id: number; now_cost?: number }[],
 ): PriceSnapshot {
   const out: PriceSnapshot = {};
   for (const el of elements) {
     const cost = Number(el.now_cost);
-    if (Number.isFinite(cost)) out[el.id] = cost;
+    if (Number.isFinite(cost)) out[String(el.id)] = cost;
   }
   return out;
 }
@@ -242,65 +256,53 @@ export function priceMapFromBootstrap(
 /**
  * Today's price movers for the home sidebar (Asia/Shanghai date).
  *
- * - Detect moves vs today's open snapshot, yesterday's close, or last-seen prices.
- * - Merge into a date-keyed sticky feed so the list stays until tomorrow.
- * - Never surface yesterday's feed on a new calendar day.
+ * Lightweight Redis I/O: one compact open snapshot (set-once), a small sticky
+ * feed, and throttled close writes. Failures never throw — Worker stays up.
  */
 export async function dailyPriceDeltaTenths(
   current: PriceSnapshot,
 ): Promise<Map<number, number>> {
-  const today = shanghaiDateIso();
-  const yesterday = shanghaiYesterdayIso();
+  try {
+    const today = shanghaiDateIso();
+    const yesterday = shanghaiYesterdayIso();
 
-  const [lastSeen, todayOpenRaw, yesterdayClose, sticky] = await Promise.all([
-    loadLastSeen(),
-    loadSnapshot(memoryOpen, openKey(today)),
-    loadYesterdayClose(yesterday),
-    loadFeed(today),
-  ]);
+    const [sticky, yesterdayClose] = await Promise.all([
+      loadFeed(today),
+      loadSnapshot(memoryClose, closeKey(yesterday)).then(
+        async (v) =>
+          v ?? (await loadSnapshot(memoryClose, closeKeyLegacy(yesterday))),
+      ),
+    ]);
 
-  await ensureOpenSnapshot(today, current);
+    let open = await ensureOpenSnapshot(today, current);
 
-  let todayOpen =
-    (await loadSnapshot(memoryOpen, openKey(today))) ?? todayOpenRaw;
-
-  // Repair when today's open was captured after the price window (open == current).
-  if (
-    todayOpen &&
-    yesterdayClose &&
-    computeDeltas(current, todayOpen).size === 0 &&
-    computeDeltas(current, yesterdayClose).size > 0
-  ) {
-    await saveSnapshot(memoryOpen, openKey(today), yesterdayClose);
-    todayOpen = yesterdayClose;
-  }
-
-  let feed = new Map(sticky);
-  const detected = new Map<number, number>();
-
-  const dayBaseline = pickDayBaseline(current, todayOpen, yesterdayClose);
-  if (dayBaseline) {
-    for (const [id, delta] of computeDeltas(current, dayBaseline)) {
-      detected.set(id, delta);
+    // Repair late open capture: if open matches live but yesterday close differs,
+    // reopen from yesterday close so today's movers reappear.
+    if (
+      yesterdayClose &&
+      computeDeltas(current, open).size === 0 &&
+      computeDeltas(current, yesterdayClose).size > 0
+    ) {
+      await saveSnapshot(memoryOpen, openKey(today), yesterdayClose);
+      open = yesterdayClose;
     }
-  }
 
-  // Fallback when day baseline missed (e.g. late deploy) and nothing sticky yet.
-  if (detected.size === 0 && feed.size === 0 && lastSeen) {
-    for (const [id, delta] of computeDeltas(current, lastSeen)) {
-      detected.set(id, delta);
+    let feed = new Map(sticky);
+    const fresh = computeDeltas(current, open);
+    if (fresh.size > 0) {
+      feed = mergeDeltas(feed, fresh);
+      await saveFeed(today, feed);
     }
+
+    // Throttle close writes — once per 30m is enough for tomorrow's baseline.
+    const now = Date.now();
+    if (now - lastCloseWriteAt >= CLOSE_WRITE_MIN_MS) {
+      lastCloseWriteAt = now;
+      void saveSnapshot(memoryClose, closeKey(today), current);
+    }
+
+    return feed;
+  } catch {
+    return new Map();
   }
-
-  if (detected.size > 0) {
-    feed = mergeDeltas(feed, detected);
-    await saveFeed(today, feed);
-  }
-
-  await Promise.all([
-    saveSnapshot(memoryClose, closeKey(today), current),
-    saveLastSeen(current),
-  ]);
-
-  return feed;
 }

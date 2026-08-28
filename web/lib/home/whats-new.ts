@@ -269,7 +269,7 @@ async function loadWatchItems(): Promise<WhatsNewWatchItem[]> {
       if (!item) continue;
       seen.add(row.fpl_id);
       items.push(item);
-      if (items.length >= 40) break;
+      if (items.length >= 24) break;
     }
     return items;
   } catch {
@@ -326,12 +326,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v6"], {
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v7"], {
   revalidate: 120,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v6", 120_000, () =>
+  return withIsolateCache("home-whats-new-v7", 120_000, () =>
     loadWhatsNewCached(),
   );
 }
