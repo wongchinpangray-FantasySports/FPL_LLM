@@ -326,12 +326,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v5"], {
-  revalidate: 180,
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v6"], {
+  revalidate: 120,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v5", 180_000, () =>
+  return withIsolateCache("home-whats-new-v6", 120_000, () =>
     loadWhatsNewCached(),
   );
 }
