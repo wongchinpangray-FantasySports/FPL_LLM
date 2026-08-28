@@ -111,6 +111,7 @@ type SeasonRow = {
   entry_name: string | null;
   total_points: number;
   gws_played: number;
+  gw_scores?: { gw: number; points: number }[];
 };
 
 type TabId = "pick" | "leaderboard" | "season" | "badges" | "social";
@@ -1056,17 +1057,31 @@ export function MiniGameApp({ locale }: { locale: string }) {
               {seasonRows.map((row) => (
                 <li
                   key={`${row.entry_id}-${row.rank}`}
-                  className="flex items-center justify-between px-3 py-2"
+                  className="flex items-start justify-between gap-3 px-3 py-2.5"
                 >
-                  <span>
-                    #{row.rank}{" "}
-                    <span className="font-medium">
-                      {row.entry_name ?? `#${row.entry_id}`}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    {row.total_points} · {t("leagueGws", { n: row.gws_played })}
-                  </span>
+                  <div className="min-w-0">
+                    <p>
+                      #{row.rank}{" "}
+                      <span className="font-medium">
+                        {row.entry_name ?? `#${row.entry_id}`}
+                      </span>
+                    </p>
+                    {row.gw_scores && row.gw_scores.length > 0 ? (
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {row.gw_scores
+                          .map((g) => t("seasonGwPts", { gw: g.gw, pts: g.points }))
+                          .join(" · ")}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold tabular-nums text-foreground">
+                      {t("seasonTotalPts", { n: row.total_points })}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("leagueGws", { n: row.gws_played })}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ol>

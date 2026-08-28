@@ -18,6 +18,7 @@ type Standing = {
   entry_name: string | null;
   total_points: number;
   gws_played: number;
+  gw_scores?: { gw: number; points: number }[];
 };
 
 export function MiniLeaguesPanel({
@@ -201,14 +202,30 @@ export function MiniLeaguesPanel({
               {standings.map((s) => (
                 <li
                   key={`${s.rank}-${s.entry_name}`}
-                  className="flex justify-between px-3 py-2"
+                  className="flex items-start justify-between gap-3 px-3 py-2.5"
                 >
-                  <span>
-                    #{s.rank} {s.entry_name ?? "—"}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {s.total_points} · {t("leagueGws", { n: s.gws_played })}
-                  </span>
+                  <div className="min-w-0">
+                    <p>
+                      #{s.rank} {s.entry_name ?? "—"}
+                    </p>
+                    {s.gw_scores && s.gw_scores.length > 0 ? (
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {s.gw_scores
+                          .map((g) =>
+                            t("seasonGwPts", { gw: g.gw, pts: g.points }),
+                          )
+                          .join(" · ")}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold tabular-nums text-foreground">
+                      {t("seasonTotalPts", { n: s.total_points })}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("leagueGws", { n: s.gws_played })}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ol>

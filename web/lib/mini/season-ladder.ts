@@ -4,16 +4,120 @@ import { scoreMiniSquad } from "@/lib/mini/scoring";
 import { getMiniOwnershipSnapshot } from "@/lib/mini/hot-picks";
 import type { MiniEntryRow, MiniPickStored } from "@/lib/mini/types";
 
+export interface SeasonGwScore {
+  gw: number;
+  points: number;
+}
+
 export interface SeasonLadderRow {
   rank: number;
   entry_id: number;
   profile_id: string | null;
   entry_name: string | null;
+  /** Sum of Mini 5 points across all submitted GWs this season. */
   total_points: number;
   gws_played: number;
+  /** Per-GW contribution so the UI can show accumulation clearly. */
+  gw_scores: SeasonGwScore[];
 }
 
-/** Sum Mini 5 GW points across the season (finished/live GWs with stats). */
+type GwStat = {
+  player_id: number;
+  total_points: number | null;
+  minutes: number | null;
+};
+
+/**
+ * Stable season identity via union-find across linked entry_id + profile_id.
+ * Same FPL ID or same profile on any row merges into one manager.
+ */
+function seasonGroupIds(rows: Array<{ entry_id: number; profile_id?: string | null }>): string[] {
+  const parent = new Map<string, string>();
+
+  function find(x: string): string {
+    let p = parent.get(x) ?? x;
+    if (!parent.has(x)) parent.set(x, x);
+    while (parent.get(p) !== p) {
+      const gp = parent.get(p)!;
+      parent.set(p, parent.get(gp) ?? gp);
+      p = parent.get(p)!;
+    }
+    return p;
+  }
+
+  function union(a: string, b: string) {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  }
+
+  function nodeKeys(row: { entry_id: number; profile_id?: string | null }): string[] {
+    const keys: string[] = [];
+    if (row.entry_id > 0) keys.push(`e:${row.entry_id}`);
+    if (row.profile_id) keys.push(`p:${row.profile_id}`);
+    if (keys.length === 0) keys.push(`e:${row.entry_id}`);
+    return keys;
+  }
+
+  for (const row of rows) {
+    const keys = nodeKeys(row);
+    for (const k of keys) find(k);
+    for (let i = 1; i < keys.length; i++) union(keys[0]!, keys[i]!);
+  }
+
+  return rows.map((row) => {
+    const keys = nodeKeys(row);
+    return find(keys[0]!);
+  });
+}
+
+/** @deprecated Prefer seasonGroupIds for multi-row merge; kept for tests/callers. */
+export function seasonIdentityKey(row: {
+  entry_id: number;
+  profile_id?: string | null;
+}): string {
+  if (row.entry_id > 0) return `e:${row.entry_id}`;
+  if (row.profile_id) return `p:${row.profile_id}`;
+  return `e:${row.entry_id}`;
+}
+
+async function fetchGwStatsPaged(
+  season: string,
+  gws: number[],
+  playerIds: number[],
+): Promise<Map<number, Map<number, GwStat>>> {
+  const supa = getServerSupabase();
+  const statsByGw = new Map<number, Map<number, GwStat>>();
+  if (gws.length === 0 || playerIds.length === 0) return statsByGw;
+
+  const PAGE = 1000;
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supa
+      .from("player_gw_stats")
+      .select("gw,player_id,total_points,minutes")
+      .eq("season", season)
+      .in("gw", gws)
+      .in("player_id", playerIds)
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const batch = data ?? [];
+    for (const s of batch) {
+      const gw = s.gw as number;
+      if (!statsByGw.has(gw)) statsByGw.set(gw, new Map());
+      statsByGw.get(gw)!.set(s.player_id as number, {
+        player_id: s.player_id as number,
+        total_points: s.total_points as number | null,
+        minutes: s.minutes as number | null,
+      });
+    }
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return statsByGw;
+}
+
+/** Sum Mini 5 GW points across the season (all submitted GWs). */
 export async function buildSeasonLadder(opts?: {
   profileIds?: string[];
   limit?: number;
@@ -64,35 +168,13 @@ export async function buildSeasonLadder(opts?: {
     return { season, rows: [] };
   }
 
-  const gws = [...new Set(rows.map((r) => r.gw))];
+  const gws = [...new Set(rows.map((r) => r.gw))].sort((a, b) => a - b);
   const allPlayerIds = new Set<number>();
   for (const row of rows) {
     for (const p of row.picks as MiniPickStored[]) allPlayerIds.add(p.fpl_id);
   }
 
-  const statsByGw = new Map<
-    number,
-    Map<number, { player_id: number; total_points: number | null; minutes: number | null }>
-  >();
-
-  if (allPlayerIds.size > 0 && gws.length > 0) {
-    const { data: stats, error: sErr } = await supa
-      .from("player_gw_stats")
-      .select("gw,player_id,total_points,minutes")
-      .eq("season", season)
-      .in("gw", gws)
-      .in("player_id", [...allPlayerIds]);
-    if (sErr) throw new Error(sErr.message);
-    for (const s of stats ?? []) {
-      const gw = s.gw as number;
-      if (!statsByGw.has(gw)) statsByGw.set(gw, new Map());
-      statsByGw.get(gw)!.set(s.player_id as number, {
-        player_id: s.player_id as number,
-        total_points: s.total_points as number | null,
-        minutes: s.minutes as number | null,
-      });
-    }
-  }
+  const statsByGw = await fetchGwStatsPaged(season, gws, [...allPlayerIds]);
 
   const ownershipByGw = new Map<
     number,
@@ -112,6 +194,8 @@ export async function buildSeasonLadder(opts?: {
     }),
   );
 
+  const groupIds = seasonGroupIds(rows);
+
   const byKey = new Map<
     string,
     {
@@ -120,13 +204,12 @@ export async function buildSeasonLadder(opts?: {
       entry_name: string | null;
       total_points: number;
       gws_played: number;
+      gwPoints: Map<number, number>;
     }
   >();
 
-  for (const row of rows) {
-    const key = row.profile_id
-      ? `p:${row.profile_id}`
-      : `e:${row.entry_id}`;
+  rows.forEach((row, idx) => {
+    const key = groupIds[idx]!;
     const picks = row.picks as MiniPickStored[];
     const pickIds = picks.map((p) => p.fpl_id);
     const fplOwnedById: Record<number, number> = {};
@@ -153,14 +236,39 @@ export async function buildSeasonLadder(opts?: {
       entry_name: row.entry_name,
       total_points: 0,
       gws_played: 0,
+      gwPoints: new Map<number, number>(),
     };
-    cur.total_points += scored.total;
-    cur.gws_played += 1;
+
+    // Prefer real FPL entry id / latest nickname when merging split rows.
+    if (row.entry_id > 0) cur.entry_id = row.entry_id;
+    if (row.profile_id) cur.profile_id = row.profile_id;
     if (row.entry_name) cur.entry_name = row.entry_name;
+
+    // One squad per GW: keep the better score if duplicates somehow exist.
+    const prevGw = cur.gwPoints.get(row.gw);
+    if (prevGw == null) {
+      cur.gwPoints.set(row.gw, scored.total);
+      cur.total_points += scored.total;
+      cur.gws_played += 1;
+    } else if (scored.total > prevGw) {
+      cur.total_points += scored.total - prevGw;
+      cur.gwPoints.set(row.gw, scored.total);
+    }
+
     byKey.set(key, cur);
-  }
+  });
 
   const ladder = [...byKey.values()]
+    .map((row) => ({
+      entry_id: row.entry_id,
+      profile_id: row.profile_id,
+      entry_name: row.entry_name,
+      total_points: row.total_points,
+      gws_played: row.gws_played,
+      gw_scores: [...row.gwPoints.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([gw, points]) => ({ gw, points })),
+    }))
     .sort(
       (a, b) =>
         b.total_points - a.total_points ||
