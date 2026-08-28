@@ -8,6 +8,7 @@ import { HomeSignupPrompt } from "@/components/auth/signup-prompt-modal";
 import { SignupPromptProvider } from "@/components/auth/signup-prompt-context";
 import { SiteHeader } from "@/components/site-header";
 import { SitePageview } from "@/components/analytics/site-pageview";
+import { FfsPremiumBanner } from "@/components/scout/ffs-premium-banner";
 
 type Props = {
   children: React.ReactNode;
@@ -45,6 +46,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <SitePageview />
         <SiteHeader />
         <main className="container flex w-full flex-1 flex-col py-5 md:py-8">
+          <FfsPremiumBanner />
           {children}
         </main>
         <footer className="site-footer border-t border-border bg-background/40">
