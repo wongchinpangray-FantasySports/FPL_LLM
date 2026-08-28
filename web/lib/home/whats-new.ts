@@ -167,6 +167,7 @@ function buildFromBootstrap(
 async function loadFromLiveBootstrap(): Promise<{
   prices: WhatsNewPriceItem[];
   injuries: WhatsNewInjuryItem[];
+  changeDate: string;
 } | null> {
   try {
     const raw = await fplGet<{
@@ -175,13 +176,14 @@ async function loadFromLiveBootstrap(): Promise<{
     }>("/bootstrap-static/");
     const elements = raw.elements ?? [];
     if (!elements.length) return null;
-    const teamsById = new Map(
-      (raw.teams ?? []).map((t) => [t.id, t] as const),
-    );
-    const dailyDeltaTenths = await dailyPriceDeltaTenths(
+    const teams = raw.teams ?? [];
+    const teamsById = new Map(teams.map((t) => [t.id, t] as const));
+    const { deltas, changeDate } = await dailyPriceDeltaTenths(
       priceMapFromBootstrap(elements),
+      { elements, teams },
     );
-    return buildFromBootstrap(elements, teamsById, dailyDeltaTenths);
+    const built = buildFromBootstrap(elements, teamsById, deltas);
+    return { ...built, changeDate };
   } catch {
     return null;
   }
@@ -278,8 +280,7 @@ async function loadWatchItems(): Promise<WhatsNewWatchItem[]> {
 }
 
 async function loadWhatsNewRaw(): Promise<WhatsNewData> {
-  const date = shanghaiDateIso();
-  const date_label = dateLabelFromIso(date);
+  const today = shanghaiDateIso();
 
   const [live, articles, watches] = await Promise.all([
     loadFromLiveBootstrap(),
@@ -300,6 +301,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
       injuries = [];
     }
   }
+
+  // Sidebar date follows the latest price-change batch when we have movers,
+  // so the list stays visible overnight until the next window.
+  const date =
+    prices.length > 0 && live?.changeDate ? live.changeDate : today;
+  const date_label = dateLabelFromIso(date);
 
   const articleItems: WhatsNewArticleItem[] = articles.slice(0, 5).map((a) => ({
     kind: "article",
@@ -326,12 +333,12 @@ async function loadWhatsNewRaw(): Promise<WhatsNewData> {
   return { date, date_label, items };
 }
 
-const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v7"], {
+const loadWhatsNewCached = unstable_cache(loadWhatsNewRaw, ["home-whats-new-v8"], {
   revalidate: 120,
 });
 
 export async function loadWhatsNew(): Promise<WhatsNewData> {
-  return withIsolateCache("home-whats-new-v7", 120_000, () =>
+  return withIsolateCache("home-whats-new-v8", 120_000, () =>
     loadWhatsNewCached(),
   );
 }
