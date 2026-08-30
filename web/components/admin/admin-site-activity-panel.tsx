@@ -8,6 +8,11 @@ import type {
   SiteDailyPoint,
   SiteFeature,
 } from "@/lib/analytics/types";
+import {
+  AdminSiteActivityDetail,
+  type ActivityDetail,
+  type KpiKey,
+} from "@/components/admin/admin-site-activity-detail";
 
 type Range = 7 | 30 | 90;
 
@@ -16,14 +21,16 @@ function StatCard({
   value,
   hint,
   delta,
+  onOpen,
 }: {
   label: string;
   value: number | string;
   hint?: string;
   delta?: number | null;
+  onOpen?: () => void;
 }) {
-  return (
-    <div className="rounded-xl border border-border bg-card/50 p-3">
+  const inner = (
+    <>
       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
@@ -34,7 +41,21 @@ function StatCard({
       {hint ? (
         <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
       ) : null}
-    </div>
+    </>
+  );
+  if (!onOpen) {
+    return (
+      <div className="w-full rounded-xl border border-border bg-card/50 p-3">{inner}</div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full rounded-xl border border-border bg-card/50 p-3 text-left transition-colors hover:border-brand-accent/40 hover:bg-card"
+    >
+      {inner}
+    </button>
   );
 }
 
@@ -156,18 +177,25 @@ function FeatureBar({
   labelFor,
   viewsLabel,
   visitorsLabel,
+  onOpen,
 }: {
   features: SiteActivityStats["features"];
   labelFor: (feature: SiteFeature) => string;
   viewsLabel: string;
   visitorsLabel: string;
+  onOpen: (feature: SiteFeature) => void;
 }) {
   const max = Math.max(1, ...features.map((f) => f.pageviews));
   if (features.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
       {features.slice(0, 16).map((row) => (
-        <div key={row.feature}>
+        <button
+          key={row.feature}
+          type="button"
+          onClick={() => onOpen(row.feature)}
+          className="rounded-lg px-1 py-1 text-left transition-colors hover:bg-muted/60"
+        >
           <div className="mb-0.5 flex items-baseline justify-between gap-2 text-sm">
             <span className="truncate font-medium">{labelFor(row.feature)}</span>
             <span className="shrink-0 text-right text-[11px] leading-snug text-muted-foreground">
@@ -188,7 +216,7 @@ function FeatureBar({
               style={{ width: `${Math.max(4, (row.pageviews / max) * 100)}%` }}
             />
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -200,6 +228,9 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
   const [stats, setStats] = useState<SiteActivityStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ActivityDetail | null>(null);
+
+  const openKpi = (key: KpiKey) => setDetail({ type: "kpi", key });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -222,6 +253,10 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setDetail(null);
+  }, [days]);
 
   const featureLabel = useCallback(
     (feature: SiteFeature) => {
@@ -247,6 +282,7 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">{t("summary")}</p>
+      <p className="-mt-2 text-xs text-muted-foreground">{t("detail.clickHint")}</p>
 
       <div className="flex flex-wrap gap-1">
         {([7, 30, 90] as const).map((tab) => (
@@ -302,22 +338,26 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                 label={t("kpiPageviews")}
                 value={stats.pageviews}
                 delta={stats.deltas?.pageviews}
+                onOpen={() => openKpi("pageviews")}
               />
               <StatCard
                 label={t("kpiVisitors")}
                 value={stats.unique_visitors}
                 delta={stats.deltas?.unique_visitors}
+                onOpen={() => openKpi("visitors")}
               />
               <StatCard
                 label={t("kpiSignedIn")}
                 value={stats.signed_in_visitors}
                 hint={t("kpiSignedInHint", { n: stats.signed_in_pageviews })}
                 delta={stats.deltas?.signed_in_visitors}
+                onOpen={() => openKpi("signed_in")}
               />
               <StatCard
                 label={t("kpiViewsPerVisitor")}
                 value={stats.avg_views_per_visitor}
                 delta={stats.deltas?.avg_views_per_visitor}
+                onOpen={() => openKpi("views_per_visitor")}
               />
             </div>
           </div>
@@ -329,46 +369,54 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                 label={t("kpiTotalUsers")}
                 value={stats.total_users}
                 delta={stats.deltas?.total_users}
+                onOpen={() => openKpi("total_users")}
               />
               <StatCard
                 label={t("kpiNewUsers")}
                 value={stats.new_users}
                 delta={stats.deltas?.new_users}
+                onOpen={() => openKpi("new_users")}
               />
               <StatCard
                 label={t("kpiDau")}
                 value={stats.dau}
                 hint={t("kpiDauHint")}
                 delta={stats.deltas?.dau}
+                onOpen={() => openKpi("dau")}
               />
               <StatCard
                 label={t("kpiWau")}
                 value={stats.wau}
                 hint={t("kpiMauHint", { n: stats.mau, pct: stats.stickiness })}
                 delta={stats.deltas?.wau}
+                onOpen={() => openKpi("wau")}
               />
               <StatCard
                 label={t("kpiOnboarded")}
                 value={stats.onboarded_users}
                 hint={onboardedPct}
                 delta={stats.deltas?.onboarded_users}
+                onOpen={() => openKpi("onboarded")}
               />
               <StatCard
                 label={t("kpiFplLinked")}
                 value={stats.fpl_linked_users}
                 hint={linkedPct}
                 delta={stats.deltas?.fpl_linked_users}
+                onOpen={() => openKpi("fpl_linked")}
               />
               <StatCard
                 label={t("kpiPro")}
                 value={stats.pro_users}
                 delta={stats.deltas?.pro_users}
+                onOpen={() => openKpi("pro")}
               />
               <StatCard
                 label={t("kpiReturning")}
                 value={stats.multi_day_visitors}
                 hint={t("kpiReturningHint", { n: stats.single_day_visitors })}
                 delta={stats.deltas?.multi_day_visitors}
+                onOpen={() => openKpi("returning")}
               />
             </div>
           </div>
@@ -390,7 +438,7 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
             <div className="rounded-xl border border-border bg-card/40 p-3">
               <h3 className="mb-1 text-sm font-medium">{t("sectionFeatures")}</h3>
               <p className="mb-3 text-xs text-muted-foreground">
-                {t("featuresHint")}
+                {t("featuresHint")} {t("detail.clickHint")}
               </p>
               {stats.features.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("noPageviews")}</p>
@@ -400,6 +448,7 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                   labelFor={featureLabel}
                   viewsLabel={t("featureViews")}
                   visitorsLabel={t("featureVisitors")}
+                  onOpen={(feature) => setDetail({ type: "feature", feature })}
                 />
               )}
             </div>
@@ -408,7 +457,7 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
               <div className="rounded-xl border border-border bg-card/40 p-3">
                 <h3 className="mb-1 text-sm font-medium">{t("sectionActivity")}</h3>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  {t("activityHint")}
+                  {t("activityHint")} {t("detail.clickHint")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {stats.login_buckets.map((row) => (
@@ -416,6 +465,9 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                       key={row.bucket}
                       label={t(`loginBucket.${row.bucket}`)}
                       value={row.users}
+                      onOpen={() =>
+                        setDetail({ type: "login", bucket: row.bucket })
+                      }
                     />
                   ))}
                 </div>
@@ -424,9 +476,9 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
               <div className="rounded-xl border border-border bg-card/40 p-3">
                 <h3 className="mb-1 text-sm font-medium">{t("sectionProducts")}</h3>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  {t("productsHint")}
+                  {t("productsHint")} {t("detail.clickHint")}
                 </p>
-                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-2">
                   {(
                     [
                       ["squad_builder_drafts", stats.products.squad_builder_drafts],
@@ -439,17 +491,24 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                       ["scout_pageviews", stats.products.scout_pageviews],
                     ] as const
                   ).map(([key, value]) => (
-                    <div key={key}>
-                      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {t(`products.${key}`)}
-                      </dt>
-                      <dd className="tabular-nums font-medium">{value}</dd>
-                    </div>
+                    <StatCard
+                      key={key}
+                      label={t(`products.${key}`)}
+                      value={value}
+                      onOpen={() => setDetail({ type: "product", key })}
+                    />
                   ))}
-                </dl>
+                </div>
               </div>
             </div>
           </div>
+          <AdminSiteActivityDetail
+            stats={stats}
+            detail={detail}
+            locale={locale}
+            featureLabel={featureLabel}
+            onClose={() => setDetail(null)}
+          />
         </>
       ) : null}
     </div>

@@ -139,10 +139,34 @@ export function aggregateSiteActivity(input: {
   const visitorDays = new Map<string, Set<string>>();
   const visitorsByDay = new Map<string, Set<string>>();
   const signedByDay = new Map<string, Set<string>>();
-  const featureMap = new Map<
-    string,
-    { pageviews: number; visitors: Set<string>; signedIn: Set<string> }
-  >();
+  type FeatureAcc = {
+    pageviews: number;
+    visitors: Set<string>;
+    signedIn: Set<string>;
+    visitorDays: Map<string, Set<string>>;
+    paths: Map<string, { pageviews: number; visitors: Set<string> }>;
+    daily: Map<string, { pageviews: number; visitors: Set<string> }>;
+  };
+  const featureMap = new Map<string, FeatureAcc>();
+
+  function featureAcc(raw: string): FeatureAcc {
+    const feature = (SITE_FEATURES as readonly string[]).includes(raw)
+      ? raw
+      : "other";
+    let bucket = featureMap.get(feature);
+    if (!bucket) {
+      bucket = {
+        pageviews: 0,
+        visitors: new Set(),
+        signedIn: new Set(),
+        visitorDays: new Map(),
+        paths: new Map(),
+        daily: new Map(),
+      };
+      featureMap.set(feature, bucket);
+    }
+    return bucket;
+  }
 
   let anonymousPageviews = 0;
   let signedInPageviews = 0;
@@ -186,15 +210,37 @@ export function aggregateSiteActivity(input: {
       }
     }
 
-    const feature = row.feature || "other";
-    let bucket = featureMap.get(feature);
-    if (!bucket) {
-      bucket = { pageviews: 0, visitors: new Set(), signedIn: new Set() };
-      featureMap.set(feature, bucket);
-    }
+    const bucket = featureAcc(row.feature || "other");
     bucket.pageviews += 1;
-    if (visitorKey) bucket.visitors.add(visitorKey);
+    if (visitorKey) {
+      bucket.visitors.add(visitorKey);
+      if (day) {
+        let daysSet = bucket.visitorDays.get(visitorKey);
+        if (!daysSet) {
+          daysSet = new Set();
+          bucket.visitorDays.set(visitorKey, daysSet);
+        }
+        daysSet.add(day);
+      }
+    }
     if (row.user_id) bucket.signedIn.add(row.user_id);
+    if (day) {
+      let dayBucket = bucket.daily.get(day);
+      if (!dayBucket) {
+        dayBucket = { pageviews: 0, visitors: new Set() };
+        bucket.daily.set(day, dayBucket);
+      }
+      dayBucket.pageviews += 1;
+      if (visitorKey) dayBucket.visitors.add(visitorKey);
+    }
+    const path = (row.path || "/").slice(0, 120) || "/";
+    let pathBucket = bucket.paths.get(path);
+    if (!pathBucket) {
+      pathBucket = { pageviews: 0, visitors: new Set() };
+      bucket.paths.set(path, pathBucket);
+    }
+    pathBucket.pageviews += 1;
+    if (visitorKey) pathBucket.visitors.add(visitorKey);
   }
 
   for (const [day, set] of visitorsByDay) {
@@ -251,15 +297,60 @@ export function aggregateSiteActivity(input: {
   }
 
   const uniqueVisitors = visitorsAll.size;
+  const totalPageviews = events.length;
   const features: SiteFeatureStat[] = [...featureMap.entries()]
-    .map(([feature, bucket]) => ({
-      feature: (SITE_FEATURES as readonly string[]).includes(feature)
-        ? (feature as SiteFeature)
-        : "other",
-      pageviews: bucket.pageviews,
-      visitors: bucket.visitors.size,
-      signed_in: bucket.signedIn.size,
-    }))
+    .map(([feature, bucket]) => {
+      const dailyPoints = [...bucket.daily.entries()]
+        .map(([date, point]) => ({
+          date,
+          pageviews: point.pageviews,
+          visitors: point.visitors.size,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      let peak_date: string | null = null;
+      let peak_pageviews = 0;
+      for (const point of dailyPoints) {
+        if (point.pageviews > peak_pageviews) {
+          peak_pageviews = point.pageviews;
+          peak_date = point.date;
+        }
+      }
+      let returning = 0;
+      for (const daysSet of bucket.visitorDays.values()) {
+        if (daysSet.size >= 2) returning += 1;
+      }
+      return {
+        feature: feature as SiteFeature,
+        pageviews: bucket.pageviews,
+        visitors: bucket.visitors.size,
+        signed_in: bucket.signedIn.size,
+        returning_visitors: returning,
+        avg_views_per_visitor:
+          bucket.visitors.size > 0
+            ? Math.round((bucket.pageviews / bucket.visitors.size) * 10) / 10
+            : 0,
+        share_of_pageviews:
+          totalPageviews > 0
+            ? Math.round((bucket.pageviews / totalPageviews) * 1000) / 10
+            : 0,
+        peak_date,
+        peak_pageviews,
+        delta_pageviews: null,
+        delta_visitors: null,
+        daily: dailyPoints,
+        paths: [...bucket.paths.entries()]
+          .map(([path, point]) => ({
+            path,
+            pageviews: point.pageviews,
+            visitors: point.visitors.size,
+          }))
+          .sort(
+            (a, b) =>
+              b.pageviews - a.pageviews || a.path.localeCompare(b.path),
+          )
+          .slice(0, 8),
+      };
+    })
     .sort((a, b) => b.pageviews - a.pageviews || a.feature.localeCompare(b.feature));
 
   const eventDau = visitorsByDay.get(today)?.size ?? 0;
@@ -348,6 +439,25 @@ function snapshotBefore(
   return { total, onboarded, fplLinked, pro, active7d, active30d };
 }
 
+function withFeatureDeltas(
+  current: SiteActivityStats,
+  previous: SiteActivityStats | null,
+): SiteActivityStats {
+  if (!previous) return current;
+  const prevMap = new Map(previous.features.map((f) => [f.feature, f]));
+  return {
+    ...current,
+    features: current.features.map((f) => {
+      const prev = prevMap.get(f.feature);
+      return {
+        ...f,
+        delta_pageviews: percentChange(f.pageviews, prev?.pageviews ?? 0),
+        delta_visitors: percentChange(f.visitors, prev?.visitors ?? 0),
+      };
+    }),
+  };
+}
+
 function withDeltas(
   current: SiteActivityStats,
   previous: SiteActivityStats | null,
@@ -369,31 +479,34 @@ function withDeltas(
         ? percentChange(lastDay, prevDay)
         : null,
   };
-  if (!previous) return { ...current, deltas };
-  return {
-    ...current,
-    deltas: {
-      ...deltas,
-      pageviews: percentChange(current.pageviews, previous.pageviews),
-      unique_visitors: percentChange(
-        current.unique_visitors,
-        previous.unique_visitors,
-      ),
-      signed_in_visitors: percentChange(
-        current.signed_in_visitors,
-        previous.signed_in_visitors,
-      ),
-      avg_views_per_visitor: percentChange(
-        current.avg_views_per_visitor,
-        previous.avg_views_per_visitor,
-      ),
-      new_users: percentChange(current.new_users, previous.new_users),
-      multi_day_visitors: percentChange(
-        current.multi_day_visitors,
-        previous.multi_day_visitors,
-      ),
+  if (!previous) return withFeatureDeltas({ ...current, deltas }, null);
+  return withFeatureDeltas(
+    {
+      ...current,
+      deltas: {
+        ...deltas,
+        pageviews: percentChange(current.pageviews, previous.pageviews),
+        unique_visitors: percentChange(
+          current.unique_visitors,
+          previous.unique_visitors,
+        ),
+        signed_in_visitors: percentChange(
+          current.signed_in_visitors,
+          previous.signed_in_visitors,
+        ),
+        avg_views_per_visitor: percentChange(
+          current.avg_views_per_visitor,
+          previous.avg_views_per_visitor,
+        ),
+        new_users: percentChange(current.new_users, previous.new_users),
+        multi_day_visitors: percentChange(
+          current.multi_day_visitors,
+          previous.multi_day_visitors,
+        ),
+      },
     },
-  };
+    previous,
+  );
 }
 
 async function fetchAllProfiles(): Promise<ProfileSnap[]> {

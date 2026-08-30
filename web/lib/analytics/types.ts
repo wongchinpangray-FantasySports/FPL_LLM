@@ -63,11 +63,32 @@ export type SiteDailyPoint = {
   new_users: number;
 };
 
+export type SitePathStat = {
+  path: string;
+  pageviews: number;
+  visitors: number;
+};
+
+export type SiteFeatureDailyPoint = {
+  date: string;
+  pageviews: number;
+  visitors: number;
+};
+
 export type SiteFeatureStat = {
   feature: SiteFeature;
   pageviews: number;
   visitors: number;
   signed_in: number;
+  returning_visitors: number;
+  avg_views_per_visitor: number;
+  share_of_pageviews: number;
+  peak_date: string | null;
+  peak_pageviews: number;
+  delta_pageviews: number | null;
+  delta_visitors: number | null;
+  daily: SiteFeatureDailyPoint[];
+  paths: SitePathStat[];
 };
 
 export type SiteLoginBucket = {

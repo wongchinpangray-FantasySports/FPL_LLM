@@ -127,6 +127,11 @@ function testAggregate() {
   assert.equal(stats.fpl_linked_users, 1);
   assert.equal(stats.features[0]?.feature, "planner");
   assert.equal(stats.features[0]?.pageviews, 2);
+  assert.equal(stats.features[0]?.paths[0]?.path, "/planner");
+  assert.equal(stats.features[0]?.paths[0]?.pageviews, 2);
+  assert.equal(stats.features[0]?.returning_visitors, 0);
+  assert.equal(stats.features[0]?.share_of_pageviews, 50);
+  assert.equal(stats.features[0]?.peak_date, "2026-08-25");
   const day25 = stats.daily.find((d) => d.date === "2026-08-25");
   assert.equal(day25?.pageviews, 2);
   assert.equal(day25?.new_users, 1);
