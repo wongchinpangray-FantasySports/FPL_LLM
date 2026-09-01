@@ -3,7 +3,7 @@
  * Render Xiaohongshu 3:4 carousel PNGs from translated Scout articles.
  *
  * Default is a **teaser feed** (cover of titles + images, then one page per
- * article with a filled teaser + bottom image). Full-article carousels are
+ * article with a ~200-word `summary_zh` + bottom image). Full-article carousels are
  * opt-in via `--full`.
  *
  *   cd web
@@ -11,12 +11,15 @@
  *   npx tsx scripts/scout-xhs-pages.ts --slugs=a,b,c,d
  *   npx tsx scripts/scout-xhs-pages.ts --all
  *   npx tsx scripts/scout-xhs-pages.ts --full --slug=one-article
- *   npx tsx scripts/scout-xhs-pages.ts --dry
+ *   npx tsx scripts/scout-xhs-pages.ts --theme=xhs --slugs=a,b,c,d
  *
  * After Cursor translate `--apply`, the writer also runs this teaser step
  * for the slugs just written (unless `--no-xhs`).
+ *
+ * A second teaser run the same day writes `feed-YYYYMMDD-2` (then -3, …)
+ * instead of replacing the earlier carousel folder.
  */
-import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync, statSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
@@ -32,8 +35,12 @@ import {
   buildTeaserCaption,
   buildTeaserCards,
   dropHeroFromBlocks,
+  extractTweetIds,
   ffsLogoPath,
   gwTag,
+  isChartLikeSrc,
+  isMatchResultSrc,
+  isTeamNewsArticle,
   loadLocalScoutZh,
   packBlocksByHeight,
   pickHeroSrc,
@@ -45,8 +52,11 @@ import {
   chunkArticles,
   publishedAtMs,
   skipReasonFor,
+  leftoverTeaserArticles,
+  CLOSE_MORE_MAX,
   TEASER_MAX_ARTICLES,
   type LocalScoutZh,
+  type ScoutTeaserCard,
   type ScoutXhsBlock,
 } from "../lib/scout/xhs-pages";
 
@@ -59,9 +69,93 @@ const BODY_MAX_HEIGHT = 800;
 let logoSrc = "";
 let ctaLabel = "";
 let ctaDisplay = "";
+let renderTheme: string | undefined;
 
 function withAssets(data: Record<string, unknown>): Record<string, unknown> {
-  return { ...data, logoSrc };
+  return renderTheme ? { ...data, logoSrc, theme: renderTheme } : { ...data, logoSrc };
+}
+
+function tweetMediaDir(outRoot: string): string {
+  return join(outRoot, "_tweet-media");
+}
+
+async function fetchTweetPhotoUrl(tweetId: string): Promise<string | null> {
+  const urls = [
+    `https://api.fxtwitter.com/status/${tweetId}`,
+    `https://api.fxtwitter.com/i/status/${tweetId}`,
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "FaleagueScoutXhs/1.0",
+        },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) continue;
+      const data = (await res.json()) as {
+        tweet?: { media?: { photos?: Array<{ url?: string }> } };
+      };
+      const photo = data.tweet?.media?.photos?.[0]?.url?.trim();
+      if (photo) return photo;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+async function cacheRemoteImage(url: string, dest: string): Promise<boolean> {
+  if (existsSync(dest)) return true;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "image/*",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return false;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length < 800) return false;
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, buf);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function localImageSrc(path: string): string {
+  const buf = readFileSync(path);
+  const ext = path.toLowerCase().endsWith(".png") ? "png" : "jpeg";
+  return `data:image/${ext};base64,${buf.toString("base64")}`;
+}
+
+/** Local data URL for a tweet photo embedded in Scout HTML (presser schedules, etc.). */
+async function cacheTweetHero(html: string, cacheDir: string): Promise<string | null> {
+  for (const tweetId of extractTweetIds(html)) {
+    const dest = join(cacheDir, `${tweetId}.jpg`);
+    if (!(existsSync(dest) && statSync(dest).size > 800)) {
+      const photoUrl = await fetchTweetPhotoUrl(tweetId);
+      if (!photoUrl) continue;
+      if (!(await cacheRemoteImage(photoUrl, dest))) continue;
+    }
+    return localImageSrc(dest);
+  }
+  return null;
+}
+
+async function resolveHeroSrc(
+  article: LocalScoutZh,
+  picked: string | null,
+  cacheDir: string,
+): Promise<string | null> {
+  const tweetHero = await cacheTweetHero(article.body_html_zh, cacheDir);
+  if (isTeamNewsArticle(article) && tweetHero) return tweetHero;
+  return picked || tweetHero;
 }
 
 function flagStr(name: string): string | null {
@@ -110,7 +204,7 @@ async function renderOnePage(
   } catch {
     /* images optional */
   }
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(280);
   await page.screenshot({ path: outPath, type: "png" });
 }
 
@@ -215,7 +309,11 @@ async function generateArticle(
   }
 
   const allBlocks = articleBlocks(article.body_html_zh);
-  const heroSrc = pickHeroSrc(allBlocks);
+  const heroSrc = await resolveHeroSrc(
+    article,
+    pickHeroSrc(allBlocks),
+    tweetMediaDir(outRoot),
+  );
   const bodyBlocks = dropHeroFromBlocks(allBlocks, heroSrc);
   let packed = await paginateBody(page, bodyBlocks);
   const series = seriesLabel(article.series, article.title_zh);
@@ -287,13 +385,43 @@ async function generateArticle(
   return { slug: article.slug, pages: actualTotal, dir };
 }
 
-function feedStamp(index = 1, { all = false } = {}): string {
-  const d = new Date();
+function ymdStamp(d = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+function carouselExists(dir: string): boolean {
+  if (!existsSync(dir)) return false;
+  try {
+    return readdirSync(dir).some(
+      (name) => /\.(png|jpg)$/i.test(name) || name === "manifest.json",
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** First unused `feed-YYYYMMDD`, then `feed-YYYYMMDD-2`, `-3`, … */
+function nextDailyFeedStamp(outRoot: string, now = new Date()): string {
+  const ymd = ymdStamp(now);
+  const first = `feed-${ymd}`;
+  if (!carouselExists(join(outRoot, first))) return first;
+  for (let i = 2; i <= 99; i++) {
+    const stamp = `feed-${ymd}-${i}`;
+    if (!carouselExists(join(outRoot, stamp))) return stamp;
+  }
+  return `feed-${ymd}-${Date.now()}`;
+}
+
+function feedStamp(
+  index = 1,
+  { all = false, outRoot, theme }: { all?: boolean; outRoot?: string; theme?: string } = {},
+): string {
   if (all) return `feed-all-${String(index).padStart(2, "0")}`;
-  return index > 1 ? `feed-${y}${m}${day}-${index}` : `feed-${y}${m}${day}`;
+  if (theme === "xhs") return `feed-${ymdStamp()}-xhs`;
+  return nextDailyFeedStamp(outRoot ?? scoutXhsOutRoot());
 }
 
 async function generateTeaserFeed(
@@ -301,8 +429,40 @@ async function generateTeaserFeed(
   articles: LocalScoutZh[],
   outRoot: string,
   stamp: string,
+  moreTitles: string[] = [],
 ): Promise<{ slug: string; pages: number; dir: string; titles: string[] }> {
-  const cards = buildTeaserCards(articles, TEASER_MAX_ARTICLES);
+  const cacheDir = tweetMediaDir(outRoot);
+  const cards: ScoutTeaserCard[] = [];
+  for (const card of buildTeaserCards(articles, TEASER_MAX_ARTICLES)) {
+    const article = articles.find((a) => a.slug === card.slug);
+    if (!article) {
+      cards.push(card);
+      continue;
+    }
+    if (card.schedule.length) {
+      console.log(JSON.stringify({ presser_schedule: true, slug: article.slug, slots: card.schedule.length }));
+      cards.push({ ...card, heroSrc: null });
+      continue;
+    }
+    const heroSrc = await resolveHeroSrc(article, card.heroSrc, cacheDir);
+    const fromTweet = Boolean(heroSrc?.startsWith("data:image/"));
+    if (fromTweet) {
+      console.log(JSON.stringify({ tweet_hero: true, slug: article.slug }));
+    }
+    if (card.coverSrc) {
+      console.log(JSON.stringify({ cover_figure: card.coverSrc, slug: article.slug }));
+    }
+    cards.push({
+      ...card,
+      heroSrc,
+      heroFit:
+        heroSrc && (fromTweet || isChartLikeSrc(heroSrc))
+          ? "contain"
+          : heroSrc
+            ? "cover"
+            : card.heroFit,
+    });
+  }
   const dir = join(outRoot, stamp);
   mkdirSync(dir, { recursive: true });
   for (const name of readdirSync(dir)) {
@@ -324,10 +484,21 @@ async function generateTeaserFeed(
       title: "Scout 中文精选",
       seriesLabel: "精选",
       gwTag: gw,
-      items: cards.map((c) => ({
-        title: c.title_zh,
-        heroSrc: c.heroSrc || logoSrc || "",
-      })),
+      items: cards.map((c) => {
+        const coverSrc =
+          c.coverSrc ||
+          (c.heroSrc && !isMatchResultSrc(c.heroSrc, 0) ? c.heroSrc : "") ||
+          logoSrc ||
+          "";
+        return {
+          title: c.title_zh,
+          heroSrc: c.schedule.length ? "" : coverSrc,
+          heroFit: c.coverSrc ? c.coverFit : c.heroSrc ? c.heroFit : "contain",
+          face: Boolean(c.coverSrc && c.coverFit === "cover"),
+          schedule: c.schedule,
+          scheduleTitle: c.scheduleTitle,
+        };
+      }),
     },
     join(dir, "01.png"),
   );
@@ -346,7 +517,10 @@ async function generateTeaserFeed(
       title: card.title_zh,
       seriesLabel: card.seriesLabel,
       gwTag: card.gwTag,
-      heroSrc: card.heroSrc,
+      heroSrc: card.schedule.length ? "" : card.heroSrc,
+      heroFit: card.heroFit,
+      schedule: card.schedule,
+      scheduleTitle: card.scheduleTitle,
     };
     let html = chunks.join("\n");
     while (chunks.length > 1) {
@@ -371,17 +545,34 @@ async function generateTeaserFeed(
     await renderOnePage(page, { ...base, html }, join(dir, name));
   }
 
+  const more = moreTitles
+    .map((t) => stripVisibleUrlText(t).trim())
+    .filter(Boolean)
+    .slice(0, CLOSE_MORE_MAX);
+
+  const closeBase = {
+    kind: "feed-close",
+    page: total,
+    total,
+    title: "完整文章在 Faleague",
+    subtitle: more.length
+      ? "去 Scout 中文专栏看全文。下面这些也已有中文。"
+      : "去 Scout 中文专栏看全文、笔记和伤情。",
+    seriesLabel: "Scout 中文",
+    gwTag: gw,
+  };
+  let listed = [...more];
+  while (listed.length > 0) {
+    await page.evaluate((payload) => {
+      (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
+    }, withAssets({ ...closeBase, moreTitles: listed }));
+    const overflow = await pageOverflow(page);
+    if (overflow <= 16) break;
+    listed.pop();
+  }
   await renderOnePage(
     page,
-    {
-      kind: "feed-close",
-      page: total,
-      total,
-      title: "完整文章在 Faleague",
-      subtitle: "去 Scout 中文专栏看全文、笔记和伤情。",
-      seriesLabel: "Scout 中文",
-      gwTag: gw,
-    },
+    { ...closeBase, moreTitles: listed },
     join(dir, String(total).padStart(2, "0") + ".png"),
   );
 
@@ -392,8 +583,10 @@ async function generateTeaserFeed(
     JSON.stringify(
       {
         mode: "teaser",
+        theme: renderTheme ?? "faleague",
         slugs: cards.map((c) => c.slug),
         titles,
+        more_titles: listed,
         pages: total,
         cta_url: ctaDisplay,
         output: dir,
@@ -439,6 +632,7 @@ async function loadDbTranslated(): Promise<LocalScoutZh[]> {
       dir: "",
       title_zh,
       excerpt_zh: String(row.excerpt_zh ?? ""),
+      summary_zh: "",
       title_en,
       excerpt_en: row.excerpt_en ? String(row.excerpt_en) : null,
       author: row.author ? String(row.author) : null,
@@ -493,6 +687,8 @@ async function main() {
   const requested = process.argv.includes("--requested");
   const full = process.argv.includes("--full");
   const teaser = !full;
+  const themeRaw = flagStr("theme");
+  renderTheme = themeRaw === "xhs" ? "xhs" : undefined;
   const slugs = parseSlugs();
   const latestRaw = flagStr("latest");
   const all = process.argv.includes("--all");
@@ -547,6 +743,7 @@ async function main() {
 
   const summary = {
     mode: dry ? "dry" : teaser ? "teaser" : "render",
+    theme: renderTheme ?? "faleague",
     cta: { label: ctaLabel, url: ctaDisplay, href: cta.href },
     selected: selected.map((a) => a.slug),
     skipped: skipped.filter((s) => s.reason === "paywall" || s.reason === "not_found" || slugFilter.includes(s.slug)),
@@ -585,14 +782,19 @@ async function main() {
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]!;
         if (!group.length) continue;
-        results.push(
-          await generateTeaserFeed(
-            page,
-            group,
-            outRoot,
-            feedStamp(i + 1, { all }),
-          ),
-        );
+      const more = leftoverTeaserArticles(pool, group.map((a) => a.slug), {
+        days: 21,
+        max: CLOSE_MORE_MAX,
+      });
+      results.push(
+        await generateTeaserFeed(
+          page,
+          group,
+          outRoot,
+          feedStamp(i + 1, { all, outRoot, theme: renderTheme }),
+          more.map((a) => a.title_zh),
+        ),
+      );
       }
     } else {
       for (const article of selected) {

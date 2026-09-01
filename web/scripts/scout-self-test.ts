@@ -28,7 +28,16 @@ import {
   isPlaceholderZh,
   scoutTranslateBadge,
 } from "../lib/scout/zh-status";
-import { extractTeaserParagraphs, chunkArticles } from "../lib/scout/xhs-pages";
+import {
+  extractTeaserParagraphs,
+  chunkArticles,
+  summaryZhToHtml,
+  teaserCopyHtml,
+  articleBlocks,
+  pickCoverFigureSrc,
+  pickHeroSrc,
+  leftoverTeaserArticles,
+} from "../lib/scout/xhs-pages";
 
 function testExtractSectionEntryContent() {
   const html = `
@@ -253,6 +262,78 @@ function testTeaserParagraphs() {
   assert.match(dup[1]!, /提名会帮助/);
 }
 
+function testSummaryZhToHtml() {
+  const html = summaryZhToHtml(
+    "第一段讲 Barry 浪费 xG。\n\n第二段讲 Everton 防守。 https://example.com",
+  );
+  assert.match(html, /<p>第一段讲 Barry 浪费 xG。<\/p>/);
+  assert.match(html, /<p>第二段讲 Everton 防守。<\/p>/);
+  assert.equal(/example\.com/.test(html), false);
+  const used = teaserCopyHtml({
+    summary_zh:
+      "Bournemouth 主场战平 Everton。Alex Scott 先开纪录并拿到 DefCon，Cherries 全场机会很多但临门掉链子。Barry 浪费大量 xG，补时 Tarkowski 扳平。",
+    body_html_zh: "<p>这是被摘要替代的正文第一段，不应该出现在卡片上。</p><p>第二段也不该出现。</p>",
+    excerpt_zh: "短摘要",
+  });
+  assert.match(used, /Tarkowski/);
+  assert.equal(/不应该出现/.test(used), false);
+  const fallback = teaserCopyHtml({
+    summary_zh: "",
+    body_html_zh: "<p>回退到正文第一段足够长可以留下，用来填满卡片。</p><p>第二段也要留下给页面填满内容。</p><p>第三段现在也应该留下，不再只截两段。</p><p>第四段超出回退上限，不应该出现。</p>",
+    excerpt_zh: "",
+  });
+  assert.match(fallback, /第一段/);
+  assert.match(fallback, /第三段/);
+  assert.equal(/第四段/.test(fallback), false);
+}
+
+function testPickCoverFigure() {
+  const html = `
+    <figure><img src="https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/08/image-509.png" alt=""></figure>
+    <figure><img src="https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/08/image-511.png" alt="Nobel Mendy"></figure>
+    <figure><img src="https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/08/image-514-1024x182.png" alt="Thomas"></figure>
+  `;
+  const blocks = articleBlocks(html);
+  assert.match(pickHeroSrc(blocks) ?? "", /image-509/);
+  assert.match(pickCoverFigureSrc(blocks) ?? "", /image-511/);
+  assert.equal(/image-509/.test(pickCoverFigureSrc(blocks) ?? ""), false);
+}
+
+function testLeftoverTeaser() {
+  const body = `<p>${"中文正文足够长用来通过检查检查检查检查检查。".repeat(8)}</p>`;
+  const mk = (slug: string, title: string, daysAgo: number) => ({
+    slug,
+    dir: "",
+    title_zh: title,
+    excerpt_zh: "摘",
+    summary_zh: "",
+    title_en: slug,
+    excerpt_en: null,
+    author: null,
+    series: "scout_notes",
+    source_url: "https://www.fantasyfootballscout.co.uk/2026/08/30/x",
+    source_published_at: new Date(Date.now() - daysAgo * 86400000).toISOString(),
+    translate_requested_at: null,
+    status: "pending",
+    body_html_zh: body,
+    zh_mtime_ms: Date.now(),
+  });
+  const used = mk("on-carousel", "轮播里的标题足够中文", 1);
+  const rest = [
+    mk("more-one", "专栏里还有第一篇标题", 1),
+    mk("more-two", "专栏里还有第二篇标题", 2),
+  ];
+  const titles = leftoverTeaserArticles([used, ...rest], ["on-carousel"], {
+    days: 21,
+    now: new Date(),
+  }).map((a) => a.slug);
+  assert.deepEqual(titles, ["more-one", "more-two"]);
+  assert.equal(
+    leftoverTeaserArticles([used, ...rest], ["on-carousel", "more-one", "more-two"]).length,
+    0,
+  );
+}
+
 function testChunkArticles() {
   assert.deepEqual(chunkArticles([1, 2, 3, 4, 5], 4), [
     [1, 2, 3, 4],
@@ -268,5 +349,8 @@ testRssParse();
 testGoAndScorecard();
 testZhStatus();
 testTeaserParagraphs();
+testSummaryZhToHtml();
+testPickCoverFigure();
+testLeftoverTeaser();
 testChunkArticles();
 console.log("scout-self-test: ok (collect-only ingest, Cursor queue, no auto-publish)");

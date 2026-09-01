@@ -27,6 +27,7 @@ export const FPL_FEATURE_PREFIXES = [
   "/dashboard",
   "/manager",
   "/planner",
+  "/transfers",
   "/squad-builder",
   "/players",
   "/player",
@@ -65,6 +66,7 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   // Home hub squad snapshot — auth still checked in the route except local preview.
   if (/^\/api\/team\/[^/]+\/summary\/?$/.test(pathname)) return false;
   if (pathname.startsWith("/api/planner/")) return true;
+  if (pathname.startsWith("/api/transfers/")) return true;
   if (pathname.startsWith("/api/squad-builder/")) return true;
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;

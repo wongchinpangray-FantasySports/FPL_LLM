@@ -33,6 +33,7 @@ const FEATURE_PREFIXES: Array<[string, SiteFeature]> = [
   ["/manager", "manager"],
   ["/players", "players"],
   ["/planner", "planner"],
+  ["/transfers", "transfer_diagnose"],
   ["/account", "account"],
   ["/player", "player"],
   ["/scout", "scout"],

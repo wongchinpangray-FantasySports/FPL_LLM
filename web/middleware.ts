@@ -75,6 +75,14 @@ export async function middleware(request: NextRequest) {
     if (!isFplProtectedApiPath(pathname)) {
       return NextResponse.next();
     }
+    const allowLocalApiPreview =
+      process.env.NODE_ENV === "development" &&
+      process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1" &&
+      (pathname.startsWith("/api/transfers/") ||
+        pathname.startsWith("/api/team/"));
+    if (allowLocalApiPreview) {
+      return NextResponse.next();
+    }
     const user = await getRequestUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -134,7 +142,14 @@ export async function middleware(request: NextRequest) {
       process.env.ALLOW_LOCAL_DASHBOARD_PREVIEW === "1" &&
       (() => {
         const path = stripLocalePrefix(pathname);
-        return path === "/dashboard" || path.startsWith("/dashboard/");
+        return (
+          path === "/dashboard" ||
+          path.startsWith("/dashboard/") ||
+          path === "/transfers" ||
+          path.startsWith("/transfers/") ||
+          path === "/planner" ||
+          path.startsWith("/planner/")
+        );
       })();
     if (!allowLocalDashboardPreview) {
       const loginUrl = new URL("/auth/login", request.url);

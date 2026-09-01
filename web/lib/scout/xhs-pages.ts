@@ -13,7 +13,11 @@ export const DEFAULT_LATEST = 8;
 export const DEFAULT_DAYS = 5;
 export const MAX_PAGES = 18;
 export const TEASER_MAX_ARTICLES = 4;
-export const TEASER_PARAS = 12;
+/** Extra ZH titles on the closing page (not in this carousel). */
+export const CLOSE_MORE_MAX = 8;
+/** Fallback body blocks when `summary_zh` is missing. Prefer a written summary. */
+export const TEASER_FALLBACK_PARAS = 3;
+export const TEASER_PARAS = TEASER_FALLBACK_PARAS;
 
 export function chunkArticles<T>(
   items: T[],
@@ -94,6 +98,8 @@ export type LocalScoutZh = {
   dir: string;
   title_zh: string;
   excerpt_zh: string;
+  /** ~200 words / 30s–1min ZH summary for XHS teaser pages. Not the site excerpt. */
+  summary_zh: string;
   title_en: string;
   excerpt_en: string | null;
   author: string | null;
@@ -111,6 +117,12 @@ export type ScoutXhsBlock = {
   kind: "heading" | "p" | "list" | "quote" | "figure" | "table" | "other";
 };
 
+export type PresserSlot = {
+  time: string;
+  name: string;
+  mark: string;
+};
+
 export type ScoutTeaserCard = {
   slug: string;
   title_zh: string;
@@ -118,6 +130,12 @@ export type ScoutTeaserCard = {
   gwTag: string | null;
   parasHtml: string;
   heroSrc: string | null;
+  /** Cover-grid image from the article, never the match-result lockup. */
+  coverSrc: string | null;
+  coverFit: "cover" | "contain";
+  heroFit: "cover" | "contain";
+  schedule: PresserSlot[];
+  scheduleTitle: string;
 };
 
 export type SkipReason =
@@ -141,6 +159,95 @@ export function countCjk(text: string): number {
 
 export function isPromoImageSrc(src: string): boolean {
   return PROMO_SRC_RE.test(src);
+}
+
+/** Ticker / price / stats screenshots — cover-crop hides them or cuts the graphic. */
+export function isChartLikeSrc(src: string): boolean {
+  if (!src) return false;
+  return (
+    /image-\d{3,}/i.test(src) ||
+    /Projected-Goal|clean-sheet|price.change/i.test(src) ||
+    /1024x(77|81|174|20\d)/i.test(src) ||
+    /gw\d+-clean-sheet/i.test(src) ||
+    /pbs\.twimg\.com|_tweet-media/i.test(src)
+  );
+}
+
+/** Ultra-wide data strips that look empty when cropped into a cover tile. */
+export function isThinStripSrc(src: string): boolean {
+  const m = src.match(/(\d{3,4})x(\d{2,3})(?=\D|$)/i);
+  if (!m) return false;
+  return Number(m[2]) > 0 && Number(m[2]) < 220;
+}
+
+/**
+ * Scout notes put the green FT scoreboard first (`image-519.png`, `image-518-1024x283.png`).
+ * `figureIndex` is 0-based among `<figure>` tags.
+ */
+export function isMatchResultSrc(src: string, figureIndex: number): boolean {
+  if (!src || figureIndex !== 0) return false;
+  return /\/image-\d{3,}/i.test(src);
+}
+
+export function isPhotoLikeSrc(src: string): boolean {
+  if (!src || isPromoImageSrc(src) || isThinStripSrc(src)) return false;
+  if (/1024x/i.test(src)) return false;
+  if (/image-20\d{2}-\d{2}-\d{2}T/i.test(src)) return false;
+  return true;
+}
+
+/** Tweet ids from FFS embeds (`x.com/.../status/ID`) so we can pull the attached photo. */
+export function extractTweetIds(html: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const re = /(?:twitter|x)\.com\/[^/\s"'<>]+\/status(?:es)?\/(\d{10,})/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const id = m[1]!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+export function isTeamNewsArticle(article: Pick<LocalScoutZh, "series" | "title_zh" | "slug">): boolean {
+  return (
+    article.series === "team_news" ||
+    /球队新闻|伤情/.test(article.title_zh) ||
+    /team-news/.test(article.slug)
+  );
+}
+
+/** Times + managers from the FFS press-conference tweet embed. */
+export function extractPresserSchedule(html: string): PresserSlot[] {
+  const text = stripTags(html.replace(/<br\s*\/?>/gi, "\n"))
+    .replace(/pic\.(?:twitter|x)\.com\/\S+/gi, "")
+    .replace(/\u00a0/g, " ");
+  const slots: PresserSlot[] = [];
+  const seen = new Set<string>();
+  const re =
+    /([^\s\dA-Za-z]{1,4})?\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm))\s*[—–\-－—]{1,4}\s*([A-Za-z][A-Za-z .'-]{0,40})/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const mark = (m[1] ?? "").trim();
+    const time = m[2]!.replace(/\s+/g, "").toLowerCase();
+    const name = m[3]!.replace(/\s+pic\..*$/i, "").trim().split(/\s+/).slice(0, 2).join(" ");
+    if (!name || name.length < 3) continue;
+    const key = `${time}|${name.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    slots.push({ time, name, mark });
+  }
+  return slots.length >= 3 ? slots : [];
+}
+
+export function presserScheduleTitle(html: string): string {
+  const m = html.match(
+    /<(h[2-4])[^>]*>\s*([^<]*(?:发布会|Press Conference)[^<]*)/i,
+  );
+  const title = m?.[2] ? stripTags(m[2]).trim() : "";
+  return title.slice(0, 24) || "发布会时间";
 }
 
 export function isPaywallSlug(slug: string): boolean {
@@ -320,6 +427,21 @@ export function pickHeroSrc(
   return null;
 }
 
+/** First in-article figure that is not the FT scoreboard or a thin data strip. */
+export function pickCoverFigureSrc(blocks: ScoutXhsBlock[]): string | null {
+  let figureIndex = 0;
+  for (const b of blocks) {
+    if (b.kind !== "figure") continue;
+    const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
+    const idx = figureIndex++;
+    if (!src || isPromoImageSrc(src) || /Screen-Shot/i.test(src)) continue;
+    if (isMatchResultSrc(src, idx)) continue;
+    if (isThinStripSrc(src)) continue;
+    return src;
+  }
+  return null;
+}
+
 export function dropHeroFromBlocks(
   blocks: ScoutXhsBlock[],
   heroSrc: string | null,
@@ -396,12 +518,14 @@ export function loadLocalScoutZh(cwd = process.cwd()): LocalScoutZh[] {
     }
     const title_zh = String(metaZh.title_zh ?? "").trim();
     const excerpt_zh = String(metaZh.excerpt_zh ?? "").trim();
+    const summary_zh = String(metaZh.summary_zh ?? "").trim();
     const body = readFileSync(zhPath, "utf8");
     out.push({
       slug: String(meta.slug ?? dirent.name),
       dir,
       title_zh,
       excerpt_zh,
+      summary_zh,
       title_en: String(meta.title_en ?? ""),
       excerpt_en: meta.excerpt_en ? String(meta.excerpt_en) : null,
       author: meta.author ? String(meta.author) : null,
@@ -498,6 +622,30 @@ export function selectScoutXhsArticles(
   return { selected, skipped };
 }
 
+/** Other eligible ZH articles, for the last carousel page. */
+export function leftoverTeaserArticles(
+  pool: LocalScoutZh[],
+  usedSlugs: string[],
+  opts: { max?: number; days?: number; now?: Date } = {},
+): LocalScoutZh[] {
+  const used = new Set(usedSlugs);
+  const now = opts.now ?? new Date();
+  const days = opts.days ?? 21;
+  const max = opts.max ?? CLOSE_MORE_MAX;
+  const windowMs = days > 0 ? days * 24 * 60 * 60 * 1000 : 0;
+  const out: LocalScoutZh[] = [];
+  for (const a of pool) {
+    if (used.has(a.slug)) continue;
+    if (skipReasonFor(a)) continue;
+    if (windowMs && now.getTime() - publishedAtMs(a) > windowMs) continue;
+    const title = stripVisibleUrlText(a.title_zh).trim();
+    if (!title || countCjk(title) < 4) continue;
+    out.push(a);
+  }
+  out.sort((a, b) => priorityScore(b) - priorityScore(a));
+  return out.slice(0, Math.max(0, max));
+}
+
 export function packBlocksByHeight(
   blocks: ScoutXhsBlock[],
   heights: number[],
@@ -546,11 +694,42 @@ function looksLikeBoilerplatePara(text: string): boolean {
   );
 }
 
-/** First 1–2 real body paragraphs. Excerpt is fallback only if the body has no usable `<p>`. */
+function escapeHtmlText(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Blank-line paragraphs → `<p>` for the carousel. No URLs. */
+export function summaryZhToHtml(summary: string): string {
+  const parts = summary
+    .trim()
+    .split(/\n\s*\n/)
+    .map((p) => stripVisibleUrlText(p.replace(/\s*\n+\s*/g, " ").trim()))
+    .filter(Boolean);
+  if (!parts.length) return "";
+  return parts.map((p) => `<p>${escapeHtmlText(p)}</p>`).join("\n");
+}
+
+export function teaserCopyHtml(
+  article: Pick<LocalScoutZh, "summary_zh" | "body_html_zh" | "excerpt_zh">,
+): string {
+  const summary = (article.summary_zh ?? "").trim();
+  if (summary) return summaryZhToHtml(summary);
+  return extractTeaserParagraphs(
+    article.body_html_zh,
+    article.excerpt_zh,
+    TEASER_FALLBACK_PARAS,
+  ).join("\n");
+}
+
+/** First real body blocks. Excerpt is fallback only if the body has no usable `<p>`. */
 export function extractTeaserParagraphs(
   html: string,
   excerptZh = "",
-  max = TEASER_PARAS,
+  max = TEASER_FALLBACK_PARAS,
 ): string[] {
   const excerpt = stripVisibleUrlText(excerptZh.trim());
   const stripped = stripVisibleUrlsFromHtml(stripScoutAds(html));
@@ -580,18 +759,21 @@ export function buildTeaserCards(
 ): ScoutTeaserCard[] {
   return articles.slice(0, Math.max(1, max)).map((article) => {
     const blocks = articleBlocks(article.body_html_zh);
-    const paras = extractTeaserParagraphs(
-      article.body_html_zh,
-      article.excerpt_zh,
-      TEASER_PARAS,
-    );
+    const heroSrc = pickHeroSrc(blocks);
+    const coverSrc = pickCoverFigureSrc(blocks);
+    const schedule = extractPresserSchedule(article.body_html_zh);
     return {
       slug: article.slug,
       title_zh: stripVisibleUrlText(article.title_zh),
       seriesLabel: seriesLabel(article.series, article.title_zh),
       gwTag: gwTag(article.slug, article.title_zh, article.title_en),
-      parasHtml: paras.join("\n"),
-      heroSrc: pickHeroSrc(blocks),
+      parasHtml: teaserCopyHtml(article),
+      heroSrc,
+      coverSrc,
+      coverFit: coverSrc && isPhotoLikeSrc(coverSrc) ? "cover" : "contain",
+      heroFit: heroSrc && isChartLikeSrc(heroSrc) ? "contain" : "cover",
+      schedule,
+      scheduleTitle: schedule.length ? presserScheduleTitle(article.body_html_zh) : "",
     };
   });
 }
@@ -607,7 +789,7 @@ export function buildTeaserCaption(
     "",
     titles,
     "",
-    "图里只放标题和开头。完整中文请到 Faleague Scout 专栏阅读，注册后可持续跟笔记和伤情。",
+    "图里是精选摘要，大约半分钟到一分钟读完。完整中文请到 Faleague Scout 专栏阅读，注册后可持续跟笔记和伤情。",
     `阅读入口：${ctaDisplay}`,
     "",
     "#FPL #英超 #FantasyFootballScout #Faleague #Scout中文",

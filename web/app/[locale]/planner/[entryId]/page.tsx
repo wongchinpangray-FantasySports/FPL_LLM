@@ -37,6 +37,20 @@ export default async function PlannerPage({
     : refreshRaw;
   const squadRaw = sp.squad;
   const squadVal = Array.isArray(squadRaw) ? squadRaw[0] : squadRaw;
+  const suggestRaw = sp.suggest;
+  const suggestVal = Array.isArray(suggestRaw) ? suggestRaw[0] : suggestRaw;
+  const openSuggest = suggestVal === "1" || suggestVal === "true";
+  const outRaw = Array.isArray(sp.out) ? sp.out[0] : sp.out;
+  const inRaw = Array.isArray(sp.in) ? sp.in[0] : sp.in;
+  const applyOutId = Number(outRaw);
+  const applyInId = Number(inRaw);
+  const pendingApply =
+    Number.isFinite(applyOutId) &&
+    applyOutId > 0 &&
+    Number.isFinite(applyInId) &&
+    applyInId > 0
+      ? { outId: applyOutId, inId: applyInId }
+      : null;
 
   const pt = await getTranslations({
     locale: resolvedParams.locale,
@@ -145,6 +159,8 @@ export default async function PlannerPage({
         initialBank={team.bank}
         initialPicks={initialPicks}
         baselineBanner={baselineBanner}
+        initialSuggestOpen={openSuggest || Boolean(pendingApply)}
+        pendingApply={pendingApply}
         squadToggle={
           hasRevert
             ? {

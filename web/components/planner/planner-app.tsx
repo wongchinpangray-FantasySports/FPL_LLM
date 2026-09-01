@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
@@ -13,10 +13,20 @@ import type {
 } from "@/lib/planner/top-xp-by-position";
 import { PlannerTopXpSidebar } from "@/components/planner/planner-top-xp-sidebar";
 import {
+  PlannerChangesStrip,
+  type SquadChangeEntry,
+} from "@/components/planner/planner-changes-strip";
+import {
   swapBudget,
   validatePlannerSquad,
   validateXiFormation,
 } from "@/lib/planner/validate";
+import { PlannerDiagnosePanel } from "@/components/transfers/diagnose-panel";
+import type {
+  DiagnoseResult,
+  SquadPlayerSignal,
+  TransferSuggestion,
+} from "@/lib/transfers/diagnose";
 
 function formatPlannerIssue(
   issue: ValidationIssue,
@@ -118,6 +128,8 @@ export function PlannerApp({
   initialPicks,
   baselineBanner = null,
   squadToggle = null,
+  initialSuggestOpen = false,
+  pendingApply = null,
 }: {
   entryId: number;
   entryName: string;
@@ -130,9 +142,17 @@ export function PlannerApp({
     useFreeHit: boolean;
     pathBase: string;
   } | null;
+  /** Open diagnose suggestions panel (e.g. ?suggest=1) */
+  initialSuggestOpen?: boolean;
+  /** Auto-apply out→in once diagnose loads (?out=&in=) */
+  pendingApply?: { outId: number; inId: number } | null;
 }) {
   const t = useTranslations("plannerApp");
   const locale = useLocale();
+  const router = useRouter();
+  const [pendingApplyState, setPendingApplyState] = useState(pendingApply);
+  const [diagnoseData, setDiagnoseData] = useState<DiagnoseResult | null>(null);
+  const [pitchMode, setPitchMode] = useState<"plan" | "fpl">("plan");
 
   const sortedInitial = useMemo(
     () => [...initialPicks].sort((a, b) => a.slot - b.slot),
@@ -379,6 +399,32 @@ export function PlannerApp({
     return s;
   }, [picks, sortedInitial]);
 
+  const squadChanges = useMemo((): SquadChangeEntry[] => {
+    const out: SquadChangeEntry[] = [];
+    for (const p of picks) {
+      const b = sortedInitial.find((x) => x.slot === p.slot);
+      if (!b) continue;
+      if (b.fpl_id !== p.fpl_id) {
+        out.push({
+          kind: "transfer",
+          slot: p.slot,
+          outName: b.web_name ?? `#${b.fpl_id}`,
+          inName: p.web_name ?? `#${p.fpl_id}`,
+        });
+      } else if (b.is_starter !== p.is_starter) {
+        out.push({
+          kind: "lineup",
+          slot: p.slot,
+          name: p.web_name ?? `#${p.fpl_id}`,
+          toStarter: p.is_starter,
+        });
+      }
+    }
+    return out.sort((a, b) => a.slot - b.slot);
+  }, [picks, sortedInitial]);
+
+  const isPlanPitch = pitchMode === "plan";
+
   function fixCaptainViceAfterLineup(next: Row[]) {
     const xiIds = new Set(
       next.filter((p) => p.is_starter).map((p) => p.fpl_id),
@@ -609,6 +655,90 @@ export function PlannerApp({
     setProjMeta(null);
   }
 
+  function applySuggestion(s: TransferSuggestion) {
+    setPitchMode("plan");
+    const slot = picks.find((p) => p.fpl_id === s.out.fpl_id)?.slot;
+    if (slot == null) {
+      setSwapNotice(t("errSuggestOutMissing"));
+      return;
+    }
+    const inbound: SearchPlayer = {
+      fpl_id: s.in.fpl_id,
+      web_name: s.in.web_name,
+      name: s.in.web_name,
+      team: s.in.team,
+      team_id: s.in.team_id,
+      position: s.in.position,
+      base_price: s.in.price,
+      status: "a",
+      form: null,
+      total_points: null,
+      minutes: null,
+      selected_by_percent: null,
+      points_per_game: null,
+      ict_index: null,
+      goals_scored: null,
+      assists: null,
+      expected_goals: null,
+      expected_assists: null,
+    };
+    applySwap(slot, inbound);
+    requestAnimationFrame(() => {
+      scenarioPitchRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function focusDiagnosedPlayer(fplId: number) {
+    setPitchMode("plan");
+    const row = picks.find((p) => p.fpl_id === fplId);
+    if (!row) return;
+    setInspectCtx({ side: "scenario", slot: row.slot, fplId });
+    scenarioPitchRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  function undoSlotChange(slot: number) {
+    const baseline = sortedInitial.find((x) => x.slot === slot);
+    if (!baseline) return;
+    const current = picks.find((x) => x.slot === slot);
+    if (!current) return;
+    if (
+      current.fpl_id === baseline.fpl_id &&
+      current.is_starter === baseline.is_starter
+    ) {
+      return;
+    }
+
+    let newBank = bank;
+    if (current.fpl_id !== baseline.fpl_id) {
+      newBank = swapBudget(bank, current.base_price, baseline.base_price);
+    }
+
+    const draft = picks.map((p) =>
+      p.slot === slot ? { ...baseline } : p,
+    );
+    setPicks(draft);
+    setBank(newBank);
+    fixCaptainViceAfterLineup(draft);
+    setProjById({});
+    setProjMeta(null);
+    setProjError(null);
+    setPitchMode("plan");
+  }
+
+  const clearPendingApply = useCallback(() => {
+    setPendingApplyState(null);
+    const base = squadToggle?.useFreeHit
+      ? `/planner/${entryId}?squad=freehit`
+      : `/planner/${entryId}`;
+    router.replace(base);
+  }, [entryId, router, squadToggle?.useFreeHit]);
+
   async function runProject() {
     if (!valid) {
       setProjError(t("errFixSquadXp"));
@@ -742,6 +872,16 @@ export function PlannerApp({
     }
     return m;
   }, [sortedInitial, nextFixtureByFplId]);
+
+  const attentionByFplId = useMemo((): Record<number, SquadPlayerSignal> | undefined => {
+    const raw = diagnoseData?.signals_by_fpl_id;
+    if (!raw) return undefined;
+    const out: Record<number, SquadPlayerSignal> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      out[Number(k)] = v;
+    }
+    return out;
+  }, [diagnoseData?.signals_by_fpl_id]);
 
   const scenarioPitchSubline = useMemo(() => {
     const m: Record<number, string> = {};
@@ -1073,7 +1213,7 @@ export function PlannerApp({
       <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
         <div className="min-w-0 flex flex-col gap-5 sm:gap-6">
           <section className="flex flex-col gap-2 sm:gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="max-w-xl space-y-1 text-xs text-muted-foreground">
             <p>
               {t("hintPitchLead")}{" "}
@@ -1084,34 +1224,76 @@ export function PlannerApp({
             </p>
             <p className="text-[11px] text-muted-foreground/80">{t("hintTapProfile")}</p>
           </div>
-          <Button type="button" variant="secondary" size="sm" onClick={resetToFplTeam}>
-            {t("resetFpl")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5"
+              role="tablist"
+              aria-label={t("pitchModePlan")}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!isPlanPitch}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3",
+                  !isPlanPitch
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => setPitchMode("fpl")}
+              >
+                {t("pitchModeFpl")}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isPlanPitch}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3",
+                  isPlanPitch
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => setPitchMode("plan")}
+              >
+                {t("pitchModePlan")}
+              </button>
+            </div>
+            <Link
+              href={`/dashboard/${entryId}`}
+              className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground/70 no-underline transition-colors hover:border-brand-accent/30 hover:text-foreground sm:px-3"
+            >
+              {t("openOnDashboard")}
+            </Link>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={squadChanges.length === 0}
+              onClick={resetToFplTeam}
+            >
+              {t("resetFpl")}
+            </Button>
+          </div>
         </div>
-        <div className="grid gap-5 sm:gap-6 xl:grid-cols-2 xl:gap-8">
-          <PitchView
-            title={t("pitchYourFpl")}
-            caption={t("pitchYourFplCaption")}
-            benchLabel={t("pitchBench")}
-            benchGkAbbrev={t("pitchBenchGkAbbrev")}
-            picks={sortedInitial}
-            captainId={cap0}
-            viceId={vice0}
-            cardSublineByFplId={baselinePitchSubline}
-            gwForecastByFplId={gwForecastByFplId}
-            nextGwXpByFplId={baselineNextGwXpByFplId}
-            nextGwXpTitle={pitchCardXpTitle}
-            interactive
-            onPickSlot={handleBaselineInspect}
-            appearance="showcase"
-            gkAtTop
+
+        {isPlanPitch && squadChanges.length > 0 ? (
+          <PlannerChangesStrip
+            changes={squadChanges}
+            bank={bank}
+            xiDelta={xiXpDelta}
+            showXiDelta={projMeta != null && Object.keys(projById).length > 0}
+            onUndo={undoSlotChange}
           />
-          <PitchView
-            ref={scenarioPitchRef}
-            title={t("planningScenario")}
-            benchLabel={t("pitchBench")}
-            benchGkAbbrev={t("pitchBenchGkAbbrev")}
-            titleAction={
+        ) : null}
+
+        <PitchView
+          ref={scenarioPitchRef}
+          title={isPlanPitch ? t("planningScenario") : t("pitchYourFpl")}
+          benchLabel={t("pitchBench")}
+          benchGkAbbrev={t("pitchBenchGkAbbrev")}
+          titleAction={
+            isPlanPitch ? (
               <div className="flex flex-col items-end gap-1">
                 <Button
                   type="button"
@@ -1121,7 +1303,9 @@ export function PlannerApp({
                   disabled={pngBusy}
                   onClick={() => void downloadScenarioPng()}
                 >
-                  {pngBusy ? t("downloadScenarioPngWorking") : t("downloadScenarioPng")}
+                  {pngBusy
+                    ? t("downloadScenarioPngWorking")
+                    : t("downloadScenarioPng")}
                 </Button>
                 {pngError ? (
                   <p className="max-w-[11rem] text-right text-[10px] leading-snug text-red-400">
@@ -1129,9 +1313,11 @@ export function PlannerApp({
                   </p>
                 ) : null}
               </div>
-            }
-            caption={
-              bank < -0.05
+            ) : null
+          }
+          caption={
+            isPlanPitch
+              ? bank < -0.05
                 ? t("pitchPlanningCaptionShortfall", {
                     short: Math.abs(bank).toFixed(1),
                     n: changedFromFpl.size,
@@ -1142,23 +1328,45 @@ export function PlannerApp({
                       bank: bank.toFixed(1),
                     })
                   : t("pitchPlanningCaptionSame", { bank: bank.toFixed(1) })
-            }
-            picks={picks}
-            captainId={captainId}
-            viceId={viceId}
-            cardSublineByFplId={scenarioPitchSubline}
-            gwForecastByFplId={gwForecastByFplId}
-            nextGwXpByFplId={scenarioNextGwXpByFplId}
-            nextGwXpTitle={pitchCardXpTitle}
-            highlightSlots={changedFromFpl}
-            reorderSelectedSlot={xiBenchMode ? xiFirst : null}
-            interactive
-            onPickSlot={handlePlanningInteraction}
-            appearance="showcase"
-            gkAtTop
-          />
-        </div>
+              : t("pitchModeFplHint")
+          }
+          picks={isPlanPitch ? picks : sortedInitial}
+          captainId={isPlanPitch ? captainId : cap0}
+          viceId={isPlanPitch ? viceId : vice0}
+          cardSublineByFplId={
+            isPlanPitch ? scenarioPitchSubline : baselinePitchSubline
+          }
+          gwForecastByFplId={gwForecastByFplId}
+          nextGwXpByFplId={
+            isPlanPitch ? scenarioNextGwXpByFplId : baselineNextGwXpByFplId
+          }
+          nextGwXpTitle={pitchCardXpTitle}
+          attentionByFplId={attentionByFplId}
+          showAttentionLegend
+          highlightSlots={isPlanPitch ? changedFromFpl : undefined}
+          reorderSelectedSlot={
+            isPlanPitch && xiBenchMode ? xiFirst : null
+          }
+          interactive
+          onPickSlot={
+            isPlanPitch ? handlePlanningInteraction : handleBaselineInspect
+          }
+          appearance="showcase"
+          gkAtTop
+        />
       </section>
+
+      <PlannerDiagnosePanel
+        entryId={entryId}
+        horizon={horizon}
+        viewingFreeHitSquad={Boolean(squadToggle?.useFreeHit)}
+        defaultExpanded={initialSuggestOpen}
+        onFocusPlayer={focusDiagnosedPlayer}
+        onApplySuggestion={applySuggestion}
+        pendingApply={pendingApplyState}
+        onPendingApplyConsumed={clearPendingApply}
+        onDataLoaded={setDiagnoseData}
+      />
 
       {projMeta && Object.keys(projById).length > 0 && (
         <div className="rounded-xl border border-border bg-card px-3 py-3 text-sm sm:px-4 sm:py-4">

@@ -30,6 +30,7 @@ export const SITE_FEATURES = [
   "price_changes",
   "best_of_position",
   "transfers",
+  "transfer_diagnose",
   "set_pieces",
   "defcon",
   "differentials",

@@ -4,6 +4,10 @@ import { PageShell } from "@/components/page-shell";
 import { ScoutArticleBody } from "@/components/scout/scout-article-body";
 import { ScoutCta } from "@/components/scout/scout-cta";
 import { ScoutPageview } from "@/components/scout/scout-pageview";
+import {
+  ScoutSignupCta,
+  ScoutSignupPrompt,
+} from "@/components/scout/scout-signup-gate";
 import { getScoutArticleBySlug } from "@/lib/scout/store";
 import { displayScoutBody, displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
@@ -49,6 +53,7 @@ export default async function ScoutArticlePage({ params }: Props) {
   return (
     <PageShell backHref="/scout" backLabel={t("backList")} width="4xl">
       <ScoutPageview articleId={article.id} slug={article.slug} />
+      <ScoutSignupPrompt />
       <article className="flex flex-col gap-5">
         <header className="flex flex-col gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">
@@ -80,6 +85,8 @@ export default async function ScoutArticlePage({ params }: Props) {
           />
         ) : null}
 
+        <ScoutSignupCta />
+
         <ScoutCta
           slug={article.slug}
           articleId={article.id}
@@ -97,6 +104,8 @@ export default async function ScoutArticlePage({ params }: Props) {
         />
 
         <ScoutArticleBody html={body} baseUrl={article.source_url} />
+
+        <ScoutSignupCta />
 
         <ScoutCta
           slug={article.slug}

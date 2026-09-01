@@ -13,6 +13,7 @@ function testPathMapping() {
   assert.equal(featureFromPath("/"), "home");
   assert.equal(featureFromPath("/zh/"), "home");
   assert.equal(featureFromPath("/planner/99"), "planner");
+  assert.equal(featureFromPath("/transfers/56657"), "transfer_diagnose");
   assert.equal(featureFromPath("/squad-builder"), "squad_builder");
   assert.equal(featureFromPath("/fpl/insights/recommended-squad"), "recommended_squad");
   assert.equal(featureFromPath("/fpl/insights"), "insights");

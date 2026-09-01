@@ -61,6 +61,7 @@
       .page-total { font-size: 14px; font-weight: 700; color: rgba(244,244,245,0.45); letter-spacing: 0.08em; }
 
       .chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+      .content:has(.teaser-page) .chips { padding: 0 40px; }
       .chip {
         padding: 7px 14px; border-radius: 999px;
         background: rgba(55,0,60,0.7); border: 1px solid rgba(0,255,135,0.3);
@@ -77,7 +78,7 @@
         flex-direction: column;
         min-height: 0;
       }
-      .cover-hero > h1 { font-size: 36px; flex-shrink: 0; }
+      .cover-hero > h1 { font-size: 38px; flex-shrink: 0; }
       h1 {
         font-size: 46px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.22;
       }
@@ -106,12 +107,12 @@
       .swipe em { color: #00ff87; font-style: normal; }
 
       .feed-grid {
-        margin-top: 18px;
+        margin-top: 16px;
         flex: 1;
         min-height: 0;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        gap: 18px;
       }
       .feed-grid.cols-1 { grid-template-columns: 1fr; }
       /* 3 cards: two on top, third full-width so landscape Scout photos keep the face. */
@@ -134,74 +135,190 @@
       }
       .feed-card .card-head {
         display: flex; gap: 10px; align-items: flex-start;
-        padding: 12px 14px 8px;
+        padding: 13px 15px 9px;
         flex-shrink: 0;
       }
       .feed-card .idx {
         flex-shrink: 0; font-family: Inter, sans-serif;
-        font-size: 16px; font-weight: 900; color: #00ff87;
+        font-size: 18px; font-weight: 900; color: #00ff87;
         padding-top: 3px; letter-spacing: 0.04em;
       }
       .feed-card h3 {
-        font-size: 20px; font-weight: 800; line-height: 1.28;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        font-size: 20px; font-weight: 800; line-height: 1.34;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         overflow: hidden;
       }
       .feed-card .thumb {
-        flex: 1; min-height: 120px; background: rgba(0,0,0,0.28);
+        flex: 1; min-height: 160px; background: rgba(0,0,0,0.28);
         overflow: hidden;
         position: relative;
       }
       .feed-card .thumb img {
+        position: absolute; inset: 0;
         width: 100%; height: 100%;
         object-fit: cover;
         object-position: center top;
         display: block;
+      }
+      .feed-card .thumb.face img {
+        object-position: center 12%;
+      }
+      .feed-card .thumb.graphic img {
+        object-fit: contain;
+        object-position: center;
       }
       .feed-card .thumb.logo {
         display: flex; align-items: center; justify-content: center;
         background: rgba(0,255,135,0.06);
       }
       .feed-card .thumb.logo img {
+        position: static;
         object-fit: contain; width: 72%; height: 72%;
       }
       .feed-card .thumb.empty {
         min-height: 88px;
         background: linear-gradient(180deg, rgba(0,255,135,0.08), rgba(255,255,255,0.03));
       }
+      .feed-card .thumb.schedule {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 10px 12px 12px;
+        background: linear-gradient(180deg, rgba(0,255,135,0.10), rgba(0,0,0,0.38));
+        gap: 3px;
+      }
+      .feed-card .sched-kicker {
+        font-size: 12px; font-weight: 800; letter-spacing: 0.10em;
+        color: #00ff87; margin-bottom: 4px; text-transform: none;
+      }
+      .feed-card .sched-row {
+        display: flex; gap: 8px; align-items: baseline;
+        font-size: 15px; font-weight: 800; line-height: 1.28;
+      }
+      .feed-card .sched-time {
+        font-family: Inter, sans-serif;
+        color: #00ff87;
+        width: 72px;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .feed-card .sched-name { color: #f4f4f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .teaser-hero.schedule {
+        height: auto;
+        min-height: 220px;
+        padding: 18px 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        background: linear-gradient(180deg, rgba(0,255,135,0.10), rgba(0,0,0,0.38));
+      }
+      .teaser-hero.schedule .sched-kicker {
+        font-size: 16px; font-weight: 800; letter-spacing: 0.10em;
+        color: #00ff87; margin-bottom: 6px;
+      }
+      .teaser-hero.schedule .sched-row {
+        display: flex; gap: 16px; align-items: baseline;
+        font-size: 26px; font-weight: 800; line-height: 1.35;
+      }
+      .teaser-hero.schedule .sched-time {
+        font-family: Inter, sans-serif;
+        color: #00ff87;
+        width: 110px;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
       .teaser-page {
         flex: 1; display: flex; flex-direction: column; min-height: 0;
       }
-      .teaser-page h1 { flex-shrink: 0; font-size: 32px; }
+      .teaser-page h1 { flex-shrink: 0; font-size: 32px; padding: 0 40px; line-height: 1.24; }
       .teaser-page h1.long { font-size: 28px; }
       .teaser-page h1.longer { font-size: 24px; }
       .teaser-copy {
-        padding-top: 10px !important;
-        flex: 1; min-height: 0; overflow: hidden;
-        font-size: 26px !important; line-height: 1.5 !important;
+        padding: 14px 52px 6px !important;
+        flex: 0 1 auto; min-height: 0; overflow: hidden;
+        font-size: 24px !important; line-height: 1.88 !important;
+        letter-spacing: 0.015em;
       }
-      .teaser-copy p:last-child { margin-bottom: 0; }
+      .teaser-copy p { margin: 0 0 22px !important; }
+      .teaser-copy p:last-child { margin-bottom: 0 !important; }
       .teaser-hero {
-        flex-shrink: 0;
+        flex: 1 1 auto;
+        min-height: 180px;
+        max-height: 460px;
         margin-top: 12px;
-        height: 300px;
+        height: auto;
         border-radius: 16px;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.12);
         background: rgba(0,0,0,0.28);
       }
+      .teaser-hero.graphic { min-height: 240px; }
       .teaser-hero img {
         width: 100%; height: 100%; object-fit: cover;
         object-position: center top;
         display: block;
       }
+      .teaser-hero.graphic img {
+        object-fit: contain;
+        object-position: center;
+      }
       .teaser-hero.hidden { display: none; }
       .teaser-more {
-        margin-top: 8px; flex-shrink: 0;
-        font-size: 20px; font-weight: 800; color: rgba(244,244,245,0.5);
+        margin-top: 10px; flex-shrink: 0;
+        font-size: 21px; font-weight: 800; color: rgba(244,244,245,0.5);
       }
       .teaser-more em { color: #00ff87; font-style: normal; }
-      .close-hero h1 { margin-top: 12px; }
+      .close-head { flex-shrink: 0; }
+      .close-head h1 { margin-top: 4px; font-size: 40px; line-height: 1.18; }
+      .close-head .sub { margin-top: 14px; font-size: 22px; line-height: 1.45; }
+      .close-swipe {
+        margin-top: 12px !important;
+        padding-top: 8px;
+        flex-shrink: 0;
+        font-size: 18px;
+      }
+      .close-more {
+        margin-top: 20px;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .close-more .kicker {
+        font-size: 18px; font-weight: 800; letter-spacing: 0.10em;
+        color: #00ff87; margin-bottom: 6px; flex-shrink: 0;
+      }
+      .close-more ol {
+        list-style: none; padding: 0; margin: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0;
+        display: flex; flex-direction: column;
+        justify-content: space-evenly;
+      }
+      .close-more li {
+        display: flex; gap: 13px; align-items: center;
+        flex: 1 1 0;
+        min-height: 0;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.10);
+        font-size: 27px; font-weight: 800; line-height: 1.38;
+      }
+      .close-more li:last-child { border-bottom: 0; }
+      .close-more .idx {
+        flex-shrink: 0; font-family: Inter, sans-serif;
+        font-size: 21px; font-weight: 900; color: #00ff87;
+        padding-top: 2px; width: 45px;
+      }
+      .close-more .ttl {
+        min-width: 0;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
 
       .body-kicker {
         flex-shrink: 0;
@@ -308,6 +425,102 @@
         padding-top: 0;
       }
       .mblock { }
+
+      /* Xiaohongshu palette: coral → pink → purple on white */
+      .poster.theme-xhs { color: #1a1020; }
+      .poster.theme-xhs .bg {
+        background: #ffffff;
+      }
+      .poster.theme-xhs .pitch-stripe { display: none; }
+      .poster.theme-xhs .wm { color: rgba(255, 45, 120, 0.04); }
+      .poster.theme-xhs .brand span {
+        background: linear-gradient(135deg, #FF4D4D 0%, #FF2D78 52%, #9B3DFF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .poster.theme-xhs .eyebrow { color: #FF2D78; }
+      .poster.theme-xhs .page-total { color: rgba(26, 16, 32, 0.42); }
+      .poster.theme-xhs .chip {
+        background: linear-gradient(135deg, rgba(255, 77, 77, 0.12), rgba(155, 61, 255, 0.10));
+        border-color: rgba(255, 45, 120, 0.35);
+        color: #D81B7A;
+      }
+      .poster.theme-xhs .chip.muted {
+        background: rgba(26, 16, 32, 0.04);
+        border-color: rgba(26, 16, 32, 0.10);
+        color: rgba(26, 16, 32, 0.72);
+      }
+      .poster.theme-xhs .sub { color: rgba(26, 16, 32, 0.62); }
+      .poster.theme-xhs .swipe { color: rgba(26, 16, 32, 0.48); }
+      .poster.theme-xhs .swipe em {
+        background: linear-gradient(135deg, #FF4D4D, #9B3DFF);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-style: normal;
+      }
+      .poster.theme-xhs .feed-card {
+        background: rgba(255, 255, 255, 0.88);
+        border-color: rgba(255, 45, 120, 0.18);
+        box-shadow: 0 8px 28px rgba(155, 61, 255, 0.08);
+      }
+      .poster.theme-xhs .feed-card .idx {
+        background: linear-gradient(135deg, #FF4D4D, #9B3DFF);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .poster.theme-xhs .feed-card .thumb { background: rgba(255, 245, 250, 0.9); }
+      .poster.theme-xhs .feed-card .thumb.empty {
+        background: linear-gradient(180deg, rgba(255, 77, 77, 0.08), rgba(155, 61, 255, 0.06));
+      }
+      .poster.theme-xhs .feed-card .sched-kicker,
+      .poster.theme-xhs .feed-card .sched-time,
+      .poster.theme-xhs .teaser-hero.schedule .sched-kicker,
+      .poster.theme-xhs .teaser-hero.schedule .sched-time { color: #FF2D78; }
+      .poster.theme-xhs .feed-card .sched-name,
+      .poster.theme-xhs .teaser-hero.schedule .sched-row { color: #1a1020; }
+      .poster.theme-xhs .teaser-hero.schedule {
+        background: linear-gradient(180deg, rgba(255, 77, 77, 0.08), rgba(155, 61, 255, 0.06));
+      }
+      .poster.theme-xhs .teaser-copy { color: #2a2030 !important; }
+      .poster.theme-xhs .teaser-more { color: rgba(26, 16, 32, 0.45); }
+      .poster.theme-xhs .teaser-more em { color: #FF2D78; -webkit-text-fill-color: #FF2D78; }
+      .poster.theme-xhs .teaser-hero {
+        border-color: rgba(255, 45, 120, 0.16);
+        background: rgba(255, 250, 252, 0.95);
+      }
+      .poster.theme-xhs .close-more .kicker { color: #FF2D78; }
+      .poster.theme-xhs .close-more .idx {
+        background: linear-gradient(135deg, #FF4D4D, #9B3DFF);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .poster.theme-xhs .close-more li { border-bottom-color: rgba(255, 45, 120, 0.14); }
+      .poster.theme-xhs .body-copy { color: #2a2030; }
+      .poster.theme-xhs .body-copy h1,
+      .poster.theme-xhs .body-copy h2,
+      .poster.theme-xhs .body-copy h3,
+      .poster.theme-xhs .body-copy h4,
+      .poster.theme-xhs .body-copy th { color: #FF2D78; }
+      .poster.theme-xhs .body-copy li::before {
+        background: linear-gradient(135deg, #FF4D4D, #9B3DFF);
+        box-shadow: 0 0 8px rgba(255, 45, 120, 0.35);
+      }
+      .poster.theme-xhs .body-copy blockquote {
+        border-left-color: #FF2D78;
+        background: rgba(255, 45, 120, 0.06);
+      }
+      .poster.theme-xhs .body-kicker { border-bottom-color: rgba(255, 45, 120, 0.14); }
+      .poster.theme-xhs .body-kicker h2 { color: rgba(26, 16, 32, 0.82); }
+      .poster.theme-xhs .footer {
+        border-top-color: rgba(255, 45, 120, 0.14);
+        color: rgba(26, 16, 32, 0.45);
+      }
+      .poster.theme-xhs .footer strong { color: #FF2D78; }
+      .poster.theme-xhs .ffs-mark { color: rgba(26, 16, 32, 0.42); }
     </style>
   </head>
   <body>
@@ -342,17 +555,26 @@
         col.innerHTML = blocks.map((h, i) =>
           `<div class="mblock" data-i="${i}">${h}</div>`
         ).join("");
-        await waitImages(col, 2500);
+        await waitImages(col, 8000);
         return Array.from(col.querySelectorAll(".mblock")).map((el) => el.offsetHeight);
       };
       window.bodyOverflow = function () {
-        const el = document.querySelector(".body-copy");
+        const el = document.querySelector(".close-more") || document.querySelector(".body-copy");
         if (!el) return 0;
         return el.scrollHeight - el.clientHeight;
       };
       window.waitPageImages = function () {
-        return waitImages(document.getElementById("root"), 2500);
+        return waitImages(document.getElementById("root"), 8000);
       };
+      function scheduleHtml(title, slots) {
+        if (!Array.isArray(slots) || !slots.length) return "";
+        const kicker = title ? `<div class="sched-kicker">${esc(title)}</div>` : "";
+        const rows = slots.map((s) => {
+          const mark = s.mark ? `${esc(s.mark)} ` : "";
+          return `<div class="sched-row"><span class="sched-time">${esc(s.time)}</span><span class="sched-name">${mark}${esc(s.name)}</span></div>`;
+        }).join("");
+        return `${kicker}${rows}`;
+      }
       function titleClass(title) {
         const n = String(title || "").length;
         if (n > 42) return "longer";
@@ -382,16 +604,25 @@
             <div class="chip muted">Fantasy Football Scout 中文</div>
           </div>`;
 
-        const showPitch = isCover || data.kind === "feed-cover" || data.kind === "feed-close";
+        const showPitch =
+          data.theme !== "xhs" &&
+          (isCover || data.kind === "feed-cover" || data.kind === "feed-close");
         let inner = "";
         if (data.kind === "feed-cover") {
           const cards = data.items || [];
           const cols = cards.length <= 2 ? "cols-1" : cards.length === 3 ? "cols-3" : "";
           const items = cards.map((item, i) => {
             const logoLike = /ffs-logo/i.test(item.heroSrc || "");
-            const thumb = item.heroSrc
-              ? `<div class="thumb${logoLike ? " logo" : ""}"><img src="${esc(item.heroSrc)}" alt=""></div>`
-              : `<div class="thumb empty"></div>`;
+            const graphic = item.heroFit === "contain" && !logoLike && !item.face;
+            const sched = Array.isArray(item.schedule) ? item.schedule : [];
+            let thumb;
+            if (sched.length) {
+              thumb = `<div class="thumb schedule">${scheduleHtml(item.scheduleTitle, sched)}</div>`;
+            } else if (item.heroSrc) {
+              thumb = `<div class="thumb${logoLike ? " logo" : ""}${item.face ? " face" : ""}${graphic ? " graphic" : ""}"><img src="${esc(item.heroSrc)}" alt=""></div>`;
+            } else {
+              thumb = `<div class="thumb empty"></div>`;
+            }
             return `<li class="feed-card">
               <div class="card-head"><span class="idx">${String(i + 1).padStart(2, "0")}</span><h3>${esc(item.title)}</h3></div>
               ${thumb}
@@ -405,9 +636,14 @@
               <div class="swipe">左滑看精选</div>
             </div>`;
         } else if (data.kind === "teaser") {
-          const hero = data.heroSrc
-            ? `<div class="teaser-hero"><img src="${esc(data.heroSrc)}" alt=""></div>`
-            : "";
+          const graphic = data.heroFit === "contain";
+          const sched = Array.isArray(data.schedule) ? data.schedule : [];
+          let hero = "";
+          if (sched.length) {
+            hero = `<div class="teaser-hero schedule">${scheduleHtml(data.scheduleTitle, sched)}</div>`;
+          } else if (data.heroSrc) {
+            hero = `<div class="teaser-hero${graphic ? " graphic" : ""}"><img src="${esc(data.heroSrc)}" alt=""></div>`;
+          }
           inner = `
             ${chips}
             <div class="teaser-page">
@@ -417,12 +653,22 @@
               <div class="teaser-more">完整内容在 <em>Faleague Scout 中文</em></div>
             </div>`;
         } else if (data.kind === "feed-close") {
+          const more = Array.isArray(data.moreTitles) ? data.moreTitles : [];
+          const moreHtml = more.length
+            ? `<div class="close-more">
+                <div class="kicker">本条未收录 · 专栏里还有</div>
+                <ol>${more.map((t, i) =>
+                  `<li><span class="idx">${String(i + 1).padStart(2, "0")}</span><span class="ttl">${esc(t)}</span></li>`
+                ).join("")}</ol>
+              </div>`
+            : "";
           inner = `
-            <div class="cover-hero close-hero">
+            <div class="close-head">
               <h1>${esc(data.title || "完整文章在 Faleague")}</h1>
               <div class="sub">${esc(data.subtitle || "去 Scout 中文专栏看全文、笔记和伤情。")}</div>
-              <div class="swipe"><em>Faleague</em> · Scout 中文</div>
-            </div>`;
+            </div>
+            ${moreHtml}
+            <div class="swipe close-swipe"><em>Faleague</em> · Scout 中文</div>`;
         } else if (isCover) {
           inner = `
             ${chips}
@@ -456,6 +702,12 @@
             ${inner}
             ${footer}
           </div>`;
+        const root = document.getElementById("root");
+        const isXhs = data.theme === "xhs";
+        root.className = isXhs ? "poster theme-xhs" : "poster";
+        document.documentElement.style.background = isXhs ? "#ffffff" : "#0b0a0f";
+        document.body.style.background = isXhs ? "#ffffff" : "#0b0a0f";
+        document.body.style.color = isXhs ? "#1a1020" : "#f4f4f5";
       };
     </script>
   </body>

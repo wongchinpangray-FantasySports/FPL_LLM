@@ -18,6 +18,10 @@ import { cn } from "@/lib/utils";
 export type SignupPromptCopy = {
   title?: string;
   body?: string;
+  /** Persist dismiss in sessionStorage under this key (optional). */
+  dismissKey?: string;
+  /** Return path after signup/login, e.g. `/scout/some-slug`. */
+  nextPath?: string;
 };
 
 type SignupPromptContextValue = {
@@ -91,6 +95,19 @@ function SignupPromptDialog({
 
   const title = copy?.title ?? t("title");
   const body = copy?.body ?? t("body");
+  const nextQ = copy?.nextPath
+    ? `?next=${encodeURIComponent(copy.nextPath)}`
+    : "";
+
+  const persistDismiss = () => {
+    const key = copy?.dismissKey ?? (!copy ? "faleague_signup_prompt_v2_dismissed" : null);
+    if (!key) return;
+    try {
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* ignore */
+    }
+  };
 
   return createPortal(
     <div
@@ -103,7 +120,10 @@ function SignupPromptDialog({
         type="button"
         className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         aria-label={t("close")}
-        onClick={onClose}
+        onClick={() => {
+          persistDismiss();
+          onClose();
+        }}
       />
       <div className="relative z-[111] w-full max-w-md overflow-hidden rounded-2xl border border-brand-accent/25 bg-background shadow-2xl shadow-brand-accent/10">
         <div
@@ -116,7 +136,10 @@ function SignupPromptDialog({
         <div className="p-6 sm:p-7">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              persistDismiss();
+              onClose();
+            }}
             className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label={t("close")}
           >
@@ -157,14 +180,14 @@ function SignupPromptDialog({
 
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
             <Link
-              href="/auth/signup"
+              href={`/auth/signup${nextQ}`}
               onClick={onClose}
               className={cn(buttonVariants({ size: "lg" }), "w-full no-underline sm:flex-1")}
             >
               {t("signup")}
             </Link>
             <Link
-              href="/auth/login"
+              href={`/auth/login${nextQ}`}
               onClick={onClose}
               className={cn(
                 buttonVariants({ variant: "secondary", size: "lg" }),
@@ -177,13 +200,7 @@ function SignupPromptDialog({
           <button
             type="button"
             onClick={() => {
-              if (!copy) {
-                try {
-                  sessionStorage.setItem("faleague_signup_prompt_v2_dismissed", "1");
-                } catch {
-                  /* ignore */
-                }
-              }
+              persistDismiss();
               onClose();
             }}
             className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground"

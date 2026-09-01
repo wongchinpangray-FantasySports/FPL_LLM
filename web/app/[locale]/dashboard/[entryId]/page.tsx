@@ -425,7 +425,7 @@ export default async function DashboardPage({
               {dt("emptySquadSaveOnFpl")}
             </a>
             <Link
-              href={`/planner/${entryId}`}
+              href={`/planner/${entryId}?suggest=1`}
               className="inline-flex rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
               {dt("emptySquadOpenPlanner")}
@@ -605,7 +605,7 @@ export default async function DashboardPage({
           {(
             [
               {
-                href: `/planner/${entryId}`,
+                href: `/planner/${entryId}?suggest=1`,
                 label: dt("toolsPlanner"),
                 body: dt("toolsPlannerBody"),
                 accent: true,

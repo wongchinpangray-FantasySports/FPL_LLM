@@ -610,7 +610,7 @@ function SquadHealthBlock({
 
             <div className="flex flex-wrap gap-2">
               <Link
-                href={entryId ? `/planner/${entryId}` : "/planner"}
+                href={entryId ? `/planner/${entryId}?suggest=1` : "/planner"}
                 className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground no-underline hover:border-brand-accent/50 hover:text-brand-accent"
               >
                 {t("fplOpenPlanner")}
@@ -869,7 +869,7 @@ export function HomeSeasonHubLayout({
                   <PlanBuildCard
                     title={t("seasonToolPlanBuild")}
                     body={t("seasonToolPlanBuildBody")}
-                    plannerHref={entryId ? `/planner/${entryId}` : "/planner"}
+                    plannerHref={entryId ? `/planner/${entryId}?suggest=1` : "/planner"}
                     plannerLabel={t("fplOpenPlanner")}
                     builderHref="/squad-builder"
                     builderLabel={t("fplOpenSquadBuilder")}

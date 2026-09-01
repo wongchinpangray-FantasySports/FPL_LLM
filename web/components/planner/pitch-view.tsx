@@ -3,7 +3,9 @@
 import { cn } from "@/lib/utils";
 import { getFplShirtUrl } from "@/lib/team-themes";
 import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
-import { forwardRef, useState, type ReactNode } from "react";
+import type { SquadPlayerSignal } from "@/lib/transfers/diagnose";
+import { forwardRef, useMemo, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import type { PlannerPickPayload } from "./types";
 
 export type PlannerGwStripCell = { gw: number; opp: string; xp: number };
@@ -111,6 +113,25 @@ function pitchPriceArrow(badge: PitchPriceBadge | undefined): "↑" | "↓" | nu
   return null;
 }
 
+function attentionDotClass(severity: SquadPlayerSignal["severity"]): string {
+  switch (severity) {
+    case "alert":
+      return "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.85)]";
+    case "watch":
+      return "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.75)]";
+    case "info":
+      return "bg-slate-400/90 shadow-[0_0_4px_rgba(148,163,184,0.6)]";
+    default:
+      return "";
+  }
+}
+
+function formTextTone(form: number, lowForm: boolean): string {
+  if (lowForm || form < 3) return "text-amber-300";
+  if (form >= 5) return "text-emerald-300/90";
+  return "text-white/65";
+}
+
 function PlayerChip({
   p,
   captainId,
@@ -125,6 +146,7 @@ function PlayerChip({
   priceBadge,
   priceBadgeLabel,
   priceAlreadyChangedLabel,
+  attention,
   onClick,
   onInspectPlayer,
   inspectNameTitle,
@@ -146,10 +168,12 @@ function PlayerChip({
   priceBadge?: PitchPriceBadge;
   priceBadgeLabel?: string;
   priceAlreadyChangedLabel?: string | null;
+  attention?: SquadPlayerSignal;
   onClick?: () => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
 }) {
+  const tAtt = useTranslations("transfers");
   const isC = captainId != null && p.fpl_id === captainId;
   const isV = viceId != null && p.fpl_id === viceId;
   const isEmpty = p.fpl_id <= 0;
@@ -185,28 +209,66 @@ function PlayerChip({
   const priceArrow = showPrice ? pitchPriceArrow(priceBadge) : null;
   const priceTone = showPrice ? pitchPriceTextTone(priceBadge) : "text-white/70";
 
+  const showAttentionDot =
+    attention != null && attention.severity !== "none";
+  const lowFormFlag = attention?.kinds.includes("low_form") ?? false;
+  const attentionTitle =
+    attention && showAttentionDot
+      ? [
+          ...attention.kinds.map((k) => tAtt(`kind_${k}`)),
+          ...attention.notes,
+          attention.form != null ? `Form ${attention.form.toFixed(1)}` : null,
+          attention.xp_horizon != null
+            ? `xP ${attention.xp_horizon.toFixed(1)}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : undefined;
+
+  const sublineParts: string[] = [];
+  if (hasStrip) {
+    /* fixture strip replaces subline row */
+  } else if (cardSubline) {
+    sublineParts.push(cardSubline);
+  } else if (!isEmpty) {
+    sublineParts.push(p.team ?? "–");
+  }
+
   const inner = (
     <>
-      {showShirt ? (
-        <img
-          src={shirtUrl!}
-          alt=""
-          width={66}
-          height={87}
-          loading="lazy"
-          decoding="async"
-          crossOrigin="anonymous"
-          className="mx-auto h-12 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)] sm:h-14"
-          onError={() => setShirtFailed(true)}
-        />
-      ) : !isEmpty ? (
-        <div
-          aria-hidden
-          className="mx-auto flex h-12 w-9 items-center justify-center rounded-sm bg-black/40 text-[10px] font-bold text-white/50 sm:h-14 sm:w-10"
-        >
-          ?
-        </div>
-      ) : null}
+      <div className="relative mx-auto w-fit">
+        {showShirt ? (
+          <img
+            src={shirtUrl!}
+            alt=""
+            width={66}
+            height={87}
+            loading="lazy"
+            decoding="async"
+            crossOrigin="anonymous"
+            className="mx-auto h-12 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)] sm:h-14"
+            onError={() => setShirtFailed(true)}
+          />
+        ) : !isEmpty ? (
+          <div
+            aria-hidden
+            className="mx-auto flex h-12 w-9 items-center justify-center rounded-sm bg-black/40 text-[10px] font-bold text-white/50 sm:h-14 sm:w-10"
+          >
+            ?
+          </div>
+        ) : null}
+        {showAttentionDot ? (
+          <span
+            className={cn(
+              "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-black/50 sm:h-3 sm:w-3",
+              attentionDotClass(attention!.severity),
+            )}
+            title={attentionTitle}
+            aria-label={attentionTitle}
+          />
+        ) : null}
+      </div>
       <div
         className={cn(
           "mt-0.5 w-full min-w-0 rounded-sm px-0.5 py-0.5",
@@ -233,9 +295,31 @@ function PlayerChip({
         {hasStrip && gwStripForDisplay ? (
           <GwStripRow cells={gwStripForDisplay} />
         ) : (
-          <div className="truncate text-center text-[7px] text-white/70 sm:text-[9px]">
-            {cardSubline ??
-              (isEmpty ? (p.position ?? "–") : (p.team ?? "–"))}
+          <div className="truncate text-center text-[7px] sm:text-[9px]">
+            {!isEmpty ? (
+              <>
+                {sublineParts.length > 0 ? (
+                  <span className="text-white/70">{sublineParts.join(" · ")}</span>
+                ) : (
+                  <span className="text-white/70">{p.team ?? "–"}</span>
+                )}
+                {attention?.form != null ? (
+                  <>
+                    <span className="text-white/50"> · </span>
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        formTextTone(attention.form, lowFormFlag),
+                      )}
+                    >
+                      F {attention.form.toFixed(1)}
+                    </span>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <span className="text-white/70">{p.position ?? "–"}</span>
+            )}
           </div>
         )}
         <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
@@ -343,6 +427,7 @@ function Line({
   priceBadgeByFplId,
   priceBadgeLabelByFplId,
   priceAlreadyChangedByFplId,
+  attentionByFplId,
   onPickSlot,
   onInspectPlayer,
   inspectNameTitle,
@@ -360,6 +445,7 @@ function Line({
   priceBadgeByFplId?: Record<number, PitchPriceBadge>;
   priceBadgeLabelByFplId?: Record<number, string>;
   priceAlreadyChangedByFplId?: Record<number, string | null>;
+  attentionByFplId?: Record<number, SquadPlayerSignal>;
   onPickSlot?: (slot: number) => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
@@ -384,6 +470,7 @@ function Line({
           priceBadge={priceBadgeByFplId?.[p.fpl_id]}
           priceBadgeLabel={priceBadgeLabelByFplId?.[p.fpl_id]}
           priceAlreadyChangedLabel={priceAlreadyChangedByFplId?.[p.fpl_id]}
+          attention={attentionByFplId?.[p.fpl_id]}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
           onInspectPlayer={onInspectPlayer}
           inspectNameTitle={inspectNameTitle}
@@ -495,6 +582,10 @@ export type PitchViewProps = {
   priceBadgeByFplId?: Record<number, PitchPriceBadge>;
   priceBadgeLabelByFplId?: Record<number, string>;
   priceAlreadyChangedByFplId?: Record<number, string | null>;
+  /** Squad diagnosis markers (injury, form, xP, fixture). */
+  attentionByFplId?: Record<number, SquadPlayerSignal>;
+  /** Show legend when any player has a non-none severity. */
+  showAttentionLegend?: boolean;
 };
 
 export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
@@ -523,9 +614,17 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       priceBadgeByFplId,
       priceBadgeLabelByFplId,
       priceAlreadyChangedByFplId,
+      attentionByFplId,
+      showAttentionLegend = false,
     },
     ref,
   ) {
+    const tAtt = useTranslations("transfers");
+    const hasAttentionMarkers = useMemo(() => {
+      if (!attentionByFplId) return false;
+      return Object.values(attentionByFplId).some((s) => s.severity !== "none");
+    }, [attentionByFplId]);
+    const showLegend = showAttentionLegend && hasAttentionMarkers;
     const starters = picks.filter((p) => p.is_starter);
     const benchAll = sortBySlot(picks.filter((p) => !p.is_starter));
     /** Bench GK in a fixed column so it does not jump when outfield bench order changes (slot sort). */
@@ -615,6 +714,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                 priceBadgeByFplId={priceBadgeByFplId}
                 priceBadgeLabelByFplId={priceBadgeLabelByFplId}
                 priceAlreadyChangedByFplId={priceAlreadyChangedByFplId}
+                attentionByFplId={attentionByFplId}
                 onPickSlot={onPickSlot}
                 onInspectPlayer={onInspectPlayer}
                 inspectNameTitle={inspectNameTitle}
@@ -663,6 +763,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     priceAlreadyChangedLabel={
                       priceAlreadyChangedByFplId?.[benchGk[0].fpl_id]
                     }
+                    attention={attentionByFplId?.[benchGk[0].fpl_id]}
                     onClick={
                       onPickSlot
                         ? () => onPickSlot(benchGk[0].slot)
@@ -694,6 +795,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     priceAlreadyChangedLabel={
                       priceAlreadyChangedByFplId?.[p.fpl_id]
                     }
+                    attention={attentionByFplId?.[p.fpl_id]}
                     onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
                     onInspectPlayer={onInspectPlayer}
                     inspectNameTitle={inspectNameTitle}
@@ -702,6 +804,23 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
               ))}
             </div>
           </div>
+          {showLegend ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 px-2 py-1.5 text-[9px] text-white/60 sm:text-[10px]">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
+                {tAtt("pitchLegendAlert")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+                {tAtt("pitchLegendWatch")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-slate-400/90" aria-hidden />
+                {tAtt("pitchLegendInfo")}
+              </span>
+              <span className="text-white/45">{tAtt("pitchLegendFormHint")}</span>
+            </div>
+          ) : null}
         </div>
       </div>
     );

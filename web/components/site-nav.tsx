@@ -44,6 +44,8 @@ function isFplPath(pathname: string): boolean {
     pathname.startsWith("/manager/") ||
     pathname === "/planner" ||
     pathname.startsWith("/planner/") ||
+    pathname === "/transfers" ||
+    pathname.startsWith("/transfers/") ||
     pathname === "/players" ||
     pathname.startsWith("/player/") ||
     pathname === "/mini"
@@ -58,7 +60,7 @@ export function SiteNav() {
   const fplRef = useRef<HTMLDivElement>(null);
 
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
-  const plannerHref = entryId ? `/planner/${entryId}` : "/planner";
+  const plannerHref = entryId ? `/planner/${entryId}?suggest=1` : "/planner";
   const managerHref = entryId ? `/manager/${entryId}` : "/manager";
   const fplActive = isFplPath(pathname);
 
@@ -78,7 +80,15 @@ export function SiteNav() {
     { href: "/fpl/guide", label: t("guide"), active: pathname.startsWith("/fpl/guide") },
     { href: dashboardHref, label: t("dashboard"), active: pathname === "/dashboard" || pathname.startsWith("/dashboard/") },
     { href: managerHref, label: t("manager"), active: pathname === "/manager" || pathname.startsWith("/manager/") },
-    { href: plannerHref, label: t("planner"), active: pathname === "/planner" || pathname.startsWith("/planner/") },
+    {
+      href: plannerHref,
+      label: t("planner"),
+      active:
+        pathname === "/planner" ||
+        pathname.startsWith("/planner/") ||
+        pathname === "/transfers" ||
+        pathname.startsWith("/transfers/"),
+    },
     { href: "/players", label: t("players"), active: pathname === "/players" || pathname.startsWith("/player/") },
     { href: "/mini", label: t("mini"), active: pathname === "/mini" },
   ];

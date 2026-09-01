@@ -5,10 +5,12 @@
  *   npx tsx scripts/write-scout-zh-batch.ts --requested
  *   npx tsx scripts/write-scout-zh-batch.ts --slugs=a,b
  *
- * After writing output/scout-translate/<slug>/body_html_zh.html + meta.zh.json:
+ * After writing output/scout-translate/<slug>/body_html_zh.html + meta.zh.json
+ * { title_zh, excerpt_zh, summary_zh } (summary_zh ≈ 200 words for XHS carousel):
  *   npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=a,b
  *
  * `--apply` also renders the XHS teaser feed for those slugs unless `--no-xhs`.
+ * Same-day extra runs write `feed-YYYYMMDD-2` (then -3, …), not over the earlier pack.
  * Does not publish. Does not call Gemini/OpenAI/DeepSeek.
  */
 import { spawnSync } from "node:child_process";
@@ -93,7 +95,7 @@ async function dumpQueue(articles: ScoutArticle[]): Promise<void> {
     JSON.stringify(
       {
         note:
-          "Translate each article to Simplified Chinese. Keep HTML tags, player names in English, FPL jargon. Write output/scout-translate/<slug>/body_html_zh.html and meta.zh.json { title_zh, excerpt_zh }, then: npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=<slugs>. Do not publish. Do not call Gemini/OpenAI/DeepSeek.",
+          "Translate each article to Simplified Chinese. Keep HTML tags, player names in English, FPL jargon. Write output/scout-translate/<slug>/body_html_zh.html and meta.zh.json { title_zh, excerpt_zh, summary_zh }. summary_zh is a ~200-word / 30s–1min Simplified Chinese carousel summary (2 short paragraphs, player names English, no URLs, no invented facts) for XHS teaser pages — not a clipped excerpt of the body. Then: npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=<slugs>. Do not publish. Do not call Gemini/OpenAI/DeepSeek.",
         count: dumped.length,
         slugs: dumped.map((d) => d.slug),
         articles: articles.map((a) => ({
