@@ -80,6 +80,7 @@ import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { readJsonResponse, apiErrorMessage } from "@/lib/fetch-json";
 import {
   PlannerScenarioTabs,
   type PlannerViewTab,
@@ -202,6 +203,49 @@ function projectionIdUnion(
   }
   return Array.from(ids);
 }
+
+const PROJ_CHUNK_MAX = 45;
+const PROJ_CHUNK_MIN = 15;
+
+/** Split ids for /api/planner/project (15–45 per request). */
+function chunkPlayerIdsForProject(
+  ids: number[],
+  padFrom: number[],
+): number[][] {
+  const uniq = Array.from(new Set(ids.filter((id) => id > 0)));
+  if (uniq.length === 0) return [];
+
+  const pad = padFrom.filter((id) => id > 0);
+  const ensureMin = (chunk: number[]) => {
+    if (chunk.length >= PROJ_CHUNK_MIN) return chunk.slice(0, PROJ_CHUNK_MAX);
+    return Array.from(new Set([...chunk, ...pad])).slice(0, PROJ_CHUNK_MAX);
+  };
+
+  if (uniq.length <= PROJ_CHUNK_MAX) {
+    const chunk = ensureMin(uniq);
+    return chunk.length >= PROJ_CHUNK_MIN ? [chunk] : [];
+  }
+
+  const chunks: number[][] = [];
+  for (let i = 0; i < uniq.length; i += PROJ_CHUNK_MAX) {
+    chunks.push(ensureMin(uniq.slice(i, i + PROJ_CHUNK_MAX)));
+  }
+  return chunks;
+}
+
+type ProjectApiResponse = {
+  projections?: Record<string, ProjRow>;
+  fromGw?: number;
+  toGw?: number;
+  horizon?: number;
+  leagueTops?: {
+    tops?: Record<PlannerTopPosition, TopXpPlayerRow[]>;
+    fromGw?: number;
+    toGw?: number;
+    horizon?: number;
+  } | null;
+  error?: string;
+};
 function pitchSecondLineFromNext(
   row: PlannerPickPayload,
   nextByFplId: Record<number, NextFixtureOpponent | null | undefined>,
@@ -961,51 +1005,60 @@ export function PlannerApp({
         picks,
         sortedInitial,
       );
-
-      const res = await fetch("/api/planner/project", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          playerIds: unionIds,
-          horizon,
-        }),
-      });
-      const data = (await res.json()) as {
-        projections?: Record<string, ProjRow>;
-        fromGw?: number;
-        toGw?: number;
-        horizon?: number;
-        leagueTops?: {
-          tops?: Record<PlannerTopPosition, TopXpPlayerRow[]>;
-          fromGw?: number;
-          toGw?: number;
-          horizon?: number;
-        } | null;
-        error?: string;
-      };
-      if (!res.ok) {
-        setProjError(data.error ?? t("errProjectionFailed"));
-        setTopsByPos(null);
-        setTopsFromGw(null);
-        setTopsToGw(null);
-        setTopsHorizon(null);
-        setTopsError(null);
-        setTopsLoading(false);
+      const baselineIds = sortedInitial.map((p) => p.fpl_id);
+      const chunks = chunkPlayerIdsForProject(unionIds, baselineIds);
+      if (chunks.length === 0) {
+        setProjError(t("errProjectionFailed"));
         return;
       }
-      setProjById((prev) => ({ ...prev, ...(data.projections ?? {}) }));
+
+      let merged: Record<string, ProjRow> = {};
+      let fromGw: number | undefined;
+      let toGw: number | undefined;
+      let leagueTops: ProjectApiResponse["leagueTops"] = null;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const res = await fetch("/api/planner/project", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            playerIds: chunks[i],
+            horizon,
+            includeLeagueTops: i === 0,
+          }),
+        });
+        const data = await readJsonResponse<ProjectApiResponse>(res);
+        if (!res.ok || !data) {
+          setProjError(
+            apiErrorMessage(res, data, t("errProjectionFailed")),
+          );
+          setTopsByPos(null);
+          setTopsFromGw(null);
+          setTopsToGw(null);
+          setTopsHorizon(null);
+          setTopsError(null);
+          setTopsLoading(false);
+          return;
+        }
+        merged = { ...merged, ...(data.projections ?? {}) };
+        if (i === 0) {
+          fromGw = data.fromGw;
+          toGw = data.toGw;
+          leagueTops = data.leagueTops ?? null;
+        }
+      }
+
+      setProjById((prev) => ({ ...prev, ...merged }));
       setProjMeta(
-        data.fromGw != null && data.toGw != null
-          ? { fromGw: data.fromGw, toGw: data.toGw }
-          : null,
+        fromGw != null && toGw != null ? { fromGw, toGw } : null,
       );
 
-      const lt = data.leagueTops;
+      const lt = leagueTops;
       if (lt?.tops) {
         setTopsByPos(lt.tops);
-        setTopsFromGw(lt.fromGw ?? data.fromGw ?? null);
-        setTopsToGw(lt.toGw ?? data.toGw ?? null);
-        setTopsHorizon(lt.horizon ?? data.horizon ?? horizon);
+        setTopsFromGw(lt.fromGw ?? fromGw ?? null);
+        setTopsToGw(lt.toGw ?? toGw ?? null);
+        setTopsHorizon(lt.horizon ?? horizon);
         setTopsError(null);
       } else {
         setTopsError(t("topsLoadFailed"));
@@ -1132,9 +1185,16 @@ export function PlannerApp({
           horizon: 1,
         }),
       });
-      const data = (await res.json()) as {
-        projections?: Record<string, { by_gw?: { gw: number; xp: number }[]; xp_next_gw?: number }>;
-      };
+      const data = await readJsonResponse<{
+        projections?: Record<
+          string,
+          { by_gw?: { gw: number; xp: number }[]; xp_next_gw?: number }
+        >;
+        error?: string;
+      }>(res);
+      if (!res.ok || !data) {
+        return {};
+      }
       return data.projections ?? {};
     },
     [panelXptsGw],
@@ -1429,13 +1489,15 @@ export function PlannerApp({
               {t("captain")}
             </label>
             <select
-              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
-              value={captainId ?? ""}
-              onChange={(e) =>
-                setCaptainId(Number(e.target.value) || null)
-              }
+              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 sm:h-auto sm:py-2 sm:text-sm"
+              disabled={!isPlanPitch}
+              value={(isPlanPitch ? captainId : cap0) ?? ""}
+              onChange={(e) => {
+                setProjError(null);
+                setCaptainId(Number(e.target.value) || null);
+              }}
             >
-              {picks
+              {(isPlanPitch ? picks : sortedInitial)
                 .filter((p) => p.is_starter)
                 .map((p) => (
                   <option key={p.fpl_id} value={p.fpl_id}>
@@ -1449,15 +1511,20 @@ export function PlannerApp({
               {t("vice")}
             </label>
             <select
-              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs sm:h-auto sm:py-2 sm:text-sm"
-              value={viceId ?? ""}
-              onChange={(e) =>
-                setViceId(Number(e.target.value) || null)
-              }
+              className="h-9 rounded-md border border-border bg-background px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 sm:h-auto sm:py-2 sm:text-sm"
+              disabled={!isPlanPitch}
+              value={(isPlanPitch ? viceId : vice0) ?? ""}
+              onChange={(e) => {
+                setProjError(null);
+                setViceId(Number(e.target.value) || null);
+              }}
             >
               <option value="">—</option>
-              {picks
-                .filter((p) => p.is_starter && p.fpl_id !== captainId)
+              {(isPlanPitch ? picks : sortedInitial)
+                .filter((p) => {
+                  const cap = isPlanPitch ? captainId : cap0;
+                  return p.is_starter && p.fpl_id !== cap;
+                })
                 .map((p) => (
                   <option key={p.fpl_id} value={p.fpl_id}>
                     {p.web_name ?? p.fpl_id}
