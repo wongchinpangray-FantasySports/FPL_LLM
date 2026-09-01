@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   filterOfficialFplPlayers,
   getOfficialFplBrowsePlayers,
+  type SquadBuilderPlayerSort,
 } from "@/lib/squad-builder/fpl-live-players";
 import {
   MINI_PLAYER_DISPLAY_COLS,
@@ -14,32 +15,41 @@ import {
 } from "@/lib/fpl/player-search";
 import { getServerSupabase } from "@/lib/supabase";
 
-/** Search current-season FPL players for Mini 5 (avoids stale `players_static` rows). */
+/** Browse / search current-season FPL players for Mini 5. */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("q") ?? "";
   const locale = searchParams.get("locale") ?? "";
   const position = searchParams.get("position");
+  const sort = (searchParams.get("sort") ?? "form") as SquadBuilderPlayerSort;
+  const limit = Math.min(
+    Math.max(Number(searchParams.get("limit") ?? 80) || 80, 10),
+    200,
+  );
 
   const q = sanitizePlayerQuery(raw);
-  if (q.length < minPlayerQueryLength(q)) {
-    return NextResponse.json({ players: [] satisfies MiniPlayerDisplay[] });
-  }
+  const hasQuery = q.length >= minPlayerQueryLength(q);
 
   try {
     const pool = await getOfficialFplBrowsePlayers();
-    const { players: filtered } = filterOfficialFplPlayers(pool, {
-      q,
+    const { players: filtered, total } = filterOfficialFplPlayers(pool, {
+      q: hasQuery ? q : "",
       locale,
       position:
         position && ["GKP", "DEF", "MID", "FWD"].includes(position)
           ? position
           : undefined,
-      limit: 20,
+      sort: ["price", "points", "ownership", "form"].includes(sort)
+        ? sort
+        : "form",
+      limit,
     });
 
     if (filtered.length === 0) {
-      return NextResponse.json({ players: [] satisfies MiniPlayerDisplay[] });
+      return NextResponse.json({
+        players: [] satisfies MiniPlayerDisplay[],
+        total: 0,
+      });
     }
 
     const ids = filtered.map((p) => p.fpl_id);
@@ -78,7 +88,10 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json({ players });
+    return NextResponse.json(
+      { players, total },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Player search failed";
     return NextResponse.json({ error: message }, { status: 500 });

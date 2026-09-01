@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useEntryId } from "@/components/entry-id-context";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
 } from "@/components/mini/mini-pitch";
 import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 import { MiniModal, MiniModalActions } from "@/components/mini/mini-modal";
-import { MiniPlayerPicker } from "@/components/mini/mini-player-picker";
+import { MiniPlayerSidebar } from "@/components/mini/mini-player-sidebar";
 import {
   MiniTemplates,
   type MiniTemplatePayload,
@@ -179,6 +179,26 @@ function writeLocal(key: string, value: string) {
   }
 }
 
+function playerFromPick(p: PlayerHit | MiniPickStored | MiniPlayerDisplay): PlayerHit {
+  return {
+    fpl_id: p.fpl_id,
+    web_name: p.web_name,
+    team: p.team,
+    team_id: p.team_id ?? null,
+    position: p.position,
+    base_price: p.base_price ?? null,
+    status: p.status ?? null,
+    form: p.form ?? null,
+    total_points: p.total_points ?? null,
+    points_per_game: p.points_per_game ?? null,
+    selected_by_percent: p.selected_by_percent ?? null,
+    goals_scored: p.goals_scored ?? null,
+    assists: p.assists ?? null,
+    expected_goals: p.expected_goals ?? null,
+    expected_assists: p.expected_assists ?? null,
+  };
+}
+
 export function MiniGameApp({ locale }: { locale: string }) {
   const t = useTranslations("mini");
   const { entryId: storedEntryId, setEntryId } = useEntryId();
@@ -190,6 +210,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -637,6 +658,21 @@ export function MiniGameApp({ locale }: { locale: string }) {
     }
   }
 
+  function pickPlayer(player: PlayerHit, slotIndex?: number | null) {
+    const target =
+      slotIndex ??
+      pickerSlot ??
+      (player.position === "GKP" && !slots[MINI_GK_SLOT]
+        ? MINI_GK_SLOT
+        : slots.findIndex((s, i) => i > MINI_GK_SLOT && s == null));
+    if (target < 0) {
+      showNotice(t("sidebarPickSlotFirst"));
+      return;
+    }
+    assignPlayerToSlot(target, player);
+    setPickerSlot(target);
+  }
+
   function onSlotClick(slotIndex: number) {
     if (!submissionOpen) {
       showNotice(t("submissionsClosed"));
@@ -644,6 +680,18 @@ export function MiniGameApp({ locale }: { locale: string }) {
     }
     setPickerSlot(slotIndex);
   }
+
+  useEffect(() => {
+    if (pickerSlot == null || !sidebarRef.current) return;
+    sidebarRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [pickerSlot]);
+
+  const activeSlotLabel =
+    pickerSlot === MINI_GK_SLOT
+      ? t("slotGk")
+      : pickerSlot != null
+        ? t("slotOut")
+        : null;
 
   function applyTemplate(tpl: MiniTemplatePayload) {
     if (!submissionOpen) {
@@ -741,8 +789,6 @@ export function MiniGameApp({ locale }: { locale: string }) {
   }
 
   const submissionGw = ctx?.submission_gw;
-  const pickerTitle =
-    pickerSlot === MINI_GK_SLOT ? t("pickerTitleGk") : t("pickerTitleOut");
 
   const tabs: { id: TabId; label: string }[] = [
     { id: "pick", label: t("tabPick") },
@@ -852,40 +898,57 @@ export function MiniGameApp({ locale }: { locale: string }) {
             differentials={diffPicks}
           />
 
-          <div>
-            <p className="mb-2 text-sm text-muted-foreground">{t("pitchHint")}</p>
-            <p className="mb-3 text-xs text-muted-foreground">
-              {t("posCounts", {
-                gkp: posCounts.GKP,
-                def: posCounts.DEF,
-                mid: posCounts.MID,
-                fwd: posCounts.FWD,
-              })}
-            </p>
-            <MiniPitch
-              slots={slots}
-              captainId={captainId}
-              viceId={viceId}
-              activeSlot={pickerSlot}
-              disabled={!submissionOpen}
-              fixtureByFplId={fixtureByFplId}
-              slotGkLabel={t("slotGk")}
-              slotOutLabel={t("slotOut")}
-              captainLabel={t("captain")}
-              viceLabel={t("vice")}
-              emptyLabel={t("tapToPick")}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,28rem)] xl:grid-cols-[minmax(0,1fr)_min(24rem,32rem)]">
+            <div>
+              <p className="mb-2 text-sm text-muted-foreground">
+                {t("pitchHintSidebar")}
+              </p>
+              <p className="mb-3 text-xs text-muted-foreground">
+                {t("posCounts", {
+                  gkp: posCounts.GKP,
+                  def: posCounts.DEF,
+                  mid: posCounts.MID,
+                  fwd: posCounts.FWD,
+                })}
+              </p>
+              <MiniPitch
+                slots={slots}
+                captainId={captainId}
+                viceId={viceId}
+                activeSlot={pickerSlot}
+                disabled={!submissionOpen}
+                fixtureByFplId={fixtureByFplId}
+                slotGkLabel={t("slotGk")}
+                slotOutLabel={t("slotOut")}
+                captainLabel={t("captain")}
+                viceLabel={t("vice")}
+                emptyLabel={t("tapToPick")}
+                miniOwnedById={miniOwnedById}
+                onSlotClick={onSlotClick}
+                onSetCaptain={(id) => {
+                  if (!submissionOpen) return;
+                  setCaptainId(id);
+                  if (viceId === id) setViceId(null);
+                }}
+                onSetVice={(id) => {
+                  if (!submissionOpen) return;
+                  setViceId(id);
+                  if (captainId === id) setCaptainId(null);
+                }}
+              />
+            </div>
+
+            <MiniPlayerSidebar
+              ref={sidebarRef}
+              selectedSlot={pickerSlot}
+              slotLabel={activeSlotLabel}
+              excludeIdentities={picks.map((p) => miniPlayerIdentityKey(p))}
               miniOwnedById={miniOwnedById}
-              onSlotClick={onSlotClick}
-              onSetCaptain={(id) => {
-                if (!submissionOpen) return;
-                setCaptainId(id);
-                if (viceId === id) setViceId(null);
-              }}
-              onSetVice={(id) => {
-                if (!submissionOpen) return;
-                setViceId(id);
-                if (captainId === id) setCaptainId(null);
-              }}
+              disabled={!submissionOpen}
+              onSelect={(p) => pickPlayer(playerFromPick(p))}
+              onClearSlot={
+                pickerSlot != null ? () => clearSlot(pickerSlot) : undefined
+              }
             />
           </div>
 
@@ -1172,43 +1235,6 @@ export function MiniGameApp({ locale }: { locale: string }) {
       {activeTab === "social" ? (
         <MiniLeaguesPanel profileId={profileId} onBadge={absorbBadges} />
       ) : null}
-
-      <MiniPlayerPicker
-        open={pickerSlot != null}
-        title={pickerTitle}
-        positionFilter={pickerSlot === MINI_GK_SLOT ? "GKP" : null}
-        excludeIdentities={picks.map((p) => miniPlayerIdentityKey(p))}
-        searchPlaceholder={t("searchPlaceholder")}
-        searchingLabel={t("searching")}
-        noResultsLabel={t("noResults")}
-        clearSlotLabel={t("clearSlot")}
-        showClear={pickerSlot != null && slots[pickerSlot!] != null}
-        playersApi="/api/mini/players"
-        onClose={() => setPickerSlot(null)}
-        onClearSlot={() => {
-          if (pickerSlot != null) clearSlot(pickerSlot);
-        }}
-        onSelect={(p) => {
-          if (pickerSlot == null) return;
-          assignPlayerToSlot(pickerSlot, {
-            fpl_id: p.fpl_id,
-            web_name: p.web_name,
-            team: p.team,
-            team_id: p.team_id ?? null,
-            position: p.position,
-            base_price: p.base_price ?? null,
-            status: p.status ?? null,
-            form: p.form ?? null,
-            total_points: p.total_points ?? null,
-            points_per_game: p.points_per_game ?? null,
-            selected_by_percent: p.selected_by_percent ?? null,
-            goals_scored: p.goals_scored ?? null,
-            assists: p.assists ?? null,
-            expected_goals: p.expected_goals ?? null,
-            expected_assists: p.expected_assists ?? null,
-          });
-        }}
-      />
 
       <MiniSquadInspectModal
         open={inspectRow != null}
