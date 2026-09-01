@@ -186,6 +186,22 @@ function baselineScenarioSlot(
     bank,
   };
 }
+
+function projectionIdUnion(
+  draft: PlannerScenarioDraftV1,
+  currentPicks: Row[],
+  baseline: Row[],
+): number[] {
+  const ids = new Set<number>();
+  for (const p of baseline) ids.add(p.fpl_id);
+  for (const p of currentPicks) ids.add(p.fpl_id);
+  for (const i of scenarioIndexRange()) {
+    for (const p of resolveScenarioSlot(draft, i).picks) {
+      if (p.fpl_id > 0) ids.add(p.fpl_id);
+    }
+  }
+  return Array.from(ids);
+}
 function pitchSecondLineFromNext(
   row: PlannerPickPayload,
   nextByFplId: Record<number, NextFixtureOpponent | null | undefined>,
@@ -343,13 +359,18 @@ export function PlannerApp({
     };
   }
 
-  function loadScenarioSlot(slot: PlannerScenarioSlot) {
+  function loadScenarioSlot(
+    slot: PlannerScenarioSlot,
+    opts?: { keepProjections?: boolean },
+  ) {
     setPicks(slot.picks.map((p) => ({ ...p })));
     setBank(slot.bank);
     setCaptainId(slot.captainId);
     setViceId(slot.viceId);
-    setProjById({});
-    setProjMeta(null);
+    if (!opts?.keepProjections) {
+      setProjById({});
+      setProjMeta(null);
+    }
     setSwapSlot(null);
     setSwapNotice(null);
     setXiBenchMode(false);
@@ -364,7 +385,9 @@ export function PlannerApp({
           : prev;
       if (next !== "fpl") {
         updated = { ...updated, activeScenario: next };
-        loadScenarioSlot(resolveScenarioSlot(updated, next));
+        loadScenarioSlot(resolveScenarioSlot(updated, next), {
+          keepProjections: true,
+        });
       }
       saveScenarioDraftLocal(updated);
       void saveScenarioDraftAccount(entryId, updated);
@@ -834,8 +857,6 @@ export function PlannerApp({
     setSwapSlot(null);
     setSearchQ("");
     setSearchHits([]);
-    setProjById({});
-    setProjMeta(null);
   }
 
   function applySuggestion(s: TransferSuggestion) {
@@ -908,8 +929,6 @@ export function PlannerApp({
     setPicks(draft);
     setBank(newBank);
     fixCaptainViceAfterLineup(draft);
-    setProjById({});
-    setProjMeta(null);
     setProjError(null);
   }
 
@@ -929,9 +948,19 @@ export function PlannerApp({
     setProjLoading(true);
     setProjError(null);
     try {
-      const scenarioIds = [...picks].map((p) => p.fpl_id);
-      const baselineIds = sortedInitial.map((p) => p.fpl_id);
-      const unionIds = Array.from(new Set([...scenarioIds, ...baselineIds]));
+      let draftForIds = scenarioDraft;
+      if (viewTab !== "fpl") {
+        draftForIds = upsertScenarioSlot(
+          scenarioDraft,
+          viewTab,
+          snapshotScenario(),
+        );
+      }
+      const unionIds = projectionIdUnion(
+        draftForIds,
+        picks,
+        sortedInitial,
+      );
 
       const res = await fetch("/api/planner/project", {
         method: "POST",
@@ -964,7 +993,7 @@ export function PlannerApp({
         setTopsLoading(false);
         return;
       }
-      setProjById(data.projections ?? {});
+      setProjById((prev) => ({ ...prev, ...(data.projections ?? {}) }));
       setProjMeta(
         data.fromGw != null && data.toGw != null
           ? { fromGw: data.fromGw, toGw: data.toGw }

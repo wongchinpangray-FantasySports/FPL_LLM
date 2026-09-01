@@ -60,9 +60,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (ids.length > 30) {
+    if (ids.length > 45) {
       return NextResponse.json(
-        { error: "At most 30 player ids (two full squads)." },
+        { error: "At most 45 player ids (three planner scenarios)." },
         { status: 400 },
       );
     }
