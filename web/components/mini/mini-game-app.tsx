@@ -37,6 +37,7 @@ import { MiniShareCard } from "@/components/mini/mini-share-card";
 import { MiniLeaguesPanel } from "@/components/mini/mini-leagues-panel";
 import { MiniSquadInspectModal } from "@/components/mini/mini-squad-inspect-modal";
 import { formatLondonDateLabel } from "@/lib/mini/matchday";
+import { formatMiniNextFixture } from "@/lib/mini/fixtures";
 import type { MiniBadgeId } from "@/lib/mini/badges";
 import type { MiniBadgeEventRow } from "@/lib/mini/badge-events";
 import type { NextFixtureOpponent } from "@/lib/xp";
@@ -155,11 +156,6 @@ function formatDeadline(iso: string | null, locale: string): string {
   } catch {
     return iso;
   }
-}
-
-function formatMiniFixture(n: NextFixtureOpponent | null | undefined): string | null {
-  if (!n?.opp_short) return null;
-  return `${n.opp_short} (${n.home ? "H" : "A"})`;
 }
 
 function readLocal(key: string): string {
@@ -548,7 +544,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
         };
         const next: Record<number, string | null> = {};
         for (const id of ids) {
-          next[id] = formatMiniFixture(data.nextByFplId?.[String(id)]);
+          next[id] = formatMiniNextFixture(data.nextByFplId?.[String(id)]);
         }
         if (!cancelled) setFixtureByFplId(next);
       } catch {
@@ -942,6 +938,7 @@ export function MiniGameApp({ locale }: { locale: string }) {
               ref={sidebarRef}
               selectedSlot={pickerSlot}
               slotLabel={activeSlotLabel}
+              fixtureFromGw={fixtureFromGw}
               excludeIdentities={picks.map((p) => miniPlayerIdentityKey(p))}
               miniOwnedById={miniOwnedById}
               disabled={!submissionOpen}

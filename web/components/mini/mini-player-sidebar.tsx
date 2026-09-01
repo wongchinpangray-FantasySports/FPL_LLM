@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
 import type { MiniPlayerDisplay } from "@/lib/mini/player-stats";
 import { miniPlayerIdentityKey } from "@/lib/mini/player-identity";
+import { formatMiniNextFixture } from "@/lib/mini/fixtures";
+import type { NextFixtureOpponent } from "@/lib/xp";
 
 type SortKey = "form" | "points" | "ownership";
 
@@ -17,6 +19,7 @@ export const MiniPlayerSidebar = forwardRef<
     slotLabel: string | null;
     excludeIdentities?: string[];
     miniOwnedById?: Record<number, number>;
+    fixtureFromGw?: number | null;
     disabled?: boolean;
     onSelect: (player: MiniPlayerDisplay) => void;
     onClearSlot?: () => void;
@@ -28,6 +31,7 @@ export const MiniPlayerSidebar = forwardRef<
     slotLabel,
     excludeIdentities = [],
     miniOwnedById,
+    fixtureFromGw = null,
     disabled,
     onSelect,
     onClearSlot,
@@ -43,8 +47,52 @@ export const MiniPlayerSidebar = forwardRef<
   const [players, setPlayers] = useState<MiniPlayerDisplay[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [fixtureByFplId, setFixtureByFplId] = useState<
+    Record<number, string | null>
+  >({});
 
   const excluded = useMemo(() => new Set(excludeIdentities), [excludeIdentities]);
+
+  const playerIdsKey = useMemo(
+    () => players.map((p) => p.fpl_id).join(","),
+    [players],
+  );
+
+  useEffect(() => {
+    if (fixtureFromGw == null || players.length === 0) {
+      setFixtureByFplId({});
+      return;
+    }
+    const ids = players.map((p) => p.fpl_id).filter((id) => id > 0);
+    if (ids.length === 0) {
+      setFixtureByFplId({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/planner/next-fixtures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playerIds: ids, fromGw: fixtureFromGw }),
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          nextByFplId?: Record<string, NextFixtureOpponent | null>;
+        };
+        const next: Record<number, string | null> = {};
+        for (const id of ids) {
+          next[id] = formatMiniNextFixture(data.nextByFplId?.[String(id)]);
+        }
+        if (!cancelled) setFixtureByFplId(next);
+      } catch {
+        if (!cancelled) setFixtureByFplId({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fixtureFromGw, playerIdsKey]);
 
   const effectivePosition = selectedSlot === 0 ? "GKP" : position;
 
@@ -212,6 +260,7 @@ export const MiniPlayerSidebar = forwardRef<
             ) : (
               players.map((p) => {
                 const miniOwn = miniOwnedById?.[p.fpl_id];
+                const fixture = fixtureByFplId[p.fpl_id];
                 return (
                   <tr
                     key={p.fpl_id}
@@ -226,8 +275,15 @@ export const MiniPlayerSidebar = forwardRef<
                     }}
                   >
                     <td className="px-2 py-2">
-                      <div className="font-medium text-foreground">
-                        {p.web_name ?? `#${p.fpl_id}`}
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium text-foreground">
+                          {p.web_name ?? `#${p.fpl_id}`}
+                        </span>
+                        {fixture ? (
+                          <span className="shrink-0 text-[10px] font-semibold tabular-nums text-brand-accent/90">
+                            {fixture}
+                          </span>
+                        ) : null}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
                         {p.team} · {p.position}
