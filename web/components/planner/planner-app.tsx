@@ -80,6 +80,28 @@ import type { PlannerPickPayload } from "@/components/planner/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  PlannerScenarioTabs,
+  type PlannerViewTab,
+} from "@/components/planner/planner-scenario-tabs";
+import {
+  SquadBuilderPlayerPanel,
+  type BrowsePlayer,
+} from "@/components/squad-builder/squad-builder-player-panel";
+import { slotPosition } from "@/lib/squad-builder/slots";
+import {
+  createScenarioDraftFromBaseline,
+  hydrateScenarioDraftFromAccount,
+  resolveScenarioSlot,
+  saveScenarioDraftAccount,
+  saveScenarioDraftLocal,
+  scenarioHorizonXpt,
+  scenarioIndexRange,
+  upsertScenarioSlot,
+  type PlannerScenarioDraftV1,
+  type PlannerScenarioSlot,
+  type ScenarioIndex,
+} from "@/lib/planner/scenario-draft";
 
 export type { PlannerPickPayload } from "@/components/planner/types";
 
@@ -116,6 +138,54 @@ type ProjRow = {
   by_gw?: { gw: number; opp: string; xp: number }[];
 };
 
+function useMinLg(): boolean {
+  const [lg, setLg] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setLg(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return lg;
+}
+
+function browseToSearchPlayer(p: BrowsePlayer): SearchPlayer {
+  return {
+    fpl_id: p.fpl_id,
+    web_name: p.web_name,
+    name: p.name,
+    team: p.team,
+    team_id: p.team_id,
+    position: p.position,
+    base_price: p.base_price,
+    status: "a",
+    form: p.form,
+    total_points: p.total_points,
+    minutes: null,
+    selected_by_percent: p.selected_by_percent,
+    points_per_game: null,
+    ict_index: null,
+    goals_scored: null,
+    assists: null,
+    expected_goals: null,
+    expected_assists: null,
+  };
+}
+
+function baselineScenarioSlot(
+  picks: PlannerPickPayload[],
+  bank: number,
+  captainId: number | null,
+  viceId: number | null,
+): PlannerScenarioSlot {
+  return {
+    picks: picks.map((p) => ({ ...p })),
+    captainId,
+    viceId,
+    bank,
+  };
+}
 function pitchSecondLineFromNext(
   row: PlannerPickPayload,
   nextByFplId: Record<number, NextFixtureOpponent | null | undefined>,
@@ -130,6 +200,8 @@ export function PlannerApp({
   entryName,
   initialBank,
   initialPicks,
+  baselineKey,
+  teams = [],
   baselineBanner = null,
   squadToggle = null,
   initialSuggestOpen = false,
@@ -139,6 +211,9 @@ export function PlannerApp({
   entryName: string;
   initialBank: number;
   initialPicks: PlannerPickPayload[];
+  /** FPL squad fingerprint — resets saved scenarios when it changes. */
+  baselineKey: string;
+  teams?: { id: number; short_name: string; name: string }[];
   /** Shown when Free Hit active: explains revert vs temp 15 */
   baselineBanner?: string | null;
   /** Links to switch ?squad=freehit vs default */
@@ -152,11 +227,12 @@ export function PlannerApp({
   pendingApply?: { outId: number; inId: number } | null;
 }) {
   const t = useTranslations("plannerApp");
+  const tsb = useTranslations("squadBuilderApp");
   const locale = useLocale();
   const router = useRouter();
+  const isLg = useMinLg();
   const [pendingApplyState, setPendingApplyState] = useState(pendingApply);
   const [diagnoseData, setDiagnoseData] = useState<DiagnoseResult | null>(null);
-  const [pitchMode, setPitchMode] = useState<"plan" | "fpl">("plan");
 
   const sortedInitial = useMemo(
     () => [...initialPicks].sort((a, b) => a.slot - b.slot),
@@ -173,6 +249,19 @@ export function PlannerApp({
     sortedInitial.find((p) => p.is_vice_captain)?.fpl_id ?? null;
   const [captainId, setCaptainId] = useState<number | null>(cap0);
   const [viceId, setViceId] = useState<number | null>(vice0);
+
+  const [scenarioDraft, setScenarioDraft] = useState<PlannerScenarioDraftV1>(() =>
+    createScenarioDraftFromBaseline(
+      entryId,
+      baselineKey,
+      sortedInitial,
+      initialBank,
+      cap0,
+      vice0,
+    ),
+  );
+  const [viewTab, setViewTab] = useState<PlannerViewTab>(1);
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   const [swapSlot, setSwapSlot] = useState<number | null>(null);
   const [searchQ, setSearchQ] = useState("");
@@ -244,6 +333,94 @@ export function PlannerApp({
   useEffect(() => {
     if (!xiBenchMode) setXiFirst(null);
   }, [xiBenchMode]);
+
+  function snapshotScenario(): PlannerScenarioSlot {
+    return {
+      picks: picks.map((p) => ({ ...p })),
+      captainId,
+      viceId,
+      bank,
+    };
+  }
+
+  function loadScenarioSlot(slot: PlannerScenarioSlot) {
+    setPicks(slot.picks.map((p) => ({ ...p })));
+    setBank(slot.bank);
+    setCaptainId(slot.captainId);
+    setViceId(slot.viceId);
+    setProjById({});
+    setProjMeta(null);
+    setSwapSlot(null);
+    setSwapNotice(null);
+    setXiBenchMode(false);
+    setXiFirst(null);
+  }
+
+  function switchViewTab(next: PlannerViewTab) {
+    setScenarioDraft((prev) => {
+      let updated =
+        viewTab !== "fpl"
+          ? upsertScenarioSlot(prev, viewTab, snapshotScenario())
+          : prev;
+      if (next !== "fpl") {
+        updated = { ...updated, activeScenario: next };
+        loadScenarioSlot(resolveScenarioSlot(updated, next));
+      }
+      saveScenarioDraftLocal(updated);
+      void saveScenarioDraftAccount(entryId, updated);
+      return updated;
+    });
+    setViewTab(next);
+  }
+
+  function ensureActiveScenario() {
+    if (viewTab === "fpl") {
+      switchViewTab(scenarioDraft.activeScenario);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void hydrateScenarioDraftFromAccount(
+      entryId,
+      baselineKey,
+      sortedInitial,
+      initialBank,
+      cap0,
+      vice0,
+    ).then((draft) => {
+      if (cancelled) return;
+      setScenarioDraft(draft);
+      const active = draft.activeScenario;
+      loadScenarioSlot(resolveScenarioSlot(draft, active));
+      setViewTab(active);
+      setDraftHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [entryId, baselineKey, sortedInitial, initialBank, cap0, vice0]);
+
+  useEffect(() => {
+    if (!draftHydrated || viewTab === "fpl") return;
+    const timer = setTimeout(() => {
+      setScenarioDraft((prev) => {
+        const updated = upsertScenarioSlot(prev, viewTab, snapshotScenario());
+        saveScenarioDraftLocal(updated);
+        void saveScenarioDraftAccount(entryId, updated);
+        return updated;
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [
+    picks,
+    bank,
+    captainId,
+    viceId,
+    viewTab,
+    draftHydrated,
+    entryId,
+  ]);
 
   useEffect(() => {
     if (swapSlot == null) {
@@ -427,7 +604,7 @@ export function PlannerApp({
     return out.sort((a, b) => a.slot - b.slot);
   }, [picks, sortedInitial]);
 
-  const isPlanPitch = pitchMode === "plan";
+  const isPlanPitch = viewTab !== "fpl";
 
   function fixCaptainViceAfterLineup(next: Row[]) {
     const xiIds = new Set(
@@ -541,11 +718,7 @@ export function PlannerApp({
     if (!inspectCtx || inspectCtx.side !== "scenario") return;
     const slot = inspectCtx.slot;
     closeInspect();
-    setSwapSlot(slot);
-    setSearchQ("");
-    setSearchHits([]);
-    setProjError(null);
-    setSwapNotice(null);
+    openTransfer(slot);
   }
 
   function applyBestXiByProjection() {
@@ -574,15 +747,21 @@ export function PlannerApp({
   }
 
   function resetToFplTeam() {
-    setPicks(sortedInitial.map((p) => ({ ...p })));
-    setBank(initialBank);
-    setCaptainId(cap0);
-    setViceId(vice0);
-    setProjById({});
-    setProjMeta(null);
+    if (viewTab === "fpl") return;
+    const reset = baselineScenarioSlot(
+      sortedInitial,
+      initialBank,
+      cap0,
+      vice0,
+    );
+    loadScenarioSlot(reset);
+    setScenarioDraft((prev) => {
+      const updated = upsertScenarioSlot(prev, viewTab, reset);
+      saveScenarioDraftLocal(updated);
+      void saveScenarioDraftAccount(entryId, updated);
+      return updated;
+    });
     setProjError(null);
-    setXiBenchMode(false);
-    setXiFirst(null);
   }
 
   const searchPlayers = useCallback(async (q: string) => {
@@ -660,7 +839,7 @@ export function PlannerApp({
   }
 
   function applySuggestion(s: TransferSuggestion) {
-    setPitchMode("plan");
+    ensureActiveScenario();
     const slot = picks.find((p) => p.fpl_id === s.out.fpl_id)?.slot;
     if (slot == null) {
       setSwapNotice(t("errSuggestOutMissing"));
@@ -696,7 +875,7 @@ export function PlannerApp({
   }
 
   function focusDiagnosedPlayer(fplId: number) {
-    setPitchMode("plan");
+    ensureActiveScenario();
     const row = picks.find((p) => p.fpl_id === fplId);
     if (!row) return;
     setInspectCtx({ side: "scenario", slot: row.slot, fplId });
@@ -732,7 +911,6 @@ export function PlannerApp({
     setProjById({});
     setProjMeta(null);
     setProjError(null);
-    setPitchMode("plan");
   }
 
   const clearPendingApply = useCallback(() => {
@@ -868,6 +1046,108 @@ export function PlannerApp({
   }, [sortedInitial, projById]);
 
   const xiXpDelta = xiXpDisplay - baselineXiXp;
+
+  const xptByScenario = useMemo(() => {
+    const out: Record<ScenarioIndex, number | null> = {
+      1: null,
+      2: null,
+      3: null,
+    };
+    if (!projMeta) return out;
+    let draftForXpt = scenarioDraft;
+    if (viewTab !== "fpl") {
+      draftForXpt = upsertScenarioSlot(
+        scenarioDraft,
+        viewTab,
+        snapshotScenario(),
+      );
+    }
+    for (const i of scenarioIndexRange()) {
+      out[i] = scenarioHorizonXpt(
+        draftForXpt,
+        i,
+        projById,
+        projMeta.fromGw,
+        projMeta.toGw,
+      );
+    }
+    return out;
+  }, [
+    scenarioDraft,
+    viewTab,
+    picks,
+    bank,
+    captainId,
+    viceId,
+    projById,
+    projMeta,
+  ]);
+
+  const squadFplIds = useMemo(
+    () => new Set(picks.map((p) => p.fpl_id)),
+    [picks],
+  );
+
+  const panelXptsGw = projMeta?.fromGw ?? 1;
+
+  const fetchPanelProjections = useCallback(
+    async (ids: number[]) => {
+      if (ids.length === 0) return {};
+      const res = await fetch("/api/squad-builder/projections", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          playerIds: ids,
+          fromGw: panelXptsGw,
+          horizon: 1,
+        }),
+      });
+      const data = (await res.json()) as {
+        projections?: Record<string, { by_gw?: { gw: number; xp: number }[]; xp_next_gw?: number }>;
+      };
+      return data.projections ?? {};
+    },
+    [panelXptsGw],
+  );
+
+  const panelLabels = {
+    title: tsb("panelTitle"),
+    search: tsb("searchPlaceholder"),
+    positionAll: tsb("filterPositionAll"),
+    clubAll: tsb("filterClubAll"),
+    priceAll: tsb("filterPriceAll"),
+    sortPrice: tsb("sortByPrice"),
+    sortPoints: tsb("sortPoints"),
+    sortOwnership: tsb("sortOwnership"),
+    sortForm: tsb("sortForm"),
+    sortXpts: tsb("sortXpts"),
+    colName: tsb("colName"),
+    colOwn: tsb("colOwn"),
+    colPrice: tsb("colPrice"),
+    colLastSeason: tsb("colLastSeason"),
+    colXpts: tsb("colXpts"),
+    inSquad: tsb("inSquad"),
+    loading: tsb("panelLoading"),
+    empty: tsb("panelEmpty"),
+    updatedAt: tsb("panelUpdated"),
+  };
+
+  function addPlayerFromPanel(player: BrowsePlayer) {
+    if (swapSlot == null) {
+      setSwapNotice(t("panelPickSlotFirst"));
+      return;
+    }
+    applySwap(swapSlot, browseToSearchPlayer(player));
+  }
+
+  function openTransfer(slot: number) {
+    setSwapSlot(slot);
+    setSearchQ("");
+    setSearchHits([]);
+    setProjError(null);
+    setSwapNotice(null);
+  }
 
   const baselinePitchSubline = useMemo(() => {
     const m: Record<number, string> = {};
@@ -1205,6 +1485,7 @@ export function PlannerApp({
       )}
 
       <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,100%)]">
         <div className="min-w-0 flex flex-col gap-5 sm:gap-6">
           <section className="flex flex-col gap-2 sm:gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1218,41 +1499,19 @@ export function PlannerApp({
             </p>
             <p className="text-[11px] text-muted-foreground/80">{t("hintTapProfile")}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5"
-              role="tablist"
-              aria-label={t("pitchModePlan")}
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={!isPlanPitch}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3",
-                  !isPlanPitch
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                onClick={() => setPitchMode("fpl")}
-              >
-                {t("pitchModeFpl")}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={isPlanPitch}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3",
-                  isPlanPitch
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                onClick={() => setPitchMode("plan")}
-              >
-                {t("pitchModePlan")}
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <PlannerScenarioTabs
+              viewTab={viewTab}
+              xptByScenario={xptByScenario}
+              onSelect={switchViewTab}
+              fplLabel={t("pitchModeFpl")}
+              planLabel={(index) =>
+                t("scenarioPlanLabel", {
+                  letter: String.fromCharCode(64 + index),
+                })
+              }
+              scenariosLabel={t("scenariosLabel")}
+            />
             <Link
               href={`/dashboard/${entryId}`}
               className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground/70 no-underline transition-colors hover:border-brand-accent/30 hover:text-foreground sm:px-3"
@@ -1263,10 +1522,10 @@ export function PlannerApp({
               type="button"
               variant="secondary"
               size="sm"
-              disabled={squadChanges.length === 0}
+              disabled={!isPlanPitch || squadChanges.length === 0}
               onClick={resetToFplTeam}
             >
-              {t("resetFpl")}
+              {t("resetScenario")}
             </Button>
           </div>
         </div>
@@ -1283,7 +1542,13 @@ export function PlannerApp({
 
         <PitchView
           ref={scenarioPitchRef}
-          title={isPlanPitch ? t("planningScenario") : t("pitchYourFpl")}
+          title={
+            isPlanPitch
+              ? t("planningScenarioNamed", {
+                  letter: String.fromCharCode(64 + viewTab),
+                })
+              : t("pitchYourFpl")
+          }
           benchLabel={t("pitchBench")}
           benchGkAbbrev={t("pitchBenchGkAbbrev")}
           titleAction={
@@ -1490,20 +1755,32 @@ export function PlannerApp({
                     )}
                   </td>
                   <td className="px-1.5 py-1.5 text-right sm:px-2 sm:py-2">
-                    <Button
-                      type="button"
-                      variant={xiBenchMode ? "primary" : "secondary"}
-                      size="sm"
-                      onClick={() => handlePlanningInteraction(p.slot)}
-                    >
-                      {xiBenchMode
-                        ? xiFirst === p.slot
-                          ? t("btnClear")
-                          : xiFirst != null
-                            ? t("btnSwap")
-                            : t("btnPick")
-                        : t("btnInspect")}
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-1">
+                      {isPlanPitch && !xiBenchMode ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openTransfer(p.slot)}
+                        >
+                          {t("btnTransfer")}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant={xiBenchMode ? "primary" : "secondary"}
+                        size="sm"
+                        onClick={() => handlePlanningInteraction(p.slot)}
+                      >
+                        {xiBenchMode
+                          ? xiFirst === p.slot
+                            ? t("btnClear")
+                            : xiFirst != null
+                              ? t("btnSwap")
+                              : t("btnPick")
+                          : t("btnInspect")}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -1511,6 +1788,50 @@ export function PlannerApp({
           </tbody>
         </table>
       </section>
+        </div>
+
+        {isPlanPitch && teams.length > 0 ? (
+          <div className="hidden min-w-0 lg:block">
+            <SquadBuilderPlayerPanel
+              selectedSlot={swapSlot}
+              slotPosition={
+                swapSlot != null ? slotPosition(swapSlot) : null
+              }
+              bank={bank}
+              xptsGw={panelXptsGw}
+              projById={projById}
+              squadFplIds={squadFplIds}
+              teams={teams}
+              onPickPlayer={addPlayerFromPanel}
+              onInspectPlayer={(fplId) => {
+                const inScenario = picks.find((p) => p.fpl_id === fplId);
+                if (inScenario) {
+                  setInspectCtx({
+                    side: "scenario",
+                    slot: inScenario.slot,
+                    fplId,
+                  });
+                } else {
+                  setInspectCtx({
+                    side: "baseline",
+                    slot: 1,
+                    fplId,
+                  });
+                }
+              }}
+              fetchProjections={fetchPanelProjections}
+              labels={panelLabels}
+            />
+            {swapNotice ? (
+              <p
+                role="alert"
+                className="mt-2 text-xs text-amber-200/90"
+              >
+                {swapNotice}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         </div>
 
         <PlannerTopXpSidebar
@@ -1524,7 +1845,7 @@ export function PlannerApp({
         />
       </div>
 
-      {swapSlot != null && (
+      {swapSlot != null && !isLg && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm sm:items-center"
           role="dialog"

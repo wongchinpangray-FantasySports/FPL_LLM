@@ -6,6 +6,7 @@ import { HomeBackLink } from "@/components/home-back-link";
 import { PlannerApp } from "@/components/planner/planner-app";
 import { getServerSupabase } from "@/lib/supabase";
 import { ensureFplEntryPage } from "@/lib/auth/ensure-fpl-entry-page";
+import { listCurrentPlTeams } from "@/lib/fpl/epl-2627-clubs";
 import { fetchTeamForUi, isFreeHitOnPicksGw } from "@/lib/tools/team";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +65,8 @@ export default async function PlannerPage({
   const useFreeHitSquad = squadVal === "freehit";
   const forceRefresh =
     refreshVal === "1" || refreshVal === "true";
+
+  const teams = await listCurrentPlTeams();
 
   let team;
   try {
@@ -158,6 +161,8 @@ export default async function PlannerPage({
         entryName={team.entry.name}
         initialBank={team.bank}
         initialPicks={initialPicks}
+        baselineKey={plannerSquadKey}
+        teams={teams}
         baselineBanner={baselineBanner}
         initialSuggestOpen={openSuggest || Boolean(pendingApply)}
         pendingApply={pendingApply}

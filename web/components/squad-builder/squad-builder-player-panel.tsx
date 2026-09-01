@@ -68,6 +68,7 @@ export function SquadBuilderPlayerPanel({
   onPickPlayer,
   onInspectPlayer,
   inspectNameTitle,
+  fetchProjections,
   labels,
 }: {
   selectedSlot: number | null;
@@ -80,6 +81,10 @@ export function SquadBuilderPlayerPanel({
   onPickPlayer: (player: BrowsePlayer) => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
+  /** When set, used instead of the Squad Builder projections API (e.g. Planner). */
+  fetchProjections?: (
+    playerIds: number[],
+  ) => Promise<Record<string, PanelProjRow>>;
   labels: {
     title: string;
     search: string;
@@ -179,6 +184,10 @@ export function SquadBuilderPlayerPanel({
     }
     setProjLoading(true);
     try {
+      if (fetchProjections) {
+        setPanelProj(await fetchProjections(ids));
+        return;
+      }
       const res = await fetch("/api/squad-builder/projections", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -198,7 +207,7 @@ export function SquadBuilderPlayerPanel({
     } finally {
       setProjLoading(false);
     }
-  }, [xptsGw]);
+  }, [xptsGw, fetchProjections]);
 
   useEffect(() => {
     const ids = players.map((p) => p.fpl_id).filter((id) => id > 0);
