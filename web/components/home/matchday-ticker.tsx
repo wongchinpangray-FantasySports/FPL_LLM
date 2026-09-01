@@ -319,6 +319,8 @@ export function MatchdayTicker() {
         netTransfers: tModal("priceNetTransfers"),
         transfersInOut: tModal("priceTransfersInOut"),
         progress: tModal("priceProgress"),
+        progressNext: tModal("priceProgressNext"),
+        progressGwCumulative: tModal("priceProgressGwCumulative"),
         status: tModal("priceStatus"),
         alreadyUp: tModal("priceAlreadyUp"),
         alreadyDown: tModal("priceAlreadyDown"),

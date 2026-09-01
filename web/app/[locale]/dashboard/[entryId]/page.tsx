@@ -265,6 +265,7 @@ export default async function DashboardPage({
         status: snap.status,
         cost_change_event: snap.cost_change_event,
         progress: snap.progress,
+        progress_next: snap.progress_next,
       },
     ]),
   );

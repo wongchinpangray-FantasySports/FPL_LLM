@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { PriceForecastRow, PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
+import { formatProgressPct } from "@/lib/fpl/insights/price-forecast";
 import {
   InsightsSortableTh,
   sortInsightRows,
@@ -44,7 +45,7 @@ function fmtInt(v: number): string {
 }
 
 function fmtPct(progress: number): string {
-  return `${Math.round(Math.abs(progress) * 100)}%`;
+  return formatProgressPct(progress);
 }
 
 function deltaClass(v: number): string {
@@ -126,6 +127,7 @@ export function PriceForecastPanel({
     colOwn: string;
     colNet: string;
     colProgress: string;
+    progressGwCumulative: string;
     colStatus: string;
     colProfile: string;
     profileLink: string;
@@ -353,20 +355,31 @@ export function PriceForecastPanel({
                     {fmtInt(row.net_transfers)}
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={
-                            row.progress >= 0 ? "h-full bg-emerald-400" : "h-full bg-red-400"
-                          }
-                          style={{
-                            width: `${Math.min(100, Math.abs(row.progress) * 100)}%`,
-                          }}
-                        />
+                    <div className="flex flex-col items-end gap-0.5">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={
+                              row.progress >= 0
+                                ? "h-full bg-emerald-400"
+                                : "h-full bg-red-400"
+                            }
+                            style={{
+                              width: `${Math.min(100, row.progress_next * 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className={`w-10 text-right tabular-nums text-xs font-semibold ${deltaClass(row.progress)}`}
+                        >
+                          {fmtPct(row.progress_next)}
+                        </span>
                       </div>
                       <span
-                        className={`w-10 text-right tabular-nums text-xs font-medium ${deltaClass(row.progress)}`}
+                        className={`text-[10px] tabular-nums ${deltaClass(row.progress)}`}
+                        title={labels.progressGwCumulative}
                       >
+                        {labels.progressGwCumulative}{" "}
                         {fmtPct(row.progress)}
                       </span>
                     </div>

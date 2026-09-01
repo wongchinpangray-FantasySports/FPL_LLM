@@ -82,6 +82,7 @@ export default async function PriceForecastPage({ params }: Props) {
             colOwn: t("priceForecast.colOwn"),
             colNet: t("priceForecast.colNet"),
             colProgress: t("priceForecast.colProgress"),
+            progressGwCumulative: t("priceForecast.progressGwCumulative"),
             colStatus: t("priceForecast.colStatus"),
             colProfile: t("priceForecast.colProfile"),
             profileLink: t("priceForecast.profileLink"),

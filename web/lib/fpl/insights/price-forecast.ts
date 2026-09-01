@@ -44,8 +44,10 @@ export type PriceForecastRow = {
   net_transfers: number;
   owners_est: number;
   threshold: number;
-  /** + toward a rise, − toward a fall. 1.0 ≈ typical trigger. */
+  /** + toward a rise, − toward a fall. 1.0 ≈ typical trigger (GW cumulative). */
   progress: number;
+  /** 0–1 toward the next £0.1 only (|progress| mod 1). */
+  progress_next: number;
   status: PriceForecastStatus;
   cost_change_event: number;
   status_code: string;
@@ -146,6 +148,18 @@ export function classifyPriceProgress(progress: number): PriceForecastStatus {
   return "stable";
 }
 
+/** Fraction toward the next £0.1 move (0–1), after stripping full thresholds passed. */
+export function progressTowardNextMove(progress: number): number {
+  const abs = Math.abs(progress);
+  if (abs <= 0) return 0;
+  if (abs < 1) return round4(abs);
+  return round4(abs % 1);
+}
+
+export function formatProgressPct(fraction: number): string {
+  return `${Math.round(Math.abs(fraction) * 100)}%`;
+}
+
 function toForecastRow(input: {
   fpl_id: number;
   web_name: string;
@@ -187,6 +201,7 @@ function toForecastRow(input: {
     owners_est: Math.round(owners),
     threshold: Math.round(threshold),
     progress,
+    progress_next: progressTowardNextMove(progress),
     status: classifyPriceProgress(progress),
     cost_change_event: input.cost_change_event,
     status_code: input.status_code,
@@ -390,6 +405,7 @@ export type PlayerPriceForecastSnapshot = {
   transfers_out: number;
   net_transfers: number;
   progress: number;
+  progress_next: number;
   status: PriceForecastStatus;
   cost_change_event: number;
   threshold: number;
@@ -407,6 +423,7 @@ function snapshotFromRow(
     transfers_out: row.transfers_out,
     net_transfers: row.net_transfers,
     progress: row.progress,
+    progress_next: row.progress_next,
     status: row.status,
     cost_change_event: row.cost_change_event,
     threshold: row.threshold,

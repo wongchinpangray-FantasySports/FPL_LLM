@@ -11,6 +11,10 @@ import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import type { PlayerShotMapData } from "@/lib/fpl/understat-shots";
 import type { PlayerGwHistoryRow } from "@/lib/player-gw-history";
 import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
+import {
+  formatProgressPct,
+  progressTowardNextMove,
+} from "@/lib/fpl/insights/price-forecast";
 import { getFplTeamBadgeStyle, getFplTeamTheme } from "@/lib/team-themes";
 
 export type PlayerPriceForecastBrief = {
@@ -20,6 +24,7 @@ export type PlayerPriceForecastBrief = {
   transfers_out: number;
   net_transfers: number;
   progress: number;
+  progress_next?: number;
   status: PriceForecastStatus;
   cost_change_event: number;
   threshold: number;
@@ -135,6 +140,8 @@ export type PlayerPerformanceModalLabels = {
     netTransfers: string;
     transfersInOut: string;
     progress: string;
+    progressNext: string;
+    progressGwCumulative: string;
     status: string;
     alreadyUp: string;
     alreadyDown: string;
@@ -504,8 +511,15 @@ export function FplPlayerPerformanceModal({
                         value={`${pf.transfers_in.toLocaleString()} / ${pf.transfers_out.toLocaleString()}`}
                       />
                       <StatCell
-                        label={pfLabels.progress}
-                        value={`${Math.round(Math.abs(pf.progress) * 100)}%`}
+                        label={pfLabels.progressNext}
+                        value={formatProgressPct(
+                          pf.progress_next ??
+                            progressTowardNextMove(pf.progress),
+                        )}
+                      />
+                      <StatCell
+                        label={pfLabels.progressGwCumulative}
+                        value={formatProgressPct(pf.progress)}
                       />
                     </div>
                     <div className="mt-3 flex items-center gap-2">
@@ -517,7 +531,11 @@ export function FplPlayerPerformanceModal({
                               : "h-full bg-red-400"
                           }
                           style={{
-                            width: `${Math.min(100, Math.abs(pf.progress) * 100)}%`,
+                            width: `${Math.min(
+                              100,
+                              (pf.progress_next ??
+                                progressTowardNextMove(pf.progress)) * 100,
+                            )}%`,
                           }}
                         />
                       </div>
@@ -528,7 +546,10 @@ export function FplPlayerPerformanceModal({
                         )}
                       >
                         {pf.progress >= 0 ? "+" : "−"}
-                        {Math.round(Math.abs(pf.progress) * 100)}%
+                        {formatProgressPct(
+                          pf.progress_next ??
+                            progressTowardNextMove(pf.progress),
+                        )}
                       </span>
                     </div>
                   </div>
