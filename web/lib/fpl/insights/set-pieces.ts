@@ -7,7 +7,7 @@ import {
 import { withIsolateCache } from "@/lib/worker-isolate-cache";
 
 const COLS =
-  "fpl_id,web_name,name,team,team_id,position,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order";
+  "fpl_id,web_name,name,team,team_id,position,minutes,expected_goals,expected_assists,penalties_order,direct_freekicks_order,corners_and_indirect_freekicks_order";
 
 export type SetPieceRow = {
   fpl_id: number;
@@ -15,6 +15,9 @@ export type SetPieceRow = {
   team: string;
   team_id: number | null;
   position: string | null;
+  minutes: number;
+  xg_per_90: number | null;
+  xa_per_90: number | null;
   penalties_order: number | null;
   direct_freekicks_order: number | null;
   corners_order: number | null;
@@ -40,13 +43,24 @@ function hasSetPieceRole(row: Record<string, unknown>): boolean {
   );
 }
 
+function per90(total: number, minutes: number): number | null {
+  if (minutes <= 0 || !Number.isFinite(total)) return null;
+  return Math.round(((total * 90) / minutes) * 1000) / 1000;
+}
+
 function toRow(row: Record<string, unknown>): SetPieceRow {
+  const minutes = num(row.minutes) ?? 0;
+  const xg = num(row.expected_goals) ?? 0;
+  const xa = num(row.expected_assists) ?? 0;
   return {
     fpl_id: row.fpl_id as number,
     web_name: (row.web_name as string | null) ?? (row.name as string) ?? `#${row.fpl_id}`,
     team: (row.team as string) ?? "—",
     team_id: (row.team_id as number | null) ?? null,
     position: (row.position as string | null) ?? null,
+    minutes,
+    xg_per_90: per90(xg, minutes),
+    xa_per_90: per90(xa, minutes),
     penalties_order: num(row.penalties_order),
     direct_freekicks_order: num(row.direct_freekicks_order),
     corners_order: num(row.corners_and_indirect_freekicks_order),
@@ -61,8 +75,21 @@ function pickBestOrder(a: number | null, b: number | null): number | null {
 
 function mergeSetPieceRows(a: SetPieceRow, b: SetPieceRow): SetPieceRow {
   const base = a.fpl_id > b.fpl_id ? a : b;
+  const minutes = Math.max(a.minutes, b.minutes);
+  const pickRate = (
+    aRate: number | null,
+    bRate: number | null,
+    aMins: number,
+    bMins: number,
+  ): number | null => {
+    if (aMins >= bMins) return aRate ?? bRate;
+    return bRate ?? aRate;
+  };
   return {
     ...base,
+    minutes,
+    xg_per_90: pickRate(a.xg_per_90, b.xg_per_90, a.minutes, b.minutes),
+    xa_per_90: pickRate(a.xa_per_90, b.xa_per_90, a.minutes, b.minutes),
     penalties_order: pickBestOrder(a.penalties_order, b.penalties_order),
     direct_freekicks_order: pickBestOrder(
       a.direct_freekicks_order,
@@ -167,6 +194,6 @@ async function loadSetPiecesRawUncached(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v5"],
+  ["fpl-insights-set-pieces-v6"],
   { revalidate: 300 },
 );

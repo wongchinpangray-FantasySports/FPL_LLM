@@ -160,6 +160,6 @@ export async function loadDifferentialsRaw(
 
 export const loadDifferentials = unstable_cache(
   async () => loadDifferentialsRaw(),
-  ["fpl-insights-differentials-v4"],
+  ["fpl-insights-differentials-v5"],
   { revalidate: 300 },
 );

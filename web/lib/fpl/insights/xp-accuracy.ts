@@ -367,6 +367,6 @@ export async function loadXpAccuracyRaw(
 
 export const loadXpAccuracy = unstable_cache(
   async () => loadXpAccuracyRaw(),
-  ["fpl-insights-xp-accuracy-v2"],
+  ["fpl-insights-xp-accuracy-v3"],
   { revalidate: 3600 },
 );

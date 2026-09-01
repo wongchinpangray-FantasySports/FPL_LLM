@@ -16,9 +16,14 @@ import {
   useInsightsTableSort,
 } from "@/components/fpl/insights/insights-table-sort";
 
-type SortKey = "player" | "pos" | "pen" | "fk" | "corners";
+type SortKey = "player" | "pos" | "pen" | "fk" | "corners" | "xg90" | "xa90";
 
 type SetPieceRow = SetPieceTeamGroup["rows"][number];
+
+function fmtNum(v: number | null | undefined, d = 2): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return v.toFixed(d);
+}
 
 function setPieceSortValue(
   row: SetPieceRow,
@@ -34,6 +39,11 @@ function setPieceSortValue(
     case "fk":
       return row.direct_freekicks_order;
     case "corners":
+      return row.corners_order;
+    case "xg90":
+      return row.xg_per_90;
+    case "xa90":
+      return row.xa_per_90;
     default:
       return row.corners_order;
   }
@@ -57,6 +67,8 @@ export function SetPiecesPanel({
     colPen: string;
     colFk: string;
     colCorners: string;
+    colXg90: string;
+    colXa90: string;
     colProfile: string;
     profileLink: string;
     empty: string;
@@ -153,6 +165,22 @@ export function SetPiecesPanel({
         onSort={() => toggle("corners", "asc")}
         className="px-3 py-2"
       />
+      <InsightsSortableTh
+        label={labels.colXg90}
+        active={sortKey === "xg90"}
+        dir={sortDir}
+        align="right"
+        onSort={() => toggle("xg90")}
+        className="px-3 py-2"
+      />
+      <InsightsSortableTh
+        label={labels.colXa90}
+        active={sortKey === "xa90"}
+        dir={sortDir}
+        align="right"
+        onSort={() => toggle("xa90")}
+        className="px-3 py-2"
+      />
       <th className="px-3 py-2">{labels.colProfile}</th>
     </tr>
   );
@@ -198,7 +226,7 @@ export function SetPiecesPanel({
               {group.team}
             </h3>
             <div className="scroll-table">
-              <table className="w-full min-w-[520px] text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>{headerRow}</thead>
                 <tbody>
                   {group.rows.map((row) => (
@@ -250,6 +278,12 @@ export function SetPiecesPanel({
                           !primaryOnly,
                           roleLabels,
                         )}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                        {fmtNum(row.xg_per_90)}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                        {fmtNum(row.xa_per_90)}
                       </td>
                       <td className="px-3 py-2">
                         <Link

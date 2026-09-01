@@ -190,6 +190,6 @@ async function loadOutputDivergenceRawUncached(
 
 export const loadOutputDivergence = unstable_cache(
   async () => loadOutputDivergenceRaw(),
-  ["fpl-insights-output-divergence-v3"],
+  ["fpl-insights-output-divergence-v4"],
   { revalidate: 300 },
 );

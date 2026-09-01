@@ -33,6 +33,8 @@ export default async function SetPiecesPage({ params }: Props) {
           colPen: t("setPieces.colPen"),
           colFk: t("setPieces.colFk"),
           colCorners: t("setPieces.colCorners"),
+          colXg90: t("setPieces.colXg90"),
+          colXa90: t("setPieces.colXa90"),
           colProfile: t("setPieces.colProfile"),
           profileLink: t("setPieces.profileLink"),
           empty: t("setPieces.empty"),

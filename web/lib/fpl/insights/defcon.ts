@@ -238,7 +238,7 @@ export async function loadDefconLeadersRaw(opts?: {
 
 export const loadDefconLeaders = unstable_cache(
   async () => loadDefconLeadersRaw(),
-  ["fpl-insights-defcon-v5"],
+  ["fpl-insights-defcon-v6"],
   { revalidate: 300 },
 );
 

@@ -787,9 +787,14 @@ export function HomeSeasonHubLayout({
 
   const statsItems = [
     {
-      href: "/fpl/fixtures",
-      label: t("exploreFixturesTitle"),
-      body: t("seasonStatFixturesBody"),
+      href: "/fpl/insights/set-pieces",
+      label: t("seasonStatSetPieces"),
+      body: t("seasonStatSetPiecesBody"),
+    },
+    {
+      href: "/fpl/insights/defcon",
+      label: t("seasonStatDefcon"),
+      body: t("seasonStatDefconBody"),
     },
     {
       href: "/fpl/insights/differentials",
@@ -797,34 +802,19 @@ export function HomeSeasonHubLayout({
       body: t("seasonStatDifferentialsBody"),
     },
     {
-      href: "/players",
-      label: t("explorePlayersTitle"),
-      body: t("explorePlayersBody"),
+      href: "/fpl/insights/xg-divergence",
+      label: t("seasonStatXg"),
+      body: t("seasonStatXgBody"),
     },
     {
-      href: "/fpl/historical",
-      label: t("exploreHistoricalTitle"),
-      body: t("exploreHistoricalBody"),
+      href: "/fpl/insights/xa-divergence",
+      label: t("seasonStatXa"),
+      body: t("seasonStatXaBody"),
     },
     {
-      href: "/fpl/insights/transfers",
-      label: t("seasonStatTransfers"),
-      body: t("seasonStatTransfersBody"),
-    },
-    {
-      href: "/fpl/insights/best-of-position",
-      label: t("seasonStatBop"),
-      body: t("seasonStatBopBody"),
-    },
-    {
-      href: "/fpl/insights/set-pieces",
-      label: t("seasonStatSetPieces"),
-      body: t("seasonStatSetPiecesBody"),
-    },
-    {
-      href: "/fpl/insights/price-changes",
-      label: t("seasonStatPrice"),
-      body: t("seasonStatPriceBody"),
+      href: "/fpl/insights/xp-accuracy",
+      label: t("seasonStatXp"),
+      body: t("seasonStatXpBody"),
     },
   ];
 
