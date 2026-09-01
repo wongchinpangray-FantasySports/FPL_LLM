@@ -116,11 +116,11 @@ function pitchPriceArrow(badge: PitchPriceBadge | undefined): "↑" | "↓" | nu
 function attentionDotClass(severity: SquadPlayerSignal["severity"]): string {
   switch (severity) {
     case "alert":
-      return "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.85)]";
+      return "bg-rose-500";
     case "watch":
-      return "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.75)]";
+      return "bg-amber-400";
     case "info":
-      return "bg-slate-400/90 shadow-[0_0_4px_rgba(148,163,184,0.6)]";
+      return "bg-slate-400/90";
     default:
       return "";
   }
@@ -240,12 +240,13 @@ function PlayerChip({
       <div className="relative mx-auto w-fit">
         {showShirt ? (
           <img
+            data-pitch-shirt=""
             src={shirtUrl!}
             alt=""
             width={66}
             height={87}
-            loading="lazy"
-            decoding="async"
+            loading="eager"
+            decoding="sync"
             crossOrigin="anonymous"
             className="mx-auto h-12 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)] sm:h-14"
             onError={() => setShirtFailed(true)}
@@ -260,6 +261,7 @@ function PlayerChip({
         ) : null}
         {showAttentionDot ? (
           <span
+            data-png-skip=""
             className={cn(
               "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-black/50 sm:h-3 sm:w-3",
               attentionDotClass(attention!.severity),
@@ -805,7 +807,10 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
             </div>
           </div>
           {showLegend ? (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 px-2 py-1.5 text-[9px] text-white/60 sm:text-[10px]">
+            <div
+              data-png-skip=""
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 px-2 py-1.5 text-[9px] text-white/60 sm:text-[10px]"
+            >
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
                 {tAtt("pitchLegendAlert")}

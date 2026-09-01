@@ -21,6 +21,10 @@ import {
   validatePlannerSquad,
   validateXiFormation,
 } from "@/lib/planner/validate";
+import {
+  pitchExportPixelRatio,
+  preparePitchForPngExport,
+} from "@/lib/planner/prepare-pitch-png-export";
 import { PlannerDiagnosePanel } from "@/components/transfers/diagnose-panel";
 import type {
   DiagnoseResult,
@@ -950,32 +954,21 @@ export function PlannerApp({
     if (!el) return;
     setPngBusy(true);
     setPngError(null);
+    let restoreImages: (() => void) | null = null;
     try {
-      // Ensure kit images are decoded before foreignObject snapshot.
-      const imgs = Array.from(el.querySelectorAll("img"));
-      await Promise.all(
-        imgs.map(
-          (img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>((resolve) => {
-                  img.addEventListener("load", () => resolve(), { once: true });
-                  img.addEventListener("error", () => resolve(), { once: true });
-                }),
-        ),
-      );
+      restoreImages = await preparePitchForPngExport(el);
 
       const { toBlob } = await import("html-to-image");
       const blob = await toBlob(el, {
-        pixelRatio: 2,
-        cacheBust: true,
+        pixelRatio: pitchExportPixelRatio(),
+        cacheBust: false,
         backgroundColor: "#052e16",
+        skipFonts: true,
         includeQueryParams: true,
         filter: (node) =>
           !(
             node instanceof HTMLElement && node.hasAttribute("data-png-skip")
           ),
-        // One broken shirt must not abort the whole export.
         onImageErrorHandler: () => undefined,
       });
       if (!blob) {
@@ -993,6 +986,7 @@ export function PlannerApp({
       console.error("[planner] download pitch png", err);
       setPngError(t("downloadScenarioPngFailed"));
     } finally {
+      restoreImages?.();
       setPngBusy(false);
     }
   }, [entryId, t]);
