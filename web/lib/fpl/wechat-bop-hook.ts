@@ -1,7 +1,7 @@
 import {
   BEST_OF_POSITION_HUB_HREF,
   VALUE_BAND_PRESETS,
-  formatValueBandPrice,
+  formatValueBandRange,
   getValueBandPreset,
   listValueBandsByPosition,
   loadValueBandByPreset,
@@ -164,7 +164,7 @@ export async function buildWechatBopHook(opts?: {
   }
 
   const analysis: ValueBandAnalysis = await loadValueBandByPreset(preset);
-  const price = formatValueBandPrice(preset.minPrice);
+  const price = formatValueBandRange(preset.minPrice, preset.maxPrice);
   const positionZh = POS_ZH[preset.position];
   const site = resolveWechatCardSiteUrl();
   const base = `${site}/${localePath(locale)}`;
@@ -179,7 +179,7 @@ export async function buildWechatBopHook(opts?: {
   const topXp = xpCatTop?.value ?? topRow?.xp_total ?? null;
   const siblings = siblingBands(preset).map((p) => ({
     id: p.id,
-    label: `£${formatValueBandPrice(p.minPrice)}m ${POS_ZH[p.position]}`,
+    label: `£${formatValueBandRange(p.minPrice, p.maxPrice)}m ${POS_ZH[p.position]}`,
     href: `${base}${p.href}`,
   }));
 

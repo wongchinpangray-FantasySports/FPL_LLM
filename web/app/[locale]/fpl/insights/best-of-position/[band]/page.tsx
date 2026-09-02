@@ -6,7 +6,7 @@ import { BestOfPositionSeriesNav } from "@/components/fpl/insights/best-of-posit
 import { ValueBandPanel } from "@/components/fpl/insights/value-band-panel";
 import {
   VALUE_BAND_PRESETS,
-  formatValueBandPrice,
+  formatValueBandRange,
   getValueBandPreset,
   loadValueBandByPresetCached,
   type ValueBandPosition,
@@ -46,7 +46,7 @@ export default async function BestOfPositionBandPage({ params }: Props) {
   const data = await loadValueBandByPresetCached(preset.id);
   if (!data) notFound();
 
-  const price = formatValueBandPrice(preset.minPrice);
+  const price = formatValueBandRange(preset.minPrice, preset.maxPrice);
   const position = t(
     `bestOfPosition.${POS_KEY[preset.position]}` as "bestOfPosition.posMID",
   );
@@ -116,7 +116,7 @@ export async function generateMetadata({ params }: Props) {
     locale: params.locale,
     namespace: "fplInsights",
   });
-  const price = formatValueBandPrice(preset.minPrice);
+  const price = formatValueBandRange(preset.minPrice, preset.maxPrice);
   const position = t(
     `bestOfPosition.${POS_KEY[preset.position]}` as "bestOfPosition.posMID",
   );

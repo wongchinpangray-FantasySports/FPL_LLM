@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   BEST_OF_POSITION_HUB_HREF,
   VALUE_BAND_POSITION_ORDER,
-  formatValueBandPrice,
+  formatValueBandRange,
   groupValueBandsByPosition,
   type ValueBandPosition,
   type ValueBandPreset,
@@ -80,7 +80,7 @@ export function BestOfPositionSeriesNav({
                           : "border-border bg-background/60 text-muted-foreground hover:border-brand-accent/25 hover:text-foreground",
                       )}
                     >
-                      £{formatValueBandPrice(band.minPrice)}m
+                      £{formatValueBandRange(band.minPrice, band.maxPrice)}m
                     </Link>
                   );
                 })}

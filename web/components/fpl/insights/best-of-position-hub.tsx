@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
   VALUE_BAND_POSITION_ORDER,
-  formatValueBandPrice,
+  formatValueBandRange,
   groupValueBandsByPosition,
   type ValueBandPosition,
 } from "@/lib/fpl/insights/value-bands";
@@ -45,7 +45,10 @@ export function BestOfPositionHub() {
             </div>
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {bands.map((band) => {
-                const price = formatValueBandPrice(band.minPrice);
+                const price = formatValueBandRange(
+                  band.minPrice,
+                  band.maxPrice,
+                );
                 return (
                   <Link
                     key={band.id}

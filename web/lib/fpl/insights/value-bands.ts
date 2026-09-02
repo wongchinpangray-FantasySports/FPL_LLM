@@ -74,12 +74,25 @@ export type ValueBandPreset = {
   href: string;
 };
 
-/** Exact-price bands for the Best of Position series (budget → mid-premium). */
+/**
+ * Band floor prices for Best of Position (budget → mid-premium).
+ * Each floor covers a half-open range up to the next floor − £0.1
+ * (e.g. DEF £4.5 → £4.5–4.9, so a £4.7 like De Cuyper appears).
+ * The top band for each position runs up to LAST_BAND_CEILING.
+ */
 const BAND_PRICES: Record<ValueBandPosition, number[]> = {
   GKP: [4.0, 4.5, 5.0, 5.5],
   DEF: [4.0, 4.5, 5.0, 5.5, 6.0],
   MID: [4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
   FWD: [4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
+};
+
+/** Inclusive upper bound for the last (highest) band per position. */
+const LAST_BAND_CEILING: Record<ValueBandPosition, number> = {
+  GKP: 6.0,
+  DEF: 7.5,
+  MID: 15.0,
+  FWD: 15.0,
 };
 
 export const VALUE_BAND_POSITION_ORDER: ValueBandPosition[] = [
@@ -95,28 +108,55 @@ export function formatValueBandPrice(price: number): string {
   return price.toFixed(1);
 }
 
+/** Display label for a band, e.g. `4.5` or `4.5–4.9`. */
+export function formatValueBandRange(
+  minPrice: number,
+  maxPrice: number,
+): string {
+  const lo = formatValueBandPrice(minPrice);
+  const hi = formatValueBandPrice(maxPrice);
+  if (lo === hi) return lo;
+  return `${lo}–${hi}`;
+}
+
 export function valueBandSlug(position: ValueBandPosition, price: number): string {
   return `${position.toLowerCase()}-${formatValueBandPrice(price).replace(".", "-")}`;
+}
+
+function bandMaxPrice(
+  position: ValueBandPosition,
+  price: number,
+  nextPrice: number | undefined,
+): number {
+  if (nextPrice != null && Number.isFinite(nextPrice)) {
+    // FPL steps are £0.1 — cover everything below the next labelled floor.
+    return Math.round((nextPrice - 0.1) * 10) / 10;
+  }
+  return LAST_BAND_CEILING[position];
 }
 
 function buildPreset(
   position: ValueBandPosition,
   price: number,
+  nextPrice?: number,
 ): ValueBandPreset {
   const id = valueBandSlug(position, price);
   return {
     id,
     position,
     minPrice: price,
-    maxPrice: price,
+    maxPrice: bandMaxPrice(position, price, nextPrice),
     href: `${BEST_OF_POSITION_HUB_HREF}/${id}`,
   };
 }
 
 export const VALUE_BAND_PRESETS: ValueBandPreset[] =
-  VALUE_BAND_POSITION_ORDER.flatMap((position) =>
-    BAND_PRICES[position].map((price) => buildPreset(position, price)),
-  );
+  VALUE_BAND_POSITION_ORDER.flatMap((position) => {
+    const prices = BAND_PRICES[position];
+    return prices.map((price, i) =>
+      buildPreset(position, price, prices[i + 1]),
+    );
+  });
 
 export type ValueBandPresetId = (typeof VALUE_BAND_PRESETS)[number]["id"];
 
@@ -358,7 +398,8 @@ export async function loadValueBandAnalysisRaw(opts: {
   limit?: number;
 }): Promise<ValueBandAnalysis> {
   const horizon = Math.min(Math.max(opts.horizon ?? 5, 1), 8);
-  const limit = Math.min(Math.max(opts.limit ?? 100, 1), 120);
+  // Show every eligible player in the band (ranges can be wide for MIDs/FWDs).
+  const limit = Math.min(Math.max(opts.limit ?? 300, 1), 400);
   const supa = getServerSupabase();
   const officialIds = await loadOfficialFplPlayerIdSet();
 
@@ -369,7 +410,9 @@ export async function loadValueBandAnalysisRaw(opts: {
     )
     .eq("position", opts.position)
     .gte("base_price", opts.minPrice)
-    .lte("base_price", opts.maxPrice);
+    .lte("base_price", opts.maxPrice)
+    .order("base_price", { ascending: true })
+    .limit(500);
 
   if (error) throw new Error(error.message);
 
@@ -402,7 +445,6 @@ export async function loadValueBandAnalysisRaw(opts: {
     officialIds,
   );
 
-  const byId = new Map(filtered.map((r) => [r.fpl_id, r]));
   const ids = filtered.map((r) => r.fpl_id);
 
   const [{ current, next }, preseason] = await Promise.all([
@@ -438,12 +480,14 @@ export async function loadValueBandAnalysisRaw(opts: {
           toGw: next + horizon - 1,
         });
 
-  const rows: ValueBandRow[] = Array.from(projections.values())
-    .map((p) => {
-      const meta = byId.get(p.fpl_id);
-      const pre = preById.get(p.fpl_id);
+  // Build from the filtered pool so every in-band player appears, even if
+  // projection skips them (missing team, etc.).
+  const rows: ValueBandRow[] = filtered
+    .map((meta) => {
+      const p = projections.get(meta.fpl_id);
+      const pre = preById.get(meta.fpl_id);
       const nextMins =
-        p.fixtures.length > 0
+        p && p.fixtures.length > 0
           ? p.fixtures.reduce(
               (s: number, f: { expected_minutes: number }) =>
                 s + f.expected_minutes,
@@ -451,30 +495,30 @@ export async function loadValueBandAnalysisRaw(opts: {
             ) / p.fixtures.length
           : null;
       return {
-        fpl_id: p.fpl_id,
-        web_name: p.web_name ?? meta?.web_name ?? `#${p.fpl_id}`,
-        team: p.team ?? meta?.team ?? "—",
-        position: p.position ?? meta?.position ?? null,
-        price: p.price ?? meta?.base_price ?? null,
-        ownership: p.ownership ?? meta?.selected_by_percent ?? null,
-        form: p.form ?? meta?.form ?? null,
-        xp_total: p.xp_total,
-        xp_per_game: p.xp_per_game,
-        value_per_million: p.value_per_million,
+        fpl_id: meta.fpl_id,
+        web_name: p?.web_name ?? meta.web_name,
+        team: p?.team ?? meta.team,
+        position: p?.position ?? meta.position,
+        price: p?.price ?? meta.base_price,
+        ownership: p?.ownership ?? meta.selected_by_percent,
+        form: p?.form ?? meta.form,
+        xp_total: p?.xp_total ?? 0,
+        xp_per_game: p?.xp_per_game ?? 0,
+        value_per_million: p?.value_per_million ?? null,
         expected_minutes_next:
           nextMins != null ? Math.round(nextMins * 10) / 10 : null,
-        threat: meta?.threat ?? null,
-        defensive_contribution: meta?.defensive_contribution ?? null,
+        threat: meta.threat,
+        defensive_contribution: meta.defensive_contribution,
         // Suppress tiny-sample FPL rates (Dasilva: 1 DC / 2 mins → 45.0).
         defensive_contribution_per_90: reliableDefconPer90(
-          meta?.minutes ?? 0,
-          meta?.defensive_contribution_per_90,
+          meta.minutes,
+          meta.defensive_contribution_per_90,
         ),
-        minutes: meta?.minutes ?? 0,
+        minutes: meta.minutes,
         preseason_goals: pre?.goals ?? 0,
         preseason_assists: pre?.assists ?? 0,
         preseason_starts: pre?.starts ?? 0,
-        fixtures: p.fixtures.map(
+        fixtures: (p?.fixtures ?? []).map(
           (f: {
             gw: number;
             opp_short: string;
@@ -513,7 +557,7 @@ export async function loadValueBandByPreset(
     minPrice: preset.minPrice,
     maxPrice: preset.maxPrice,
     horizon: 5,
-    limit: 100,
+    limit: 300,
   });
 }
 
@@ -525,7 +569,7 @@ export async function loadValueBandByPresetCached(
   if (!preset) return null;
   return unstable_cache(
     async () => loadValueBandByPreset(preset),
-    ["fpl-insights-bop-v2", id],
+    ["fpl-insights-bop-v3", id],
     { revalidate: 300 },
   )();
 }
