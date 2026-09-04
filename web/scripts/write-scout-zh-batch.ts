@@ -10,7 +10,9 @@
  *   npx tsx scripts/write-scout-zh-batch.ts --apply --slugs=a,b
  *
  * `--apply` also renders the XHS teaser feed for those slugs unless `--no-xhs`.
- * Same-day extra runs write `feed-YYYYMMDD-2` (then -3, …), not over the earlier pack.
+ * Default carousel theme is `--theme=xhs` (coral/pink/purple on white); pass
+ * `--theme=faleague` for the dark Faleague palette.
+ * Same-day extra runs write `feed-YYYYMMDD-xhs` or `feed-YYYYMMDD-2` (then -3, …).
  * Does not publish. Does not call Gemini/OpenAI/DeepSeek.
  */
 import { spawnSync } from "node:child_process";
@@ -248,11 +250,19 @@ async function main() {
     const written = await applyFromFiles(slugs);
     const skipXhs = process.argv.includes("--no-xhs");
     if (!skipXhs && written.length && !process.argv.includes("--dry")) {
-      const xhs = spawnSync(
-        "npx",
-        ["tsx", "scripts/scout-xhs-pages.ts", `--slugs=${written.join(",")}`],
-        { cwd: process.cwd(), stdio: "inherit", shell: true },
-      );
+      const xhsArgs = ["tsx", "scripts/scout-xhs-pages.ts", `--slugs=${written.join(",")}`];
+      if (!process.argv.includes("--theme=faleague")) {
+        xhsArgs.push("--theme=xhs");
+      }
+      // Multiple covers: chunk the batch; each close page lists titles not on that cover.
+      if (written.length > 4) {
+        xhsArgs.push("--all");
+      }
+      const xhs = spawnSync("npx", xhsArgs, {
+        cwd: process.cwd(),
+        stdio: "inherit",
+        shell: true,
+      });
       if (xhs.status) process.exit(xhs.status);
     }
     return;

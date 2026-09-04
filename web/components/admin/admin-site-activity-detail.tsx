@@ -25,6 +25,7 @@ export type KpiKey =
   | "views_per_visitor"
   | "total_users"
   | "new_users"
+  | "signup_conversion"
   | "dau"
   | "wau"
   | "onboarded"
@@ -264,6 +265,29 @@ function kpiFacts(
         series: seriesFor((d) => d.new_users),
       };
     }
+    case "signup_conversion":
+      return {
+        title: t("kpiSignupConversion"),
+        summary: t("detail.signupConversionSummary", {
+          rate: stats.signup_conversion_rate,
+          converted: stats.converted_visitors,
+          anon: stats.anonymous_visitors,
+          newUsers: stats.new_users,
+        }),
+        facts: [
+          {
+            label: t("kpiSignupConversion"),
+            value: `${stats.signup_conversion_rate}%`,
+          },
+          { label: t("detail.anonVisitors"), value: stats.anonymous_visitors },
+          {
+            label: t("detail.convertedVisitors"),
+            value: stats.converted_visitors,
+          },
+          { label: t("kpiNewUsers"), value: stats.new_users },
+        ],
+        series: seriesFor((d) => d.new_users),
+      };
     case "dau":
       return {
         title: t("kpiDau"),
@@ -534,6 +558,8 @@ export function AdminSiteActivityDetail({
                             ? stats.deltas.total_users
                             : detail.key === "new_users"
                               ? stats.deltas.new_users
+                              : detail.key === "signup_conversion"
+                                ? stats.deltas.signup_conversion_rate
                               : detail.key === "dau"
                                 ? stats.deltas.dau
                                 : detail.key === "wau"

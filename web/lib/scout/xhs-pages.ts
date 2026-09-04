@@ -14,7 +14,7 @@ export const DEFAULT_DAYS = 5;
 export const MAX_PAGES = 18;
 export const TEASER_MAX_ARTICLES = 4;
 /** Extra ZH titles on the closing page (not in this carousel). */
-export const CLOSE_MORE_MAX = 8;
+export const CLOSE_MORE_MAX = 10;
 /** Fallback body blocks when `summary_zh` is missing. Prefer a written summary. */
 export const TEASER_FALLBACK_PARAS = 3;
 export const TEASER_PARAS = TEASER_FALLBACK_PARAS;
@@ -644,6 +644,53 @@ export function leftoverTeaserArticles(
   }
   out.sort((a, b) => priorityScore(b) - priorityScore(a));
   return out.slice(0, Math.max(0, max));
+}
+
+/**
+ * Close-page titles: prefer other articles from the same batch (same apply /
+ * `--slugs` set) that are not on this feed's cover.
+ * When the batch is larger than this cover, list only those missing titles
+ * (do not pad with unrelated older articles). Otherwise fill from the pool.
+ */
+export function closePageMoreTitles(
+  group: LocalScoutZh[],
+  batch: LocalScoutZh[],
+  pool: LocalScoutZh[],
+  opts: { max?: number; days?: number; now?: Date } = {},
+): string[] {
+  const max = opts.max ?? CLOSE_MORE_MAX;
+  const used = new Set(group.map((a) => a.slug));
+  const titles: string[] = [];
+  const listed = new Set<string>();
+
+  for (const a of batch) {
+    if (used.has(a.slug)) continue;
+    if (skipReasonFor(a)) continue;
+    const title = stripVisibleUrlText(a.title_zh).trim();
+    if (!title || countCjk(title) < 4) continue;
+    if (listed.has(a.slug)) continue;
+    listed.add(a.slug);
+    titles.push(title);
+    if (titles.length >= max) return titles;
+  }
+
+  // Multi-pack batch: only show titles that belong to this run but missed the cover.
+  if (batch.length > group.length) {
+    return titles;
+  }
+
+  const extras = leftoverTeaserArticles(
+    pool,
+    [...used, ...listed],
+    { ...opts, max: max - titles.length },
+  );
+  for (const a of extras) {
+    const title = stripVisibleUrlText(a.title_zh).trim();
+    if (!title) continue;
+    titles.push(title);
+    if (titles.length >= max) break;
+  }
+  return titles;
 }
 
 export function packBlocksByHeight(

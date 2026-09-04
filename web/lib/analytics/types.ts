@@ -122,6 +122,8 @@ export type SiteDeltas = {
   fpl_linked_users: number | null;
   pro_users: number | null;
   multi_day_visitors: number | null;
+  signup_conversion_rate: number | null;
+  converted_visitors: number | null;
 };
 
 export type SiteActivityStats = {
@@ -135,6 +137,15 @@ export type SiteActivityStats = {
   signed_in_visitors: number;
   anonymous_pageviews: number;
   signed_in_pageviews: number;
+  /** Distinct cookies that browsed while logged out in this window. */
+  anonymous_visitors: number;
+  /**
+   * Anonymous visitors whose same visitor cookie later appears signed-in
+   * (anon → signup conversion within the tracked window).
+   */
+  converted_visitors: number;
+  /** converted_visitors / anonymous_visitors × 100 (0 if no anon visitors). */
+  signup_conversion_rate: number;
   multi_day_visitors: number;
   single_day_visitors: number;
   avg_views_per_visitor: number;

@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
-import { ScoutArticleBody } from "@/components/scout/scout-article-body";
+import { ScoutArticleGate } from "@/components/scout/scout-article-gate";
 import { ScoutCta } from "@/components/scout/scout-cta";
 import { ScoutPageview } from "@/components/scout/scout-pageview";
 import {
   ScoutSignupCta,
   ScoutSignupPrompt,
 } from "@/components/scout/scout-signup-gate";
+import { getAuthUser } from "@/lib/auth/session";
 import { getScoutArticleBySlug } from "@/lib/scout/store";
+import { splitScoutPreviewHtml } from "@/lib/scout/preview-html";
 import { displayScoutBody, displayScoutExcerpt, displayScoutTitle } from "@/lib/scout/zh-status";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import { Link } from "@/i18n/navigation";
@@ -44,6 +46,10 @@ export default async function ScoutArticlePage({ params }: Props) {
   const body = displayScoutBody(article);
   if (!body) notFound();
 
+  const user = await getAuthUser();
+  const serverAuthed = Boolean(user);
+  const { previewHtml, gated } = splitScoutPreviewHtml(body, 0.5);
+
   const published = article.source_published_at
     ? new Intl.DateTimeFormat(params.locale, { dateStyle: "long" }).format(
         new Date(article.source_published_at),
@@ -53,7 +59,7 @@ export default async function ScoutArticlePage({ params }: Props) {
   return (
     <PageShell backHref="/scout" backLabel={t("backList")} width="4xl">
       <ScoutPageview articleId={article.id} slug={article.slug} />
-      <ScoutSignupPrompt />
+      {!serverAuthed ? <ScoutSignupPrompt /> : null}
       <article className="flex flex-col gap-5">
         <header className="flex flex-col gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-accent">
@@ -85,7 +91,7 @@ export default async function ScoutArticlePage({ params }: Props) {
           />
         ) : null}
 
-        <ScoutSignupCta />
+        {!serverAuthed ? <ScoutSignupCta /> : null}
 
         <ScoutCta
           slug={article.slug}
@@ -103,25 +109,30 @@ export default async function ScoutArticlePage({ params }: Props) {
           }}
         />
 
-        <ScoutArticleBody html={body} baseUrl={article.source_url} />
-
-        <ScoutSignupCta />
-
-        <ScoutCta
-          slug={article.slug}
-          articleId={article.id}
-          sourceUrl={article.source_url}
-          labels={{
-            partner: t("partner"),
-            premiumTitle: t("ctaPremiumTitle"),
-            premiumBody: t("ctaPremiumBody"),
-            premiumButton: t("ctaPremiumButton"),
-            raterButton: t("ctaRaterButton"),
-            originalButton: t("ctaOriginalButton"),
-            qrHint: t("ctaQrHint"),
-            credit: t("ctaCredit"),
-          }}
+        <ScoutArticleGate
+          html={serverAuthed || !gated ? body : previewHtml}
+          baseUrl={article.source_url}
+          serverAuthed={serverAuthed}
+          gated={gated && !serverAuthed}
         />
+
+        {serverAuthed ? (
+          <ScoutCta
+            slug={article.slug}
+            articleId={article.id}
+            sourceUrl={article.source_url}
+            labels={{
+              partner: t("partner"),
+              premiumTitle: t("ctaPremiumTitle"),
+              premiumBody: t("ctaPremiumBody"),
+              premiumButton: t("ctaPremiumButton"),
+              raterButton: t("ctaRaterButton"),
+              originalButton: t("ctaOriginalButton"),
+              qrHint: t("ctaQrHint"),
+              credit: t("ctaCredit"),
+            }}
+          />
+        ) : null}
 
         <p className="text-xs text-muted-foreground">
           {t("disclaimer")}{" "}

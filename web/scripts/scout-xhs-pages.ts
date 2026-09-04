@@ -12,6 +12,8 @@
  *   npx tsx scripts/scout-xhs-pages.ts --all
  *   npx tsx scripts/scout-xhs-pages.ts --full --slug=one-article
  *   npx tsx scripts/scout-xhs-pages.ts --theme=xhs --slugs=a,b,c,d
+ *   npx tsx scripts/scout-xhs-pages.ts --full-passage --theme=xhs --slugs=main,other1,other2
+ *     → full body carousel for `main`, close page lists other1/other2 titles
  *
  * After Cursor translate `--apply`, the writer also runs this teaser step
  * for the slugs just written (unless `--no-xhs`).
@@ -52,7 +54,7 @@ import {
   chunkArticles,
   publishedAtMs,
   skipReasonFor,
-  leftoverTeaserArticles,
+  closePageMoreTitles,
   CLOSE_MORE_MAX,
   TEASER_MAX_ARTICLES,
   type LocalScoutZh,
@@ -419,9 +421,20 @@ function feedStamp(
   index = 1,
   { all = false, outRoot, theme }: { all?: boolean; outRoot?: string; theme?: string } = {},
 ): string {
+  const root = outRoot ?? scoutXhsOutRoot();
+  // Theme wins: same-day xhs packs use -xhs, -xhs-2, … even under `--all`.
+  if (theme === "xhs") {
+    const ymd = ymdStamp();
+    const first = `feed-${ymd}-xhs`;
+    if (!carouselExists(join(root, first))) return first;
+    for (let i = 2; i <= 99; i++) {
+      const stamp = `feed-${ymd}-xhs-${i}`;
+      if (!carouselExists(join(root, stamp))) return stamp;
+    }
+    return `feed-${ymd}-xhs-${Date.now()}`;
+  }
   if (all) return `feed-all-${String(index).padStart(2, "0")}`;
-  if (theme === "xhs") return `feed-${ymdStamp()}-xhs`;
-  return nextDailyFeedStamp(outRoot ?? scoutXhsOutRoot());
+  return nextDailyFeedStamp(root);
 }
 
 async function generateTeaserFeed(
@@ -556,7 +569,7 @@ async function generateTeaserFeed(
     total,
     title: "完整文章在 Faleague",
     subtitle: more.length
-      ? "去 Scout 中文专栏看全文。下面这些也已有中文。"
+      ? "去 Scout 中文专栏看全文。下面这些未出现在封面。"
       : "去 Scout 中文专栏看全文、笔记和伤情。",
     seriesLabel: "Scout 中文",
     gwTag: gw,
@@ -598,6 +611,145 @@ async function generateTeaserFeed(
   );
   console.log(JSON.stringify({ ok: true, mode: "teaser", pages: total, dir, slugs: cards.map((c) => c.slug) }));
   return { slug: stamp, pages: total, dir, titles };
+}
+
+/**
+ * Single-article feed: cover + full body pages + same feed-close as teasers.
+ * `moreTitles` are listed on the last page (batch titles not in this article).
+ */
+async function generateFullPassageFeed(
+  page: import("playwright").Page,
+  article: LocalScoutZh,
+  outRoot: string,
+  stamp: string,
+  moreTitles: string[] = [],
+): Promise<{ slug: string; pages: number; dir: string; titles: string[] }> {
+  const dir = join(outRoot, stamp);
+  mkdirSync(dir, { recursive: true });
+  for (const name of readdirSync(dir)) {
+    if (/\.(png|jpg)$/i.test(name)) unlinkSync(join(dir, name));
+  }
+
+  const allBlocks = articleBlocks(article.body_html_zh);
+  const heroSrc = await resolveHeroSrc(
+    article,
+    pickHeroSrc(allBlocks),
+    tweetMediaDir(outRoot),
+  );
+  if (heroSrc) {
+    console.log(
+      JSON.stringify({
+        cover_figure: heroSrc.startsWith("data:") ? "(cached)" : heroSrc,
+        slug: article.slug,
+      }),
+    );
+  }
+  const bodyBlocks = dropHeroFromBlocks(allBlocks, heroSrc);
+  let packed = await paginateBody(page, bodyBlocks);
+  const series = seriesLabel(article.series, article.title_zh);
+  const gw = gwTag(article.slug, article.title_zh, article.title_en);
+  packed = await reflowPackedPages(page, article, packed, series, gw);
+
+  // cover + body pages + close
+  const maxBody = Math.max(1, MAX_PAGES - 2);
+  if (packed.length > maxBody) {
+    const head = packed.slice(0, maxBody - 1);
+    const tail = packed.slice(maxBody - 1).flat();
+    packed = tail.length ? [...head, tail] : head;
+    console.warn(JSON.stringify({ warn: "truncated_full_passage", slug: article.slug }));
+  }
+
+  const more = moreTitles
+    .map((t) => stripVisibleUrlText(t).trim())
+    .filter(Boolean)
+    .slice(0, CLOSE_MORE_MAX);
+  const total = packed.length + 2; // cover + bodies + close
+
+  await renderOnePage(
+    page,
+    {
+      kind: "cover",
+      page: 1,
+      total,
+      title: stripVisibleUrlText(article.title_zh),
+      subtitle: stripVisibleUrlText(article.excerpt_zh),
+      seriesLabel: series,
+      gwTag: gw,
+      heroSrc,
+    },
+    join(dir, "01.png"),
+  );
+
+  for (let i = 0; i < packed.length; i++) {
+    const name = String(i + 2).padStart(2, "0") + ".png";
+    await renderOnePage(
+      page,
+      bodyPagePayload(article, packed[i]!, i + 2, total, series, gw),
+      join(dir, name),
+    );
+  }
+
+  const closeBase = {
+    kind: "feed-close",
+    page: total,
+    total,
+    title: "完整文章在 Faleague",
+    subtitle: more.length
+      ? "去 Scout 中文专栏看全文。下面这些未出现在封面。"
+      : "去 Scout 中文专栏看全文、笔记和伤情。",
+    seriesLabel: "Scout 中文",
+    gwTag: gw,
+  };
+  let listed = [...more];
+  while (listed.length > 0) {
+    await page.evaluate((payload) => {
+      (window as unknown as { renderPage: (d: unknown) => void }).renderPage(payload);
+    }, withAssets({ ...closeBase, moreTitles: listed }));
+    const overflow = await pageOverflow(page);
+    if (overflow <= 16) break;
+    listed.pop();
+  }
+  await renderOnePage(
+    page,
+    { ...closeBase, moreTitles: listed },
+    join(dir, String(total).padStart(2, "0") + ".png"),
+  );
+
+  const caption = buildCaption(article, ctaDisplay);
+  writeFileSync(join(dir, "caption.txt"), caption, "utf8");
+  writeFileSync(
+    join(dir, "manifest.json"),
+    JSON.stringify(
+      {
+        mode: "full-passage",
+        theme: renderTheme ?? "faleague",
+        slugs: [article.slug],
+        titles: [stripVisibleUrlText(article.title_zh)],
+        more_titles: listed,
+        pages: total,
+        cta_url: ctaDisplay,
+        output: dir,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  console.log(
+    JSON.stringify({
+      ok: true,
+      mode: "full-passage",
+      pages: total,
+      dir,
+      slugs: [article.slug],
+    }),
+  );
+  return {
+    slug: stamp,
+    pages: total,
+    dir,
+    titles: [stripVisibleUrlText(article.title_zh)],
+  };
 }
 
 async function loadDbTranslated(): Promise<LocalScoutZh[]> {
@@ -685,8 +837,9 @@ async function main() {
   const dry = process.argv.includes("--dry");
   const force = process.argv.includes("--force");
   const requested = process.argv.includes("--requested");
-  const full = process.argv.includes("--full");
-  const teaser = !full;
+  const fullPassage = process.argv.includes("--full-passage");
+  const full = process.argv.includes("--full") && !fullPassage;
+  const teaser = !full && !fullPassage;
   const themeRaw = flagStr("theme");
   renderTheme = themeRaw === "xhs" ? "xhs" : undefined;
   const slugs = parseSlugs();
@@ -730,19 +883,22 @@ async function main() {
     days: slugFilter.length || all ? 0 : days,
     force,
   });
-  const cap = all
+  // Explicit slug batches larger than one cover auto-chunk into multiple feeds.
+  const chunkBatch =
+    all || (teaser && slugFilter.length > TEASER_MAX_ARTICLES);
+  const cap = chunkBatch || fullPassage
     ? 999
     : teaser
       ? TEASER_MAX_ARTICLES
       : (latest ?? DEFAULT_LATEST);
   const selected =
     slugFilter.length
-      ? picked.selected.slice(0, all ? 999 : cap)
+      ? picked.selected.slice(0, chunkBatch || fullPassage ? 999 : cap)
       : picked.selected.slice(0, cap);
   const skipped = picked.skipped;
 
   const summary = {
-    mode: dry ? "dry" : teaser ? "teaser" : "render",
+    mode: dry ? "dry" : fullPassage ? "full-passage" : teaser ? "teaser" : "render",
     theme: renderTheme ?? "faleague",
     cta: { label: ctaLabel, url: ctaDisplay, href: cta.href },
     selected: selected.map((a) => a.slug),
@@ -775,26 +931,48 @@ async function main() {
       /* fonts optional */
     }
 
-    if (teaser) {
-      const groups = all
+    if (fullPassage) {
+      const prefer =
+        slugFilter.find((s) => selected.some((a) => a.slug === s)) ?? selected[0]!.slug;
+      const main = selected.find((a) => a.slug === prefer) ?? selected[0]!;
+      const moreTitles = closePageMoreTitles([main], selected, pool, {
+        days: 21,
+        max: CLOSE_MORE_MAX,
+      });
+      results.push(
+        await generateFullPassageFeed(
+          page,
+          main,
+          outRoot,
+          feedStamp(1, { all: false, outRoot, theme: renderTheme }),
+          moreTitles,
+        ),
+      );
+    } else if (teaser) {
+      const groups = chunkBatch
         ? chunkArticles(selected, TEASER_MAX_ARTICLES)
         : [selected];
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]!;
         if (!group.length) continue;
-      const more = leftoverTeaserArticles(pool, group.map((a) => a.slug), {
-        days: 21,
-        max: CLOSE_MORE_MAX,
-      });
-      results.push(
-        await generateTeaserFeed(
-          page,
-          group,
-          outRoot,
-          feedStamp(i + 1, { all, outRoot, theme: renderTheme }),
-          more.map((a) => a.title_zh),
-        ),
-      );
+        // Prefer other titles from this batch that are not on this cover.
+        const moreTitles = closePageMoreTitles(group, selected, pool, {
+          days: 21,
+          max: CLOSE_MORE_MAX,
+        });
+        results.push(
+          await generateTeaserFeed(
+            page,
+            group,
+            outRoot,
+            feedStamp(i + 1, {
+              all: chunkBatch || all,
+              outRoot,
+              theme: renderTheme,
+            }),
+            moreTitles,
+          ),
+        );
       }
     } else {
       for (const article of selected) {

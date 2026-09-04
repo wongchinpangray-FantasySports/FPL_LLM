@@ -378,6 +378,16 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
                 onOpen={() => openKpi("new_users")}
               />
               <StatCard
+                label={t("kpiSignupConversion")}
+                value={`${stats.signup_conversion_rate}%`}
+                hint={t("kpiSignupConversionHint", {
+                  converted: stats.converted_visitors,
+                  anon: stats.anonymous_visitors,
+                })}
+                delta={stats.deltas?.signup_conversion_rate}
+                onOpen={() => openKpi("signup_conversion")}
+              />
+              <StatCard
                 label={t("kpiDau")}
                 value={stats.dau}
                 hint={t("kpiDauHint")}

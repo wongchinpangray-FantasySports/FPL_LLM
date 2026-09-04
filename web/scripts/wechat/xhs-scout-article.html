@@ -656,7 +656,7 @@
           const more = Array.isArray(data.moreTitles) ? data.moreTitles : [];
           const moreHtml = more.length
             ? `<div class="close-more">
-                <div class="kicker">本条未收录 · 专栏里还有</div>
+                <div class="kicker">未上封面 · 专栏里还有</div>
                 <ol>${more.map((t, i) =>
                   `<li><span class="idx">${String(i + 1).padStart(2, "0")}</span><span class="ttl">${esc(t)}</span></li>`
                 ).join("")}</ol>

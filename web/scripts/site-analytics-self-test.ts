@@ -79,6 +79,13 @@ function testAggregate() {
       visitor_id: "v1",
       user_id: "u1",
     },
+    {
+      created_at: "2026-08-26T11:00:00.000Z",
+      path: "/auth/signup",
+      feature: "other",
+      visitor_id: "v2",
+      user_id: "u2",
+    },
   ];
   const stats = aggregateSiteActivity({
     from: "2026-08-20T00:00:00.000Z",
@@ -102,6 +109,14 @@ function testAggregate() {
         onboarding_completed_at: null,
         insights_plan: null,
       },
+      {
+        created_at: "2026-08-26T11:05:00.000Z",
+        last_login_date: "2026-08-26",
+        login_days: 1,
+        fpl_entry_id: null,
+        onboarding_completed_at: null,
+        insights_plan: null,
+      },
     ],
     products: {
       squad_builder_drafts: 3,
@@ -117,13 +132,16 @@ function testAggregate() {
     tableMissing: false,
   });
 
-  assert.equal(stats.pageviews, 4);
+  assert.equal(stats.pageviews, 5);
   assert.equal(stats.unique_visitors, 2);
-  assert.equal(stats.signed_in_visitors, 1);
+  assert.equal(stats.signed_in_visitors, 2);
+  assert.equal(stats.anonymous_visitors, 1);
+  assert.equal(stats.converted_visitors, 1);
+  assert.equal(stats.signup_conversion_rate, 100);
   assert.equal(stats.multi_day_visitors, 1);
   assert.equal(stats.single_day_visitors, 1);
-  assert.equal(stats.new_users, 1);
-  assert.equal(stats.total_users, 2);
+  assert.equal(stats.new_users, 2);
+  assert.equal(stats.total_users, 3);
   assert.equal(stats.pro_users, 1);
   assert.equal(stats.fpl_linked_users, 1);
   assert.equal(stats.features[0]?.feature, "planner");
@@ -131,14 +149,14 @@ function testAggregate() {
   assert.equal(stats.features[0]?.paths[0]?.path, "/planner");
   assert.equal(stats.features[0]?.paths[0]?.pageviews, 2);
   assert.equal(stats.features[0]?.returning_visitors, 0);
-  assert.equal(stats.features[0]?.share_of_pageviews, 50);
+  assert.equal(stats.features[0]?.share_of_pageviews, 40);
   assert.equal(stats.features[0]?.peak_date, "2026-08-25");
   const day25 = stats.daily.find((d) => d.date === "2026-08-25");
   assert.equal(day25?.pageviews, 2);
   assert.equal(day25?.new_users, 1);
   assert.equal(stats.products.squad_builder_drafts, 3);
   assert.equal(stats.login_buckets.find((b) => b.bucket === "2_7")?.users, 1);
-  assert.equal(stats.login_buckets.find((b) => b.bucket === "1")?.users, 1);
+  assert.equal(stats.login_buckets.find((b) => b.bucket === "1")?.users, 2);
 }
 
 testPathMapping();

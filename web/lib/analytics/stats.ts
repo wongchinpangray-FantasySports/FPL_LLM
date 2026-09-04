@@ -79,6 +79,8 @@ const EMPTY_DELTAS: SiteDeltas = {
   fpl_linked_users: null,
   pro_users: null,
   multi_day_visitors: null,
+  signup_conversion_rate: null,
+  converted_visitors: null,
 };
 
 function emptyProducts(): SiteProductCounts {
@@ -170,6 +172,10 @@ export function aggregateSiteActivity(input: {
 
   let anonymousPageviews = 0;
   let signedInPageviews = 0;
+  /** Cookies that browsed while logged out. */
+  const anonVisitorIds = new Set<string>();
+  /** Cookies that browsed while signed in (same id persists after signup). */
+  const signedVisitorIds = new Set<string>();
 
   for (const row of events) {
     const day = utcDay(row.created_at);
@@ -180,6 +186,7 @@ export function aggregateSiteActivity(input: {
     if (row.user_id) {
       signedInPageviews += 1;
       signedInVisitors.add(row.user_id);
+      if (row.visitor_id) signedVisitorIds.add(row.visitor_id);
       if (day) {
         let signed = signedByDay.get(day);
         if (!signed) {
@@ -190,6 +197,7 @@ export function aggregateSiteActivity(input: {
       }
     } else {
       anonymousPageviews += 1;
+      if (row.visitor_id) anonVisitorIds.add(row.visitor_id);
     }
 
     if (visitorKey) {
@@ -355,6 +363,16 @@ export function aggregateSiteActivity(input: {
 
   const eventDau = visitorsByDay.get(today)?.size ?? 0;
 
+  let convertedVisitors = 0;
+  for (const id of anonVisitorIds) {
+    if (signedVisitorIds.has(id)) convertedVisitors += 1;
+  }
+  const anonymousVisitors = anonVisitorIds.size;
+  const signupConversionRate =
+    anonymousVisitors > 0
+      ? Math.round((convertedVisitors / anonymousVisitors) * 1000) / 10
+      : 0;
+
   return {
     from,
     to,
@@ -366,6 +384,9 @@ export function aggregateSiteActivity(input: {
     signed_in_visitors: signedInVisitors.size,
     anonymous_pageviews: anonymousPageviews,
     signed_in_pageviews: signedInPageviews,
+    anonymous_visitors: anonymousVisitors,
+    converted_visitors: convertedVisitors,
+    signup_conversion_rate: signupConversionRate,
     multi_day_visitors: multiDay,
     single_day_visitors: singleDay,
     avg_views_per_visitor:
@@ -502,6 +523,14 @@ function withDeltas(
         multi_day_visitors: percentChange(
           current.multi_day_visitors,
           previous.multi_day_visitors,
+        ),
+        converted_visitors: percentChange(
+          current.converted_visitors,
+          previous.converted_visitors,
+        ),
+        signup_conversion_rate: percentChange(
+          current.signup_conversion_rate,
+          previous.signup_conversion_rate,
         ),
       },
     },
