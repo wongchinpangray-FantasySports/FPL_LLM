@@ -872,28 +872,6 @@ export function MiniGameApp({ locale }: { locale: string }) {
             </div>
           </div>
 
-          <MiniTemplates
-            templates={templates}
-            disabled={!submissionOpen}
-            onApply={applyTemplate}
-          />
-
-          {ctx?.mission ? (
-            <MiniMissionPanel
-              gw={ctx.mission.gw}
-              titleKey={ctx.mission.titleKey}
-              bodyKey={ctx.mission.bodyKey}
-              completed={missionLive.completed}
-            />
-          ) : null}
-
-          <MiniCrowdVsDiff
-            gw={hotGw}
-            entries={hotEntries}
-            crowd={hotPicks}
-            differentials={diffPicks}
-          />
-
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(22rem,28rem)] xl:grid-cols-[minmax(0,1fr)_min(24rem,32rem)]">
             <div>
               <p className="mb-2 text-sm text-muted-foreground">
@@ -970,6 +948,28 @@ export function MiniGameApp({ locale }: { locale: string }) {
               {t("submitLocked")}
             </p>
           ) : null}
+
+          <MiniTemplates
+            templates={templates}
+            disabled={!submissionOpen}
+            onApply={applyTemplate}
+          />
+
+          {ctx?.mission ? (
+            <MiniMissionPanel
+              gw={ctx.mission.gw}
+              titleKey={ctx.mission.titleKey}
+              bodyKey={ctx.mission.bodyKey}
+              completed={missionLive.completed}
+            />
+          ) : null}
+
+          <MiniCrowdVsDiff
+            gw={hotGw}
+            entries={hotEntries}
+            crowd={hotPicks}
+            differentials={diffPicks}
+          />
 
           <MiniShareCard
             locale={locale}
