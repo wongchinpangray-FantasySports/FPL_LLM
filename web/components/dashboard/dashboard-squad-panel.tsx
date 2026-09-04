@@ -2,13 +2,17 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { PitchView, type PlannerGwStripCell, type PitchPriceBadge } from "@/components/planner/pitch-view";
+import {
+  PitchView,
+  type PlannerFdrStripCell,
+  type PlannerGwStripCell,
+} from "@/components/planner/pitch-view";
 import {
   FplPlayerPerformanceModal,
   type PlayerPerformanceProfile,
 } from "@/components/fpl/insights/fpl-player-performance-modal";
 import type { PlannerPickPayload } from "@/components/planner/types";
-import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
+import type { SquadPlayerSignal } from "@/lib/transfers/diagnose";
 import { cn } from "@/lib/utils";
 
 export type DashboardSquadPick = {
@@ -21,11 +25,29 @@ export type DashboardSquadPick = {
   position: string | null;
   price: number | null;
   form: number | null;
+  ownership: number | null;
   is_starter: boolean;
   is_captain: boolean;
   is_vice_captain: boolean;
   availability_note?: string | null;
+  /** Raw GW points for the selected points gameweek (no captain ×2). */
+  gw_points?: number | null;
 };
+
+export type DashboardCardMetric =
+  | "gw_pts"
+  | "form"
+  | "fdr3"
+  | "ownership"
+  | "xp";
+
+const CARD_METRICS: DashboardCardMetric[] = [
+  "gw_pts",
+  "form",
+  "fdr3",
+  "ownership",
+  "xp",
+];
 
 function toPlannerPicks(picks: DashboardSquadPick[]): PlannerPickPayload[] {
   return picks.map((p) => ({
@@ -50,15 +72,52 @@ function nextOppLabel(
   return cell.opp;
 }
 
+function cautionFromNote(note: string | null | undefined): SquadPlayerSignal | null {
+  if (!note) return null;
+  const lower = note.toLowerCase();
+  let kind: SquadPlayerSignal["kinds"][number] = "doubtful";
+  let severity: SquadPlayerSignal["severity"] = "watch";
+  if (
+    lower.includes("injur") ||
+    lower.includes("受伤") ||
+    lower.includes("伤停")
+  ) {
+    kind = "injured";
+    severity = "alert";
+  } else if (
+    lower.includes("suspend") ||
+    lower.includes("停赛") ||
+    lower.includes("red card")
+  ) {
+    kind = "suspended";
+    severity = "alert";
+  } else if (
+    lower.includes("unavail") ||
+    lower.includes("不可用") ||
+    lower.includes("not available")
+  ) {
+    kind = "unavailable";
+    severity = "alert";
+  }
+  return {
+    form: null,
+    xp_horizon: null,
+    severity,
+    kinds: [kind],
+    notes: [note],
+  };
+}
+
 export function DashboardSquadPanel({
   picks,
   title,
   caption,
   benchLabel,
   horizon = 5,
+  pointsGw = null,
   nextGwXpByFplId,
   gwForecastByFplId,
-  priceForecastByFplId,
+  fdrStripByFplId,
   inspectNameTitle = "View player summary",
 }: {
   picks: DashboardSquadPick[];
@@ -66,22 +125,18 @@ export function DashboardSquadPanel({
   caption?: string;
   benchLabel: string;
   horizon?: number;
+  /** GW number whose points are shown in GW pts mode */
+  pointsGw?: number | null;
   nextGwXpByFplId?: Record<number, number>;
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
-  priceForecastByFplId?: Record<
-    number,
-    {
-      status: PriceForecastStatus;
-      cost_change_event: number;
-      progress: number;
-    }
-  >;
+  fdrStripByFplId?: Record<number, PlannerFdrStripCell[]>;
   inspectNameTitle?: string;
 }) {
   const t = useTranslations("dashboard");
   const tPlayer = useTranslations("playerPage");
   const tModal = useTranslations("fplInsights.playerModal");
   const [viewMode, setViewMode] = useState<"pitch" | "list">("pitch");
+  const [cardMetric, setCardMetric] = useState<DashboardCardMetric>("gw_pts");
   const [inspectOpen, setInspectOpen] = useState(false);
   const [inspectLoading, setInspectLoading] = useState(false);
   const [inspectError, setInspectError] = useState<string | null>(null);
@@ -145,6 +200,67 @@ export function DashboardSquadPanel({
     [tModal, tPlayer],
   );
 
+  const attentionByFplId = useMemo(() => {
+    const out: Record<number, SquadPlayerSignal> = {};
+    for (const p of picks) {
+      const signal = cautionFromNote(p.availability_note);
+      if (signal) out[p.fpl_id] = signal;
+    }
+    return out;
+  }, [picks]);
+
+  const primaryMetricTitle = useMemo(() => {
+    switch (cardMetric) {
+      case "gw_pts":
+        return pointsGw != null
+          ? t("cardMetricGwPtsTitle", { gw: pointsGw })
+          : t("cardMetricGwPts");
+      case "form":
+        return t("cardMetricForm");
+      case "ownership":
+        return t("cardMetricOwn");
+      case "xp":
+        return t("cardMetricXp");
+      default:
+        return undefined;
+    }
+  }, [cardMetric, pointsGw, t]);
+
+  const primaryMetricByFplId = useMemo(() => {
+    if (cardMetric === "fdr3") return undefined;
+    const out: Record<number, string> = {};
+    for (const p of picks) {
+      if (cardMetric === "gw_pts") {
+        out[p.fpl_id] =
+          p.gw_points != null && Number.isFinite(p.gw_points)
+            ? String(Math.round(p.gw_points))
+            : "—";
+      } else if (cardMetric === "form") {
+        out[p.fpl_id] =
+          p.form != null && Number.isFinite(p.form) ? p.form.toFixed(1) : "—";
+      } else if (cardMetric === "ownership") {
+        out[p.fpl_id] =
+          p.ownership != null && Number.isFinite(p.ownership)
+            ? `${p.ownership.toFixed(1)}%`
+            : "—";
+      } else if (cardMetric === "xp") {
+        const xp = nextGwXpByFplId?.[p.fpl_id];
+        const base =
+          xp != null && Number.isFinite(xp)
+            ? p.is_starter && p.is_captain
+              ? xp * 2
+              : xp
+            : null;
+        out[p.fpl_id] =
+          base != null ? base.toFixed(1) : "—";
+      }
+    }
+    return out;
+  }, [cardMetric, picks, nextGwXpByFplId]);
+
+  const activeFdrStrip =
+    cardMetric === "fdr3" ? fdrStripByFplId : undefined;
+
   const cardSublineByFplId = useMemo(() => {
     const out: Record<number, string> = {};
     for (const p of picks) {
@@ -152,67 +268,10 @@ export function DashboardSquadPanel({
       const opp = nextOppLabel(gwForecastByFplId?.[p.fpl_id]);
       if (opp) bits.push(opp);
       if (p.price != null) bits.push(`£${p.price.toFixed(1)}m`);
-      if (p.form != null) bits.push(`F ${p.form}`);
-      if (p.availability_note) bits.push("⚠");
       if (bits.length) out[p.fpl_id] = bits.join(" · ");
     }
     return out;
   }, [picks, gwForecastByFplId]);
-
-  const priceStatusLabel = (status: PriceForecastStatus): string => {
-    switch (status) {
-      case "likely_rise":
-        return t("pitchPriceLikelyRise");
-      case "watch_rise":
-        return t("pitchPriceWatchRise");
-      case "likely_fall":
-        return t("pitchPriceLikelyFall");
-      case "watch_fall":
-        return t("pitchPriceWatchFall");
-      default:
-        return t("pitchPriceStable");
-    }
-  };
-
-  const {
-    priceBadgeByFplId,
-    priceBadgeLabelByFplId,
-    priceAlreadyChangedByFplId,
-  } = useMemo(() => {
-    const badges: Record<number, PitchPriceBadge> = {};
-    const labels: Record<number, string> = {};
-    const changed: Record<number, string | null> = {};
-    if (!priceForecastByFplId) {
-      return {
-        priceBadgeByFplId: undefined,
-        priceBadgeLabelByFplId: undefined,
-        priceAlreadyChangedByFplId: undefined,
-      };
-    }
-    for (const [idStr, snap] of Object.entries(priceForecastByFplId)) {
-      const fplId = Number(idStr);
-      badges[fplId] = {
-        status: snap.status,
-        cost_change_event: snap.cost_change_event,
-        progress: snap.progress,
-      };
-      labels[fplId] = priceStatusLabel(snap.status);
-      if (Math.abs(snap.cost_change_event) >= 0.05) {
-        const n = Math.abs(snap.cost_change_event).toFixed(1);
-        changed[fplId] =
-          snap.cost_change_event > 0
-            ? t("pitchPriceAlreadyUp", { n })
-            : t("pitchPriceAlreadyDown", { n });
-      } else {
-        changed[fplId] = null;
-      }
-    }
-    return {
-      priceBadgeByFplId: badges,
-      priceBadgeLabelByFplId: labels,
-      priceAlreadyChangedByFplId: changed,
-    };
-  }, [priceForecastByFplId, t]);
 
   const openInspect = useCallback(
     async (fplId: number) => {
@@ -247,6 +306,25 @@ export function DashboardSquadPanel({
   const starters = picks.filter((p) => p.is_starter);
   const bench = picks.filter((p) => !p.is_starter);
 
+  const pitchCaption =
+    cardMetric === "gw_pts"
+      ? t("squadPitchCaptionMetric", {
+          metric: pointsGw != null
+            ? t("cardMetricGwPtsTitle", { gw: pointsGw })
+            : t("cardMetricGwPts"),
+        })
+      : t("squadPitchCaptionMetric", {
+          metric: t(
+            cardMetric === "form"
+              ? "cardMetricForm"
+              : cardMetric === "fdr3"
+                ? "cardMetricFdr"
+                : cardMetric === "ownership"
+                  ? "cardMetricOwn"
+                  : "cardMetricXp",
+          ),
+        });
+
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -276,28 +354,60 @@ export function DashboardSquadPanel({
             {t("viewList")}
           </button>
         </div>
+
+        {viewMode === "pitch" ? (
+          <div
+            className="inline-flex max-w-full flex-wrap rounded-lg border border-border bg-card/60 p-0.5"
+            role="group"
+            aria-label={t("cardMetricLabel")}
+          >
+            {CARD_METRICS.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:text-xs",
+                  cardMetric === m
+                    ? "bg-brand-accent/20 text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => setCardMetric(m)}
+              >
+                {m === "gw_pts"
+                  ? t("cardMetricGwPts")
+                  : m === "form"
+                    ? t("cardMetricForm")
+                    : m === "fdr3"
+                      ? t("cardMetricFdr")
+                      : m === "ownership"
+                        ? t("cardMetricOwn")
+                        : t("cardMetricXp")}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {viewMode === "pitch" ? (
         <PitchView
           picks={plannerPicks}
           title={title}
-          caption={caption}
+          caption={pitchCaption}
           captainId={captainId}
           viceId={viceId}
           interactive={false}
           benchLabel={benchLabel}
-          cardSublineByFplId={cardSublineByFplId}
-          gwForecastByFplId={gwForecastByFplId}
-          nextGwXpByFplId={
-            gwForecastByFplId ? undefined : nextGwXpByFplId
+          cardSublineByFplId={
+            cardMetric === "fdr3" ? undefined : cardSublineByFplId
           }
-          nextGwXpTitle="xP"
+          fdrStripByFplId={activeFdrStrip}
+          primaryMetricByFplId={primaryMetricByFplId}
+          primaryMetricTitle={primaryMetricTitle}
+          nextGwXpByFplId={undefined}
           onInspectPlayer={openInspect}
           inspectNameTitle={inspectNameTitle}
-          priceBadgeByFplId={priceBadgeByFplId}
-          priceBadgeLabelByFplId={priceBadgeLabelByFplId}
-          priceAlreadyChangedByFplId={priceAlreadyChangedByFplId}
+          attentionByFplId={attentionByFplId}
+          showAttentionLegend
           gkAtTop
           appearance="showcase"
         />
@@ -308,6 +418,7 @@ export function DashboardSquadPanel({
             sectionLabel={title}
             captainId={captainId}
             viceId={viceId}
+            pointsGw={pointsGw}
             nextGwXpByFplId={nextGwXpByFplId}
             gwForecastByFplId={gwForecastByFplId}
             onInspect={openInspect}
@@ -317,6 +428,7 @@ export function DashboardSquadPanel({
             sectionLabel={benchLabel}
             captainId={captainId}
             viceId={viceId}
+            pointsGw={pointsGw}
             nextGwXpByFplId={nextGwXpByFplId}
             gwForecastByFplId={gwForecastByFplId}
             onInspect={openInspect}
@@ -342,6 +454,7 @@ function SquadListTable({
   sectionLabel,
   captainId,
   viceId,
+  pointsGw,
   nextGwXpByFplId,
   gwForecastByFplId,
   onInspect,
@@ -351,6 +464,7 @@ function SquadListTable({
   sectionLabel: string;
   captainId: number | null;
   viceId: number | null;
+  pointsGw?: number | null;
   nextGwXpByFplId?: Record<number, number>;
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
   onInspect: (fplId: number) => void;
@@ -365,7 +479,7 @@ function SquadListTable({
         {sectionLabel}
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-left text-sm">
+        <table className="w-full min-w-[40rem] text-left text-sm">
           <thead>
             <tr className="text-[10px] uppercase tracking-wide text-muted-foreground">
               <th className="px-3 py-2 font-medium">{t("listPos")}</th>
@@ -373,6 +487,11 @@ function SquadListTable({
               <th className="px-3 py-2 font-medium">{t("listTeam")}</th>
               <th className="px-3 py-2 font-medium">{t("listPrice")}</th>
               <th className="px-3 py-2 font-medium">{t("listForm")}</th>
+              <th className="px-3 py-2 font-medium">
+                {pointsGw != null
+                  ? t("listGwPts", { gw: pointsGw })
+                  : t("cardMetricGwPts")}
+              </th>
               <th className="px-3 py-2 font-medium">{t("listNext")}</th>
               <th className="px-3 py-2 font-medium text-right">{t("listXp")}</th>
             </tr>
@@ -427,6 +546,11 @@ function SquadListTable({
                   </td>
                   <td className="px-3 py-2 tabular-nums text-muted-foreground">
                     {p.form != null ? p.form : "—"}
+                  </td>
+                  <td className="px-3 py-2 font-semibold tabular-nums text-brand-accent">
+                    {p.gw_points != null && Number.isFinite(p.gw_points)
+                      ? Math.round(p.gw_points)
+                      : "—"}
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {next ? (

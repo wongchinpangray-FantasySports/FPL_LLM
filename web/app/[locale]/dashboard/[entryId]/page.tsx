@@ -24,7 +24,7 @@ import { normalizeFplFdr } from "@/lib/fpl/fdr";
 import { HomeBackLink } from "@/components/home-back-link";
 import { XpHeatmap, buildHeatmapRow, buildHeatmapRowFromPick } from "@/components/xp-heatmap";
 import { DashboardSquadPanel } from "@/components/dashboard/dashboard-squad-panel";
-import { loadPriceForecastMap } from "@/lib/fpl/insights/price-forecast";
+import { loadLiveGwPointsById } from "@/lib/fpl/live-gw-points";
 
 export const dynamic = "force-dynamic";
 
@@ -255,20 +255,37 @@ export default async function DashboardPage({
     }),
   );
 
-  const priceForecastMap = squadEmpty
-    ? new Map<number, never>()
-    : await loadPriceForecastMap(displayPicks.map((p) => p.fpl_id));
-  const priceForecastByFplId = Object.fromEntries(
-    [...priceForecastMap.entries()].map(([fplId, snap]) => [
-      fplId,
-      {
-        status: snap.status,
-        cost_change_event: snap.cost_change_event,
-        progress: snap.progress,
-        progress_next: snap.progress_next,
-      },
-    ]),
+  const fdrStripByFplId = Object.fromEntries(
+    heatmapRows.map((r) => {
+      const cells: { gw: number; opp: string; fdr: number | null }[] = [];
+      for (const g of gwHeaders.slice(0, 3)) {
+        const fxs = r.byGw?.[g] ?? [];
+        if (fxs.length === 0) continue;
+        const opp = fxs
+          .map((f) => `${f.opp_short}${f.home ? "" : " (A)"}`)
+          .join("/");
+        const fdrVals = fxs
+          .map((f) => f.fdr)
+          .filter((n): n is number => n != null && Number.isFinite(n));
+        const fdr =
+          fdrVals.length > 0
+            ? Math.round(
+                (fdrVals.reduce((a, b) => a + b, 0) / fdrVals.length) * 10,
+              ) / 10
+            : null;
+        cells.push({ gw: g, opp, fdr });
+      }
+      return [r.fpl_id, cells] as const;
+    }),
   );
+
+  const pointsGw =
+    team.current_gw != null && team.current_gw > 0
+      ? team.current_gw
+      : Math.max(1, startGw - 1);
+  const gwPointsMap = squadEmpty
+    ? new Map<number, number>()
+    : await loadLiveGwPointsById(pointsGw);
 
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
@@ -458,19 +475,22 @@ export default async function DashboardPage({
                 position: p.position,
                 price: p.price,
                 form: p.form,
+                ownership: row?.ownership ?? null,
                 is_starter: p.is_starter,
                 is_captain: p.is_captain,
                 is_vice_captain: p.is_vice_captain,
                 availability_note: row?.availability_note ?? null,
+                gw_points: gwPointsMap.get(p.fpl_id) ?? null,
               };
             })}
             title={dt("startingXI")}
             caption={dt("squadPitchCaption")}
             benchLabel={dt("bench")}
             horizon={Math.max(1, horizon)}
+            pointsGw={pointsGw}
             nextGwXpByFplId={nextGwXpByFplId}
             gwForecastByFplId={gwForecastByFplId}
-            priceForecastByFplId={priceForecastByFplId}
+            fdrStripByFplId={fdrStripByFplId}
             inspectNameTitle={dt("squadPitchCaption")}
           />
         ) : null}

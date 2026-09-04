@@ -9,15 +9,35 @@ import { useTranslations } from "next-intl";
 import type { PlannerPickPayload } from "./types";
 
 export type PlannerGwStripCell = { gw: number; opp: string; xp: number };
+export type PlannerFdrStripCell = { gw: number; opp: string; fdr: number | null };
 
 function sortBySlot(rows: PlannerPickPayload[]): PlannerPickPayload[] {
   return [...rows].sort((a, b) => a.slot - b.slot);
 }
 
 const GW_STRIP_MAX = 5;
+const FDR_STRIP_MAX = 3;
 
 function stripXpLabel(xp: unknown): string {
   return typeof xp === "number" && Number.isFinite(xp) ? xp.toFixed(1) : "–";
+}
+
+function fdrStripTone(fdr: number | null): string {
+  const n = fdr != null && Number.isFinite(fdr) ? Math.round(fdr) : 3;
+  switch (n) {
+    case 1:
+      return "bg-emerald-500/85 text-emerald-950";
+    case 2:
+      return "bg-lime-400/80 text-lime-950";
+    case 3:
+      return "bg-slate-400/55 text-white";
+    case 4:
+      return "bg-orange-400/85 text-orange-950";
+    case 5:
+      return "bg-rose-500/85 text-rose-50";
+    default:
+      return "bg-white/15 text-white/80";
+  }
 }
 
 function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
@@ -53,6 +73,42 @@ function GwStripRow({ cells }: { cells: PlannerGwStripCell[] }) {
             </span>
             <span className="text-[6px] font-semibold tabular-nums text-brand-accent/95 sm:text-[7px]">
               {stripXpLabel(c.xp)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FdrStripRow({ cells }: { cells: PlannerFdrStripCell[] }) {
+  const shown = cells.slice(0, FDR_STRIP_MAX);
+  if (shown.length === 0) return null;
+  const n = shown.length;
+  return (
+    <div
+      className="mt-0.5 w-full border-t border-white/15 pt-0.5"
+      title={shown
+        .map((c) => `GW${c.gw} ${c.opp} FDR ${c.fdr ?? "—"}`)
+        .join(" · ")}
+    >
+      <div
+        className="grid w-full gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+      >
+        {shown.map((c) => (
+          <div
+            key={`${c.gw}-${c.opp}`}
+            className={cn(
+              "flex min-w-0 flex-col items-center rounded-[3px] px-0.5 py-0.5 leading-none",
+              fdrStripTone(c.fdr),
+            )}
+          >
+            <span className="text-[5px] font-semibold opacity-80 sm:text-[6px]">
+              {c.gw}
+            </span>
+            <span className="max-w-full truncate text-[6px] font-bold sm:text-[7px]">
+              {c.opp}
             </span>
           </div>
         ))}
@@ -141,6 +197,9 @@ function PlayerChip({
   interactive,
   cardSubline,
   gwStrip,
+  fdrStrip,
+  primaryMetric,
+  primaryMetricTitle,
   nextGwXpByFplId,
   nextGwXpTitle,
   priceBadge,
@@ -162,6 +221,11 @@ function PlayerChip({
   cardSubline?: string;
   /** Upcoming GWs (fixtures + xP) after Refresh xP */
   gwStrip?: PlannerGwStripCell[];
+  /** Compact upcoming FDR cells (dashboard metric mode) */
+  fdrStrip?: PlannerFdrStripCell[];
+  /** When set, replaces £ / next-xP on the bottom row */
+  primaryMetric?: string | null;
+  primaryMetricTitle?: string;
   /** When set and no GW strip, show next-GW xP (values may include captain ×2) instead of £ */
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
@@ -181,7 +245,8 @@ function PlayerChip({
   const [shirtFailed, setShirtFailed] = useState(false);
   const showShirt = Boolean(shirtUrl && !shirtFailed);
 
-  const hasStrip = gwStrip != null && gwStrip.length > 0;
+  const hasFdrStrip = fdrStrip != null && fdrStrip.length > 0;
+  const hasStrip = !hasFdrStrip && gwStrip != null && gwStrip.length > 0;
   /** Match horizon totals: starter captain earns double in each GW on the strip. */
   const gwStripForDisplay =
     hasStrip && gwStrip && p.is_starter && isC
@@ -196,13 +261,17 @@ function PlayerChip({
       : gwStrip;
   const nextXp =
     nextGwXpByFplId != null ? nextGwXpByFplId[p.fpl_id] : undefined;
+  const showPrimaryMetric =
+    !isEmpty && primaryMetric != null && String(primaryMetric).length > 0;
   /** Per-GW strip already includes xP; do not duplicate next-GW xP on the bottom row. */
   const showNextXp =
+    !showPrimaryMetric &&
     !hasStrip &&
+    !hasFdrStrip &&
     nextGwXpByFplId != null &&
     nextXp !== undefined &&
     Number.isFinite(nextXp);
-  const showPrice = !showNextXp && !isEmpty;
+  const showPrice = !showPrimaryMetric && !showNextXp && !isEmpty;
   const priceTrendTitle = [priceBadgeLabel, priceAlreadyChangedLabel]
     .filter(Boolean)
     .join(" · ");
@@ -227,8 +296,8 @@ function PlayerChip({
       : undefined;
 
   const sublineParts: string[] = [];
-  if (hasStrip) {
-    /* fixture strip replaces subline row */
+  if (hasStrip || hasFdrStrip) {
+    /* fixture / FDR strip replaces subline row */
   } else if (cardSubline) {
     sublineParts.push(cardSubline);
   } else if (!isEmpty) {
@@ -294,7 +363,9 @@ function PlayerChip({
             {isEmpty ? (p.web_name ?? "–") : (p.web_name ?? `#${p.fpl_id}`)}
           </div>
         )}
-        {hasStrip && gwStripForDisplay ? (
+        {hasFdrStrip && fdrStrip ? (
+          <FdrStripRow cells={fdrStrip} />
+        ) : hasStrip && gwStripForDisplay ? (
           <GwStripRow cells={gwStripForDisplay} />
         ) : (
           <div className="truncate text-center text-[7px] sm:text-[9px]">
@@ -305,7 +376,7 @@ function PlayerChip({
                 ) : (
                   <span className="text-white/70">{p.team ?? "–"}</span>
                 )}
-                {attention?.form != null ? (
+                {attention?.form != null && !showPrimaryMetric ? (
                   <>
                     <span className="text-white/50"> · </span>
                     <span
@@ -328,25 +399,29 @@ function PlayerChip({
           <span
             className={cn(
               "inline-flex items-center gap-px tabular-nums",
-              showNextXp
-                ? "text-[7px] font-semibold text-brand-accent/95 sm:text-[9px]"
+              showPrimaryMetric || showNextXp
+                ? "text-[8px] font-semibold text-brand-accent/95 sm:text-[10px]"
                 : showPrice
                   ? cn("text-[8px] sm:text-[10px]", priceTone)
                   : "text-[7px] text-white/70 sm:text-[9px]",
             )}
             title={
-              showNextXp
-                ? nextGwXpTitle
-                : showPrice && priceTrendTitle
-                  ? priceTrendTitle
-                  : undefined
+              showPrimaryMetric
+                ? primaryMetricTitle
+                : showNextXp
+                  ? nextGwXpTitle
+                  : showPrice && priceTrendTitle
+                    ? priceTrendTitle
+                    : undefined
             }
           >
             {isEmpty
               ? "–"
-              : showNextXp && nextXp != null && Number.isFinite(nextXp)
-                ? nextXp.toFixed(1)
-                : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
+              : showPrimaryMetric
+                ? primaryMetric
+                : showNextXp && nextXp != null && Number.isFinite(nextXp)
+                  ? nextXp.toFixed(1)
+                  : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
             {priceArrow ? (
               <span aria-hidden className="font-bold leading-none">
                 {priceArrow}
@@ -370,7 +445,7 @@ function PlayerChip({
 
   const cls = cn(
     "flex min-w-[48px] max-w-[min(24vw,76px)] shrink flex-col items-center text-center transition-[filter,transform] sm:min-w-[76px] sm:max-w-[108px]",
-    hasStrip &&
+    (hasStrip || hasFdrStrip) &&
       "min-w-[56px] max-w-[min(30vw,96px)] sm:min-w-[92px] sm:max-w-[124px]",
     isEmpty
       ? "rounded-md border border-dashed border-white/25 bg-black/30 px-0.5 py-1.5 backdrop-blur-[2px]"
@@ -424,6 +499,9 @@ function Line({
   interactive,
   cardSublineByFplId,
   gwForecastByFplId,
+  fdrStripByFplId,
+  primaryMetricByFplId,
+  primaryMetricTitle,
   nextGwXpByFplId,
   nextGwXpTitle,
   priceBadgeByFplId,
@@ -442,6 +520,9 @@ function Line({
   interactive?: boolean;
   cardSublineByFplId?: Record<number, string>;
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
+  fdrStripByFplId?: Record<number, PlannerFdrStripCell[]>;
+  primaryMetricByFplId?: Record<number, string>;
+  primaryMetricTitle?: string;
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
   priceBadgeByFplId?: Record<number, PitchPriceBadge>;
@@ -467,6 +548,9 @@ function Line({
           interactive={interactive}
           cardSubline={cardSublineByFplId?.[p.fpl_id]}
           gwStrip={gwForecastByFplId?.[p.fpl_id]}
+          fdrStrip={fdrStripByFplId?.[p.fpl_id]}
+          primaryMetric={primaryMetricByFplId?.[p.fpl_id]}
+          primaryMetricTitle={primaryMetricTitle}
           nextGwXpByFplId={nextGwXpByFplId}
           nextGwXpTitle={nextGwXpTitle}
           priceBadge={priceBadgeByFplId?.[p.fpl_id]}
@@ -570,6 +654,11 @@ export type PitchViewProps = {
   cardSublineByFplId?: Record<number, string>;
   /** After Refresh xP: up to 5 GWs fixture + xP per player */
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
+  /** Dashboard: upcoming FDR cells (typically 3) */
+  fdrStripByFplId?: Record<number, PlannerFdrStripCell[]>;
+  /** Dashboard: bottom-row metric text (GW pts / form / own% / xP) */
+  primaryMetricByFplId?: Record<number, string>;
+  primaryMetricTitle?: string;
   nextGwXpByFplId?: Record<number, number>;
   nextGwXpTitle?: string;
   gkAtTop?: boolean;
@@ -606,6 +695,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       benchGkAbbrev = "GK",
       cardSublineByFplId,
       gwForecastByFplId,
+      fdrStripByFplId,
+      primaryMetricByFplId,
+      primaryMetricTitle,
       nextGwXpByFplId,
       nextGwXpTitle,
       gkAtTop = true,
@@ -711,6 +803,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                 interactive={interactive}
                 cardSublineByFplId={cardSublineByFplId}
                 gwForecastByFplId={gwForecastByFplId}
+                fdrStripByFplId={fdrStripByFplId}
+                primaryMetricByFplId={primaryMetricByFplId}
+                primaryMetricTitle={primaryMetricTitle}
                 nextGwXpByFplId={nextGwXpByFplId}
                 nextGwXpTitle={nextGwXpTitle}
                 priceBadgeByFplId={priceBadgeByFplId}
@@ -758,6 +853,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     interactive={interactive}
                     cardSubline={cardSublineByFplId?.[benchGk[0].fpl_id]}
                     gwStrip={gwForecastByFplId?.[benchGk[0].fpl_id]}
+                    fdrStrip={fdrStripByFplId?.[benchGk[0].fpl_id]}
+                    primaryMetric={primaryMetricByFplId?.[benchGk[0].fpl_id]}
+                    primaryMetricTitle={primaryMetricTitle}
                     nextGwXpByFplId={nextGwXpByFplId}
                     nextGwXpTitle={nextGwXpTitle}
                     priceBadge={priceBadgeByFplId?.[benchGk[0].fpl_id]}
@@ -790,6 +888,9 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                     interactive={interactive}
                     cardSubline={cardSublineByFplId?.[p.fpl_id]}
                     gwStrip={gwForecastByFplId?.[p.fpl_id]}
+                    fdrStrip={fdrStripByFplId?.[p.fpl_id]}
+                    primaryMetric={primaryMetricByFplId?.[p.fpl_id]}
+                    primaryMetricTitle={primaryMetricTitle}
                     nextGwXpByFplId={nextGwXpByFplId}
                     nextGwXpTitle={nextGwXpTitle}
                     priceBadge={priceBadgeByFplId?.[p.fpl_id]}
