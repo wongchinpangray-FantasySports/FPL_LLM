@@ -12,6 +12,8 @@ import type { NextFixtureOpponent } from "@/lib/xp";
 
 type SortKey = "form" | "points" | "ownership";
 
+const PAGE_SIZE = 20;
+
 export const MiniPlayerSidebar = forwardRef<
   HTMLElement,
   {
@@ -45,7 +47,7 @@ export const MiniPlayerSidebar = forwardRef<
   const [position, setPosition] = useState<string>("");
   const [sort, setSort] = useState<SortKey>("form");
   const [players, setPlayers] = useState<MiniPlayerDisplay[]>([]);
-  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fixtureByFplId, setFixtureByFplId] = useState<
     Record<number, string | null>
@@ -53,17 +55,24 @@ export const MiniPlayerSidebar = forwardRef<
 
   const excluded = useMemo(() => new Set(excludeIdentities), [excludeIdentities]);
 
+  const pageCount = Math.max(1, Math.ceil(players.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pagePlayers = useMemo(() => {
+    const start = safePage * PAGE_SIZE;
+    return players.slice(start, start + PAGE_SIZE);
+  }, [players, safePage]);
+
   const playerIdsKey = useMemo(
-    () => players.map((p) => p.fpl_id).join(","),
-    [players],
+    () => pagePlayers.map((p) => p.fpl_id).join(","),
+    [pagePlayers],
   );
 
   useEffect(() => {
-    if (fixtureFromGw == null || players.length === 0) {
+    if (fixtureFromGw == null || pagePlayers.length === 0) {
       setFixtureByFplId({});
       return;
     }
-    const ids = players.map((p) => p.fpl_id).filter((id) => id > 0);
+    const ids = pagePlayers.map((p) => p.fpl_id).filter((id) => id > 0);
     if (ids.length === 0) {
       setFixtureByFplId({});
       return;
@@ -105,7 +114,7 @@ export const MiniPlayerSidebar = forwardRef<
     try {
       const params = new URLSearchParams({
         sort,
-        limit: "120",
+        limit: "200",
         locale,
       });
       const trimmed = q.trim();
@@ -122,17 +131,17 @@ export const MiniPlayerSidebar = forwardRef<
       };
       if (!res.ok) {
         setPlayers([]);
-        setTotal(0);
+        setPage(0);
         return;
       }
       const list = (data.players ?? []).filter(
         (p) => !excluded.has(miniPlayerIdentityKey(p)),
       );
       setPlayers(list);
-      setTotal(typeof data.total === "number" ? data.total : list.length);
+      setPage(0);
     } catch {
       setPlayers([]);
-      setTotal(0);
+      setPage(0);
     } finally {
       setLoading(false);
     }
@@ -143,6 +152,10 @@ export const MiniPlayerSidebar = forwardRef<
     return () => window.clearTimeout(timer);
   }, [loadPlayers]);
 
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(Math.max(0, pageCount - 1));
+  }, [page, pageCount]);
+
   const positions = [
     { value: "", label: t("sidebarPosAll") },
     { value: "GKP", label: t("sidebarPosGk") },
@@ -150,6 +163,9 @@ export const MiniPlayerSidebar = forwardRef<
     { value: "MID", label: t("sidebarPosMid") },
     { value: "FWD", label: t("sidebarPosFwd") },
   ];
+
+  const rangeStart = players.length === 0 ? 0 : safePage * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(players.length, (safePage + 1) * PAGE_SIZE);
 
   return (
     <aside
@@ -168,11 +184,12 @@ export const MiniPlayerSidebar = forwardRef<
             ? t("sidebarSlotActive", { slot: slotLabel })
             : t("sidebarSlotHint")}
         </p>
-        {!loading && total > 0 ? (
+        {!loading && players.length > 0 ? (
           <p className="mt-0.5 text-[10px] text-muted-foreground">
-            {t("sidebarResultCount", {
-              shown: players.length,
-              total,
+            {t("sidebarPageRange", {
+              from: rangeStart,
+              to: rangeEnd,
+              total: players.length,
             })}
           </p>
         ) : null}
@@ -228,7 +245,7 @@ export const MiniPlayerSidebar = forwardRef<
         </button>
       ) : null}
 
-      <div className="scroll-table min-h-[280px] flex-1 rounded-lg border border-border/60 lg:min-h-0">
+      <div className="rounded-lg border border-border/60">
         <table className="w-full text-[11px]">
           <thead>
             <tr className="border-b border-border text-[9px] uppercase text-muted-foreground">
@@ -248,7 +265,7 @@ export const MiniPlayerSidebar = forwardRef<
                   {t("loading")}
                 </td>
               </tr>
-            ) : players.length === 0 ? (
+            ) : pagePlayers.length === 0 ? (
               <tr>
                 <td
                   colSpan={4}
@@ -258,7 +275,7 @@ export const MiniPlayerSidebar = forwardRef<
                 </td>
               </tr>
             ) : (
-              players.map((p) => {
+              pagePlayers.map((p) => {
                 const miniOwn = miniOwnedById?.[p.fpl_id];
                 const fixture = fixtureByFplId[p.fpl_id];
                 return (
@@ -308,6 +325,33 @@ export const MiniPlayerSidebar = forwardRef<
           </tbody>
         </table>
       </div>
+
+      {players.length > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            disabled={disabled || safePage <= 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
+          >
+            {t("sidebarPagePrev")}
+          </button>
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {t("sidebarPageStatus", {
+              page: safePage + 1,
+              pages: pageCount,
+            })}
+          </span>
+          <button
+            type="button"
+            disabled={disabled || safePage >= pageCount - 1}
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
+          >
+            {t("sidebarPageNext")}
+          </button>
+        </div>
+      ) : null}
     </aside>
   );
 });
