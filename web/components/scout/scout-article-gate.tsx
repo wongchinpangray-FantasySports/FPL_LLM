@@ -74,14 +74,14 @@ export function ScoutArticleGate({
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href={`/auth/signup?next=${next}`}
-            className={cn(buttonVariants({ size: "default" }), "no-underline")}
+            className={cn(buttonVariants({ size: "md" }), "no-underline")}
           >
             {t("gateSignup")}
           </Link>
           <Link
             href={`/auth/login?next=${next}`}
             className={cn(
-              buttonVariants({ variant: "secondary", size: "default" }),
+              buttonVariants({ variant: "secondary", size: "md" }),
               "no-underline",
             )}
           >
