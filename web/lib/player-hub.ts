@@ -287,3 +287,135 @@ export async function loadPlayerRadarSnapshot(fplId: number): Promise<{
     radar,
   };
 }
+
+export type SimilarRadarPeerKind = "form" | "owned" | "points";
+
+export type SimilarRadarPeer = {
+  kind: SimilarRadarPeerKind;
+  fpl_id: number;
+  web_name: string;
+  team: string | null;
+  position: string | null;
+  price: number | null;
+  form: number | null;
+  selected_by_percent: number | null;
+  total_points: number | null;
+};
+
+const SIMILAR_PRICE_BAND = 0.5;
+
+type SimilarCandidate = {
+  fpl_id: number;
+  web_name: string | null;
+  name: string | null;
+  team: string | null;
+  position: string | null;
+  base_price: number | null;
+  form: number | null;
+  selected_by_percent: number | null;
+  total_points: number | null;
+};
+
+function pickBest(
+  pool: SimilarCandidate[],
+  used: Set<number>,
+  score: (c: SimilarCandidate) => number,
+): SimilarCandidate | null {
+  let best: SimilarCandidate | null = null;
+  let bestScore = -Infinity;
+  for (const c of pool) {
+    if (used.has(c.fpl_id)) continue;
+    const s = score(c);
+    if (!Number.isFinite(s)) continue;
+    if (s > bestScore) {
+      bestScore = s;
+      best = c;
+    }
+  }
+  return best;
+}
+
+function toPeer(
+  kind: SimilarRadarPeerKind,
+  c: SimilarCandidate,
+): SimilarRadarPeer {
+  return {
+    kind,
+    fpl_id: c.fpl_id,
+    web_name: c.web_name ?? c.name ?? `#${c.fpl_id}`,
+    team: c.team,
+    position: c.position,
+    price: c.base_price,
+    form: c.form,
+    selected_by_percent: c.selected_by_percent,
+    total_points: c.total_points,
+  };
+}
+
+/**
+ * Same position, price within ±£0.5m: best form, most owned, highest points.
+ * Dedupes so each player appears at most once (priority: form → owned → points).
+ */
+export async function loadSimilarRadarPeers(
+  fplId: number,
+): Promise<SimilarRadarPeer[]> {
+  if (!Number.isFinite(fplId) || fplId <= 0) return [];
+
+  const supa = getServerSupabase();
+  const { data: base, error: baseErr } = await supa
+    .from("players_static")
+    .select("fpl_id,position,base_price")
+    .eq("fpl_id", fplId)
+    .maybeSingle();
+
+  if (baseErr || !base) return [];
+  const position = (base as { position: string | null }).position;
+  const price = Number((base as { base_price: number | null }).base_price);
+  if (!position || !Number.isFinite(price)) return [];
+
+  const { data, error } = await supa
+    .from("players_static")
+    .select(
+      "fpl_id,web_name,name,team,position,base_price,form,selected_by_percent,total_points,minutes,status",
+    )
+    .eq("position", position)
+    .neq("fpl_id", fplId)
+    .gte("base_price", Math.round((price - SIMILAR_PRICE_BAND) * 10) / 10)
+    .lte("base_price", Math.round((price + SIMILAR_PRICE_BAND) * 10) / 10)
+    .gt("minutes", 0);
+
+  if (error || !data?.length) return [];
+
+  const pool = (data as SimilarCandidate[]).filter((c) => {
+    const st = String(
+      (c as SimilarCandidate & { status?: string | null }).status ?? "a",
+    ).toLowerCase();
+    return st === "a" || st === "d";
+  });
+  if (!pool.length) return [];
+
+  const used = new Set<number>();
+  const out: SimilarRadarPeer[] = [];
+
+  const formPick = pickBest(pool, used, (c) => Number(c.form) || 0);
+  if (formPick) {
+    used.add(formPick.fpl_id);
+    out.push(toPeer("form", formPick));
+  }
+  const ownedPick = pickBest(
+    pool,
+    used,
+    (c) => Number(c.selected_by_percent) || 0,
+  );
+  if (ownedPick) {
+    used.add(ownedPick.fpl_id);
+    out.push(toPeer("owned", ownedPick));
+  }
+  const pointsPick = pickBest(pool, used, (c) => Number(c.total_points) || 0);
+  if (pointsPick) {
+    used.add(pointsPick.fpl_id);
+    out.push(toPeer("points", pointsPick));
+  }
+
+  return out;
+}

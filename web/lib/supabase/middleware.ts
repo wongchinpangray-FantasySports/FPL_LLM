@@ -70,6 +70,8 @@ export function isFplProtectedApiPath(pathname: string): boolean {
   if (pathname.startsWith("/api/squad-builder/")) return true;
   if (pathname.startsWith("/api/team/")) return true;
   if (/^\/api\/player\/[^/]+\/radar/.test(pathname)) return true;
+  if (/^\/api\/player\/[^/]+\/similar/.test(pathname)) return true;
+  if (pathname.startsWith("/api/players/recent-points")) return true;
   if (pathname.startsWith("/api/fpl/insights/")) return false;
   // Mini League Killer — route handlers enforce auth / local preview.
   if (pathname.startsWith("/api/fpl/mini-league")) return false;

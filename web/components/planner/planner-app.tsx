@@ -31,6 +31,10 @@ import type {
   SquadPlayerSignal,
   TransferSuggestion,
 } from "@/lib/transfers/diagnose";
+import {
+  classifyTransferStance,
+  type TransferStance,
+} from "@/lib/transfers/stance";
 
 function formatPlannerIssue(
   issue: ValidationIssue,
@@ -288,6 +292,8 @@ export function PlannerApp({
 }) {
   const t = useTranslations("plannerApp");
   const tsb = useTranslations("squadBuilderApp");
+  const tDash = useTranslations("dashboard");
+  const tPlayer = useTranslations("playerPage");
   const locale = useLocale();
   const router = useRouter();
   const isLg = useMinLg();
@@ -1256,6 +1262,102 @@ export function PlannerApp({
     return out;
   }, [diagnoseData?.signals_by_fpl_id]);
 
+  const pitchIdsKey = useMemo(() => {
+    const ids = [
+      ...new Set(
+        [...picks, ...sortedInitial]
+          .map((p) => p.fpl_id)
+          .filter((id) => id > 0),
+      ),
+    ].sort((a, b) => a - b);
+    return ids.join(",");
+  }, [picks, sortedInitial]);
+
+  const [pointsTrendByFplId, setPointsTrendByFplId] = useState<
+    Record<number, number[]>
+  >({});
+
+  useEffect(() => {
+    if (!pitchIdsKey) {
+      setPointsTrendByFplId({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/players/recent-points?ids=${encodeURIComponent(pitchIdsKey)}&limit=3`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          points?: Record<string, number[]>;
+        };
+        if (cancelled) return;
+        const out: Record<number, number[]> = {};
+        for (const [k, v] of Object.entries(data.points ?? {})) {
+          if (Array.isArray(v) && v.length > 0) out[Number(k)] = v;
+        }
+        setPointsTrendByFplId(out);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pitchIdsKey]);
+
+  const transferStanceByFplId = useMemo(():
+    | Record<number, TransferStance>
+    | undefined => {
+    const rows = isPlanPitch ? picks : sortedInitial;
+    const out: Record<number, TransferStance> = {};
+    for (const row of rows) {
+      if (row.fpl_id <= 0) continue;
+      const pr = projById[String(row.fpl_id)];
+      const next = nextFixtureByFplId[row.fpl_id];
+      const form = attentionByFplId?.[row.fpl_id]?.form ?? null;
+      out[row.fpl_id] = classifyTransferStance({
+        form,
+        avgFdr: next?.fdr ?? null,
+        xpNext: pr?.xp_next_gw ?? null,
+        position: row.position ?? pr?.position,
+      }).stance;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }, [
+    isPlanPitch,
+    picks,
+    sortedInitial,
+    projById,
+    nextFixtureByFplId,
+    attentionByFplId,
+  ]);
+
+  const stanceShortByStance = useMemo(
+    () => ({
+      buy: tDash("stanceBuyShort"),
+      hold: tDash("stanceHoldShort"),
+      sell: tDash("stanceSellShort"),
+    }),
+    [tDash],
+  );
+
+  const stanceTitleByFplId = useMemo(() => {
+    if (!transferStanceByFplId) return undefined;
+    const out: Record<number, string> = {};
+    for (const [id, stance] of Object.entries(transferStanceByFplId)) {
+      const word =
+        stance === "buy"
+          ? tPlayer("stanceBuy")
+          : stance === "sell"
+            ? tPlayer("stanceSell")
+            : tPlayer("stanceHold");
+      out[Number(id)] = `${tPlayer("stanceTitle")}: ${word}`;
+    }
+    return out;
+  }, [transferStanceByFplId, tPlayer]);
+
   const scenarioPitchSubline = useMemo(() => {
     const m: Record<number, string> = {};
     for (const p of picks) {
@@ -1698,6 +1800,17 @@ export function PlannerApp({
           nextGwXpTitle={pitchCardXpTitle}
           attentionByFplId={attentionByFplId}
           showAttentionLegend
+          pointsTrendByFplId={
+            Object.keys(pointsTrendByFplId).length > 0
+              ? pointsTrendByFplId
+              : undefined
+          }
+          pointsTrendTitle={tPlayer("pointsTrendTitle")}
+          transferStanceByFplId={transferStanceByFplId}
+          stanceShortByStance={stanceShortByStance}
+          stanceTitleByFplId={stanceTitleByFplId}
+          showStanceLegend={Boolean(transferStanceByFplId)}
+          stanceLegendText={tDash("stanceLegend")}
           highlightSlots={isPlanPitch ? changedFromFpl : undefined}
           reorderSelectedSlot={
             isPlanPitch && xiBenchMode ? xiFirst : null

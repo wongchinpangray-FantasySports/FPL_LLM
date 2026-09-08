@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { PlayerRadarChart } from "@/components/player/player-radar-chart";
-import type { PlayerRadarAxes } from "@/lib/player-hub";
+import type { PlayerRadarAxes, SimilarRadarPeer } from "@/lib/player-hub";
 import { minPlayerQueryLength } from "@/lib/fpl/player-search";
+import { cn } from "@/lib/utils";
 
 type SearchHit = {
   fpl_id: number;
@@ -27,14 +28,25 @@ function axesToTuple(r: PlayerRadarAxes): Six {
   ];
 }
 
+function peerKindLabel(
+  kind: SimilarRadarPeer["kind"],
+  t: ReturnType<typeof useTranslations<"playerPage">>,
+): string {
+  if (kind === "form") return t("radarSimilarForm");
+  if (kind === "owned") return t("radarSimilarOwned");
+  return t("radarSimilarPoints");
+}
+
 export function PlayerRadarCompareSection({
   baseFplId,
   basePosition,
   baseRadar,
+  similarPeers = [],
 }: {
   baseFplId: number;
   basePosition: string | null;
   baseRadar: PlayerRadarAxes;
+  similarPeers?: SimilarRadarPeer[];
 }) {
   const t = useTranslations("playerPage");
   const locale = useLocale();
@@ -78,12 +90,10 @@ export function PlayerRadarCompareSection({
     return () => window.clearTimeout(id);
   }, [q, runSearch]);
 
-  async function pickPlayer(hit: SearchHit) {
-    setQ("");
-    setHits([]);
+  async function loadCompare(fplId: number) {
     setLoadingCompare(true);
     try {
-      const res = await fetch(`/api/player/${hit.fpl_id}/radar`);
+      const res = await fetch(`/api/player/${fplId}/radar`);
       if (!res.ok) return;
       const data = (await res.json()) as {
         radar: PlayerRadarAxes;
@@ -102,6 +112,18 @@ export function PlayerRadarCompareSection({
     } finally {
       setLoadingCompare(false);
     }
+  }
+
+  async function pickPlayer(hit: SearchHit) {
+    setQ("");
+    setHits([]);
+    await loadCompare(hit.fpl_id);
+  }
+
+  async function pickSimilar(peer: SimilarRadarPeer) {
+    setQ("");
+    setHits([]);
+    await loadCompare(peer.fpl_id);
   }
 
   const posMismatch =
@@ -128,6 +150,61 @@ export function PlayerRadarCompareSection({
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-3 lg:max-w-md">
+          {similarPeers.length > 0 ? (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                {t("radarSimilarTitle")}
+              </p>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                {t("radarSimilarHint")}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {similarPeers.map((peer) => {
+                  const active = compare?.fpl_id === peer.fpl_id;
+                  return (
+                    <button
+                      key={`${peer.kind}-${peer.fpl_id}`}
+                      type="button"
+                      disabled={loadingCompare}
+                      onClick={() => void pickSimilar(peer)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:opacity-50",
+                        active
+                          ? "border-amber-400/50 bg-amber-400/15 text-foreground"
+                          : "border-border bg-black/20 text-foreground/90 hover:bg-muted",
+                      )}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-brand-accent">
+                          {peerKindLabel(peer.kind, t)}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {peer.web_name}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                          {peer.team ?? "—"}
+                          {peer.price != null
+                            ? ` · £${peer.price.toFixed(1)}m`
+                            : ""}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                        {peer.kind === "form" && peer.form != null
+                          ? peer.form.toFixed(1)
+                          : peer.kind === "owned" &&
+                              peer.selected_by_percent != null
+                            ? `${Number(peer.selected_by_percent).toFixed(1)}%`
+                            : peer.total_points != null
+                              ? String(Math.round(Number(peer.total_points)))
+                              : "—"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           <div>
             <label
               htmlFor="radar-compare-search"
@@ -199,39 +276,30 @@ export function PlayerRadarCompareSection({
               ) : null}
             </div>
           ) : null}
-
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-brand-accent" aria-hidden />
-              {t("radarLegendYou")}
-            </span>
-            {compare ? (
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full bg-amber-400"
-                  aria-hidden
-                />
-                {compare.label}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 opacity-50">
-                <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
-                {t("radarLegendCompare")}
-              </span>
-            )}
-          </div>
         </div>
 
-        <PlayerRadarChart
-          values={baseValues}
-          labels={labels}
-          caption={t("radarCaption")}
-          compare={
-            compare
-              ? { values: compare.values, name: compare.label }
-              : undefined
-          }
-        />
+        <div className="mx-auto w-full max-w-sm shrink-0 lg:mx-0">
+          <PlayerRadarChart
+            values={baseValues}
+            labels={labels}
+            caption={t("radarCaption")}
+            compare={
+              compare
+                ? { values: compare.values, name: compare.label }
+                : undefined
+            }
+          />
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+              {t("radarLegendYou")}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+              {compare ? compare.label : t("radarLegendCompare")}
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );

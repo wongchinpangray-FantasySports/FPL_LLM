@@ -13,6 +13,7 @@ import {
 } from "@/components/fpl/insights/fpl-player-performance-modal";
 import type { PlannerPickPayload } from "@/components/planner/types";
 import type { SquadPlayerSignal } from "@/lib/transfers/diagnose";
+import type { TransferStance } from "@/lib/transfers/stance";
 import { cn } from "@/lib/utils";
 
 export type DashboardSquadPick = {
@@ -118,6 +119,8 @@ export function DashboardSquadPanel({
   nextGwXpByFplId,
   gwForecastByFplId,
   fdrStripByFplId,
+  pointsTrendByFplId,
+  transferStanceByFplId,
   inspectNameTitle = "View player summary",
 }: {
   picks: DashboardSquadPick[];
@@ -130,6 +133,8 @@ export function DashboardSquadPanel({
   nextGwXpByFplId?: Record<number, number>;
   gwForecastByFplId?: Record<number, PlannerGwStripCell[]>;
   fdrStripByFplId?: Record<number, PlannerFdrStripCell[]>;
+  pointsTrendByFplId?: Record<number, number[]>;
+  transferStanceByFplId?: Record<number, TransferStance>;
   inspectNameTitle?: string;
 }) {
   const t = useTranslations("dashboard");
@@ -260,6 +265,30 @@ export function DashboardSquadPanel({
 
   const activeFdrStrip =
     cardMetric === "fdr3" ? fdrStripByFplId : undefined;
+
+  const stanceShortByStance = useMemo(
+    () => ({
+      buy: t("stanceBuyShort"),
+      hold: t("stanceHoldShort"),
+      sell: t("stanceSellShort"),
+    }),
+    [t],
+  );
+
+  const stanceTitleByFplId = useMemo(() => {
+    if (!transferStanceByFplId) return undefined;
+    const out: Record<number, string> = {};
+    for (const [id, stance] of Object.entries(transferStanceByFplId)) {
+      const word =
+        stance === "buy"
+          ? tPlayer("stanceBuy")
+          : stance === "sell"
+            ? tPlayer("stanceSell")
+            : tPlayer("stanceHold");
+      out[Number(id)] = `${tPlayer("stanceTitle")}: ${word}`;
+    }
+    return out;
+  }, [transferStanceByFplId, tPlayer]);
 
   const cardSublineByFplId = useMemo(() => {
     const out: Record<number, string> = {};
@@ -408,6 +437,13 @@ export function DashboardSquadPanel({
           inspectNameTitle={inspectNameTitle}
           attentionByFplId={attentionByFplId}
           showAttentionLegend
+          pointsTrendByFplId={pointsTrendByFplId}
+          pointsTrendTitle={tPlayer("pointsTrendTitle")}
+          transferStanceByFplId={transferStanceByFplId}
+          stanceShortByStance={stanceShortByStance}
+          stanceTitleByFplId={stanceTitleByFplId}
+          showStanceLegend={Boolean(transferStanceByFplId)}
+          stanceLegendText={t("stanceLegend")}
           gkAtTop
           appearance="showcase"
         />

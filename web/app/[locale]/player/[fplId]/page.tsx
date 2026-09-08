@@ -6,12 +6,17 @@ import { HomeBackLink } from "@/components/home-back-link";
 import { PageHeader } from "@/components/page-header";
 import { ShareButton } from "@/components/share/share-button";
 import { xpCellClass } from "@/components/xp-heatmap";
-import { loadPlayerProfileBundle } from "@/lib/player-hub";
+import { loadPlayerProfileBundle, loadSimilarRadarPeers } from "@/lib/player-hub";
 import { loadPlayerGwHistory } from "@/lib/player-gw-history";
 import { loadPlayerShotMapCached } from "@/lib/fpl/understat-shots";
 import { PlayerGwBarChart } from "@/components/player/player-gw-bar-chart";
 import { PlayerRadarCompareSection } from "@/components/player/player-radar-compare-section";
 import { PlayerShotMap } from "@/components/player/player-shot-map";
+import { TransferStanceBadge } from "@/components/player/transfer-stance-badge";
+import {
+  averageFdr,
+  classifyTransferStance,
+} from "@/lib/transfers/stance";
 import { getServerSupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { FixtureProjection } from "@/lib/xp";
@@ -64,10 +69,11 @@ export default async function PlayerHubPage({
     Math.max(1, Number(searchParams?.horizon) || 5),
   );
 
-  const [data, gwHistory, shotMap] = await Promise.all([
+  const [data, gwHistory, shotMap, similarPeers] = await Promise.all([
     loadPlayerProfileBundle(fplId, horizon),
     loadPlayerGwHistory(fplId, 10),
     loadPlayerShotMapCached(fplId).catch(() => null),
+    loadSimilarRadarPeers(fplId),
   ]);
   if (!data) notFound();
 
@@ -77,6 +83,16 @@ export default async function PlayerHubPage({
 
   const displayName = row.web_name ?? row.name ?? `#${fplId}`;
   const fixtures = [...p.fixtures].sort((a, b) => a.gw - b.gw);
+  const nextThree = fixtures.slice(0, 3);
+  const stance = classifyTransferStance({
+    form: row.form,
+    avgFdr: averageFdr(nextThree.map((fx) => ({ fdr: fx.fdr }))),
+    xpNext:
+      nextThree[0] != null
+        ? Number(nextThree[0].xp_total) || 0
+        : p.xp_per_game,
+    position: row.position,
+  });
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-8">
@@ -120,10 +136,30 @@ export default async function PlayerHubPage({
         </ul>
       </section>
 
+      <TransferStanceBadge
+        result={stance}
+        labels={{
+          title: t("stanceTitle"),
+          buy: t("stanceBuy"),
+          hold: t("stanceHold"),
+          sell: t("stanceSell"),
+          caption: t("stanceCaption"),
+          reasons: {
+            form_hot: t("stanceReason_form_hot"),
+            form_cold: t("stanceReason_form_cold"),
+            fdr_easy: t("stanceReason_fdr_easy"),
+            fdr_hard: t("stanceReason_fdr_hard"),
+            xp_high: t("stanceReason_xp_high"),
+            xp_low: t("stanceReason_xp_low"),
+          },
+        }}
+      />
+
       <PlayerRadarCompareSection
         baseFplId={fplId}
         basePosition={row.position}
         baseRadar={radar}
+        similarPeers={similarPeers}
       />
 
       {shotMap ? (

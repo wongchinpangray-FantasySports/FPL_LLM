@@ -75,6 +75,55 @@ function normalizeRow(r: Record<string, unknown>): PlayerGwHistoryRow {
 }
 
 /**
+ * Last `limit` GW total_points per player (ascending within each list).
+ * Cap 5 GWs · max 30 players per call — for pitch sparklines.
+ */
+export async function loadRecentGwPointsByPlayerIds(
+  fplIds: number[],
+  limit = 3,
+): Promise<Map<number, number[]>> {
+  const out = new Map<number, number[]>();
+  const ids = [
+    ...new Set(
+      fplIds.filter((id) => Number.isFinite(id) && id > 0).map((id) => Math.floor(id)),
+    ),
+  ].slice(0, 30);
+  if (!ids.length) return out;
+
+  const lim = Math.min(Math.max(Math.floor(limit), 1), 5);
+  const season = await getCurrentFplSeason();
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("player_gw_stats")
+    .select("player_id,gw,total_points")
+    .eq("season", season)
+    .in("player_id", ids)
+    .order("gw", { ascending: false });
+
+  if (error || !data?.length) return out;
+
+  const buckets = new Map<number, { gw: number; pts: number }[]>();
+  for (const row of data) {
+    const pid = Math.floor(num((row as { player_id: unknown }).player_id));
+    const gw = Math.floor(num((row as { gw: unknown }).gw));
+    const pts = num((row as { total_points: unknown }).total_points);
+    if (!ids.includes(pid) || gw <= 0) continue;
+    const list = buckets.get(pid) ?? [];
+    if (list.length >= lim) continue;
+    list.push({ gw, pts });
+    buckets.set(pid, list);
+  }
+
+  for (const [pid, list] of buckets) {
+    out.set(
+      pid,
+      [...list].sort((a, b) => a.gw - b.gw).map((r) => r.pts),
+    );
+  }
+  return out;
+}
+
+/**
  * Most recent `limit` gameweeks for one player, ascending by GW (for charts).
  * Cap 10 — enough for “last 10” chart windows.
  */

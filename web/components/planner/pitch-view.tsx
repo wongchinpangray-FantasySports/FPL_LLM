@@ -4,12 +4,68 @@ import { cn } from "@/lib/utils";
 import { getFplShirtUrl } from "@/lib/team-themes";
 import type { PriceForecastStatus } from "@/lib/fpl/insights/price-forecast";
 import type { SquadPlayerSignal } from "@/lib/transfers/diagnose";
+import type { TransferStance } from "@/lib/transfers/stance";
 import { forwardRef, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import type { PlannerPickPayload } from "./types";
 
 export type PlannerGwStripCell = { gw: number; opp: string; xp: number };
 export type PlannerFdrStripCell = { gw: number; opp: string; fdr: number | null };
+
+/** Last finished GW points (oldest → newest), typically length 3. */
+export type PointsTrendSeries = number[];
+
+function PointsTrendSparkline({
+  points,
+  title,
+}: {
+  points: PointsTrendSeries;
+  title?: string;
+}) {
+  if (!points.length) return null;
+  const max = Math.max(1, ...points.map((n) => Math.abs(n)));
+  const prior =
+    points.length > 1
+      ? points.slice(0, -1).reduce((a, b) => a + b, 0) / (points.length - 1)
+      : points[0]!;
+  const last = points[points.length - 1]!;
+  return (
+    <span
+      className="inline-flex h-3.5 shrink-0 items-end gap-0.5"
+      title={title ?? points.map((n) => String(n)).join(" · ")}
+      aria-hidden
+    >
+      {points.map((n, i) => {
+        const h = Math.max(3, Math.round((Math.abs(n) / max) * 14));
+        const isLast = i === points.length - 1;
+        let tone = "bg-white/45";
+        if (isLast) {
+          if (last > prior + 0.5) tone = "bg-emerald-400";
+          else if (last < prior - 0.5) tone = "bg-rose-400";
+          else tone = "bg-amber-300/90";
+        }
+        return (
+          <span
+            key={i}
+            className={cn("w-1 rounded-sm", tone)}
+            style={{ height: h }}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
+function stanceBadgeClass(stance: TransferStance): string {
+  switch (stance) {
+    case "buy":
+      return "bg-emerald-500/85 text-emerald-950";
+    case "sell":
+      return "bg-rose-500/85 text-rose-50";
+    default:
+      return "bg-white/20 text-white/85";
+  }
+}
 
 function sortBySlot(rows: PlannerPickPayload[]): PlannerPickPayload[] {
   return [...rows].sort((a, b) => a.slot - b.slot);
@@ -206,6 +262,11 @@ function PlayerChip({
   priceBadgeLabel,
   priceAlreadyChangedLabel,
   attention,
+  pointsTrend,
+  pointsTrendTitle,
+  transferStance,
+  stanceShortLabel,
+  stanceTitle,
   onClick,
   onInspectPlayer,
   inspectNameTitle,
@@ -233,6 +294,11 @@ function PlayerChip({
   priceBadgeLabel?: string;
   priceAlreadyChangedLabel?: string | null;
   attention?: SquadPlayerSignal;
+  pointsTrend?: PointsTrendSeries;
+  pointsTrendTitle?: string;
+  transferStance?: TransferStance;
+  stanceShortLabel?: string;
+  stanceTitle?: string;
   onClick?: () => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
@@ -342,43 +408,58 @@ function PlayerChip({
       </div>
       <div
         className={cn(
-          "mt-0.5 w-full min-w-0 rounded-sm px-0.5 py-0.5",
+          "mt-1 w-full min-w-0 rounded-md px-1.5 py-1 sm:px-2 sm:py-1.5",
           !isEmpty && "bg-black/55 backdrop-blur-[2px]",
         )}
       >
-        {!isEmpty && onInspectPlayer ? (
-          <button
-            type="button"
-            title={inspectNameTitle}
-            className="w-full truncate text-center text-[8px] font-semibold leading-tight text-white underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-accent sm:text-[10px]"
-            onClick={(e) => {
-              e.stopPropagation();
-              onInspectPlayer(p.fpl_id);
-            }}
-          >
-            {p.web_name ?? `#${p.fpl_id}`}
-          </button>
-        ) : (
-          <div className="truncate text-center text-[8px] font-semibold leading-tight text-white sm:text-[10px]">
-            {isEmpty ? (p.web_name ?? "–") : (p.web_name ?? `#${p.fpl_id}`)}
-          </div>
-        )}
+        <div className="flex items-start justify-between gap-1">
+          {!isEmpty && onInspectPlayer ? (
+            <button
+              type="button"
+              title={inspectNameTitle}
+              className="min-w-0 flex-1 truncate text-left text-[9px] font-semibold leading-tight text-white underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-accent sm:text-[11px]"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspectPlayer(p.fpl_id);
+              }}
+            >
+              {p.web_name ?? `#${p.fpl_id}`}
+            </button>
+          ) : (
+            <div className="min-w-0 flex-1 truncate text-left text-[9px] font-semibold leading-tight text-white sm:text-[11px]">
+              {isEmpty ? (p.web_name ?? "–") : (p.web_name ?? `#${p.fpl_id}`)}
+            </div>
+          )}
+          {(isC || (isV && !isC)) && (
+            <span
+              className={cn(
+                "shrink-0 rounded px-1 py-px text-[8px] font-bold leading-none sm:text-[9px]",
+                isC
+                  ? "bg-brand-accent/30 text-brand-accent"
+                  : "bg-white/15 text-white/80",
+              )}
+            >
+              {isC ? "C" : "V"}
+            </span>
+          )}
+        </div>
+
         {hasFdrStrip && fdrStrip ? (
           <FdrStripRow cells={fdrStrip} />
         ) : hasStrip && gwStripForDisplay ? (
           <GwStripRow cells={gwStripForDisplay} />
         ) : (
-          <div className="truncate text-center text-[7px] sm:text-[9px]">
+          <div className="mt-0.5 truncate text-left text-[7px] leading-snug text-white/65 sm:text-[8px]">
             {!isEmpty ? (
               <>
                 {sublineParts.length > 0 ? (
-                  <span className="text-white/70">{sublineParts.join(" · ")}</span>
+                  <span>{sublineParts.join(" · ")}</span>
                 ) : (
-                  <span className="text-white/70">{p.team ?? "–"}</span>
+                  <span>{p.team ?? "–"}</span>
                 )}
                 {attention?.form != null && !showPrimaryMetric ? (
                   <>
-                    <span className="text-white/50"> · </span>
+                    <span className="text-white/40"> · </span>
                     <span
                       className={cn(
                         "tabular-nums",
@@ -391,19 +472,30 @@ function PlayerChip({
                 ) : null}
               </>
             ) : (
-              <span className="text-white/70">{p.position ?? "–"}</span>
+              <span>{p.position ?? "–"}</span>
             )}
           </div>
         )}
-        <div className="mt-0.5 flex items-center justify-center gap-0.5 sm:gap-1">
+
+        <div className="mt-1.5 flex items-center justify-between gap-1">
+          <div className="flex min-w-[18px] shrink-0 justify-start">
+            {!isEmpty && pointsTrend && pointsTrend.length > 0 ? (
+              <PointsTrendSparkline
+                points={pointsTrend}
+                title={pointsTrendTitle}
+              />
+            ) : (
+              <span className="w-[18px]" aria-hidden />
+            )}
+          </div>
           <span
             className={cn(
-              "inline-flex items-center gap-px tabular-nums",
+              "min-w-0 flex-1 truncate text-center tabular-nums",
               showPrimaryMetric || showNextXp
-                ? "text-[8px] font-semibold text-brand-accent/95 sm:text-[10px]"
+                ? "text-[10px] font-semibold text-brand-accent/95 sm:text-[12px]"
                 : showPrice
-                  ? cn("text-[8px] sm:text-[10px]", priceTone)
-                  : "text-[7px] text-white/70 sm:text-[9px]",
+                  ? cn("text-[9px] sm:text-[11px]", priceTone)
+                  : "text-[8px] text-white/70 sm:text-[10px]",
             )}
             title={
               showPrimaryMetric
@@ -423,30 +515,34 @@ function PlayerChip({
                   ? nextXp.toFixed(1)
                   : `£${p.base_price != null ? p.base_price.toFixed(1) : "?"}m`}
             {priceArrow ? (
-              <span aria-hidden className="font-bold leading-none">
+              <span aria-hidden className="ml-0.5 font-bold leading-none">
                 {priceArrow}
               </span>
             ) : null}
           </span>
-          {isC && (
-            <span className="rounded bg-brand-accent/30 px-0.5 text-[7px] font-bold text-brand-accent sm:px-1 sm:text-[8px]">
-              C
-            </span>
-          )}
-          {isV && !isC && (
-            <span className="rounded bg-white/15 px-0.5 text-[7px] text-white/80 sm:px-1 sm:text-[8px]">
-              V
-            </span>
-          )}
+          <div className="flex min-w-[18px] shrink-0 justify-end">
+            {!isEmpty && transferStance && stanceShortLabel ? (
+              <span
+                className={cn(
+                  "rounded px-1 py-0.5 text-[8px] font-bold leading-none sm:text-[9px]",
+                  stanceBadgeClass(transferStance),
+                )}
+                title={stanceTitle}
+              >
+                {stanceShortLabel}
+              </span>
+            ) : (
+              <span className="w-[18px]" aria-hidden />
+            )}
+          </div>
         </div>
       </div>
     </>
   );
 
   const cls = cn(
-    "flex min-w-[48px] max-w-[min(24vw,76px)] shrink flex-col items-center text-center transition-[filter,transform] sm:min-w-[76px] sm:max-w-[108px]",
-    (hasStrip || hasFdrStrip) &&
-      "min-w-[56px] max-w-[min(30vw,96px)] sm:min-w-[92px] sm:max-w-[124px]",
+    "flex w-[88px] shrink-0 flex-col items-center text-center transition-[filter,transform] sm:w-[112px]",
+    (hasStrip || hasFdrStrip) && "w-[96px] sm:w-[124px]",
     isEmpty
       ? "rounded-md border border-dashed border-white/25 bg-black/30 px-0.5 py-1.5 backdrop-blur-[2px]"
       : "border-0 bg-transparent p-0 shadow-none",
@@ -508,6 +604,11 @@ function Line({
   priceBadgeLabelByFplId,
   priceAlreadyChangedByFplId,
   attentionByFplId,
+  pointsTrendByFplId,
+  pointsTrendTitle,
+  transferStanceByFplId,
+  stanceShortByStance,
+  stanceTitleByFplId,
   onPickSlot,
   onInspectPlayer,
   inspectNameTitle,
@@ -529,6 +630,11 @@ function Line({
   priceBadgeLabelByFplId?: Record<number, string>;
   priceAlreadyChangedByFplId?: Record<number, string | null>;
   attentionByFplId?: Record<number, SquadPlayerSignal>;
+  pointsTrendByFplId?: Record<number, PointsTrendSeries>;
+  pointsTrendTitle?: string;
+  transferStanceByFplId?: Record<number, TransferStance>;
+  stanceShortByStance?: Record<TransferStance, string>;
+  stanceTitleByFplId?: Record<number, string>;
   onPickSlot?: (slot: number) => void;
   onInspectPlayer?: (fplId: number) => void;
   inspectNameTitle?: string;
@@ -536,7 +642,7 @@ function Line({
   if (players.length === 0) return null;
   const sorted = sortBySlot(players);
   return (
-    <div className="flex min-h-[56px] flex-1 items-center justify-center gap-1 px-0 sm:min-h-[72px] sm:gap-2 sm:px-1">
+    <div className="flex min-h-[56px] w-full flex-1 items-center justify-center gap-1 overflow-x-auto px-0.5 sm:min-h-[72px] sm:gap-2 sm:px-1">
       {sorted.map((p) => (
         <PlayerChip
           key={`${p.slot}-${p.fpl_id}`}
@@ -557,6 +663,15 @@ function Line({
           priceBadgeLabel={priceBadgeLabelByFplId?.[p.fpl_id]}
           priceAlreadyChangedLabel={priceAlreadyChangedByFplId?.[p.fpl_id]}
           attention={attentionByFplId?.[p.fpl_id]}
+          pointsTrend={pointsTrendByFplId?.[p.fpl_id]}
+          pointsTrendTitle={pointsTrendTitle}
+          transferStance={transferStanceByFplId?.[p.fpl_id]}
+          stanceShortLabel={
+            transferStanceByFplId?.[p.fpl_id]
+              ? stanceShortByStance?.[transferStanceByFplId[p.fpl_id]!]
+              : undefined
+          }
+          stanceTitle={stanceTitleByFplId?.[p.fpl_id]}
           onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
           onInspectPlayer={onInspectPlayer}
           inspectNameTitle={inspectNameTitle}
@@ -677,6 +792,15 @@ export type PitchViewProps = {
   attentionByFplId?: Record<number, SquadPlayerSignal>;
   /** Show legend when any player has a non-none severity. */
   showAttentionLegend?: boolean;
+  /** Last finished GW points for sparklines (oldest → newest). */
+  pointsTrendByFplId?: Record<number, PointsTrendSeries>;
+  pointsTrendTitle?: string;
+  /** Buy / Hold / Sell badges on chips. */
+  transferStanceByFplId?: Record<number, TransferStance>;
+  stanceShortByStance?: Record<TransferStance, string>;
+  stanceTitleByFplId?: Record<number, string>;
+  showStanceLegend?: boolean;
+  stanceLegendText?: string;
 };
 
 export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
@@ -710,6 +834,13 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       priceAlreadyChangedByFplId,
       attentionByFplId,
       showAttentionLegend = false,
+      pointsTrendByFplId,
+      pointsTrendTitle,
+      transferStanceByFplId,
+      stanceShortByStance,
+      stanceTitleByFplId,
+      showStanceLegend = false,
+      stanceLegendText,
     },
     ref,
   ) {
@@ -719,6 +850,11 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
       return Object.values(attentionByFplId).some((s) => s.severity !== "none");
     }, [attentionByFplId]);
     const showLegend = showAttentionLegend && hasAttentionMarkers;
+    const showStance =
+      showStanceLegend &&
+      Boolean(stanceLegendText) &&
+      transferStanceByFplId != null &&
+      Object.keys(transferStanceByFplId).length > 0;
     const starters = picks.filter((p) => p.is_starter);
     const benchAll = sortBySlot(picks.filter((p) => !p.is_starter));
     /** Bench GK in a fixed column so it does not jump when outfield bench order changes (slot sort). */
@@ -812,6 +948,11 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                 priceBadgeLabelByFplId={priceBadgeLabelByFplId}
                 priceAlreadyChangedByFplId={priceAlreadyChangedByFplId}
                 attentionByFplId={attentionByFplId}
+                pointsTrendByFplId={pointsTrendByFplId}
+                pointsTrendTitle={pointsTrendTitle}
+                transferStanceByFplId={transferStanceByFplId}
+                stanceShortByStance={stanceShortByStance}
+                stanceTitleByFplId={stanceTitleByFplId}
                 onPickSlot={onPickSlot}
                 onInspectPlayer={onInspectPlayer}
                 inspectNameTitle={inspectNameTitle}
@@ -837,7 +978,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
           */}
             <div className="grid grid-cols-4 items-end justify-items-center gap-0.5 sm:gap-2">
               {benchGk.length > 0 ? (
-                <div className="flex w-full max-w-[min(24vw,76px)] flex-col items-center justify-self-center gap-0.5 sm:max-w-[108px]">
+                <div className="flex w-[88px] flex-col items-center justify-self-center gap-0.5 sm:w-[112px]">
                   <span className="text-[8px] uppercase tracking-wide text-muted-foreground/80 sm:text-[9px]">
                     {benchGkAbbrev}
                   </span>
@@ -864,6 +1005,17 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                       priceAlreadyChangedByFplId?.[benchGk[0].fpl_id]
                     }
                     attention={attentionByFplId?.[benchGk[0].fpl_id]}
+                    pointsTrend={pointsTrendByFplId?.[benchGk[0].fpl_id]}
+                    pointsTrendTitle={pointsTrendTitle}
+                    transferStance={transferStanceByFplId?.[benchGk[0].fpl_id]}
+                    stanceShortLabel={
+                      transferStanceByFplId?.[benchGk[0].fpl_id]
+                        ? stanceShortByStance?.[
+                            transferStanceByFplId[benchGk[0].fpl_id]!
+                          ]
+                        : undefined
+                    }
+                    stanceTitle={stanceTitleByFplId?.[benchGk[0].fpl_id]}
                     onClick={
                       onPickSlot
                         ? () => onPickSlot(benchGk[0].slot)
@@ -877,7 +1029,7 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
               {benchOutfield.map((p) => (
                 <div
                   key={`${p.slot}-${p.fpl_id}`}
-                  className="flex w-full max-w-[min(24vw,76px)] flex-col items-center justify-self-center sm:max-w-[108px]"
+                  className="flex w-[88px] flex-col items-center justify-self-center sm:w-[112px]"
                 >
                   <PlayerChip
                     p={p}
@@ -899,6 +1051,17 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
                       priceAlreadyChangedByFplId?.[p.fpl_id]
                     }
                     attention={attentionByFplId?.[p.fpl_id]}
+                    pointsTrend={pointsTrendByFplId?.[p.fpl_id]}
+                    pointsTrendTitle={pointsTrendTitle}
+                    transferStance={transferStanceByFplId?.[p.fpl_id]}
+                    stanceShortLabel={
+                      transferStanceByFplId?.[p.fpl_id]
+                        ? stanceShortByStance?.[
+                            transferStanceByFplId[p.fpl_id]!
+                          ]
+                        : undefined
+                    }
+                    stanceTitle={stanceTitleByFplId?.[p.fpl_id]}
                     onClick={onPickSlot ? () => onPickSlot(p.slot) : undefined}
                     onInspectPlayer={onInspectPlayer}
                     inspectNameTitle={inspectNameTitle}
@@ -907,24 +1070,34 @@ export const PitchView = forwardRef<HTMLDivElement, PitchViewProps>(
               ))}
             </div>
           </div>
-          {showLegend ? (
+          {showLegend || showStance ? (
             <div
               data-png-skip=""
               className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 px-2 py-1.5 text-[9px] text-white/60 sm:text-[10px]"
             >
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
-                {tAtt("pitchLegendAlert")}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
-                {tAtt("pitchLegendWatch")}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-slate-400/90" aria-hidden />
-                {tAtt("pitchLegendInfo")}
-              </span>
-              <span className="text-white/45">{tAtt("pitchLegendFormHint")}</span>
+              {showLegend ? (
+                <>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
+                    {tAtt("pitchLegendAlert")}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+                    {tAtt("pitchLegendWatch")}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span
+                      className="h-2 w-2 rounded-full bg-slate-400/90"
+                      aria-hidden
+                    />
+                    {tAtt("pitchLegendInfo")}
+                  </span>
+                  <span className="text-white/45">{tAtt("pitchLegendFormHint")}</span>
+                </>
+              ) : null}
+              {showStance ? (
+                <span className="text-white/55">{stanceLegendText}</span>
+              ) : null}
             </div>
           ) : null}
         </div>

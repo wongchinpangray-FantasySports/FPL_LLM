@@ -25,6 +25,12 @@ import { HomeBackLink } from "@/components/home-back-link";
 import { XpHeatmap, buildHeatmapRow, buildHeatmapRowFromPick } from "@/components/xp-heatmap";
 import { DashboardSquadPanel } from "@/components/dashboard/dashboard-squad-panel";
 import { loadLiveGwPointsById } from "@/lib/fpl/live-gw-points";
+import { loadRecentGwPointsByPlayerIds } from "@/lib/player-gw-history";
+import {
+  averageFdr,
+  classifyTransferStance,
+  type TransferStance,
+} from "@/lib/transfers/stance";
 
 export const dynamic = "force-dynamic";
 
@@ -283,9 +289,30 @@ export default async function DashboardPage({
     team.current_gw != null && team.current_gw > 0
       ? team.current_gw
       : Math.max(1, startGw - 1);
-  const gwPointsMap = squadEmpty
-    ? new Map<number, number>()
-    : await loadLiveGwPointsById(pointsGw);
+  const squadIds = orderedPicks.map((p) => p.fpl_id).filter((id) => id > 0);
+  const [gwPointsMap, recentPointsMap] = squadEmpty
+    ? [new Map<number, number>(), new Map<number, number[]>()]
+    : await Promise.all([
+        loadLiveGwPointsById(pointsGw),
+        loadRecentGwPointsByPlayerIds(squadIds, 3),
+      ]);
+
+  const pointsTrendByFplId = Object.fromEntries(
+    [...recentPointsMap.entries()].filter(([, pts]) => pts.length > 0),
+  );
+
+  const transferStanceByFplId: Record<number, TransferStance> = {};
+  for (const p of orderedPicks) {
+    if (p.fpl_id <= 0) continue;
+    const avg = averageFdr(fdrStripByFplId[p.fpl_id]);
+    const xp = nextGwXpByFplId[p.fpl_id];
+    transferStanceByFplId[p.fpl_id] = classifyTransferStance({
+      form: p.form,
+      avgFdr: avg,
+      xpNext: xp,
+      position: p.position,
+    }).stance;
+  }
 
   return (
     <div className="flex flex-col gap-7 md:gap-10 lg:gap-12">
@@ -491,6 +518,8 @@ export default async function DashboardPage({
             nextGwXpByFplId={nextGwXpByFplId}
             gwForecastByFplId={gwForecastByFplId}
             fdrStripByFplId={fdrStripByFplId}
+            pointsTrendByFplId={pointsTrendByFplId}
+            transferStanceByFplId={transferStanceByFplId}
             inspectNameTitle={dt("squadPitchCaption")}
           />
         ) : null}
