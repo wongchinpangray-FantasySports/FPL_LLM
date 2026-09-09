@@ -571,12 +571,18 @@ export default async function DashboardPage({
           <span className="text-xs text-muted-foreground">{dt("fixturesHint")}</span>
         </div>
         <div className="scroll-table scroll-table--bordered rounded-2xl bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[36rem] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[3.75rem] sm:w-[4.5rem]" />
+              {gwHeaders.map((g) => (
+                <col key={`col-${g}`} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="text-left text-xs uppercase text-muted-foreground">
-                <th className="px-3 py-2">{dt("fixtureTableTeam")}</th>
+                <th className="px-2 py-2.5 sm:px-3">{dt("fixtureTableTeam")}</th>
                 {gwHeaders.map((g) => (
-                  <th key={g} className="px-2 py-2 text-center">
+                  <th key={g} className="px-1 py-2.5 text-center">
                     GW{g}
                   </th>
                 ))}
@@ -585,46 +591,54 @@ export default async function DashboardPage({
             <tbody>
               {grid.map((t) => (
                 <tr key={t.team_id} className="border-t border-border/60">
-                  <td className="px-3 py-2 font-medium">{t.short}</td>
+                  <td className="px-2 py-1.5 text-xs font-semibold sm:px-3 sm:text-sm">
+                    {t.short}
+                  </td>
                   {gwHeaders.map((g) => {
                     const fs = t.fixtures.filter((x) => x.gw === g);
                     const calendarDgw = dgwTeamGw.has(`${t.team_id}:${g}`);
-                    const isDgw = fs.length >= 2 || (calendarDgw && fs.length > 0);
+                    const isDgw =
+                      fs.length >= 2 || (calendarDgw && fs.length > 0);
                     return (
-                      <td key={g} className="px-1.5 py-1.5 align-top">
+                      <td key={g} className="p-1 align-middle">
                         {fs.length > 0 ? (
                           <div
                             className={cn(
-                              "flex min-h-[2.75rem] flex-col gap-1 rounded-md border border-border px-1.5 py-1 text-center text-xs",
+                              "mx-auto flex w-full max-w-[5.5rem] flex-col gap-1 rounded-lg p-0.5",
                               isDgw &&
-                                "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]",
+                                "ring-1 ring-yellow-400/80 ring-offset-1 ring-offset-background",
                             )}
                           >
                             {fs.map((f, idx) => (
                               <div
                                 key={`${f.opp}-${f.home}-${idx}`}
                                 className={cn(
-                                  "rounded-md border px-1.5 py-0.5",
+                                  "flex min-h-[2.75rem] flex-col items-center justify-center rounded-md border px-1 py-1 text-center leading-tight",
                                   fdrClass(f.fdr),
                                 )}
                               >
-                                <div className="font-semibold">
+                                <div className="whitespace-nowrap text-[10px] font-semibold sm:text-[11px]">
                                   {f.opp}
-                                  {!f.home ? " (A)" : ""}
+                                  {!f.home ? (
+                                    <span className="font-medium opacity-80">
+                                      {" "}
+                                      (A)
+                                    </span>
+                                  ) : null}
                                 </div>
-                                <div className="text-[10px] text-foreground/90">
+                                <div className="mt-0.5 whitespace-nowrap text-[9px] tabular-nums text-foreground/85 sm:text-[10px]">
                                   FDR {normalizeFplFdr(f.fdr) ?? "–"}
                                 </div>
                               </div>
                             ))}
                             {isDgw && fs.length >= 2 ? (
-                              <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-yellow-200/95">
+                              <div className="text-center text-[8px] font-semibold uppercase tracking-wide text-yellow-200/95">
                                 DGW
                               </div>
                             ) : null}
                           </div>
                         ) : (
-                          <div className="rounded-md border border-border/60 bg-muted px-2 py-1 text-center text-xs text-muted-foreground">
+                          <div className="mx-auto flex min-h-[2.75rem] w-full max-w-[5.5rem] items-center justify-center rounded-md border border-border/60 bg-muted/40 text-xs text-muted-foreground">
                             —
                           </div>
                         )}

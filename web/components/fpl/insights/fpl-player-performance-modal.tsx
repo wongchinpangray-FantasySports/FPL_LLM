@@ -198,7 +198,8 @@ function formatRecentFixture(
   const prefix = fixture.home ? "vs" : "@";
   const fdr =
     fixture.fdr != null && fixture.fdr > 0 ? ` · FDR ${fixture.fdr}` : "";
-  return `${prefix} ${fixture.opp}${fdr}`;
+  // Non-breaking spaces keep "vs LEE · FDR 2" on one line in narrow tables.
+  return `${prefix}\u00A0${fixture.opp}${fdr}`.replace(/ /g, "\u00A0");
 }
 
 /** Map modal recent GWs into chart rows (ascending by GW). */
@@ -259,14 +260,17 @@ function StatCell({
   value: string | number;
   highlight?: boolean;
 }) {
+  const text = String(value);
+  const compact = text.length > 12;
   return (
-    <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+    <div className="rounded-lg border border-border/70 bg-muted/20 px-2.5 py-2 sm:px-3">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p
         className={cn(
-          "mt-0.5 text-sm tabular-nums",
+          "mt-0.5 break-words tabular-nums leading-snug",
+          compact ? "text-[11px] sm:text-sm" : "text-sm",
           highlight ? "font-semibold text-brand-accent" : "text-foreground/90",
         )}
       >
@@ -345,8 +349,10 @@ export function FplPlayerPerformanceModal({
       />
       <div
         className={cn(
-          "relative z-[111] flex max-h-[min(92vh,760px)] w-full flex-col overflow-hidden",
-          "rounded-t-2xl border bg-background shadow-2xl sm:max-w-3xl sm:rounded-2xl",
+          "relative z-[111] flex w-full flex-col overflow-hidden",
+          // dvh + safe areas: avoid 100vh chrome clipping the sticky header/close on mobile.
+          "max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.5rem)]",
+          "rounded-t-2xl border bg-background shadow-2xl sm:max-h-[min(92vh,760px)] sm:max-w-3xl sm:rounded-2xl",
         )}
         style={
           hasTeamTheme
@@ -367,14 +373,17 @@ export function FplPlayerPerformanceModal({
           />
         ) : null}
         <div
-          className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4"
+          className="sticky top-0 z-[112] flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3 sm:px-5 sm:py-4"
           style={
             hasTeamTheme
               ? {
                   borderColor: teamBadge.chipBorder,
-                  background: `linear-gradient(135deg, ${teamTheme.primary}24 0%, ${teamTheme.secondary}14 55%, transparent 100%)`,
+                  background: `linear-gradient(135deg, ${teamTheme.primary}24 0%, ${teamTheme.secondary}14 55%, hsl(var(--background)) 100%)`,
                 }
-              : { borderColor: "hsl(var(--border))" }
+              : {
+                  borderColor: "hsl(var(--border))",
+                  background: "hsl(var(--background))",
+                }
           }
         >
           <div className="min-w-0">
@@ -384,13 +393,13 @@ export function FplPlayerPerformanceModal({
               ) : null}
               <h2
                 id="fpl-player-perf-title"
-                className="truncate text-lg font-semibold text-foreground"
+                className="truncate text-base font-semibold text-foreground sm:text-lg"
               >
                 {detail?.display_name ?? "…"}
               </h2>
             </div>
             {detail ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                 {detail.team ?? "—"} · {detail.position ?? "—"}
                 {m
                   ? ` · GW${m.from_gw}–${m.to_gw}`
@@ -401,13 +410,13 @@ export function FplPlayerPerformanceModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="shrink-0 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
           >
             {labels.close}
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {loading ? (
             <p className="text-sm text-muted-foreground">{labels.loading}</p>
           ) : null}
@@ -627,31 +636,41 @@ export function FplPlayerPerformanceModal({
                   </p>
                 ) : (
                   <div className="scroll-table scroll-table--bordered scroll-table--muted">
-                    <table className="min-w-full text-left text-xs">
+                    <table className="w-max min-w-full table-fixed text-left text-xs sm:w-full">
+                      <colgroup>
+                        <col className="w-10" />
+                        <col className="w-[9.5rem]" />
+                        <col className="w-12" />
+                        <col className="w-12" />
+                        <col className="w-12" />
+                        <col className="w-16" />
+                        <col className="w-12" />
+                        <col className="w-14" />
+                      </colgroup>
                       <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                         <tr>
-                          <th className="px-2.5 py-2 font-medium">
+                          <th className="px-2 py-2 font-medium">
                             {labels.colGw}
                           </th>
-                          <th className="px-2.5 py-2 font-medium">
+                          <th className="px-2 py-2 font-medium">
                             {labels.colOpp}
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             {labels.colPlayedMins}
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             {labels.colPts}
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             G/A
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             xG/xA
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             DC
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             {labels.colDcPts}
                           </th>
                         </tr>
@@ -662,31 +681,31 @@ export function FplPlayerPerformanceModal({
                             key={g.gw}
                             className="border-b border-border/50 last:border-0"
                           >
-                            <td className="px-2.5 py-1.5 font-medium">
+                            <td className="px-2 py-1.5 font-medium">
                               {g.gw}
                             </td>
-                            <td className="px-2.5 py-1.5 text-muted-foreground">
+                            <td className="whitespace-nowrap px-2 py-1.5 text-muted-foreground">
                               {formatRecentFixture(g.fixture)}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums">
+                            <td className="px-2 py-1.5 tabular-nums">
                               {g.minutes}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums font-medium">
+                            <td className="px-2 py-1.5 tabular-nums font-medium">
                               {g.total_points}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums">
+                            <td className="px-2 py-1.5 tabular-nums">
                               {g.goals_scored}/{g.assists}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums">
+                            <td className="px-2 py-1.5 tabular-nums">
                               {fmtNum(g.expected_goals, 2)}/
                               {fmtNum(g.expected_assists, 2)}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums">
+                            <td className="px-2 py-1.5 tabular-nums">
                               {g.defensive_contribution}
                             </td>
                             <td
                               className={cn(
-                                "px-2.5 py-1.5 tabular-nums font-medium",
+                                "px-2 py-1.5 tabular-nums font-medium",
                                 (g.defcon_points ?? 0) > 0
                                   ? "text-emerald-400"
                                   : "text-muted-foreground",
@@ -710,19 +729,25 @@ export function FplPlayerPerformanceModal({
                     {labels.fixturesTitle}
                   </h3>
                   <div className="scroll-table scroll-table--bordered scroll-table--muted">
-                    <table className="min-w-full text-left text-xs">
+                    <table className="w-max min-w-full table-fixed text-left text-xs sm:w-full">
+                      <colgroup>
+                        <col className="w-10" />
+                        <col className="w-[9.5rem]" />
+                        <col className="w-16" />
+                        <col className="w-14" />
+                      </colgroup>
                       <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                         <tr>
-                          <th className="px-2.5 py-2 font-medium">
+                          <th className="px-2 py-2 font-medium">
                             {labels.colGw}
                           </th>
-                          <th className="px-2.5 py-2 font-medium">
+                          <th className="px-2 py-2 font-medium">
                             {labels.colOpp}
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             {labels.colMins}
                           </th>
-                          <th className="px-2.5 py-2 font-medium tabular-nums">
+                          <th className="px-2 py-2 font-medium tabular-nums">
                             {labels.colXp}
                           </th>
                         </tr>
@@ -733,20 +758,20 @@ export function FplPlayerPerformanceModal({
                             key={`${f.gw}-${f.opp}-${f.home ? "H" : "A"}`}
                             className="border-b border-border/50 last:border-0"
                           >
-                            <td className="px-2.5 py-1.5 font-medium">{f.gw}</td>
-                            <td className="px-2.5 py-1.5">
-                              {f.home ? "vs" : "@"} {f.opp}
+                            <td className="px-2 py-1.5 font-medium">{f.gw}</td>
+                            <td className="whitespace-nowrap px-2 py-1.5">
+                              {(f.home ? "vs" : "@") + "\u00A0" + f.opp}
                               {f.fdr != null ? (
                                 <span className="text-muted-foreground">
-                                  {" "}
-                                  · FDR {f.fdr}
+                                  {"\u00A0·\u00A0FDR\u00A0"}
+                                  {f.fdr}
                                 </span>
                               ) : null}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums">
+                            <td className="px-2 py-1.5 tabular-nums">
                               {fmtNum(f.expected_minutes, 0)}
                             </td>
-                            <td className="px-2.5 py-1.5 tabular-nums font-medium text-brand-accent">
+                            <td className="px-2 py-1.5 tabular-nums font-medium text-brand-accent">
                               {fmtNum(f.xp, 1)}
                             </td>
                           </tr>
@@ -761,10 +786,17 @@ export function FplPlayerPerformanceModal({
         </div>
 
         {detail ? (
-          <div className="flex shrink-0 justify-end border-t border-border px-5 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:hidden"
+            >
+              {labels.close}
+            </button>
             <Link
               href={`/player/${detail.fpl_id}`}
-              className="text-sm text-brand-accent no-underline hover:underline"
+              className="ml-auto text-sm text-brand-accent no-underline hover:underline"
               onClick={onClose}
             >
               {labels.openFullProfile}
