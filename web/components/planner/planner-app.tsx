@@ -78,6 +78,7 @@ import {
 } from "@/components/planner/planner-player-inspect";
 import {
   PitchView,
+  type PlannerFdrStripCell,
   type PlannerGwStripCell,
 } from "@/components/planner/pitch-view";
 import type { PlannerPickPayload } from "@/components/planner/types";
@@ -140,8 +141,27 @@ type ProjRow = {
   web_name: string | null;
   position: string | null;
   team: string | null;
-  by_gw?: { gw: number; opp: string; xp: number }[];
+  form?: number | null;
+  ownership?: number | null;
+  by_gw?: { gw: number; opp: string; xp: number; fdr?: number | null }[];
 };
+
+type PlannerCardMetric =
+  | "xp_strip"
+  | "fdr3"
+  | "form"
+  | "ownership"
+  | "xp"
+  | "price";
+
+const PLANNER_CARD_METRICS: PlannerCardMetric[] = [
+  "xp_strip",
+  "fdr3",
+  "form",
+  "ownership",
+  "xp",
+  "price",
+];
 
 function useMinLg(): boolean {
   const [lg, setLg] = useState(false);
@@ -350,6 +370,7 @@ export function PlannerApp({
   } | null>(null);
   const [projLoading, setProjLoading] = useState(false);
   const [projError, setProjError] = useState<string | null>(null);
+  const [cardMetric, setCardMetric] = useState<PlannerCardMetric>("xp_strip");
 
   const [topsByPos, setTopsByPos] = useState<Record<
     PlannerTopPosition,
@@ -1411,10 +1432,91 @@ export function PlannerApp({
       const pr = projById[id];
       const strip = pr?.by_gw;
       if (!strip?.length) continue;
-      out[Number(id)] = strip.slice(0, 5);
+      out[Number(id)] = strip.slice(0, 5).map((c) => ({
+        gw: c.gw,
+        opp: c.opp,
+        xp: c.xp,
+      }));
     }
     return Object.keys(out).length > 0 ? out : undefined;
   }, [projById]);
+
+  const fdrStripByFplId = useMemo(() => {
+    if (Object.keys(projById).length === 0) return undefined;
+    const out: Record<number, PlannerFdrStripCell[]> = {};
+    for (const id of Object.keys(projById)) {
+      const pr = projById[id];
+      const strip = pr?.by_gw;
+      if (!strip?.length) continue;
+      out[Number(id)] = strip.slice(0, 3).map((c) => ({
+        gw: c.gw,
+        opp: c.opp,
+        fdr: c.fdr ?? null,
+      }));
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }, [projById]);
+
+  const activePitchRows = isPlanPitch ? picks : sortedInitial;
+
+  const primaryMetricByFplId = useMemo(() => {
+    if (
+      cardMetric === "xp_strip" ||
+      cardMetric === "fdr3" ||
+      cardMetric === "price"
+    ) {
+      return undefined;
+    }
+    const out: Record<number, string> = {};
+    for (const row of activePitchRows) {
+      if (row.fpl_id <= 0) continue;
+      const pr = projById[String(row.fpl_id)];
+      if (cardMetric === "form") {
+        const form =
+          pr?.form ?? attentionByFplId?.[row.fpl_id]?.form ?? null;
+        out[row.fpl_id] =
+          form != null && Number.isFinite(form) ? Number(form).toFixed(1) : "—";
+      } else if (cardMetric === "ownership") {
+        const own = pr?.ownership;
+        out[row.fpl_id] =
+          own != null && Number.isFinite(own)
+            ? `${Number(own).toFixed(1)}%`
+            : "—";
+      } else if (cardMetric === "xp") {
+        const nextMap = isPlanPitch
+          ? scenarioNextGwXpByFplId
+          : baselineNextGwXpByFplId;
+        const xp = nextMap?.[row.fpl_id];
+        out[row.fpl_id] =
+          xp != null && Number.isFinite(xp) ? xp.toFixed(1) : "—";
+      }
+    }
+    return out;
+  }, [
+    cardMetric,
+    activePitchRows,
+    projById,
+    attentionByFplId,
+    isPlanPitch,
+    scenarioNextGwXpByFplId,
+    baselineNextGwXpByFplId,
+  ]);
+
+  const primaryMetricTitle = useMemo(() => {
+    switch (cardMetric) {
+      case "form":
+        return tDash("cardMetricForm");
+      case "ownership":
+        return tDash("cardMetricOwn");
+      case "xp":
+        return pitchCardXpTitle;
+      default:
+        return undefined;
+    }
+  }, [cardMetric, tDash, pitchCardXpTitle]);
+
+  const showXpStrip = cardMetric === "xp_strip" && Boolean(gwForecastByFplId);
+  const showFdrStrip = cardMetric === "fdr3" && Boolean(fdrStripByFplId);
 
   const scenarioPitchRef = useRef<HTMLDivElement>(null);
   const [pngBusy, setPngBusy] = useState(false);
@@ -1738,6 +1840,48 @@ export function PlannerApp({
           />
         ) : null}
 
+        <div
+          className="mb-2 inline-flex max-w-full flex-wrap rounded-lg border border-border bg-card/60 p-0.5"
+          role="group"
+          aria-label={t("cardMetricLabel")}
+        >
+          {PLANNER_CARD_METRICS.map((m) => {
+            const disabled =
+              (m === "xp_strip" || m === "fdr3" || m === "xp") &&
+              !gwForecastByFplId;
+            return (
+              <button
+                key={m}
+                type="button"
+                disabled={disabled}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:text-xs",
+                  cardMetric === m
+                    ? "bg-brand-accent/20 text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                  disabled && "cursor-not-allowed opacity-40",
+                )}
+                title={
+                  disabled ? t("cardMetricNeedsXp") : undefined
+                }
+                onClick={() => setCardMetric(m)}
+              >
+                {m === "xp_strip"
+                  ? t("cardMetricXpStrip")
+                  : m === "fdr3"
+                    ? tDash("cardMetricFdr")
+                    : m === "form"
+                      ? tDash("cardMetricForm")
+                      : m === "ownership"
+                        ? tDash("cardMetricOwn")
+                        : m === "xp"
+                          ? tDash("cardMetricXp")
+                          : t("cardMetricPrice")}
+              </button>
+            );
+          })}
+        </div>
+
         <PitchView
           ref={scenarioPitchRef}
           title={
@@ -1791,12 +1935,17 @@ export function PlannerApp({
           captainId={isPlanPitch ? captainId : cap0}
           viceId={isPlanPitch ? viceId : vice0}
           cardSublineByFplId={
-            isPlanPitch ? scenarioPitchSubline : baselinePitchSubline
+            showFdrStrip
+              ? undefined
+              : isPlanPitch
+                ? scenarioPitchSubline
+                : baselinePitchSubline
           }
-          gwForecastByFplId={gwForecastByFplId}
-          nextGwXpByFplId={
-            isPlanPitch ? scenarioNextGwXpByFplId : baselineNextGwXpByFplId
-          }
+          gwForecastByFplId={showXpStrip ? gwForecastByFplId : undefined}
+          fdrStripByFplId={showFdrStrip ? fdrStripByFplId : undefined}
+          primaryMetricByFplId={primaryMetricByFplId}
+          primaryMetricTitle={primaryMetricTitle}
+          nextGwXpByFplId={undefined}
           nextGwXpTitle={pitchCardXpTitle}
           attentionByFplId={attentionByFplId}
           showAttentionLegend

@@ -4,32 +4,50 @@ import { projectPlayers } from "@/lib/xp";
 import { computeTopXpByPosition } from "@/lib/planner/top-xp-by-position";
 import { resolvePlannerProjectionWindow } from "@/lib/planner/projection-window";
 
-/** One row per GW (DGW: opponents joined with ·, xP summed). */
+/** One row per GW (DGW: opponents joined with ·, xP summed, FDR averaged). */
 function buildByGwStrip(
   fixtures: FixtureProjection[],
   fromGw: number,
   toGw: number,
-): { gw: number; opp: string; xp: number }[] {
-  const map = new Map<number, { parts: string[]; xp: number }>();
+): { gw: number; opp: string; xp: number; fdr: number | null }[] {
+  const map = new Map<
+    number,
+    { parts: string[]; xp: number; fdrSum: number; fdrN: number }
+  >();
   for (const f of fixtures) {
     if (f.gw < fromGw || f.gw > toGw) continue;
     const tag = `${f.opp_short}${f.home ? "H" : "A"}`;
     const cur = map.get(f.gw);
+    const fdr =
+      f.fdr != null && Number.isFinite(f.fdr) ? Number(f.fdr) : null;
     if (!cur) {
-      map.set(f.gw, { parts: [tag], xp: f.xp_total });
+      map.set(f.gw, {
+        parts: [tag],
+        xp: f.xp_total,
+        fdrSum: fdr ?? 0,
+        fdrN: fdr != null ? 1 : 0,
+      });
     } else {
       cur.parts.push(tag);
       cur.xp += f.xp_total;
+      if (fdr != null) {
+        cur.fdrSum += fdr;
+        cur.fdrN += 1;
+      }
     }
   }
   return Array.from(map.keys())
     .sort((a, b) => a - b)
     .map((gw) => {
-      const { parts, xp } = map.get(gw)!;
+      const { parts, xp, fdrSum, fdrN } = map.get(gw)!;
       return {
         gw,
         opp: parts.join("·"),
         xp: Math.round(xp * 100) / 100,
+        fdr:
+          fdrN > 0
+            ? Math.round((fdrSum / fdrN) * 10) / 10
+            : null,
       };
     });
 }
@@ -89,7 +107,9 @@ export async function POST(req: Request) {
         web_name: string | null;
         position: string | null;
         team: string | null;
-        by_gw: { gw: number; opp: string; xp: number }[];
+        form: number | null;
+        ownership: number | null;
+        by_gw: { gw: number; opp: string; xp: number; fdr: number | null }[];
       }
     > = {};
     for (const [id, p] of projections) {
@@ -103,6 +123,8 @@ export async function POST(req: Request) {
         web_name: p.web_name,
         position: p.position,
         team: p.team,
+        form: p.form,
+        ownership: p.ownership,
         by_gw: buildByGwStrip(p.fixtures, fromGw, toGw),
       };
     }
