@@ -7,6 +7,8 @@ export type UserProfile = {
   fpl_entry_id: number | null;
   onboarding_completed_at: string | null;
   locale: string | null;
+  insights_plan?: "free" | "premium" | null;
+  insights_plan_expires_at?: string | null;
 };
 
 export type UserPreferences = {

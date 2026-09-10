@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { InsightsUpgradeButton } from "@/components/fpl/insights/insights-upgrade-button";
 
@@ -21,6 +20,8 @@ export function InsightsPaywall({
   locale?: string;
   preview?: React.ReactNode;
 }) {
+  const loginHref = `/auth/login?next=${encodeURIComponent(returnPath ?? "/fpl/insights")}`;
+
   return (
     <div className="relative overflow-hidden rounded-xl border border-amber-500/25 bg-card">
       {preview ? (
@@ -38,7 +39,7 @@ export function InsightsPaywall({
             locale={locale}
           />
           <Link
-            href="/sign-in"
+            href={loginHref}
             className="inline-flex rounded-lg border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground no-underline hover:bg-muted/80"
           >
             {signInLabel}

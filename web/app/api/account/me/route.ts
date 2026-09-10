@@ -37,7 +37,7 @@ export async function GET() {
       admin
         .from("profiles")
         .select(
-          "id,display_name,fpl_entry_id,onboarding_completed_at,locale,login_days",
+          "id,display_name,fpl_entry_id,onboarding_completed_at,locale,login_days,insights_plan,insights_plan_expires_at",
         )
         .eq("id", userId)
         .maybeSingle(),

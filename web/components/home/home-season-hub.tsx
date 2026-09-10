@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { ShareButton } from "@/components/share/share-button";
 import { HomeRankSparkline } from "@/components/home/home-rank-sparkline";
 import { cn } from "@/lib/utils";
+import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 import type { RankHistoryPoint } from "@/lib/fpl-rank-series";
 
 type HealthFlag = {
@@ -760,6 +761,15 @@ export function HomeSeasonHubLayout({
   ];
 
   const decideTools = [
+    ...(founderPackIsPublic()
+      ? [
+          {
+            href: "/pro",
+            label: t("seasonToolFounderPack"),
+            body: t("seasonToolFounderPackBody"),
+          },
+        ]
+      : []),
     {
       href: "/fpl/mini-league",
       label: t("seasonToolMiniLeague"),

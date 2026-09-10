@@ -8,6 +8,10 @@
 		"nodejs_compat_populate_process_env",
 		"global_fetch_strictly_public"
 	],
+	"vars": {
+		"INSIGHTS_PREMIUM_ENFORCE": "false",
+		"NEXT_PUBLIC_FOUNDER_PACK_PUBLIC": "true"
+	},
 	"ai": {
 		"binding": "AI"
 	},

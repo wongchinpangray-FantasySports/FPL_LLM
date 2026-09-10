@@ -3,6 +3,11 @@
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { notificationCategory } from "@/lib/notifications/categories";
+import {
+  FOUNDER_PACK_PATH,
+  SAMPLE_REPORT_A_PDF,
+  SAMPLE_REPORT_B_PDF,
+} from "@/lib/billing/founder-pack";
 
 export type InboxNotification = {
   id: string;
@@ -32,6 +37,7 @@ export function InboxNotificationRow({
     category === "news"
       ? categoryLabels?.news ?? "News"
       : categoryLabels?.message ?? "Message";
+  const isOffer = item.type === "founder_pack_offer";
 
   const content = (
     <>
@@ -61,11 +67,47 @@ export function InboxNotificationRow({
         <p
           className={cn(
             "mt-1 text-muted-foreground",
-            compact ? "line-clamp-2 text-xs leading-relaxed" : "line-clamp-2 text-sm",
+            compact ? "line-clamp-2 text-xs leading-relaxed" : "line-clamp-3 text-sm",
           )}
         >
           {item.body}
         </p>
+      ) : null}
+      {isOffer && !compact ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href={item.href?.startsWith("/") ? item.href : FOUNDER_PACK_PATH}
+            className="inline-flex rounded-lg bg-brand-accent px-3 py-1.5 text-xs font-semibold text-brand-ink no-underline hover:opacity-90"
+            onClick={(e) => {
+              e.stopPropagation();
+              onActivate?.();
+            }}
+          >
+            去开通
+          </Link>
+          <a
+            href={SAMPLE_REPORT_A_PDF}
+            download="faleague-sample-a-19.pdf"
+            className="inline-flex rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground no-underline hover:bg-muted/80"
+            onClick={(e) => {
+              e.stopPropagation();
+              onActivate?.();
+            }}
+          >
+            参考报告 A ¥19
+          </a>
+          <a
+            href={SAMPLE_REPORT_B_PDF}
+            download="faleague-sample-b-49.pdf"
+            className="inline-flex rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground no-underline hover:bg-muted/80"
+            onClick={(e) => {
+              e.stopPropagation();
+              onActivate?.();
+            }}
+          >
+            参考报告 B ¥49
+          </a>
+        </div>
       ) : null}
       {!compact ? (
         <time className="mt-2 block text-xs text-muted-foreground/80">
@@ -87,6 +129,11 @@ export function InboxNotificationRow({
   const activate = () => {
     if (onActivate) onActivate();
   };
+
+  // Offer cards use explicit buttons — avoid wrapping the whole row in one link.
+  if (isOffer && !compact) {
+    return <div className={className}>{content}</div>;
+  }
 
   if (item.href?.startsWith("http")) {
     return (

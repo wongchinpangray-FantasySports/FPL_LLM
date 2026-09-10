@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthNav } from "@/components/auth/auth-nav";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
+import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 function isHomePath(pathname: string): boolean {
   return pathname === "/";
@@ -133,6 +134,14 @@ export function SiteHeader() {
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {founderPackIsPublic() && pathname !== "/pro" && !pathname.startsWith("/scout") ? (
+              <Link
+                href="/pro"
+                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 sm:text-xs"
+              >
+                {t("founderPack")}
+              </Link>
+            ) : null}
             <ThemeToggle />
             <LanguageSwitcher />
           </div>
@@ -188,6 +197,13 @@ export function SiteHeader() {
               </MenuSection>
 
               <MenuSection title={t("menuSectionTools")}>
+                {founderPackIsPublic() ? (
+                  <MenuLink
+                    href="/pro"
+                    label={t("founderPack")}
+                    active={pathname === "/pro" || pathname.startsWith("/pro/")}
+                  />
+                ) : null}
                 <MenuLink
                   href="/fpl/mini-league"
                   label={t("miniLeague")}

@@ -22,5 +22,7 @@ export type AdminUserRow = {
   login_days: number;
   last_login_date: string | null;
   theme_team_type: string | null;
+  insights_plan: "free" | "premium";
+  insights_plan_expires_at: string | null;
   onboarding: AdminOnboardingView;
 };

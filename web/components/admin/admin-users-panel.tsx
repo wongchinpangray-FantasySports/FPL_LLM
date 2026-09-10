@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { wechatOutreachMessage } from "@/lib/billing/founder-pack";
 import type { AdminUserRow } from "@/lib/admin/types";
 
 function fmtWhen(iso: string | null, locale: string): string {
@@ -126,6 +127,8 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
   const [clearingId, setClearingId] = useState<string | null>(null);
   const [settingId, setSettingId] = useState<string | null>(null);
   const [entryDrafts, setEntryDrafts] = useState<Record<string, string>>({});
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -256,6 +259,49 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
     [entryDrafts, t],
   );
 
+  const grantFounderPack = useCallback(
+    async (user: AdminUserRow, action: "grant" | "revoke") => {
+      const email = user.email ?? user.id.slice(0, 8);
+      const ok = window.confirm(
+        action === "grant"
+          ? t("grantProConfirm", { email })
+          : t("revokeProConfirm", { email }),
+      );
+      if (!ok) return;
+      setGrantingId(user.id);
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}/insights`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        });
+        const data = (await res.json()) as {
+          error?: string;
+          insights_plan?: "free" | "premium";
+          insights_plan_expires_at?: string | null;
+        };
+        if (!res.ok) throw new Error(data.error ?? t("grantProFailed"));
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id
+              ? {
+                  ...u,
+                  insights_plan: data.insights_plan === "premium" ? "premium" : "free",
+                  insights_plan_expires_at: data.insights_plan_expires_at ?? null,
+                }
+              : u,
+          ),
+        );
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("grantProFailed"));
+      } finally {
+        setGrantingId(null);
+      }
+    },
+    [t],
+  );
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -272,6 +318,8 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
   }, [users, query]);
 
   const onboardedCount = users.filter((u) => u.onboarding.completed_at).length;
+  const proCount = users.filter((u) => u.insights_plan === "premium").length;
+  const outreach = wechatOutreachMessage();
 
   const detailLabels = {
     skipped: t("onboardingSkipped"),
@@ -316,7 +364,33 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
             total: users.length,
             onboarded: onboardedCount,
           })}
+          {" · "}
+          {t("proStats", { n: proCount })}
         </p>
+      </div>
+
+      <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">
+            {t("founderPackTitle")}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(outreach).then(() => {
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="rounded-lg border border-brand-accent/40 px-2.5 py-1 text-xs font-medium text-brand-accent hover:bg-brand-accent/10"
+          >
+            {copied ? t("copied") : t("copyOutreach")}
+          </button>
+        </div>
+        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+          {outreach}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("founderPackHint")}</p>
       </div>
 
       {loading ? (
@@ -338,6 +412,7 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                   <th className="px-3 py-2.5 font-medium">{t("colLastLogin")}</th>
                   <th className="px-3 py-2.5 font-medium">{t("colOnboarding")}</th>
                   <th className="px-3 py-2.5 font-medium">{t("colLogins")}</th>
+                  <th className="px-3 py-2.5 font-medium">{t("colPlan")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -396,10 +471,24 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                         <td className="px-3 py-2.5 tabular-nums text-muted-foreground">
                           {user.login_days}
                         </td>
+                        <td className="px-3 py-2.5">
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                              user.insights_plan === "premium"
+                                ? "bg-amber-500/15 text-amber-200"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {user.insights_plan === "premium"
+                              ? t("planPro")
+                              : t("planFree")}
+                          </span>
+                        </td>
                       </tr>
                       {expanded ? (
                         <tr key={`${user.id}-detail`} className="bg-card/30">
-                          <td colSpan={5} className="px-3 py-4">
+                          <td colSpan={6} className="px-3 py-4">
                             <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 {t("onboardingAnswers")}
@@ -445,6 +534,29 @@ export function AdminUsersPanel({ locale }: { locale: string }) {
                                       : t("clearEntry")}
                                   </button>
                                 ) : null}
+                                {user.insights_plan === "premium" ? (
+                                  <button
+                                    type="button"
+                                    disabled={grantingId === user.id}
+                                    onClick={() => void grantFounderPack(user, "revoke")}
+                                    className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
+                                  >
+                                    {grantingId === user.id
+                                      ? t("grantProSaving")
+                                      : t("revokePro")}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={grantingId === user.id}
+                                    onClick={() => void grantFounderPack(user, "grant")}
+                                    className="rounded-lg border border-amber-500/40 px-2.5 py-1 text-xs font-medium text-amber-200 hover:bg-amber-500/10 disabled:opacity-50"
+                                  >
+                                    {grantingId === user.id
+                                      ? t("grantProSaving")
+                                      : t("grantPro")}
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <OnboardingDetails

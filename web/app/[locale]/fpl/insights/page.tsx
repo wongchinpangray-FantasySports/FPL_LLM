@@ -2,9 +2,11 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { InsightsHub } from "@/components/fpl/insights/insights-hub";
 import { InsightsSubNav } from "@/components/fpl/insights/insights-sub-nav";
+import { Link } from "@/i18n/navigation";
 import { INSIGHT_CATALOG } from "@/lib/fpl/insights/catalog";
 import { getInsightsAccessSummary } from "@/lib/fpl/insights/access";
 import { getAuthUser } from "@/lib/auth/session";
+import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,14 @@ export default async function FplInsightsHubPage({ params }: Props) {
     >
       <div className="flex flex-col gap-5">
         <InsightsSubNav />
+        {founderPackIsPublic() ? (
+          <Link
+            href="/pro"
+            className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-3 text-sm text-foreground no-underline hover:bg-amber-500/10"
+          >
+            {t("founderPackBanner")}
+          </Link>
+        ) : null}
         <InsightsHub
           entries={INSIGHT_CATALOG}
           featuredId="preseason-signals"

@@ -127,16 +127,16 @@ export function InboxPanel() {
       ) : (
         <>
           <InboxSection
-            title={t("sectionNews")}
-            items={news}
-            empty={t("emptyNews")}
+            title={t("sectionMessages")}
+            items={message}
+            empty={t("emptyMessages")}
             categoryLabels={categoryLabels}
             onMarkRead={markRead}
           />
           <InboxSection
-            title={t("sectionMessages")}
-            items={message}
-            empty={t("emptyMessages")}
+            title={t("sectionNews")}
+            items={news}
+            empty={t("emptyNews")}
             categoryLabels={categoryLabels}
             onMarkRead={markRead}
           />

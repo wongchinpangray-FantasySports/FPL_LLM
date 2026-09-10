@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Link } from "@/i18n/navigation";
+import { FOUNDER_PACK_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 export function InsightsUpgradeButton({
   label,
@@ -8,15 +10,31 @@ export function InsightsUpgradeButton({
   locale,
   variant = "primary",
   disabled,
+  billingConfigured = false,
 }: {
   label: string;
   returnPath?: string;
   locale?: string;
   variant?: "primary" | "secondary";
   disabled?: boolean;
+  billingConfigured?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const className =
+    variant === "primary"
+      ? "inline-flex rounded-lg bg-brand-accent px-4 py-2 text-sm font-semibold text-brand-ink hover:opacity-90 disabled:opacity-60"
+      : "inline-flex rounded-lg border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-60";
+
+  if (!billingConfigured) {
+    if (!founderPackIsPublic()) return null;
+    return (
+      <Link href={FOUNDER_PACK_PATH} className={`${className} no-underline`}>
+        {label}
+      </Link>
+    );
+  }
 
   async function startCheckout() {
     setLoading(true);
@@ -28,6 +46,13 @@ export function InsightsUpgradeButton({
         body: JSON.stringify({ returnPath, locale }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
+      if (res.status === 503) {
+        if (founderPackIsPublic()) {
+          window.location.href = FOUNDER_PACK_PATH;
+        }
+        setLoading(false);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Checkout failed");
       if (data.url) {
         window.location.href = data.url;
@@ -39,11 +64,6 @@ export function InsightsUpgradeButton({
       setLoading(false);
     }
   }
-
-  const className =
-    variant === "primary"
-      ? "inline-flex rounded-lg bg-brand-accent px-4 py-2 text-sm font-semibold text-brand-ink hover:opacity-90 disabled:opacity-60"
-      : "inline-flex rounded-lg border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-60";
 
   return (
     <div className="inline-flex flex-col items-start gap-1">

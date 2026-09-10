@@ -167,6 +167,12 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
       login_days: (profile?.login_days as number | undefined) ?? 0,
       last_login_date: (profile?.last_login_date as string | null) ?? null,
       theme_team_type: (profile?.theme_team_type as string | null) ?? null,
+      insights_plan:
+        (profile?.insights_plan as string | null) === "premium"
+          ? "premium"
+          : "free",
+      insights_plan_expires_at:
+        (profile?.insights_plan_expires_at as string | null) ?? null,
       onboarding: {
         completed_at: completedAt,
         skipped,

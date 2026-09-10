@@ -2,9 +2,10 @@ import { getServerSupabase } from "@/lib/supabase";
 import { getInsightById, listPremiumInsightIds } from "@/lib/fpl/insights/catalog";
 import type { InsightsPlan } from "@/lib/fpl/insights/types";
 
-/** When false (default), premium insights are visible to everyone until billing launches. */
+/** Premium insights require Insights Pro. Off unless INSIGHTS_PREMIUM_ENFORCE is explicitly true. */
 export function isInsightsPremiumEnforced(): boolean {
-  return process.env.INSIGHTS_PREMIUM_ENFORCE === "true";
+  const raw = process.env["INSIGHTS_PREMIUM_ENFORCE"]?.trim().toLowerCase();
+  return raw === "true" || raw === "1";
 }
 
 export function getInsightsSponsor(): { name: string; href: string } | null {

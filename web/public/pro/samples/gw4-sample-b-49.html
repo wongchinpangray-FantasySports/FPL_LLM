@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>FALEAGUE 参考报告 · B</title>
+  <style>
+    :root {
+      --ink: #111;
+      --muted: #555;
+      --line: #ddd;
+      --accent: #00ff85;
+      --bg-soft: #f4f7f5;
+      --warn: #8a5a00;
+      --ok: #0a6b3c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 36px 48px;
+      font: 11.5px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: #fff;
+    }
+    h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    h2 {
+      font-size: 14px;
+      margin: 22px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #111;
+    }
+    h3 { font-size: 12px; margin: 14px 0 6px; }
+    p { margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 10px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #111;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .pill.on { background: #111; color: #fff; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0 14px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--bg-soft);
+    }
+    .stat b { display: block; font-size: 16px; }
+    .stat span { color: var(--muted); font-size: 10px; }
+    .callout {
+      border-left: 3px solid #111;
+      background: var(--bg-soft);
+      padding: 8px 10px;
+      margin: 10px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout.warn { border-left-color: #c98900; }
+    .callout.ok { border-left-color: var(--ok); }
+    .callout .t { font-weight: 700; margin-bottom: 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 12px;
+      font-size: 10.5px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 5px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #111; color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .card .k { font-size: 10px; font-weight: 700; margin-bottom: 4px; }
+    .bars { margin: 8px 0 12px; }
+    .bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 10px; }
+    .bar-row .lab { width: 88px; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 10px; background: #eee; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #1a7a4c; }
+    .bar-val { width: 42px; text-align: right; color: var(--muted); }
+    .foot {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .watermark {
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 10px;
+    }
+    @page { size: A4; margin: 12mm; }
+  </style>
+</head>
+<body>
+  <p class="watermark">FALEAGUE PRO · 参考样张（Entry 916934 · AI League）· 非买家真实交付件 · 样张 · B ¥49 · 4轮套餐</p>
+  <div class="row">
+    <h1>GW4 诊断 · FALEAGUE-AI FC</h1>
+    <span class="pill on">样张 · B ¥49 · 4轮套餐</span>
+    <span class="pill">3 FT · 芯片全在</span>
+  </div>
+  <p class="muted">
+    Entry 916934 · 截止示例。本季 0 次转会、四张芯片未用；按 3 次免费转会写。
+    小联赛主看 AI League（22 人，你第 18）。
+  </p>
+
+  <div class="stats">
+    <div class="stat"><b>186</b><span>总分 · 总榜约 404 万</span></div>
+    <div class="stat"><b>#18 / 22</b><span>AI League · 落后榜首 57</span></div>
+    <div class="stat"><b>3 FT · £0</b><span>应用满，0 扣分</span></div>
+    <div class="stat"><b>芯片 4/4</b><span>本周全不开</span></div>
+  </div>
+
+  <div class="callout">
+    <div class="t">本周一句话</div>
+    用满 3 次 FT 清掉 Rodon（伤停至 11 月）和 Keane（0 分钟），再把 Thiaw 换成赛程更好的廉价后卫。
+    不开任何芯片。队长 João Pedro（CHE vs HUL，FDR 2）——AI League 里约 80% 人仍队长 Haaland，
+    这是你追分的一周，不是跟模板。
+  </div>
+
+  <h2>1. 本周动作（先看完再翻证据）</h2>
+  <table>
+    <thead>
+      <tr><th>FT</th><th>出</th><th>入</th><th>净花费</th><th>一句话</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Rodon £4.4<br/>伤停 · 预计 11/21</td>
+        <td>Thomas £4.0<br/>COV vs BHA (H) FDR 2</td>
+        <td>−£0.4</td>
+        <td>死人换活人。AI League 你上面一半人有他；3 轮 xP 约 16.8 vs Rodon 3.8。</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Keane £4.9<br/>0 分钟</td>
+        <td>Mitchell £4.5<br/>CRY vs IPS (H) FDR 2</td>
+        <td>−£0.4 · 银行 ≈£0.8m</td>
+        <td>板凳占位清掉。和 Richards 同场水晶宫，本轮后防故意压好赛程。</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Thiaw £5.0<br/>NEW @ LEE</td>
+        <td>De Cuyper £4.8<br/>BHA @ COV FDR 2</td>
+        <td>−£0.2 · 银行 ≈£1.0m</td>
+        <td>首发升级。3 轮 xP 约 19.4 vs 9.7；联赛里他也不算冷门。</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted small">
+    若 App 显示 4 次 FT：第 4 刀再看 E.Le Fée（主场对阿森纳 FDR 4）。只有 3 次就停，不要 -4。
+    不要为了追联赛模板去买 B.Fernandes（£12，银行不够）。
+  </p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="k">C · João Pedro</div>
+      CHE vs HUL · FDR 2。你阵容里本轮进攻最甜的人。联赛队长模板是 Haaland（约 80%）——改 João Pedro 是故意偏离，用来追 57 分差距。
+    </div>
+    <div class="card">
+      <div class="k">VC · Saka 或 Tavernier</div>
+      João Pedro 若轮换：Saka @ SUN（你独有、榜首没有）或 Tavernier vs BRE。德比轮不要把 C/TC 给 Haaland 或 Mbeumo。
+    </div>
+  </div>
+
+  <h3>芯片：四张都留</h3>
+  <table>
+    <thead><tr><th>芯片</th><th>本周</th><th>原因</th></tr></thead>
+    <tbody>
+      <tr><td>Wildcard</td><td>不开</td><td>3 FT 已够修板凳；核心进攻还在，空白轮再用。</td></tr>
+      <tr><td>Bench Boost</td><td>不开</td><td>换完后板凳仍不够 4 个都值得打。</td></tr>
+      <tr><td>Free Hit</td><td>不开</td><td>不是空白轮；FH 不是用来代替免费转会的。</td></tr>
+      <tr><td>Triple Captain</td><td>不开</td><td>Haaland @ MUN FDR 4；João Pedro 只做普通队长。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. 小联赛 · AI League（主战场）</h2>
+  <p>
+    22 人。你 186 分排第 18，榜首 243，差 57。紧挨着你的人挤在 185–188。
+    本周目标是<strong>先把阵容修成能每周得分，再用队长差异追分</strong>——不是开 WC 赌一轮。
+  </p>
+  <table>
+    <thead><tr><th>排名</th><th>球队</th><th>总分</th><th>GW3</th><th>相对你</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>榜首</td><td>243</td><td>—</td><td>差你 57</td></tr>
+      <tr><td>15</td><td>AI Trafford</td><td>188</td><td>42</td><td>上面 2 分</td></tr>
+      <tr><td>15</td><td>老虎桥.ai</td><td>188</td><td>38</td><td>上面 2 分</td></tr>
+      <tr><td>17</td><td>GPT's 11</td><td>187</td><td>47</td><td>上面 1 分</td></tr>
+      <tr><td>18</td><td>FALEAGUE-AI FC（你）</td><td>186</td><td>56</td><td>—</td></tr>
+      <tr><td>19</td><td>MayWon Fantasy AI</td><td>185</td><td>54</td><td>下面 1 分</td></tr>
+    </tbody>
+  </table>
+
+  <h3>对榜首：他们有、你没有（先别追贵的）</h3>
+  <table>
+    <thead><tr><th>球员</th><th>位置</th><th>身价</th><th>本轮</th><th>本周建议</th></tr></thead>
+    <tbody>
+      <tr><td>B.Fernandes</td><td>MID</td><td>£12.0</td><td>vs MCI FDR 4</td><td>银行 £0，买不起。德比轮也不急。</td></tr>
+      <tr><td>Szoboszlai</td><td>MID</td><td>£7.0</td><td>vs FUL FDR 2</td><td>联赛缺口。记入 GW5 观察，本周 FT 先修后防。</td></tr>
+      <tr><td>Calafiori</td><td>DEF</td><td>£5.7</td><td>@ SUN</td><td>可后期用银行补，不如先上 De Cuyper/Thomas。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>你有、榜首没有（护住）</h3>
+  <table>
+    <thead><tr><th>球员</th><th>为什么重要</th></tr></thead>
+    <tbody>
+      <tr><td>Saka</td><td>几乎是你的独有中场。不要卖。客场桑德兰可当 VC。</td></tr>
+      <tr><td>Tavernier</td><td>3 轮 xP 很高；榜首没有。主场布伦特福德，留下。</td></tr>
+      <tr><td>João Pedro</td><td>你有模板前锋；本周用他当 C 制造队长差异。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <div class="t">小联赛结论如何写进转会</div>
+    本周 3 FT：清掉死人（Rodon、Keane）和低 xP 后卫（Thiaw），并带上 Thomas（上位约 50% 已有）。
+    Szoboszlai 等银行到了再追；本周靠 João Pedro 队长追分。
+  </div>
+
+  <h2>3. 冲击当轮小联赛冠军 · 可行性</h2>
+  <p class="muted">先判断「这周有没有资格冲」，再给可选加码。主方案仍以修阵容 + 追分为准。</p>
+  <div class="stats" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="stat"><b>中</b><span>可行性</span></div>
+    <div class="stat"><b>队长</b><span>最大杠杆</span></div>
+    <div class="stat"><b>不开芯片</b><span>冲奖也不动 TC/BB</span></div>
+  </div>
+  <div class="callout warn">
+    <div class="t">可行性：中 —— 可以冲分差，不适合烧芯片赌一轮</div>
+    <strong>有利：</strong>进攻轴还在；上轮 56 分；约 80% 人队长 Haaland（德比 FDR 4），你改 João Pedro（FDR 2）是差异。<br/>
+    <strong>不利：</strong>Haaland/Mbeumo FDR 4；银行 £0；板凳撑不起 BB。<br/>
+    <strong>结论：</strong>本周 = 主方案上把队长差异打满，不开 TC。
+  </div>
+  <table>
+    <thead><tr><th>优先级</th><th>动作</th><th>相对主方案</th><th>为什么</th></tr></thead>
+    <tbody>
+      <tr><td>1 · 必做</td><td>队长 João Pedro</td><td>相同</td><td>场内最甜赛程；模板低分时的便宜追分路径。</td></tr>
+      <tr><td>2 · 可选</td><td>VC 选 Saka</td><td>略激进</td><td>保留差异；别自动回 Haaland。</td></tr>
+      <tr><td>不做</td><td>TC / BB / -4</td><td>否决</td><td>可行性只有「中」；BB 板凳不够。</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>4. 规划 4 轮内冲击小联赛冠军（AI League）</h2>
+  <p class="muted">Package B 专属块：每轮报告会按最新排名改写剩余窗口。样张窗口 = GW4–7。</p>
+  <div class="stats" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="stat"><b>低→中</b><span>4 轮冲榜首可行性</span></div>
+    <div class="stat"><b>−57</b><span>落后榜首（243）</span></div>
+    <div class="stat"><b>~+14 / 轮</b><span>追平所需平均净优势*</span></div>
+  </div>
+  <p class="muted small">*粗算：57÷4 ≈ 14 分/轮净胜榜首。现实中更可能先冲进前 10 / 前 5，再伺机抢榜首。</p>
+
+  <div class="callout warn">
+    <div class="t">诚实结论</div>
+    57 分差距 + 榜首仍持有 Fernandes 等资产 → <strong>4 轮内夺冠偏难（低）</strong>。
+    但芯片全在、本周修完死人后，<strong>4 轮内冲进前 8–10 并保持上升趋势为「中」</strong>。
+    本块给出「冲冠路径」与「现实阶梯」两套规划，避免只画饼。
+  </div>
+
+  <h3>4.1 现实阶梯（建议主线）</h3>
+  <table>
+    <thead><tr><th>轮次</th><th>目标排名带</th><th>本周任务</th><th>芯片</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>GW4</td>
+        <td>止跌 · 争前 15</td>
+        <td>3 FT 修阵容；João Pedro (C) 制造差异</td>
+        <td>全留</td>
+      </tr>
+      <tr>
+        <td>GW5</td>
+        <td>前 12</td>
+        <td>观察 Szoboszlai / 银行；覆盖上位高频中场缺口</td>
+        <td>仍留，除非空白/双赛窗口</td>
+      </tr>
+      <tr>
+        <td>GW6</td>
+        <td>前 8–10</td>
+        <td>若仍落后 &gt;35：评估 FH 或定向 -4；否则稳 FT</td>
+        <td>按赛程再定</td>
+      </tr>
+      <tr>
+        <td>GW7</td>
+        <td>前 5 或可视榜首</td>
+        <td>芯片窗口（BB/TC/WC）择一对齐强赛程周</td>
+        <td>至少动一张</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 冲冠加码路径（高风险）</h3>
+  <table>
+    <thead><tr><th>条件</th><th>动作</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>GW4–5 你单周连续大胜榜首（累计追回 ≥25）</td>
+        <td>GW6–7 才讨论 TC/BB 叠差异队长</td>
+        <td>中</td>
+      </tr>
+      <tr>
+        <td>差距仍 &gt;40 且榜首模板僵化</td>
+        <td>WC 重做进攻差异轴（保留 Saka/Tavernier 类独有）</td>
+        <td>高 · 芯片一次用掉</td>
+      </tr>
+      <tr>
+        <td>默认</td>
+        <td>不在 GW4 烧芯片赌一轮</td>
+        <td>低（推荐）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 每轮复盘清单（交付时会勾）</h3>
+  <table>
+    <thead><tr><th>#</th><th>检查项</th><th>本周样张</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>与榜首分差变化</td><td>基线 −57</td></tr>
+      <tr><td>2</td><td>上位持有你没有的高拥有率资产</td><td>Fernandes / Szoboszlai</td></tr>
+      <tr><td>3</td><td>你有、榜首没有的护城河</td><td>Saka / Tavernier</td></tr>
+      <tr><td>4</td><td>下轮 FT / 芯片是否仍对齐阶梯</td><td>GW4：对齐「止跌」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <div class="t">写进买家微信的一句话</div>
+    4 轮内硬抢榜首偏难；计划先用 GW4 修阵 + 队长差异止跌，GW5–7 按分差决定是否动芯片。
+    每轮报告会更新「剩余窗口冲冠可行性」。
+  </div>
+
+
+  <h2>5. 证据附录</h2>
+  <p class="muted">下面数字支撑前半结论，不是第二套建议。</p>
+  <h3>5.1 转会：出 vs 入 · 未来 3 轮 xP</h3>
+  <div class="bars">
+    <div class="bar-row"><span class="lab">Rodon (出)</span><div class="bar-track"><div class="bar-fill" style="width:19%"></div></div><span class="bar-val">3.8</span></div>
+    <div class="bar-row"><span class="lab">Thomas (入)</span><div class="bar-track"><div class="bar-fill" style="width:84%"></div></div><span class="bar-val">16.8</span></div>
+    <div class="bar-row"><span class="lab">Keane (出)</span><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><span class="bar-val">2.4</span></div>
+    <div class="bar-row"><span class="lab">Mitchell (入)</span><div class="bar-track"><div class="bar-fill" style="width:86%"></div></div><span class="bar-val">17.2</span></div>
+    <div class="bar-row"><span class="lab">Thiaw (出)</span><div class="bar-track"><div class="bar-fill" style="width:49%"></div></div><span class="bar-val">9.7</span></div>
+    <div class="bar-row"><span class="lab">De Cuyper (入)</span><div class="bar-track"><div class="bar-fill" style="width:97%"></div></div><span class="bar-val">19.4</span></div>
+  </div>
+  <p class="muted small">来源：Faleague xP 模型 · 窗口 GW4–6 · 样张日期 2026-09-10。</p>
+
+  <table>
+    <thead><tr><th>球员</th><th>角色</th><th>GW4</th><th>FDR</th><th>3轮xP</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td>Rodon</td><td>出</td><td>vs NEW</td><td>2</td><td>3.8</td><td>伤停 0%</td></tr>
+      <tr><td>Thomas</td><td>入</td><td>vs BHA</td><td>2</td><td>16.8</td><td>上位 50% 已有</td></tr>
+      <tr><td>Keane</td><td>出</td><td>@ TOT</td><td>3</td><td>~2.4</td><td>0 分钟</td></tr>
+      <tr><td>Mitchell</td><td>入</td><td>vs IPS</td><td>2</td><td>17.2</td><td>与 Richards 同场</td></tr>
+      <tr><td>Thiaw</td><td>出</td><td>@ LEE</td><td>3</td><td>9.7</td><td>低 xP</td></tr>
+      <tr><td>De Cuyper</td><td>入</td><td>@ COV</td><td>2</td><td>19.4</td><td>form 7.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 队长候选 · FDR vs 3 轮 xP</h3>
+  <table>
+    <thead><tr><th>球员</th><th>GW4 FDR</th><th>3轮 xP</th></tr></thead>
+    <tbody>
+      <tr><td>Haaland</td><td>4</td><td>30.9</td></tr>
+      <tr><td>Mbeumo</td><td>4</td><td>26.6</td></tr>
+      <tr><td>Saka</td><td>3</td><td>26.1</td></tr>
+      <tr><td>Tavernier</td><td>3</td><td>26.8</td></tr>
+      <tr><td>João Pedro</td><td>2</td><td>23.4</td></tr>
+    </tbody>
+  </table>
+  <p class="muted small">João Pedro 赛季 xP 不是最高，但本轮 FDR 最好，且联赛模板锁 Haaland。</p>
+
+  <div class="foot">
+    Scout 中文仍免费。这不是 Scout Members。<br/>
+    本文件为 B · 4轮套餐 参考样张（含「规划 4 轮内冲击小联赛冠军」）。正式交付每轮更新剩余窗口规划。
+  </div>
+</body>
+</html>

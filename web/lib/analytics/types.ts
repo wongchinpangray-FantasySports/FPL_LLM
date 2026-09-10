@@ -13,6 +13,7 @@ export const SITE_FEATURES = [
   "chat",
   "inbox",
   "account",
+  "pro",
   "onboarding",
   "auth",
   "mini_game",

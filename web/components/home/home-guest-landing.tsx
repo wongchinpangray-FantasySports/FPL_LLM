@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
+import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 /** Soft card gradients — distinct tints, readable in light and dark themes. */
 const FEATURE_GRADIENTS = [
@@ -103,15 +104,19 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
   const t = useTranslations("home");
 
   const features = [
+    ...(founderPackIsPublic()
+      ? [
+          {
+            title: t("guestFounderTitle"),
+            body: t("guestFounderBody"),
+            href: "/pro",
+          },
+        ]
+      : []),
     {
       title: t("guestGuideTitle"),
       body: t("guestGuideBody"),
       href: "/fpl/guide",
-    },
-    {
-      title: t("guestPreseasonTitle"),
-      body: t("guestPreseasonBody"),
-      href: "/auth/signup?next=%2Ffpl%2Fpreseason",
     },
     {
       title: t("guestFeature1Title"),
@@ -123,7 +128,7 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
       body: t("guestFeature3Body"),
       href: "/planner",
     },
-  ] as const;
+  ];
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-2 md:gap-8">
@@ -149,7 +154,16 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
           {t("guestHeroBody")}
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
-          <Link href="/auth/signup" className={cn(buttonVariants({ size: "sm" }), "no-underline")}>
+          <Link
+            href="/auth/signup"
+            className={cn(
+              buttonVariants({
+                size: "sm",
+                variant: founderPackIsPublic() ? "secondary" : "primary",
+              }),
+              "no-underline",
+            )}
+          >
             {t("guestRegister")}
           </Link>
           <Link
@@ -158,19 +172,21 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
           >
             {t("guestLogin")}
           </Link>
-          <Link
-            href="/auth/signup?next=%2Ffpl%2Fpreseason"
-            className="text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
-          >
-            {t("guestBrowsePreseason")} →
-          </Link>
-          <Link
-            href="/fpl"
-            className="text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
-          >
-            {t("guestBrowseFpl")} →
-          </Link>
+          {founderPackIsPublic() ? (
+            <Link
+              href="/pro"
+              className={cn(buttonVariants({ size: "sm" }), "no-underline")}
+            >
+              {t("guestFounderCta")}
+            </Link>
+          ) : null}
         </div>
+        <Link
+          href="/fpl"
+          className="mt-3 inline-flex text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
+        >
+          {t("guestBrowseFpl")} →
+        </Link>
         </div>
       </section>
 

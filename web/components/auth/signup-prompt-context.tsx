@@ -18,6 +18,10 @@ import { cn } from "@/lib/utils";
 export type SignupPromptCopy = {
   title?: string;
   body?: string;
+  eyebrow?: string;
+  benefits?: string[];
+  primaryHref?: string;
+  primaryLabel?: string;
   /** Persist dismiss in sessionStorage under this key (optional). */
   dismissKey?: string;
   /** Return path after signup/login, e.g. `/scout/some-slug`. */
@@ -147,55 +151,52 @@ function SignupPromptDialog({
           </button>
 
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-accent">
-            {t("eyebrow")}
+            {copy?.eyebrow ?? t("eyebrow")}
           </p>
           <h2
             id="signup-prompt-title"
-            className="mt-2 pr-8 text-xl font-semibold leading-snug text-foreground sm:text-2xl"
+            className="mt-2 pr-8 text-xl font-semibold leading-snug whitespace-pre-line text-foreground sm:text-2xl"
           >
             {title}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
 
           <ul className="mt-4 space-y-2 text-sm text-foreground/85">
-            <li className="flex gap-2">
-              <span className="text-brand-accent" aria-hidden>
-                ✓
-              </span>
-              {t("benefit1")}
-            </li>
-            <li className="flex gap-2">
-              <span className="text-brand-accent" aria-hidden>
-                ✓
-              </span>
-              {t("benefit2")}
-            </li>
-            <li className="flex gap-2">
-              <span className="text-brand-accent" aria-hidden>
-                ✓
-              </span>
-              {t("benefit3")}
-            </li>
+            {(copy?.benefits ?? [t("benefit1"), t("benefit2"), t("benefit3")]).map(
+              (item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="text-brand-accent" aria-hidden>
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ),
+            )}
           </ul>
 
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
             <Link
-              href={`/auth/signup${nextQ}`}
-              onClick={onClose}
+              href={copy?.primaryHref ?? `/auth/signup${nextQ}`}
+              onClick={() => {
+                persistDismiss();
+                onClose();
+              }}
               className={cn(buttonVariants({ size: "lg" }), "w-full no-underline sm:flex-1")}
             >
-              {t("signup")}
+              {copy?.primaryLabel ?? t("signup")}
             </Link>
-            <Link
-              href={`/auth/login${nextQ}`}
-              onClick={onClose}
-              className={cn(
-                buttonVariants({ variant: "secondary", size: "lg" }),
-                "w-full no-underline sm:flex-1",
-              )}
-            >
-              {t("signin")}
-            </Link>
+            {copy?.primaryHref ? null : (
+              <Link
+                href={`/auth/login${nextQ}`}
+                onClick={onClose}
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "lg" }),
+                  "w-full no-underline sm:flex-1",
+                )}
+              >
+                {t("signin")}
+              </Link>
+            )}
           </div>
           <button
             type="button"

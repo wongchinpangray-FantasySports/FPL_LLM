@@ -17,7 +17,10 @@ export async function grantInsightsPremium(
   if (opts.stripeCustomerId) {
     patch.stripe_customer_id = opts.stripeCustomerId;
   }
-  const { error } = await supa.from("profiles").update(patch).eq("id", userId);
+  const { error } = await supa.from("profiles").upsert(
+    { id: userId, ...patch },
+    { onConflict: "id" },
+  );
   if (error) throw new Error(error.message);
 }
 

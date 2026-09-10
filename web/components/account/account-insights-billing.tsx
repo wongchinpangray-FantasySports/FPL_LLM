@@ -83,13 +83,12 @@ export function AccountInsightsBilling({
               returnPath="/account"
             />
           ) : null
-        ) : billingConfigured ? (
+        ) : (
           <InsightsUpgradeButton
             label={labels.upgrade}
             returnPath="/account"
+            billingConfigured={billingConfigured}
           />
-        ) : (
-          <p className="text-sm text-muted-foreground">{labels.comingSoon}</p>
         )}
       </div>
     </div>

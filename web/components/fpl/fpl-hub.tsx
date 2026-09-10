@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useEntryId } from "@/components/entry-id-context";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { cn } from "@/lib/utils";
+import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 function HubTile({
   href,
@@ -61,6 +62,14 @@ export function FplHub() {
         />
         <HubTile href={managerHref} title={t("manager")} description={t("managerBody")} />
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
+        {founderPackIsPublic() ? (
+          <HubTile
+            href="/pro"
+            title={t("founderPackTitle")}
+            description={t("founderPackBody")}
+            accent
+          />
+        ) : null}
         <HubTile
           href="/fpl/insights"
           title={t("insightsTitle")}

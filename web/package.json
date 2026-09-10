@@ -45,6 +45,8 @@
     "scout:queue": "tsx scripts/write-scout-zh-batch.ts --requested",
     "scout:write-zh": "tsx scripts/write-scout-zh-batch.ts --apply",
     "test:scout": "tsx scripts/scout-self-test.ts",
+    "test:founder-pack": "tsx scripts/founder-pack-self-test.ts",
+    "render:sample-reports": "node scripts/render-sample-report-pdfs.mjs",
     "test:analytics": "tsx scripts/site-analytics-self-test.ts",
     "xhs:scout": "tsx scripts/scout-xhs-pages.ts",
     "xhs:scout:all": "tsx scripts/scout-xhs-pages.ts --all",

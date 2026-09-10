@@ -24,6 +24,10 @@ import {
   type InboxNotification,
 } from "@/components/inbox/inbox-notification-row";
 import { groupNotificationsByCategory } from "@/lib/notifications/categories";
+import {
+  FOUNDER_PACK_PATH,
+  founderPackIsPublic,
+} from "@/lib/billing/founder-pack";
 
 function HubSection({
   eyebrow,
@@ -334,13 +338,13 @@ function YourFootballSection({
           <div className="space-y-4">
             <div>
               <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {labels.sectionNews}
+                {labels.sectionMessages}
               </h3>
-              {previewNews.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{labels.emptyNews}</p>
+              {previewMessages.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{labels.emptyMessages}</p>
               ) : (
                 <ul className="divide-y divide-border/60">
-                  {previewNews.map((n) => (
+                  {previewMessages.map((n) => (
                     <li key={n.id}>
                       <InboxNotificationRow item={n} compact />
                     </li>
@@ -350,13 +354,13 @@ function YourFootballSection({
             </div>
             <div>
               <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {labels.sectionMessages}
+                {labels.sectionNews}
               </h3>
-              {previewMessages.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{labels.emptyMessages}</p>
+              {previewNews.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{labels.emptyNews}</p>
               ) : (
                 <ul className="divide-y divide-border/60">
-                  {previewMessages.map((n) => (
+                  {previewNews.map((n) => (
                     <li key={n.id}>
                       <InboxNotificationRow item={n} compact />
                     </li>
@@ -1056,7 +1060,7 @@ function NewsSection({
 export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [data, setData] = useState<HomeHubData | null>(initialData ?? null);
   const [hubError, setHubError] = useState<string | null>(null);
 
@@ -1122,8 +1126,25 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     );
   }
 
+  const showFounderOffer =
+    founderPackIsPublic() && profile?.insights_plan !== "premium";
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6">
+      {showFounderOffer ? (
+        <Link
+          href={FOUNDER_PACK_PATH}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 no-underline hover:bg-amber-500/15"
+        >
+          <span className="text-sm font-semibold text-foreground">
+            {t("seasonToolFounderPack")}
+          </span>
+          <span className="text-xs text-muted-foreground sm:text-sm">
+            {t("seasonToolFounderPackBody")}
+          </span>
+        </Link>
+      ) : null}
+
       <MatchdayTicker />
 
       {hub.today.fpl.gw != null ? (
