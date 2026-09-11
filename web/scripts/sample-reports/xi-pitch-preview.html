@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Preview · 建议首发 XI 阵型图 · 916934 样张</title>
+  <style>
+    :root {
+      --ink: #111;
+      --muted: #555;
+      --line: #ddd;
+      --bg-soft: #f4f7f5;
+      --pitch: #1a7a3a;
+      --pitch-alt: #176f35;
+      --ok: #0a6b3c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 36px 48px;
+      font: 11.5px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: #e8ebe9;
+    }
+    .sheet {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 32px 36px;
+      background: #fff;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    }
+    .preview-banner {
+      margin: -8px 0 16px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #fff8e6;
+      border: 1px solid #e6d9a8;
+      color: #6a5500;
+      font-size: 11px;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h3 { font-size: 12px; margin: 14px 0 6px; }
+    p { margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 10px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #111;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .pill.on { background: #111; color: #fff; }
+
+    /* —— Pitch —— */
+    .pitch {
+      position: relative;
+      margin: 10px 0 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #0f4d26;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.14)),
+        repeating-linear-gradient(
+          90deg,
+          var(--pitch) 0 28px,
+          var(--pitch-alt) 28px 56px
+        );
+      padding: 14px 8px 12px;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .pitch::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1.5px solid rgba(255,255,255,0.28);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .pitch::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 72px;
+      height: 72px;
+      margin: -36px 0 0 -36px;
+      border: 1.5px solid rgba(255,255,255,0.22);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .xi-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: flex-start;
+      width: 100%;
+    }
+    .player {
+      width: 92px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      color: #fff;
+    }
+    .shirt-wrap {
+      position: relative;
+      width: 56px;
+      height: 72px;
+      margin-bottom: 2px;
+    }
+    .shirt {
+      width: 56px;
+      height: 72px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
+    .cap {
+      position: absolute;
+      top: -2px;
+      right: -8px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #111;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 18px;
+      border: 1.5px solid #fff;
+    }
+    .cap.vc { background: #333; }
+    .name {
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.15;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      max-width: 88px;
+    }
+    .meta {
+      font-size: 8.5px;
+      color: rgba(255,255,255,0.82);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      margin-top: 1px;
+    }
+    .xp {
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #b8ffd4;
+      margin-top: 1px;
+    }
+
+    .bench {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 0 0 10px;
+    }
+    .bench .slot {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg-soft);
+      padding: 6px 6px 7px;
+      text-align: center;
+    }
+    .bench .n {
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .bench .nm { font-size: 10.5px; font-weight: 700; margin-top: 2px; }
+    .bench .fx { font-size: 9px; color: var(--muted); margin-top: 1px; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .card .k { font-size: 10px; font-weight: 700; margin-bottom: 4px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 12px;
+      font-size: 10.5px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 5px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #111; color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <p class="preview-banner">
+      <strong>预览稿（未写入正式 PDF）</strong> —
+      样张 Entry 916934 · 建议首发 XI 阵型图。确认样式后再嵌进 template.html。
+    </p>
+
+    <div class="row">
+      <h1>GW4 诊断 · FALEAGUE-AI FC</h1>
+      <span class="pill on">样张 · B ¥49</span>
+      <span class="pill">3 FT · 芯片全在</span>
+    </div>
+    <p class="muted small">下面只预览「建议首发 XI」区块：阵型图 + 板凳 + C/VC（表格可保留作附录对照）。</p>
+
+    <h3>建议首发 XI · 3 FT 之后（4-3-3）</h3>
+    <p class="muted">
+      按本轮赛程排阵：后防 De Cuyper / Mitchell / Thomas / Richards（CRY 双后卫打 IPS），Virgil 坐；
+      Petrović 顶 Roefs；E.Le Fée（vs ARS）坐。
+    </p>
+
+    <div class="pitch" aria-label="Suggested starting XI pitch">
+      <!-- GKP -->
+      <div class="xi-row">
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91_1-220.webp" />
+          </div>
+          <div class="name">Petrović</div>
+          <div class="meta">vs BRE · FDR 2</div>
+          <div class="xp">xP 7.8</div>
+        </div>
+      </div>
+      <!-- DEF -->
+      <div class="xi-row">
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-220.webp" />
+          </div>
+          <div class="name">Mitchell</div>
+          <div class="meta">vs IPS · FDR 2</div>
+          <div class="xp">xP ~11.5</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36-220.webp" />
+          </div>
+          <div class="name">De Cuyper</div>
+          <div class="meta">@ COV · FDR 2</div>
+          <div class="xp">xP 13.4</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_9-220.webp" />
+          </div>
+          <div class="name">Thomas</div>
+          <div class="meta">vs BHA · FDR 2</div>
+          <div class="xp">xP ~11</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-220.webp" />
+          </div>
+          <div class="name">Richards</div>
+          <div class="meta">vs IPS · FDR 2</div>
+          <div class="xp">xP 8.5</div>
+        </div>
+      </div>
+      <!-- MID -->
+      <div class="xi-row">
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-220.webp" />
+            <span class="cap vc">VC</span>
+          </div>
+          <div class="name">Saka</div>
+          <div class="meta">@ SUN · FDR 3</div>
+          <div class="xp">xP 16.6</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp" />
+          </div>
+          <div class="name">Tavernier</div>
+          <div class="meta">vs BRE · FDR 3</div>
+          <div class="xp">xP 18.5</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp" />
+          </div>
+          <div class="name">Mbeumo</div>
+          <div class="meta">vs MCI · FDR 4</div>
+          <div class="xp">xP 17.2</div>
+        </div>
+      </div>
+      <!-- FWD -->
+      <div class="xi-row">
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp" />
+          </div>
+          <div class="name">Haaland</div>
+          <div class="meta">@ MUN · FDR 4</div>
+          <div class="xp">xP 21.2</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp" />
+            <span class="cap">C</span>
+          </div>
+          <div class="name">João Pedro</div>
+          <div class="meta">vs HUL · FDR 2</div>
+          <div class="xp">xP 15.2 ×2</div>
+        </div>
+        <div class="player">
+          <div class="shirt-wrap">
+            <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp" />
+          </div>
+          <div class="name">Calvert-Lewin</div>
+          <div class="meta">vs NEW · FDR 2</div>
+          <div class="xp">xP 12.7</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="muted small" style="margin-top:-4px">板凳顺序</p>
+    <div class="bench">
+      <div class="slot">
+        <div class="n">12</div>
+        <div class="nm">Roefs</div>
+        <div class="fx">vs ARS · FDR 4</div>
+      </div>
+      <div class="slot">
+        <div class="n">13</div>
+        <div class="nm">E.Le Fée</div>
+        <div class="fx">vs ARS · FDR 4</div>
+      </div>
+      <div class="slot">
+        <div class="n">14</div>
+        <div class="nm">Virgil</div>
+        <div class="fx">vs FUL · FDR 2</div>
+      </div>
+      <div class="slot">
+        <div class="n">15</div>
+        <div class="nm">Buendía</div>
+        <div class="fx">vs NFO</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="k">C · João Pedro</div>
+        CHE vs HUL · FDR 2。联赛队长模板是 Haaland（约 80%）——改 João Pedro 是故意偏离，用来追 57 分差距。
+      </div>
+      <div class="card">
+        <div class="k">VC · Saka</div>
+        @ SUN · FDR 3。你独有、榜首没有。João Pedro 若轮换由他接管。
+      </div>
+    </div>
+
+    <details style="margin-top:12px">
+      <summary class="muted small" style="cursor:pointer">对照：原表格版（可保留作证据附录）</summary>
+      <table>
+        <thead>
+          <tr><th>位置</th><th>球员</th><th>本轮</th><th>FDR</th><th>本轮 xP</th><th>角色</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GKP</td><td>Petrović</td><td>vs BRE (H)</td><td>2</td><td>7.8</td><td>首发</td></tr>
+          <tr><td>DEF</td><td>Mitchell</td><td>vs IPS (H)</td><td>2</td><td>~11.5</td><td>首发 · 新援</td></tr>
+          <tr><td>DEF</td><td>De Cuyper</td><td>@ COV</td><td>2</td><td>13.4</td><td>首发 · 新援</td></tr>
+          <tr><td>DEF</td><td>Thomas</td><td>vs BHA (H)</td><td>2</td><td>~11</td><td>首发 · 新援</td></tr>
+          <tr><td>DEF</td><td>Richards</td><td>vs IPS (H)</td><td>2</td><td>8.5</td><td>首发</td></tr>
+          <tr><td>MID</td><td>Saka</td><td>@ SUN</td><td>3</td><td>16.6</td><td>首发 · VC</td></tr>
+          <tr><td>MID</td><td>Tavernier</td><td>vs BRE (H)</td><td>3</td><td>18.5</td><td>首发</td></tr>
+          <tr><td>MID</td><td>Mbeumo</td><td>vs MCI (H)</td><td>4</td><td>17.2</td><td>首发</td></tr>
+          <tr><td>FWD</td><td>Haaland</td><td>@ MUN</td><td>4</td><td>21.2</td><td>首发（不队长）</td></tr>
+          <tr><td>FWD</td><td>João Pedro</td><td>vs HUL (H)</td><td>2</td><td>15.2</td><td>首发 · C</td></tr>
+          <tr><td>FWD</td><td>Calvert-Lewin</td><td>vs NEW (H)</td><td>2</td><td>12.7</td><td>首发</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+</body>
+</html>

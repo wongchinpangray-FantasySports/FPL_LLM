@@ -3,7 +3,9 @@
 import { useState } from "react";
 import {
   LAUNCH_DISCOUNT_ACTIVE,
+  SAMPLE_REPORT_A_HTML,
   SAMPLE_REPORT_A_PDF,
+  SAMPLE_REPORT_B_HTML,
   SAMPLE_REPORT_B_PDF,
   type FounderSkuId,
   getFounderWechatHandle,
@@ -55,6 +57,7 @@ export function FounderPackOffer({
     skuBListPrice: string;
     skuBBody: string;
     limitedOffer: string;
+    sampleView: string;
     sampleDownload: string;
     includesTitle: string;
     includesA: string[];
@@ -98,7 +101,8 @@ export function FounderPackOffer({
       price: labels.skuAPrice,
       listPrice: labels.skuAListPrice,
       body: labels.skuABody,
-      sampleHref: SAMPLE_REPORT_A_PDF,
+      sampleHtml: SAMPLE_REPORT_A_HTML,
+      samplePdf: SAMPLE_REPORT_A_PDF,
       sampleName: "faleague-sample-a-19.pdf",
     },
     {
@@ -107,7 +111,8 @@ export function FounderPackOffer({
       price: labels.skuBPrice,
       listPrice: labels.skuBListPrice,
       body: labels.skuBBody,
-      sampleHref: SAMPLE_REPORT_B_PDF,
+      sampleHtml: SAMPLE_REPORT_B_HTML,
+      samplePdf: SAMPLE_REPORT_B_PDF,
       sampleName: "faleague-sample-b-49.pdf",
     },
   ];
@@ -143,17 +148,27 @@ export function FounderPackOffer({
                     list={card.listPrice}
                     limitedLabel={labels.limitedOffer}
                   />
-                  <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                  <p className="mt-2 whitespace-nowrap text-[13px] leading-snug text-muted-foreground sm:text-sm">
                     {card.body}
                   </p>
                 </button>
-                <a
-                  href={card.sampleHref}
-                  download={card.sampleName}
-                  className="inline-flex items-center justify-center rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground no-underline hover:border-brand-accent/40 hover:bg-muted hover:text-brand-accent"
-                >
-                  {labels.sampleDownload}
-                </a>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={card.sampleHtml}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg border border-brand-accent/50 bg-brand-accent/15 px-3 py-2 text-sm font-medium text-brand-accent no-underline hover:bg-brand-accent/25"
+                  >
+                    {labels.sampleView}
+                  </a>
+                  <a
+                    href={card.samplePdf}
+                    download={card.sampleName}
+                    className="inline-flex items-center justify-center rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground no-underline hover:border-brand-accent/40 hover:bg-muted hover:text-brand-accent"
+                  >
+                    {labels.sampleDownload}
+                  </a>
+                </div>
               </div>
             );
           })}

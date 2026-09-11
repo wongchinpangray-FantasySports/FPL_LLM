@@ -1139,7 +1139,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
           <span className="text-sm font-semibold text-foreground">
             {t("seasonToolFounderPack")}
           </span>
-          <span className="text-xs text-muted-foreground sm:text-sm">
+          <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
             {t("seasonToolFounderPackBody")}
           </span>
         </Link>

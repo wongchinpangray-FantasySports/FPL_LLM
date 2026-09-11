@@ -31,6 +31,15 @@ Fill in their Entry / league / transfers — do **not** invent a new section ord
 Reuse CSS from `template.html` (same fonts, stats, callouts, black table headers, bars).  
 Tone: Chinese, direct, one primary plan — model traps go in appendix “否决”, not in §1.
 
+## Visual blocks (required in sample + delivery)
+
+| Block | Where |
+|-------|--------|
+| Pitch XI + bench chips + C/VC cards | after §1 FT table（取代纯 XI 表作主视图；数字细节仍在证据附录） |
+| 联赛阶梯 spark | §2（积分榜表保留） |
+| 可行性仪表（红→橙→黄→浅绿→绿） | §3 |
+| 4 轮 climb cards | §4（B only） |
+
 ## Files
 
 | Role | Path |

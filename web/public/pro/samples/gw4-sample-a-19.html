@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>FALEAGUE 参考报告 · A</title>
   <style>
     :root {
@@ -12,6 +13,11 @@
       --bg-soft: #f4f7f5;
       --warn: #8a5a00;
       --ok: #0a6b3c;
+      --pitch: #1a7a3a;
+      --pitch-alt: #176f35;
+      --you: #0d6b3c;
+      --rival: #5a6570;
+      --leader: #1a1a1a;
     }
     * { box-sizing: border-box; }
     body {
@@ -48,6 +54,12 @@
       gap: 8px;
       margin: 12px 0 14px;
     }
+    .stats3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 8px 0 10px;
+    }
     .stat {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -80,6 +92,7 @@
     }
     th { background: #111; color: #fff; font-weight: 600; }
     tr:nth-child(even) td { background: #fafafa; }
+    tr.you td { background: #e8f6ee !important; font-weight: 600; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
     .card {
       border: 1px solid var(--line);
@@ -105,7 +118,471 @@
       font-size: 10px;
       margin-bottom: 10px;
     }
-    @page { size: A4; margin: 12mm; }
+
+    /* —— Pitch —— */
+    .pitch {
+      position: relative;
+      margin: 10px 0 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #0f4d26;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.14)),
+        repeating-linear-gradient(
+          90deg,
+          var(--pitch) 0 28px,
+          var(--pitch-alt) 28px 56px
+        );
+      padding: 14px 8px 12px;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .pitch::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1.5px solid rgba(255,255,255,0.28);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .pitch::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 72px;
+      height: 72px;
+      margin: -36px 0 0 -36px;
+      border: 1.5px solid rgba(255,255,255,0.22);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .xi-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: flex-start;
+      width: 100%;
+    }
+    .player {
+      width: 92px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      color: #fff;
+    }
+    .shirt-wrap {
+      position: relative;
+      width: 56px;
+      height: 72px;
+      margin-bottom: 2px;
+    }
+    .shirt {
+      width: 56px;
+      height: 72px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
+    .cap {
+      position: absolute;
+      top: -2px;
+      right: -8px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #111;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 18px;
+      border: 1.5px solid #fff;
+    }
+    .cap.vc { background: #333; }
+    .name {
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.15;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      max-width: 88px;
+    }
+    .meta {
+      font-size: 8.5px;
+      color: rgba(255,255,255,0.82);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      margin-top: 1px;
+    }
+    .xp {
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #b8ffd4;
+      margin-top: 1px;
+    }
+    .bench {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 0 0 10px;
+    }
+    .bench .slot {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg-soft);
+      padding: 6px 6px 7px;
+      text-align: center;
+    }
+    .bench .n { font-size: 9px; color: var(--muted); font-weight: 600; }
+    .bench .nm { font-size: 10.5px; font-weight: 700; margin-top: 2px; }
+    .bench .fx { font-size: 9px; color: var(--muted); margin-top: 1px; }
+
+    /* —— Ladder —— */
+    .ladder {
+      margin: 10px 0 12px;
+      padding: 12px 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fbfcfb, var(--bg-soft));
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .ladder-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .ladder-head .title { font-size: 11px; font-weight: 700; }
+    .ladder-kpis {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .ladder-kpis b {
+      display: block;
+      font-size: 16px;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .ladder-track {
+      position: relative;
+      height: 56px;
+      margin: 4px 4px 18px;
+    }
+    .ladder-rail {
+      position: absolute;
+      left: 0; right: 0; top: 26px;
+      height: 4px;
+      border-radius: 999px;
+      background: #d5ddd8;
+    }
+    .ladder-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #9fd4b5, #1a7a4c);
+      width: 23.5%;
+    }
+    .node {
+      position: absolute;
+      top: 8px;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 72px;
+    }
+    .node .dot {
+      width: 14px;
+      height: 14px;
+      margin: 0 auto 4px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1.5px #111;
+      background: var(--rival);
+    }
+    .node.leader .dot { background: var(--leader); }
+    .node.you .dot {
+      background: var(--you);
+      width: 16px;
+      height: 16px;
+      box-shadow: 0 0 0 2px #00ff85, 0 0 0 3.5px #111;
+    }
+    .node .lab {
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 72px;
+      margin: 0 auto;
+    }
+    .node .sub {
+      font-size: 8.5px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .node.you .lab { color: var(--you); }
+    .gap-tag {
+      position: absolute;
+      top: -2px;
+      transform: translateX(-50%);
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #8a5a00;
+      background: #fff8e6;
+      border: 1px solid #e6d9a8;
+      border-radius: 999px;
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+    .ladder-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .ladder-legend i {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* —— Feasibility —— */
+    .feas {
+      margin: 10px 0 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .feas-top {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .gauge {
+      position: relative;
+      width: 112px;
+      height: 64px;
+      margin: 0 auto;
+    }
+    .gauge-svg {
+      display: block;
+      width: 112px;
+      height: 56px;
+    }
+    .gauge-needle {
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      width: 2px;
+      height: 42px;
+      margin-left: -1px;
+      background: #111;
+      transform-origin: bottom center;
+      transform: rotate(8deg);
+      border-radius: 2px;
+      z-index: 1;
+    }
+    .gauge-needle::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -4px;
+      width: 10px;
+      height: 10px;
+      margin-left: -5px;
+      border-radius: 50%;
+      background: #111;
+    }
+    .gauge-label {
+      text-align: center;
+      margin-top: -2px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #8a5a00;
+    }
+    .gauge-scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      padding: 0 2px;
+    }
+    .feas-copy .k {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .feas-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .feas-pills span {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+    }
+    .feas-pills .hi {
+      border-color: #1a7a4c55;
+      background: #e8f6ee;
+      color: var(--ok);
+    }
+    .feas-pills .lo {
+      border-color: #c9890055;
+      background: #fff8e6;
+      color: var(--warn);
+    }
+
+    /* —— Climb timeline —— */
+    .climb-rail {
+      margin: 10px 0 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--bg-soft);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .climb-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .climb-step {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .climb-step.now {
+      border-color: #111;
+      box-shadow: 0 0 0 1px #111;
+    }
+    .climb-step .gw {
+      font-size: 10px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+    .climb-step .tgt {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .climb-step .task {
+      font-size: 9.5px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* —— PDF pagination: never split graphs / tables / section chunks ——
+       Chromium often ignores break-inside on flex/grid; inline-block + width 100% works. */
+    .keep {
+      display: inline-block;
+      width: 100%;
+      vertical-align: top;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+    }
+    h2, h3 {
+      break-after: avoid;
+      page-break-after: avoid;
+    }
+    .pitch,
+    .ladder,
+    .feas,
+    .climb-rail,
+    .bench,
+    .grid2,
+    .stats,
+    .stats3,
+    .callout,
+    .bars,
+    table {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+    }
+    thead { display: table-header-group; }
+    tbody { display: table-row-group; }
+    tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .foot {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    @page { size: A4; margin: 11mm 10mm 14mm 10mm; }
+    @media print {
+      body { padding: 0; }
+      .pitch {
+        min-height: 300px;
+        padding: 10px 6px 8px;
+      }
+      .shirt-wrap, .shirt { width: 50px; height: 64px; }
+      .player { width: 84px; }
+      h2 { margin-top: 18px; }
+    }
+    /* H5 / phone reading (screen only — does not affect PDF print) */
+    @media screen and (max-width: 640px) {
+      body {
+        padding: 16px 14px 40px;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      h1 { font-size: 18px; }
+      h2 { font-size: 14px; margin-top: 20px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stats3 { grid-template-columns: 1fr; }
+      .pitch {
+        min-height: 300px;
+        padding: 10px 4px 8px;
+      }
+      .player { width: 72px; }
+      .shirt-wrap, .shirt { width: 44px; height: 56px; }
+      .name { font-size: 9px; }
+      .meta, .xp { font-size: 8px; }
+      .bench { grid-template-columns: repeat(2, 1fr); }
+      .grid2 { grid-template-columns: 1fr; }
+      .feas-top { grid-template-columns: 1fr; }
+      .climb-steps { grid-template-columns: 1fr 1fr; }
+      .ladder-kpis { gap: 10px; }
+      .ladder-track { height: 64px; margin-bottom: 22px; }
+      table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -120,6 +597,7 @@
     小联赛主看 AI League（22 人，你第 18）。
   </p>
 
+  <div class="keep">
   <div class="stats">
     <div class="stat"><b>186</b><span>总分 · 总榜约 404 万</span></div>
     <div class="stat"><b>#18 / 22</b><span>AI League · 落后榜首 57</span></div>
@@ -133,8 +611,10 @@
     不开任何芯片。队长 João Pedro（CHE vs HUL，FDR 2）——AI League 里约 80% 人仍队长 Haaland，
     这是你追分的一周，不是跟模板。
   </div>
+  </div>
 
   <h2>1. 本周动作（先看完再翻证据）</h2>
+  <div class="keep">
   <table>
     <thead>
       <tr><th>FT</th><th>出</th><th>入</th><th>净花费</th><th>一句话</th></tr>
@@ -167,38 +647,140 @@
     若 App 显示 4 次 FT：第 4 刀再看 E.Le Fée（主场对阿森纳 FDR 4）。只有 3 次就停，不要 -4。
     不要为了追联赛模板去买 B.Fernandes（£12，银行不够）。
   </p>
+  </div>
 
   <h3>建议首发 XI · 3 FT 之后（4-3-3）</h3>
+  <div class="keep">
   <p class="muted">
     按本轮赛程排阵：后防按 3 轮 xP 排——De Cuyper / Mitchell / Thomas / Richards（CRY 双后卫打 IPS），Virgil 坐；中场砍掉对阿森纳的 E.Le Fée；门将 Petrović 顶 Roefs。
   </p>
-  <table>
-    <thead>
-      <tr><th>位置</th><th>球员</th><th>本轮</th><th>FDR</th><th>本轮 xP</th><th>角色</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>GKP</td><td>Petrović</td><td>vs BRE (H)</td><td>2</td><td>7.8</td><td>首发</td></tr>
-      <tr><td>DEF</td><td>Mitchell</td><td>vs IPS (H)</td><td>2</td><td>~11.5</td><td>首发 · 新援 · CRY 双后卫</td></tr>
-      <tr><td>DEF</td><td>De Cuyper</td><td>@ COV</td><td>2</td><td>13.4</td><td>首发 · 新援</td></tr>
-      <tr><td>DEF</td><td>Thomas</td><td>vs BHA (H)</td><td>2</td><td>~11</td><td>首发 · 新援</td></tr>
-      <tr><td>DEF</td><td>Richards</td><td>vs IPS (H)</td><td>2</td><td>8.5</td><td>首发 · CRY 双后卫</td></tr>
-      <tr><td>MID</td><td>Saka</td><td>@ SUN</td><td>3</td><td>16.6</td><td>首发 · <strong>VC</strong></td></tr>
-      <tr><td>MID</td><td>Tavernier</td><td>vs BRE (H)</td><td>3</td><td>18.5</td><td>首发</td></tr>
-      <tr><td>MID</td><td>Mbeumo</td><td>vs MCI (H)</td><td>4</td><td>17.2</td><td>首发（德比难踢仍留）</td></tr>
-      <tr><td>FWD</td><td>Haaland</td><td>@ MUN</td><td>4</td><td>21.2</td><td>首发（不队长）</td></tr>
-      <tr><td>FWD</td><td>João Pedro</td><td>vs HUL (H)</td><td>2</td><td>15.2</td><td>首发 · <strong>C</strong></td></tr>
-      <tr><td>FWD</td><td>Calvert-Lewin</td><td>vs NEW (H)</td><td>2</td><td>12.7</td><td>首发</td></tr>
-    </tbody>
-  </table>
-  <table>
-    <thead><tr><th>板凳顺序</th><th>球员</th><th>本轮</th><th>为什么坐</th></tr></thead>
-    <tbody>
-      <tr><td>12</td><td>Roefs</td><td>vs ARS (H) FDR 4</td><td>赛程差；Petrović 上位</td></tr>
-      <tr><td>13</td><td>E.Le Fée</td><td>vs ARS (H) FDR 4</td><td>同场难赛程，让给四后卫</td></tr>
-      <tr><td>14</td><td>Virgil</td><td>vs FUL (H) FDR 2</td><td>3 轮 xP 11.3，低于 Mitchell / Richards；本轮让位</td></tr>
-      <tr><td>15</td><td>Buendía</td><td>vs NFO (H)</td><td>中场第三替补</td></tr>
-    </tbody>
-  </table>
+
+  <div class="pitch" aria-label="Suggested starting XI pitch">
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91_1-220.webp" />
+        </div>
+        <div class="name">Petrović</div>
+        <div class="meta">vs BRE · FDR 2</div>
+        <div class="xp">xP 7.8</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-220.webp" />
+        </div>
+        <div class="name">Mitchell</div>
+        <div class="meta">vs IPS · FDR 2</div>
+        <div class="xp">xP ~11.5</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_36-220.webp" />
+        </div>
+        <div class="name">De Cuyper</div>
+        <div class="meta">@ COV · FDR 2</div>
+        <div class="xp">xP 13.4</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_9-220.webp" />
+        </div>
+        <div class="name">Thomas</div>
+        <div class="meta">vs BHA · FDR 2</div>
+        <div class="xp">xP ~11</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_31-220.webp" />
+        </div>
+        <div class="name">Richards</div>
+        <div class="meta">vs IPS · FDR 2</div>
+        <div class="xp">xP 8.5</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_3-220.webp" />
+          <span class="cap vc">VC</span>
+        </div>
+        <div class="name">Saka</div>
+        <div class="meta">@ SUN · FDR 3</div>
+        <div class="xp">xP 16.6</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_91-220.webp" />
+        </div>
+        <div class="name">Tavernier</div>
+        <div class="meta">vs BRE · FDR 3</div>
+        <div class="xp">xP 18.5</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_1-220.webp" />
+        </div>
+        <div class="name">Mbeumo</div>
+        <div class="meta">vs MCI · FDR 4</div>
+        <div class="xp">xP 17.2</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_43-220.webp" />
+        </div>
+        <div class="name">Haaland</div>
+        <div class="meta">@ MUN · FDR 4</div>
+        <div class="xp">xP 21.2</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_8-220.webp" />
+          <span class="cap">C</span>
+        </div>
+        <div class="name">João Pedro</div>
+        <div class="meta">vs HUL · FDR 2</div>
+        <div class="xp">xP 15.2 ×2</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_2-220.webp" />
+        </div>
+        <div class="name">Calvert-Lewin</div>
+        <div class="meta">vs NEW · FDR 2</div>
+        <div class="xp">xP 12.7</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="keep">
+  <p class="muted small" style="margin-top:-4px">板凳顺序</p>
+  <div class="bench">
+    <div class="slot">
+      <div class="n">12</div>
+      <div class="nm">Roefs</div>
+      <div class="fx">vs ARS · FDR 4</div>
+    </div>
+    <div class="slot">
+      <div class="n">13</div>
+      <div class="nm">E.Le Fée</div>
+      <div class="fx">vs ARS · FDR 4</div>
+    </div>
+    <div class="slot">
+      <div class="n">14</div>
+      <div class="nm">Virgil</div>
+      <div class="fx">vs FUL · FDR 2</div>
+    </div>
+    <div class="slot">
+      <div class="n">15</div>
+      <div class="nm">Buendía</div>
+      <div class="fx">vs NFO</div>
+    </div>
+  </div>
 
   <div class="grid2">
     <div class="card">
@@ -211,8 +793,10 @@
     </div>
   </div>
   <p class="muted small">备选 VC：Tavernier（主场布伦特福德）。若 App 自动把 VC 指到 Haaland，开赛前改回 Saka。</p>
+  </div>
 
   <h3>芯片：四张都留</h3>
+  <div class="keep">
   <table>
     <thead><tr><th>芯片</th><th>本周</th><th>原因</th></tr></thead>
     <tbody>
@@ -222,12 +806,65 @@
       <tr><td>Triple Captain</td><td>不开</td><td>Haaland @ MUN FDR 4；João Pedro 只做普通队长。</td></tr>
     </tbody>
   </table>
+  </div>
 
   <h2>2. 小联赛 · AI League（主战场）</h2>
+  <div class="keep">
   <p>
     22 人。你 186 分排第 18，榜首 243，差 57。紧挨着你的人挤在 185–188。
     本周目标是<strong>先把阵容修成能每周得分，再用队长差异追分</strong>——不是开 WC 赌一轮。
   </p>
+
+  <div class="ladder" aria-label="Mini-league ladder">
+    <div class="ladder-head">
+      <div class="title">联赛阶梯 · 相对榜首</div>
+      <div class="ladder-kpis">
+        <div><b>#18</b>你的排名</div>
+        <div><b>−57</b>落后榜首</div>
+        <div><b>186</b>总分</div>
+      </div>
+    </div>
+    <div class="ladder-track">
+      <div class="ladder-rail">
+        <div class="ladder-fill"></div>
+      </div>
+      <div class="node" style="left: 8%">
+        <div class="dot" style="background:#9aa3ab"></div>
+        <div class="lab">MayWon</div>
+        <div class="sub">#19 · 185</div>
+      </div>
+      <div class="node you" style="left: 18%">
+        <div class="dot"></div>
+        <div class="lab">你</div>
+        <div class="sub">#18 · 186</div>
+      </div>
+      <div class="node" style="left: 28%">
+        <div class="dot"></div>
+        <div class="lab">GPT's 11</div>
+        <div class="sub">#17 · 187</div>
+      </div>
+      <div class="node" style="left: 40%">
+        <div class="dot"></div>
+        <div class="lab">AI Trafford</div>
+        <div class="sub">#15 · 188</div>
+      </div>
+      <span class="gap-tag" style="left: 68%">差 57 分</span>
+      <div class="node leader" style="left: 92%">
+        <div class="dot"></div>
+        <div class="lab">榜首</div>
+        <div class="sub">#1 · 243</div>
+      </div>
+    </div>
+    <div class="ladder-legend">
+      <span><i style="background:#0d6b3c"></i>你</span>
+      <span><i style="background:#5a6570"></i>邻近对手</span>
+      <span><i style="background:#1a1a1a"></i>榜首</span>
+      <span>挤在 185–188 的包里 · 真正要追的是右侧</span>
+    </div>
+  </div>
+  </div>
+
+  <div class="keep">
   <table>
     <thead><tr><th>排名</th><th>球队</th><th>总分</th><th>GW3</th><th>相对你</th></tr></thead>
     <tbody>
@@ -235,11 +872,13 @@
       <tr><td>15</td><td>AI Trafford</td><td>188</td><td>42</td><td>上面 2 分</td></tr>
       <tr><td>15</td><td>老虎桥.ai</td><td>188</td><td>38</td><td>上面 2 分</td></tr>
       <tr><td>17</td><td>GPT's 11</td><td>187</td><td>47</td><td>上面 1 分</td></tr>
-      <tr><td>18</td><td>FALEAGUE-AI FC（你）</td><td>186</td><td>56</td><td>—</td></tr>
+      <tr class="you"><td>18</td><td>FALEAGUE-AI FC（你）</td><td>186</td><td>56</td><td>—</td></tr>
       <tr><td>19</td><td>MayWon Fantasy AI</td><td>185</td><td>54</td><td>下面 1 分</td></tr>
     </tbody>
   </table>
+  </div>
 
+  <div class="keep">
   <h3>对榜首：他们有、你没有（先别追贵的）</h3>
   <table>
     <thead><tr><th>球员</th><th>位置</th><th>身价</th><th>本轮</th><th>本周建议</th></tr></thead>
@@ -249,7 +888,9 @@
       <tr><td>Calafiori</td><td>DEF</td><td>£5.7</td><td>@ SUN</td><td>可后期用银行补，不如先上 De Cuyper/Thomas。</td></tr>
     </tbody>
   </table>
+  </div>
 
+  <div class="keep">
   <h3>你有、榜首没有（护住）</h3>
   <table>
     <thead><tr><th>球员</th><th>为什么重要</th></tr></thead>
@@ -265,20 +906,60 @@
     本周 3 FT：清掉死人（Rodon、Keane）和低 xP 后卫（Thiaw），并带上 Thomas（上位约 50% 已有）。
     Szoboszlai 等银行到了再追；本周靠 João Pedro 队长追分。
   </div>
+  </div>
 
   <h2>3. 冲击当轮小联赛冠军 · 可行性</h2>
+  <div class="keep">
   <p class="muted">先判断「这周有没有资格冲」，再给可选加码。主方案仍以修阵容 + 追分为准。</p>
-  <div class="stats" style="grid-template-columns: repeat(3, 1fr);">
+
+  <div class="feas">
+    <div class="feas-top">
+      <div>
+        <div class="gauge" aria-hidden="true">
+          <svg class="gauge-svg" viewBox="0 0 112 56" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 10 52 A 46 46 0 0 1 18.8 25" fill="none" stroke="#e53935" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 18.8 25 A 46 46 0 0 1 41.8 8.3" fill="none" stroke="#ef6c00" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 41.8 8.3 A 46 46 0 0 1 70.2 8.3" fill="none" stroke="#fbc02d" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 70.2 8.3 A 46 46 0 0 1 93.2 25" fill="none" stroke="#8bc34a" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 93.2 25 A 46 46 0 0 1 102 52" fill="none" stroke="#2e7d32" stroke-width="12" stroke-linecap="butt"/>
+            <circle cx="10" cy="52" r="6" fill="#e53935"/>
+            <circle cx="102" cy="52" r="6" fill="#2e7d32"/>
+          </svg>
+          <div class="gauge-needle"></div>
+        </div>
+        <div class="gauge-scale"><span>低</span><span>中</span><span>高</span></div>
+        <div class="gauge-label">中</div>
+      </div>
+      <div class="feas-copy">
+        <div class="k">可行性：中 —— 可以冲分差，不适合烧芯片</div>
+        <p class="small muted" style="margin:0">
+          仪表只传达「判断」；下面三条仍是完整理由，信息不丢。
+        </p>
+        <div class="feas-pills">
+          <span class="hi">有利 · 队长差异</span>
+          <span class="hi">有利 · 进攻轴还在</span>
+          <span class="lo">不利 · FDR 4 德比</span>
+          <span class="lo">不利 · 银行 £0</span>
+          <span>杠杆 · 队长</span>
+          <span>芯片 · 不开</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats3">
     <div class="stat"><b>中</b><span>可行性</span></div>
     <div class="stat"><b>队长</b><span>最大杠杆</span></div>
     <div class="stat"><b>不开芯片</b><span>冲奖也不动 TC/BB</span></div>
   </div>
   <div class="callout warn">
-    <div class="t">可行性：中 —— 可以冲分差，不适合烧芯片赌一轮</div>
+    <div class="t">有利 / 不利 / 结论</div>
     <strong>有利：</strong>进攻轴还在；上轮 56 分；约 80% 人队长 Haaland（德比 FDR 4），你改 João Pedro（FDR 2）是差异。<br/>
     <strong>不利：</strong>Haaland/Mbeumo FDR 4；银行 £0；板凳撑不起 BB。<br/>
     <strong>结论：</strong>本周 = 主方案上把队长差异打满，不开 TC。
   </div>
+  </div>
+  <div class="keep">
   <table>
     <thead><tr><th>优先级</th><th>动作</th><th>相对主方案</th><th>为什么</th></tr></thead>
     <tbody>
@@ -287,11 +968,13 @@
       <tr><td>不做</td><td>TC / BB / -4</td><td>否决</td><td>可行性只有「中」；BB 板凳不够。</td></tr>
     </tbody>
   </table>
+  </div>
 
   
 
   <h2>4. 证据附录</h2>
   <p class="muted">下面数字支撑前半结论，不是第二套建议。</p>
+  <div class="keep">
   <h3>4.1 转会：出 vs 入 · 未来 3 轮 xP</h3>
   <div class="bars">
     <div class="bar-row"><span class="lab">Rodon (出)</span><div class="bar-track"><div class="bar-fill" style="width:19%"></div></div><span class="bar-val">3.8</span></div>
@@ -314,7 +997,9 @@
       <tr><td>De Cuyper</td><td>入</td><td>@ COV</td><td>2</td><td>19.4</td><td>form 7.0</td></tr>
     </tbody>
   </table>
+  </div>
 
+  <div class="keep">
   <h3>4.2 建议 XI · 本轮 xP / FDR（支撑首发）</h3>
   <p class="muted small">xP 为单轮预期（诊断抽样 · GW4）。队长分 = 球员 xP ×2。</p>
   <div class="bars">
@@ -343,7 +1028,9 @@
     粗算建议 XI 本轮团队 xP（含 João Pedro 队长加倍、未计 bonus）≈ 150+；
     若锁 Haaland (C) 且仍用 Roefs + 三后卫 + Le Fée，单轮上限更贴模板、追分更慢。
   </p>
+  </div>
 
+  <div class="keep">
   <h3>4.3 队长候选 · FDR vs 3 轮 xP</h3>
   <table>
     <thead><tr><th>球员</th><th>GW4 FDR</th><th>3轮 xP</th></tr></thead>
@@ -356,6 +1043,7 @@
     </tbody>
   </table>
   <p class="muted small">João Pedro 赛季 xP 不是最高，但本轮 FDR 最好，且联赛模板锁 Haaland。</p>
+  </div>
 
   <div class="foot">
     Scout 中文仍免费。这不是 Scout Members。<br/>

@@ -17,13 +17,39 @@ const template = readFileSync(join(__dirname, "sample-reports", "template.html")
 
 const climbBlock = `
   <h2>4. 规划 4 轮内冲击小联赛冠军（AI League）</h2>
+  <div class="keep">
   <p class="muted">Package B 专属块：每轮报告会按最新排名改写剩余窗口。样张窗口 = GW4–7。</p>
-  <div class="stats" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="stats3">
     <div class="stat"><b>低→中</b><span>4 轮冲榜首可行性</span></div>
     <div class="stat"><b>−57</b><span>落后榜首（243）</span></div>
     <div class="stat"><b>~+14 / 轮</b><span>追平所需平均净优势*</span></div>
   </div>
   <p class="muted small">*粗算：57÷4 ≈ 14 分/轮净胜榜首。现实中更可能先冲进前 10 / 前 5，再伺机抢榜首。</p>
+
+  <div class="climb-rail">
+    <div class="climb-steps">
+      <div class="climb-step now">
+        <div class="gw">GW4 · 本周</div>
+        <div class="tgt">止跌 · 争前 15</div>
+        <div class="task">3 FT 修阵容；João Pedro (C) 制造差异 · 芯片全留</div>
+      </div>
+      <div class="climb-step">
+        <div class="gw">GW5</div>
+        <div class="tgt">前 12</div>
+        <div class="task">观察 Szoboszlai / 银行；覆盖上位高频中场缺口</div>
+      </div>
+      <div class="climb-step">
+        <div class="gw">GW6</div>
+        <div class="tgt">前 8–10</div>
+        <div class="task">若仍落后 &gt;35：评估 FH 或定向 -4；否则稳 FT</div>
+      </div>
+      <div class="climb-step">
+        <div class="gw">GW7</div>
+        <div class="tgt">前 5 或可视榜首</div>
+        <div class="task">芯片窗口（BB/TC/WC）择一对齐强赛程周</div>
+      </div>
+    </div>
+  </div>
 
   <div class="callout warn">
     <div class="t">诚实结论</div>
@@ -31,7 +57,9 @@ const climbBlock = `
     但芯片全在、本周修完死人后，<strong>4 轮内冲进前 8–10 并保持上升趋势为「中」</strong>。
     本块给出「冲冠路径」与「现实阶梯」两套规划，避免只画饼。
   </div>
+  </div>
 
+  <div class="keep">
   <h3>4.1 现实阶梯（建议主线）</h3>
   <table>
     <thead><tr><th>轮次</th><th>目标排名带</th><th>本周任务</th><th>芯片</th></tr></thead>
@@ -62,7 +90,9 @@ const climbBlock = `
       </tr>
     </tbody>
   </table>
+  </div>
 
+  <div class="keep">
   <h3>4.2 冲冠加码路径（高风险）</h3>
   <table>
     <thead><tr><th>条件</th><th>动作</th><th>风险</th></tr></thead>
@@ -84,7 +114,9 @@ const climbBlock = `
       </tr>
     </tbody>
   </table>
+  </div>
 
+  <div class="keep">
   <h3>4.3 每轮复盘清单（交付时会勾）</h3>
   <table>
     <thead><tr><th>#</th><th>检查项</th><th>本周样张</th></tr></thead>
@@ -100,6 +132,7 @@ const climbBlock = `
     <div class="t">写进买家微信的一句话</div>
     4 轮内硬抢榜首偏难；计划先用 GW4 修阵 + 队长差异止跌，GW5–7 按分差决定是否动芯片。
     每轮报告会更新「剩余窗口冲冠可行性」。
+  </div>
   </div>
 `;
 
@@ -148,14 +181,31 @@ async function main() {
       writeFileSync(htmlPath, v.html, "utf8");
       const page = await browser.newPage();
       await page.goto(`file://${htmlPath.replace(/\\/g, "/")}`, {
-        waitUntil: "load",
+        waitUntil: "networkidle",
+        timeout: 60000,
       });
+      // Wait for FPL shirt images so the pitch renders in PDF
+      await page.evaluate(async () => {
+        const imgs = [...document.images];
+        await Promise.all(
+          imgs.map(
+            (img) =>
+              img.complete ||
+              new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve;
+              }),
+          ),
+        );
+      });
+      await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
       const pdfPath = join(outDir, v.file);
       await page.pdf({
         path: pdfPath,
         format: "A4",
         printBackground: true,
-        margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" },
+        preferCSSPageSize: true,
+        margin: { top: "11mm", bottom: "14mm", left: "10mm", right: "10mm" },
       });
       await page.close();
       console.log("wrote", pdfPath);

@@ -24,9 +24,11 @@ export const FOUNDER_PACK_THROUGH_GW = 7;
 export const FOUNDER_PACK_PATH = "/pro";
 export const FOUNDER_PACK_EXPIRES_AT = new Date("2026-10-22T15:59:59.000Z");
 
-/** Public sample PDFs under /pro (reference downloads). */
+/** Public sample reports under /pro (H5 view + PDF download). */
 export const SAMPLE_REPORT_A_PDF = "/pro/samples/gw4-sample-a-19.pdf";
 export const SAMPLE_REPORT_B_PDF = "/pro/samples/gw4-sample-b-49.pdf";
+export const SAMPLE_REPORT_A_HTML = "/pro/samples/gw4-sample-a-19.html";
+export const SAMPLE_REPORT_B_HTML = "/pro/samples/gw4-sample-b-49.html";
 
 export type FounderSkuId = "gw_note" | "founder_pack";
 

@@ -47,6 +47,7 @@ export default async function FounderPackPage({ params }: Props) {
           skuBListPrice: formatPriceCny(FOUNDER_PACK_LIST_PRICE_CNY),
           skuBBody: t("skuBBody"),
           limitedOffer: t("limitedOffer"),
+          sampleView: t("sampleView"),
           sampleDownload: t("sampleDownload"),
           includesTitle: t("includesTitle"),
           includesA: [

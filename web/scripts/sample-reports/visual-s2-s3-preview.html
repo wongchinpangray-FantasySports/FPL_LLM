@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Preview · 小联赛阶梯 + 冲冠可行性 · 916934</title>
+  <style>
+    :root {
+      --ink: #111;
+      --muted: #555;
+      --line: #ddd;
+      --bg-soft: #f4f7f5;
+      --ok: #0a6b3c;
+      --warn: #8a5a00;
+      --you: #0d6b3c;
+      --rival: #5a6570;
+      --leader: #1a1a1a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 36px 48px;
+      font: 11.5px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: #e8ebe9;
+    }
+    .sheet {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 32px 36px;
+      background: #fff;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    }
+    .preview-banner {
+      margin: -8px 0 16px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #fff8e6;
+      border: 1px solid #e6d9a8;
+      color: #6a5500;
+      font-size: 11px;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h2 {
+      font-size: 14px;
+      margin: 22px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #111;
+    }
+    h3 { font-size: 12px; margin: 14px 0 6px; }
+    p { margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 10px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #111;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .pill.on { background: #111; color: #fff; }
+
+    .callout {
+      border-left: 3px solid #111;
+      background: var(--bg-soft);
+      padding: 8px 10px;
+      margin: 10px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout.warn { border-left-color: #c98900; }
+    .callout.ok { border-left-color: var(--ok); }
+    .callout .t { font-weight: 700; margin-bottom: 4px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 12px;
+      font-size: 10.5px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 5px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #111; color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+    tr.you td { background: #e8f6ee !important; font-weight: 600; }
+
+    /* —— Ladder spark —— */
+    .ladder {
+      margin: 10px 0 12px;
+      padding: 12px 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fbfcfb, var(--bg-soft));
+    }
+    .ladder-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .ladder-head .title { font-size: 11px; font-weight: 700; }
+    .ladder-kpis {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .ladder-kpis b {
+      display: block;
+      font-size: 16px;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .ladder-track {
+      position: relative;
+      height: 56px;
+      margin: 4px 4px 18px;
+    }
+    .ladder-rail {
+      position: absolute;
+      left: 0; right: 0; top: 26px;
+      height: 4px;
+      border-radius: 999px;
+      background: #d5ddd8;
+    }
+    .ladder-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #9fd4b5, #1a7a4c);
+      width: 23.5%; /* 186/243 ≈ you vs leader scale from bottom */
+    }
+    .node {
+      position: absolute;
+      top: 8px;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 72px;
+    }
+    .node .dot {
+      width: 14px;
+      height: 14px;
+      margin: 0 auto 4px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1.5px #111;
+      background: var(--rival);
+    }
+    .node.leader .dot { background: var(--leader); }
+    .node.you .dot {
+      background: var(--you);
+      width: 16px;
+      height: 16px;
+      box-shadow: 0 0 0 2px #00ff85, 0 0 0 3.5px #111;
+    }
+    .node .lab {
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 72px;
+      margin: 0 auto;
+    }
+    .node .sub {
+      font-size: 8.5px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .node.you .lab { color: var(--you); }
+    .gap-tag {
+      position: absolute;
+      top: -2px;
+      transform: translateX(-50%);
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #8a5a00;
+      background: #fff8e6;
+      border: 1px solid #e6d9a8;
+      border-radius: 999px;
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+    .ladder-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .ladder-legend i {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* —— Feasibility meter —— */
+    .feas {
+      margin: 10px 0 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .feas-top {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    @media (max-width: 560px) {
+      .feas-top { grid-template-columns: 1fr; }
+    }
+    .gauge {
+      position: relative;
+      width: 112px;
+      height: 64px;
+      margin: 0 auto;
+    }
+    .gauge-svg {
+      display: block;
+      width: 112px;
+      height: 56px;
+    }
+    .gauge-needle {
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      width: 2px;
+      height: 42px;
+      margin-left: -1px;
+      background: #111;
+      transform-origin: bottom center;
+      /* 中 = ~90deg from left (halfway of semicircle) → rotate from -90 (left) */
+      transform: rotate(8deg); /* slightly past mid toward 高 */
+      border-radius: 2px;
+      z-index: 1;
+    }
+    .gauge-needle::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -4px;
+      width: 10px;
+      height: 10px;
+      margin-left: -5px;
+      border-radius: 50%;
+      background: #111;
+    }
+    .gauge-label {
+      text-align: center;
+      margin-top: -2px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #8a5a00;
+    }
+    .gauge-scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      padding: 0 2px;
+    }
+    .feas-copy .k {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .feas-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .feas-pills span {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+    }
+    .feas-pills .hi {
+      border-color: #1a7a4c55;
+      background: #e8f6ee;
+      color: var(--ok);
+    }
+    .feas-pills .lo {
+      border-color: #c9890055;
+      background: #fff8e6;
+      color: var(--warn);
+    }
+
+    .stats3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 8px 0 10px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--bg-soft);
+    }
+    .stat b { display: block; font-size: 16px; }
+    .stat span { color: var(--muted); font-size: 10px; }
+
+    details { margin-top: 8px; }
+    summary { cursor: pointer; color: var(--muted); font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <p class="preview-banner">
+      <strong>预览稿（未写入正式 PDF）</strong> —
+      §2 小联赛阶梯 spark + §3 可行性仪表。样张 Entry 916934 · AI League（−57）。
+    </p>
+
+    <div class="row">
+      <h1>GW4 诊断 · FALEAGUE-AI FC</h1>
+      <span class="pill on">样张 · B ¥49</span>
+    </div>
+
+    <h2>2. 小联赛 · AI League（主战场）</h2>
+    <p>
+      22 人。你 186 分排第 18，榜首 243，差 57。
+      本周目标是<strong>先把阵容修成能每周得分，再用队长差异追分</strong>——不是开 WC 赌一轮。
+    </p>
+
+    <div class="ladder" aria-label="Mini-league ladder">
+      <div class="ladder-head">
+        <div class="title">联赛阶梯 · 相对榜首</div>
+        <div class="ladder-kpis">
+          <div><b>#18</b>你的排名</div>
+          <div><b>−57</b>落后榜首</div>
+          <div><b>186</b>总分</div>
+        </div>
+      </div>
+      <div class="ladder-track">
+        <div class="ladder-rail">
+          <div class="ladder-fill"></div>
+        </div>
+        <!-- positions: score / 243 * 100%  (186=76.5% from 0… wait - we want left=bottom, right=leader)
+             Better: left = lowest shown (185), right = leader (243)
+             span = 243-185 = 58
+             MayWon 185 → 0%
+             You 186 → 1/58 ≈ 1.7%
+             GPT 187 → 3.4%
+             Trafford 188 → 5.2%
+             Leader 243 → 100%
+             That clusters everyone on the left. Better scale: left = you-ish pack, show gap to leader visually.
+
+             Design: left = #19 pack, mid-left = you, mid = nearby, RIGHT = leader
+             Or: horizontal "distance to leader" where RIGHT is leader and LEFT is farthest.
+
+             Position by points: pct = (pts - min) / (max - min)
+             Use min=180, max=243 for breathing room
+             MayWon 185: (185-180)/(243-180)=7.9%
+             You 186: 9.5%
+             GPT 187: 11.1%
+             Trafford 188: 12.7%
+             Leader 243: 100%
+             Still clustered. That's honest — the story IS the big gap.
+
+             Alternative: two-zone layout — "pack" cluster on left, leader on right, gap tag in middle.
+        -->
+        <div class="node" style="left: 8%">
+          <div class="dot" style="background:#9aa3ab"></div>
+          <div class="lab">MayWon</div>
+          <div class="sub">#19 · 185</div>
+        </div>
+        <div class="node you" style="left: 18%">
+          <div class="dot"></div>
+          <div class="lab">你</div>
+          <div class="sub">#18 · 186</div>
+        </div>
+        <div class="node" style="left: 28%">
+          <div class="dot"></div>
+          <div class="lab">GPT's 11</div>
+          <div class="sub">#17 · 187</div>
+        </div>
+        <div class="node" style="left: 40%">
+          <div class="dot"></div>
+          <div class="lab">AI Trafford</div>
+          <div class="sub">#15 · 188</div>
+        </div>
+        <span class="gap-tag" style="left: 68%">差 57 分</span>
+        <div class="node leader" style="left: 92%">
+          <div class="dot"></div>
+          <div class="lab">榜首</div>
+          <div class="sub">#1 · 243</div>
+        </div>
+      </div>
+      <div class="ladder-legend">
+        <span><i style="background:#0d6b3c"></i>你</span>
+        <span><i style="background:#5a6570"></i>邻近对手</span>
+        <span><i style="background:#1a1a1a"></i>榜首</span>
+        <span>挤在 185–188 的包里 · 真正要追的是右侧</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>对照：原积分榜表格</summary>
+      <table>
+        <thead><tr><th>排名</th><th>球队</th><th>总分</th><th>GW3</th><th>相对你</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>榜首</td><td>243</td><td>—</td><td>差你 57</td></tr>
+          <tr><td>15</td><td>AI Trafford</td><td>188</td><td>42</td><td>上面 2 分</td></tr>
+          <tr><td>17</td><td>GPT's 11</td><td>187</td><td>47</td><td>上面 1 分</td></tr>
+          <tr class="you"><td>18</td><td>FALEAGUE-AI FC（你）</td><td>186</td><td>56</td><td>—</td></tr>
+          <tr><td>19</td><td>MayWon Fantasy AI</td><td>185</td><td>54</td><td>下面 1 分</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <h3>对榜首：他们有、你没有（先别追贵的）</h3>
+    <table>
+      <thead><tr><th>球员</th><th>位置</th><th>身价</th><th>本周建议</th></tr></thead>
+      <tbody>
+        <tr><td>Szoboszlai</td><td>MID</td><td>£7.0</td><td>记入 GW5；本周 FT 先修后防</td></tr>
+        <tr><td>B.Fernandes</td><td>MID</td><td>£12.0</td><td>银行不够，德比轮也不急</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout ok">
+      <div class="t">小联赛结论如何写进转会</div>
+      本周 3 FT 清死人；本周靠 João Pedro 队长追分。Szoboszlai 等银行到了再追。
+    </div>
+
+    <h2>3. 冲击当轮小联赛冠军 · 可行性</h2>
+    <p class="muted">先判断「这周有没有资格冲」，再给可选加码。主方案仍以修阵容 + 追分为准。</p>
+
+    <div class="feas">
+      <div class="feas-top">
+        <div>
+          <div class="gauge" aria-hidden="true">
+            <svg class="gauge-svg" viewBox="0 0 112 56" xmlns="http://www.w3.org/2000/svg">
+              <!-- 5 equal bands L→R: red > orange > yellow > light green > green
+                   center (56,52) r=46; angles 180→0 via top -->
+              <path d="M 10 52 A 46 46 0 0 1 18.8 25" fill="none" stroke="#e53935" stroke-width="12" stroke-linecap="butt"/>
+              <path d="M 18.8 25 A 46 46 0 0 1 41.8 8.3" fill="none" stroke="#ef6c00" stroke-width="12" stroke-linecap="butt"/>
+              <path d="M 41.8 8.3 A 46 46 0 0 1 70.2 8.3" fill="none" stroke="#fbc02d" stroke-width="12" stroke-linecap="butt"/>
+              <path d="M 70.2 8.3 A 46 46 0 0 1 93.2 25" fill="none" stroke="#8bc34a" stroke-width="12" stroke-linecap="butt"/>
+              <path d="M 93.2 25 A 46 46 0 0 1 102 52" fill="none" stroke="#2e7d32" stroke-width="12" stroke-linecap="butt"/>
+              <circle cx="10" cy="52" r="6" fill="#e53935"/>
+              <circle cx="102" cy="52" r="6" fill="#2e7d32"/>
+            </svg>
+            <div class="gauge-needle"></div>
+          </div>
+          <div class="gauge-scale"><span>低</span><span>中</span><span>高</span></div>
+          <div class="gauge-label">中</div>
+        </div>
+        <div class="feas-copy">
+          <div class="k">可行性：中 —— 可以冲分差，不适合烧芯片</div>
+          <p class="small muted" style="margin:0">
+            仪表只传达「判断」；下面三条仍是完整理由，信息不丢。
+          </p>
+          <div class="feas-pills">
+            <span class="hi">有利 · 队长差异</span>
+            <span class="hi">有利 · 进攻轴还在</span>
+            <span class="lo">不利 · FDR 4 德比</span>
+            <span class="lo">不利 · 银行 £0</span>
+            <span>杠杆 · 队长</span>
+            <span>芯片 · 不开</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats3">
+      <div class="stat"><b>中</b><span>可行性</span></div>
+      <div class="stat"><b>队长</b><span>最大杠杆</span></div>
+      <div class="stat"><b>不开芯片</b><span>冲奖也不动 TC/BB</span></div>
+    </div>
+
+    <div class="callout warn">
+      <div class="t">有利 / 不利 / 结论</div>
+      <strong>有利：</strong>进攻轴还在；上轮 56 分；约 80% 人队长 Haaland（德比 FDR 4），你改 João Pedro（FDR 2）是差异。<br/>
+      <strong>不利：</strong>Haaland/Mbeumo FDR 4；银行 £0；板凳撑不起 BB。<br/>
+      <strong>结论：</strong>本周 = 主方案上把队长差异打满，不开 TC。
+    </div>
+
+    <table>
+      <thead><tr><th>优先级</th><th>动作</th><th>相对主方案</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td>1 · 必做</td><td>队长 João Pedro</td><td>相同</td><td>场内最甜赛程；模板低分时的便宜追分路径。</td></tr>
+        <tr><td>2 · 可选</td><td>VC 选 Saka</td><td>略激进</td><td>保留差异；别自动回 Haaland。</td></tr>
+        <tr><td>不做</td><td>TC / BB / -4</td><td>否决</td><td>可行性只有「中」；BB 板凳不够。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
