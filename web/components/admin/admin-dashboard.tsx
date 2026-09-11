@@ -8,19 +8,28 @@ import { AdminScoutArticlesPanel } from "@/components/admin/admin-scout-articles
 import { AdminScoutTrialPanel } from "@/components/admin/admin-scout-trial-panel";
 import { AdminMiniLeagueBetaPanel } from "@/components/admin/admin-mini-league-beta-panel";
 import { AdminSiteActivityPanel } from "@/components/admin/admin-site-activity-panel";
+import { AdminProSubscriptionsPanel } from "@/components/admin/admin-pro-subscriptions-panel";
 
-type Tab = "activity" | "users" | "articles" | "trial" | "miniLeagueBeta";
+type Tab =
+  | "activity"
+  | "pro"
+  | "users"
+  | "articles"
+  | "trial"
+  | "miniLeagueBeta";
 
 export function AdminDashboard({ locale }: { locale: string }) {
   const t = useTranslations("adminScout");
   const tUsers = useTranslations("admin");
-  const [tab, setTab] = useState<Tab>("activity");
+  const tPro = useTranslations("adminPro");
+  const [tab, setTab] = useState<Tab>("pro");
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-1 overflow-x-auto pb-1">
         {(
           [
+            ["pro", tPro("tab")],
             ["activity", t("tabActivity")],
             ["articles", t("tabArticles")],
             ["trial", t("tabTrial")],
@@ -44,11 +53,14 @@ export function AdminDashboard({ locale }: { locale: string }) {
         ))}
       </div>
 
+      {tab === "pro" ? <AdminProSubscriptionsPanel locale={locale} /> : null}
       {tab === "activity" ? <AdminSiteActivityPanel locale={locale} /> : null}
       {tab === "users" ? <AdminUsersPanel locale={locale} /> : null}
       {tab === "articles" ? <AdminScoutArticlesPanel locale={locale} /> : null}
       {tab === "trial" ? <AdminScoutTrialPanel locale={locale} /> : null}
-      {tab === "miniLeagueBeta" ? <AdminMiniLeagueBetaPanel locale={locale} /> : null}
+      {tab === "miniLeagueBeta" ? (
+        <AdminMiniLeagueBetaPanel locale={locale} />
+      ) : null}
     </div>
   );
 }

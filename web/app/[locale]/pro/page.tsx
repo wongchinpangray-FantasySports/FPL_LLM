@@ -4,8 +4,11 @@ import { PageShell } from "@/components/page-shell";
 import { FounderPackOffer } from "@/components/billing/founder-pack-offer";
 import { getAuthUser } from "@/lib/auth/session";
 import {
+  FOUNDER_PACK_LIST_PRICE_CNY,
   FOUNDER_PACK_PRICE_CNY,
+  GW_NOTE_LIST_PRICE_CNY,
   GW_NOTE_PRICE_CNY,
+  formatPriceCny,
   founderPackIsPublic,
 } from "@/lib/billing/founder-pack";
 
@@ -36,11 +39,14 @@ export default async function FounderPackPage({ params }: Props) {
         labels={{
           chooseSku: t("chooseSku"),
           skuATitle: t("skuATitle"),
-          skuAPrice: t("skuAPrice", { n: GW_NOTE_PRICE_CNY }),
+          skuAPrice: formatPriceCny(GW_NOTE_PRICE_CNY),
+          skuAListPrice: formatPriceCny(GW_NOTE_LIST_PRICE_CNY),
           skuABody: t("skuABody"),
           skuBTitle: t("skuBTitle"),
-          skuBPrice: t("skuBPrice", { n: FOUNDER_PACK_PRICE_CNY }),
+          skuBPrice: formatPriceCny(FOUNDER_PACK_PRICE_CNY),
+          skuBListPrice: formatPriceCny(FOUNDER_PACK_LIST_PRICE_CNY),
           skuBBody: t("skuBBody"),
+          limitedOffer: t("limitedOffer"),
           sampleDownload: t("sampleDownload"),
           includesTitle: t("includesTitle"),
           includesA: [

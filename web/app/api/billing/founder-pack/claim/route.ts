@@ -8,6 +8,7 @@ import {
   founderPackClaimHref,
   founderPackIsPublic,
 } from "@/lib/billing/founder-pack";
+import { recordProClaim } from "@/lib/billing/pro-subscriptions";
 import { getUserInsightsPlan } from "@/lib/fpl/insights/access";
 import { insertNotifications } from "@/lib/notifications/shared";
 import { getServerSupabase } from "@/lib/supabase";
@@ -66,6 +67,14 @@ export async function POST(req: Request) {
     const existingUserId = user?.id ?? (await findAuthUserIdByEmail(email));
     const needsSignup = !existingUserId;
 
+    const claim = await recordProClaim({
+      wechatId,
+      email,
+      userId: existingUserId,
+      needsSignup,
+      sku,
+    });
+
     const admins = await listAdminAuthUsers();
     if (admins.length === 0) {
       return NextResponse.json(
@@ -77,7 +86,7 @@ export async function POST(req: Request) {
     const skuMeta = FOUNDER_SKUS[sku];
     const href = existingUserId
       ? founderPackClaimHref(existingUserId)
-      : `/admin?grantEmail=${encodeURIComponent(email)}`;
+      : `/admin?tab=pro&grantEmail=${encodeURIComponent(email)}`;
     const admin = getServerSupabase();
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const dedupeKey = `${wechatId}|${sku}|${email}`;
@@ -89,12 +98,14 @@ export async function POST(req: Request) {
       .limit(20);
 
     if (
+      claim.duplicate ||
       existing?.some((row) => String(row.body ?? "").includes(`wx:${wechatId}`))
     ) {
       return NextResponse.json({
         ok: true,
         status: "already_claimed",
         needsSignup,
+        subscriptionId: claim.row?.id ?? null,
       });
     }
 
@@ -104,12 +115,18 @@ export async function POST(req: Request) {
         user_id: a.id,
         type: "founder_pack_claim",
         title: `Lead · ${skuMeta.labelZh} ¥${skuMeta.priceCny}`,
-        body: `Contact WeChat "${wechatId}" (wx:${wechatId}). Email ${email}${needsSignup ? " (not registered yet)" : ""}. SKU ${sku} ¥${skuMeta.priceCny}. Collect privately — no on-site QR. ${dedupeKey}`,
+        body: `Contact WeChat "${wechatId}" (wx:${wechatId}). Email ${email}${needsSignup ? " (not registered yet)" : ""}. SKU ${sku} ¥${skuMeta.priceCny} (list ¥${skuMeta.listPriceCny}). Collect privately — no on-site QR. Open Admin → PRO. ${dedupeKey}`,
         href,
       })),
     );
 
-    return NextResponse.json({ ok: true, status: "claimed", needsSignup });
+    return NextResponse.json({
+      ok: true,
+      status: "claimed",
+      needsSignup,
+      subscriptionId: claim.row?.id ?? null,
+      tableMissing: claim.tableMissing,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Claim failed";
     return NextResponse.json({ error: message }, { status: 500 });

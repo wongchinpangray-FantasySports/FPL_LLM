@@ -1,6 +1,9 @@
 /**
  * Render sample diagnosis PDFs for /pro download buttons.
  *   node scripts/render-sample-report-pdfs.mjs
+ *
+ * Gold master for ALL customer deliveries: this template's section order.
+ * See sample-reports/REPORT_SPEC.md — do not invent a new outline per Entry.
  */
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

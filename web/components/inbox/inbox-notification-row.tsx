@@ -94,7 +94,7 @@ export function InboxNotificationRow({
               onActivate?.();
             }}
           >
-            参考报告 A ¥19
+            参考报告 A ¥9.9
           </a>
           <a
             href={SAMPLE_REPORT_B_PDF}
@@ -105,7 +105,7 @@ export function InboxNotificationRow({
               onActivate?.();
             }}
           >
-            参考报告 B ¥49
+            参考报告 B ¥39.9
           </a>
         </div>
       ) : null}

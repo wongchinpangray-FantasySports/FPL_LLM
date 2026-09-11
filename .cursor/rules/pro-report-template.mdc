@@ -1,0 +1,15 @@
+---
+description: FALEAGUE PRO customer GW notes must follow the 916934 sample outline
+alwaysApply: true
+---
+
+# PRO diagnosis report template
+
+When drafting / revising a **FALEAGUE PRO** GW note (¥19 A or ¥49 B) for any Entry:
+
+1. **Gold master = Entry 916934** — `web/scripts/sample-reports/template.html` and canvas `gw4-note-916934`.
+2. Follow `web/scripts/sample-reports/REPORT_SPEC.md` section order exactly. Do not invent a new outline.
+3. Swap Entry / league / FT / XI / C-VC / climb numbers only. Same CSS voice as the sample.
+4. **A:** evidence is §4 (no climb). **B:** climb is §4, evidence is §5.
+5. Write customer files under `web/output/reports/gw{N}-{entry}-{a19|b49}.{html,pdf}`.
+6. Model traps go in appendix “否决”, not in §1 本周动作.

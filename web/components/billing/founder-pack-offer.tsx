@@ -2,12 +2,44 @@
 
 import { useState } from "react";
 import {
+  LAUNCH_DISCOUNT_ACTIVE,
   SAMPLE_REPORT_A_PDF,
   SAMPLE_REPORT_B_PDF,
   type FounderSkuId,
   getFounderWechatHandle,
 } from "@/lib/billing/founder-pack";
 import { FounderPackPayActions } from "@/components/billing/founder-pack-pay-actions";
+
+function SkuPrice({
+  sale,
+  list,
+  limitedLabel,
+}: {
+  sale: string;
+  list: string;
+  limitedLabel: string;
+}) {
+  if (!LAUNCH_DISCOUNT_ACTIVE) {
+    return (
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+        {sale}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-1 flex flex-wrap items-baseline gap-2">
+      <span className="text-2xl font-semibold tabular-nums text-foreground">
+        {sale}
+      </span>
+      <span className="text-sm tabular-nums text-muted-foreground line-through decoration-muted-foreground/80">
+        {list}
+      </span>
+      <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-amber-200">
+        {limitedLabel}
+      </span>
+    </div>
+  );
+}
 
 export function FounderPackOffer({
   labels,
@@ -16,10 +48,13 @@ export function FounderPackOffer({
   labels: {
     skuATitle: string;
     skuAPrice: string;
+    skuAListPrice: string;
     skuABody: string;
     skuBTitle: string;
     skuBPrice: string;
+    skuBListPrice: string;
     skuBBody: string;
+    limitedOffer: string;
     sampleDownload: string;
     includesTitle: string;
     includesA: string[];
@@ -61,6 +96,7 @@ export function FounderPackOffer({
       id: "gw_note" as const,
       title: labels.skuATitle,
       price: labels.skuAPrice,
+      listPrice: labels.skuAListPrice,
       body: labels.skuABody,
       sampleHref: SAMPLE_REPORT_A_PDF,
       sampleName: "faleague-sample-a-19.pdf",
@@ -69,11 +105,17 @@ export function FounderPackOffer({
       id: "founder_pack" as const,
       title: labels.skuBTitle,
       price: labels.skuBPrice,
+      listPrice: labels.skuBListPrice,
       body: labels.skuBBody,
       sampleHref: SAMPLE_REPORT_B_PDF,
       sampleName: "faleague-sample-b-49.pdf",
     },
   ];
+
+  const activePrice =
+    sku === "gw_note" ? labels.skuAPrice : labels.skuBPrice;
+  const activeList =
+    sku === "gw_note" ? labels.skuAListPrice : labels.skuBListPrice;
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,9 +138,11 @@ export function FounderPackOffer({
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {card.title}
                   </p>
-                  <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                    {card.price}
-                  </p>
+                  <SkuPrice
+                    sale={card.price}
+                    list={card.listPrice}
+                    limitedLabel={labels.limitedOffer}
+                  />
                   <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                     {card.body}
                   </p>
@@ -149,12 +193,16 @@ export function FounderPackOffer({
         <h2 className="text-sm font-semibold text-foreground">{labels.payTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.payBody}</p>
         <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/[0.1] px-4 py-3">
-          <p className="text-lg font-semibold tabular-nums tracking-tight text-foreground sm:text-xl">
+          <p className="text-sm font-semibold text-foreground sm:text-base">
             {sku === "gw_note" ? labels.skuATitle : labels.skuBTitle}
-            <span className="ml-2 text-amber-200">
-              {sku === "gw_note" ? labels.skuAPrice : labels.skuBPrice}
-            </span>
           </p>
+          <div className="mt-1">
+            <SkuPrice
+              sale={activePrice}
+              list={activeList}
+              limitedLabel={labels.limitedOffer}
+            />
+          </div>
         </div>
         {wechat ? (
           <p className="mt-3 text-sm text-foreground">
