@@ -24,11 +24,33 @@ export const FOUNDER_PACK_THROUGH_GW = 7;
 export const FOUNDER_PACK_PATH = "/pro";
 export const FOUNDER_PACK_EXPIRES_AT = new Date("2026-10-22T15:59:59.000Z");
 
-/** Public sample reports under /pro (H5 view + PDF download). */
-export const SAMPLE_REPORT_A_PDF = "/pro/samples/gw4-sample-a-19.pdf";
-export const SAMPLE_REPORT_B_PDF = "/pro/samples/gw4-sample-b-49.pdf";
-export const SAMPLE_REPORT_A_HTML = "/pro/samples/gw4-sample-a-19.html";
-export const SAMPLE_REPORT_B_HTML = "/pro/samples/gw4-sample-b-49.html";
+/** Public sample report asset paths (static files under /public). */
+export const SAMPLE_REPORT_A_PDF_ASSET = "/pro/samples/gw4-sample-a-19.pdf";
+export const SAMPLE_REPORT_B_PDF_ASSET = "/pro/samples/gw4-sample-b-49.pdf";
+export const SAMPLE_REPORT_A_HTML_ASSET = "/pro/samples/gw4-sample-a-19.html";
+export const SAMPLE_REPORT_B_HTML_ASSET = "/pro/samples/gw4-sample-b-49.html";
+
+/**
+ * Tracked sample links (log open/download then redirect to the asset).
+ * Use these in UI / inbox / email so funnel counts stay accurate.
+ */
+export const SAMPLE_REPORT_A_PDF = "/api/pro/sample?sku=a&fmt=pdf";
+export const SAMPLE_REPORT_B_PDF = "/api/pro/sample?sku=b&fmt=pdf";
+export const SAMPLE_REPORT_A_HTML = "/api/pro/sample?sku=a&fmt=html";
+export const SAMPLE_REPORT_B_HTML = "/api/pro/sample?sku=b&fmt=html";
+
+export type ProSampleSku = "a" | "b";
+export type ProSampleFmt = "html" | "pdf";
+
+export function resolveProSampleAsset(
+  sku: ProSampleSku,
+  fmt: ProSampleFmt,
+): string {
+  if (sku === "a") {
+    return fmt === "pdf" ? SAMPLE_REPORT_A_PDF_ASSET : SAMPLE_REPORT_A_HTML_ASSET;
+  }
+  return fmt === "pdf" ? SAMPLE_REPORT_B_PDF_ASSET : SAMPLE_REPORT_B_HTML_ASSET;
+}
 
 export type FounderSkuId = "gw_note" | "founder_pack";
 

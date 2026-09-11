@@ -571,6 +571,7 @@ async function fetchSiteEvents(
     const { data, error } = await supa
       .from("site_events")
       .select("created_at,path,feature,visitor_id,user_id")
+      .eq("event_type", "pageview")
       .gte("created_at", from)
       .lt("created_at", to)
       .order("created_at", { ascending: true })

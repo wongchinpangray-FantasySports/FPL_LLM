@@ -10,6 +10,7 @@ import {
   type ProSubSource,
   type ProSubStatus,
 } from "@/lib/billing/pro-subscriptions";
+import { getProSampleFunnel } from "@/lib/billing/pro-sample-funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,11 @@ export async function GET() {
   try {
     await requireAdminUser();
     const { rows, progress, tableMissing } = await listProSubscriptions();
-    return NextResponse.json({ rows, progress, tableMissing });
+    const sampleFunnel = await getProSampleFunnel({
+      leads: progress.total,
+      payers: progress.payers,
+    });
+    return NextResponse.json({ rows, progress, tableMissing, sampleFunnel });
   } catch (e) {
     const status =
       e instanceof Error && "status" in e && typeof e.status === "number"

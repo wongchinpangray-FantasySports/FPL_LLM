@@ -31,7 +31,10 @@ export function isMissingSiteEventsTable(
 
 let tableMissingCached = false;
 
-export async function insertSitePageview(input: {
+export type SiteEventType = "pageview" | "pro_sample";
+
+export async function insertSiteEvent(input: {
+  event_type: SiteEventType;
   path: string;
   feature: SiteFeature;
   visitor_id: string | null;
@@ -41,7 +44,7 @@ export async function insertSitePageview(input: {
   if (tableMissingCached) return { ok: false, tableMissing: true };
   const supa = getServerSupabase();
   const { error } = await supa.from("site_events").insert({
-    event_type: "pageview",
+    event_type: input.event_type,
     path: sanitizeUtf16(input.path).slice(0, 300),
     feature: input.feature,
     visitor_id: input.visitor_id,
@@ -55,5 +58,24 @@ export async function insertSitePageview(input: {
     tableMissingCached = true;
     return { ok: false, tableMissing: true };
   }
+  // Pre-migration: check constraint still pageview-only
+  const msg = (error.message ?? "").toLowerCase();
+  if (
+    msg.includes("event_type") ||
+    msg.includes("check constraint") ||
+    error.code === "23514"
+  ) {
+    return { ok: false, tableMissing: true };
+  }
   throw new Error(error.message);
+}
+
+export async function insertSitePageview(input: {
+  path: string;
+  feature: SiteFeature;
+  visitor_id: string | null;
+  user_id: string | null;
+  referrer: string | null;
+}): Promise<{ ok: boolean; tableMissing: boolean }> {
+  return insertSiteEvent({ ...input, event_type: "pageview" });
 }

@@ -13,6 +13,7 @@ import {
   PRO_SUB_STATUSES,
   skuLabelZh,
 } from "@/lib/billing/pro-subscriptions-shared";
+import type { ProSampleFunnel } from "@/lib/billing/pro-sample-funnel";
 
 function fmtWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
@@ -38,6 +39,9 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
   const t = useTranslations("adminPro");
   const [rows, setRows] = useState<ProSubscriptionRow[]>([]);
   const [progress, setProgress] = useState<ProSubProgress | null>(null);
+  const [sampleFunnel, setSampleFunnel] = useState<ProSampleFunnel | null>(
+    null,
+  );
   const [tableMissing, setTableMissing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,12 +63,14 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
       const data = (await res.json()) as {
         rows?: ProSubscriptionRow[];
         progress?: ProSubProgress;
+        sampleFunnel?: ProSampleFunnel;
         tableMissing?: boolean;
         error?: string;
       };
       if (!res.ok) throw new Error(data.error ?? t("loadError"));
       setRows(data.rows ?? []);
       setProgress(data.progress ?? null);
+      setSampleFunnel(data.sampleFunnel ?? null);
       setTableMissing(Boolean(data.tableMissing));
       const drafts: Record<string, string> = {};
       for (const r of data.rows ?? []) {
@@ -192,6 +198,76 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
               contacted: progress.byStatus.contacted,
             })}
           />
+        </div>
+      ) : null}
+
+      {sampleFunnel?.tableMissing ? (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          {t("sampleNeedMigration")}
+        </p>
+      ) : null}
+
+      {sampleFunnel && !sampleFunnel.tableMissing ? (
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("sampleFunnelTitle")}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("sampleFunnelHint")}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Kpi
+              label={t("kpiSampleClicks")}
+              value={String(sampleFunnel.clicks)}
+              hint={t("kpiSampleClicksHint", {
+                html: sampleFunnel.htmlClicks,
+                pdf: sampleFunnel.pdfClicks,
+              })}
+            />
+            <Kpi
+              label={t("kpiSampleVisitors")}
+              value={String(sampleFunnel.uniqueVisitors)}
+              hint={t("kpiSampleSkuHint", {
+                a: sampleFunnel.aClicks,
+                b: sampleFunnel.bClicks,
+              })}
+            />
+            <Kpi
+              label={t("kpiSampleToLead")}
+              value={
+                sampleFunnel.sampleToLeadRate == null
+                  ? "—"
+                  : `${sampleFunnel.sampleToLeadRate}%`
+              }
+              hint={t("kpiSampleToLeadHint")}
+            />
+            <Kpi
+              label={t("kpiSampleToPaid")}
+              value={
+                sampleFunnel.sampleToPaidRate == null
+                  ? "—"
+                  : `${sampleFunnel.sampleToPaidRate}%`
+              }
+              hint={t("kpiSampleToPaidHint")}
+            />
+          </div>
+          <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
+            {sampleFunnel.bySample.map((b) => (
+              <div
+                key={b.key}
+                className="rounded-lg border border-border/80 bg-background/60 px-2.5 py-2"
+              >
+                <p className="text-[11px] font-medium text-foreground">{b.label}</p>
+                <p className="mt-0.5 text-sm tabular-nums text-foreground">
+                  {b.clicks}
+                  <span className="ml-1 text-[10px] text-muted-foreground">
+                    {t("sampleClickUnit")}
+                  </span>
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {t("sampleVisitorUnit", { n: b.visitors })}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 
