@@ -882,6 +882,7 @@ async function main() {
     latest: all ? 999 : (latest ?? (teaser ? TEASER_MAX_ARTICLES : DEFAULT_LATEST)),
     days: slugFilter.length || all ? 0 : days,
     force,
+    allowPaywallSummary: teaser,
   });
   // Explicit slug batches larger than one cover auto-chunk into multiple feeds.
   const chunkBatch =

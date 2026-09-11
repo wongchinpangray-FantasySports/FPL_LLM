@@ -191,8 +191,16 @@ export function isMatchResultSrc(src: string, figureIndex: number): boolean {
 
 export function isPhotoLikeSrc(src: string): boolean {
   if (!src || isPromoImageSrc(src) || isThinStripSrc(src)) return false;
-  if (/1024x/i.test(src)) return false;
   if (/image-20\d{2}-\d{2}-\d{2}T/i.test(src)) return false;
+  const dim = src.match(/(\d{3,4})x(\d{2,4})/i);
+  if (dim) {
+    const w = Number(dim[1]);
+    const h = Number(dim[2]);
+    if (h < 280) return false;
+    // Landscape Scout notes photos (1024x452 jpg) still crop as faces on tiles.
+    if (w >= 900 && h >= 400 && h <= 720 && !/\.png$/i.test(src)) return true;
+    if (/1024x/i.test(src)) return false;
+  }
   return true;
 }
 
@@ -261,12 +269,18 @@ export function looksLikePaywallLeftover(slug: string, html: string): boolean {
   return cleaned.length < 1400;
 }
 
-export function skipReasonFor(article: LocalScoutZh): SkipReason | null {
+export function skipReasonFor(
+  article: LocalScoutZh,
+  opts?: { allowPaywallSummary?: boolean },
+): SkipReason | null {
   if (!article.body_html_zh.trim()) return "missing_zh";
   if (looksLikePaywallLeftover(article.slug, article.body_html_zh)) {
-    return "paywall";
+    const summaryOk = countCjk(article.summary_zh) >= 80;
+    if (!opts?.allowPaywallSummary || !summaryOk) return "paywall";
   }
-  if (countCjk(article.body_html_zh) < 80) return "not_chinese";
+  if (countCjk(article.body_html_zh) < 80 && countCjk(article.summary_zh) < 80) {
+    return "not_chinese";
+  }
   const blocks = articleBlocks(article.body_html_zh);
   if (blocks.length === 0) return "too_short";
   return null;
@@ -427,16 +441,46 @@ export function pickHeroSrc(
   return null;
 }
 
+const DRAFT_HEADING_RE = /草案|最佳阵|Wildcard\s*Draft|WILDCARD DRAFT/i;
+
+function figureSrcFromBlock(block: ScoutXhsBlock): string {
+  return block.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
+}
+
+function usableCoverSrc(src: string): boolean {
+  return Boolean(
+    src && !isPromoImageSrc(src) && !/Screen-Shot/i.test(src) && !isThinStripSrc(src),
+  );
+}
+
+/** Squad screenshot that sits under a Wildcard / 草案 heading — prefer this on the cover. */
+export function figureSrcAfterDraftHeading(blocks: ScoutXhsBlock[]): string | null {
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]!;
+    if (block.kind !== "heading") continue;
+    if (!DRAFT_HEADING_RE.test(stripTags(block.html))) continue;
+    for (let j = i + 1; j < blocks.length; j++) {
+      const next = blocks[j]!;
+      if (next.kind === "heading" && stripTags(next.html).trim()) break;
+      if (next.kind !== "figure") continue;
+      const src = figureSrcFromBlock(next);
+      if (usableCoverSrc(src)) return src;
+    }
+  }
+  return null;
+}
+
 /** First in-article figure that is not the FT scoreboard or a thin data strip. */
 export function pickCoverFigureSrc(blocks: ScoutXhsBlock[]): string | null {
+  const draftSrc = figureSrcAfterDraftHeading(blocks);
+  if (draftSrc) return draftSrc;
   let figureIndex = 0;
   for (const b of blocks) {
     if (b.kind !== "figure") continue;
-    const src = b.html.match(/src=["']([^"']+)/i)?.[1] ?? "";
+    const src = figureSrcFromBlock(b);
     const idx = figureIndex++;
-    if (!src || isPromoImageSrc(src) || /Screen-Shot/i.test(src)) continue;
+    if (!usableCoverSrc(src)) continue;
     if (isMatchResultSrc(src, idx)) continue;
-    if (isThinStripSrc(src)) continue;
     return src;
   }
   return null;
@@ -565,6 +609,8 @@ export type SelectOpts = {
   days?: number;
   force?: boolean;
   now?: Date;
+  /** Teaser feeds may include paywalled leftovers that already have summary_zh. */
+  allowPaywallSummary?: boolean;
 };
 
 export function selectScoutXhsArticles(
@@ -585,7 +631,9 @@ export function selectScoutXhsArticles(
         skipped.push({ slug, reason: "not_found" });
         continue;
       }
-      const reason = skipReasonFor(a);
+      const reason = skipReasonFor(a, {
+        allowPaywallSummary: opts.allowPaywallSummary,
+      });
       if (reason && !opts.force) {
         skipped.push({ slug, reason });
         continue;
@@ -602,7 +650,9 @@ export function selectScoutXhsArticles(
   const eligible: LocalScoutZh[] = [];
 
   for (const a of articles) {
-    const reason = skipReasonFor(a);
+    const reason = skipReasonFor(a, {
+      allowPaywallSummary: opts.allowPaywallSummary,
+    });
     if (reason) {
       skipped.push({ slug: a.slug, reason });
       continue;
@@ -808,6 +858,7 @@ export function buildTeaserCards(
     const blocks = articleBlocks(article.body_html_zh);
     const heroSrc = pickHeroSrc(blocks);
     const coverSrc = pickCoverFigureSrc(blocks);
+    const draftSrc = figureSrcAfterDraftHeading(blocks);
     const schedule = extractPresserSchedule(article.body_html_zh);
     return {
       slug: article.slug,
@@ -817,7 +868,12 @@ export function buildTeaserCards(
       parasHtml: teaserCopyHtml(article),
       heroSrc,
       coverSrc,
-      coverFit: coverSrc && isPhotoLikeSrc(coverSrc) ? "cover" : "contain",
+      coverFit:
+        coverSrc && coverSrc === draftSrc
+          ? "contain"
+          : coverSrc && isPhotoLikeSrc(coverSrc)
+            ? "cover"
+            : "contain",
       heroFit: heroSrc && isChartLikeSrc(heroSrc) ? "contain" : "cover",
       schedule,
       scheduleTitle: schedule.length ? presserScheduleTitle(article.body_html_zh) : "",

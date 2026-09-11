@@ -1,5 +1,6 @@
 "use client";
 
+import { Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -54,14 +55,21 @@ export function AuthNav({ layout = "inline" }: { layout?: "inline" | "drawer" })
           {t("admin")}
         </Link>
       ) : null}
-      <Link href="/inbox" className={cn(linkClass, "relative")}>
+      <Link
+        href="/inbox"
+        className={cn(linkClass, "relative inline-flex items-center gap-2")}
+        aria-label={
+          unreadCount > 0 ? t("inboxAriaUnread", { n: unreadCount }) : t("inbox")
+        }
+      >
+        <Mail className="pointer-events-none h-4 w-4 shrink-0" aria-hidden />
         {t("inbox")}
         {unreadCount > 0 ? (
           <span
             className={cn(
               "flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-bold text-brand-ink",
               layout === "drawer"
-                ? "ml-2 inline-flex"
+                ? "inline-flex"
                 : "absolute -right-0.5 -top-0.5",
             )}
           >

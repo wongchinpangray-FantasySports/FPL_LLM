@@ -9,6 +9,7 @@ import { useEntryId } from "@/components/entry-id-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthNav } from "@/components/auth/auth-nav";
+import { InboxEnvelopeLink } from "@/components/inbox/inbox-envelope-link";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
 import { founderPackIsPublic } from "@/lib/billing/founder-pack";
@@ -55,11 +56,14 @@ function MenuLink({
   label,
   active,
   gated = false,
+  featured = false,
 }: {
   href: string;
   label: string;
   active: boolean;
   gated?: boolean;
+  /** Always-on CTA styling (e.g. FALEAGUE PRO). */
+  featured?: boolean;
 }) {
   const LinkComponent = gated ? GatedLink : Link;
   return (
@@ -67,9 +71,15 @@ function MenuLink({
       href={href}
       className={cn(
         "rounded-lg px-3 py-2 text-sm transition-colors",
-        active
-          ? "nav-link-active bg-brand-accent/10 font-medium text-brand-accent"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        featured
+          ? cn(
+              "border border-amber-500/45 bg-amber-500/15 font-semibold text-amber-100",
+              "hover:bg-amber-500/25 hover:text-amber-50",
+              active && "border-amber-400/70 bg-amber-500/25 ring-1 ring-amber-400/30",
+            )
+          : active
+            ? "nav-link-active bg-brand-accent/10 font-medium text-brand-accent"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       {label}
@@ -142,6 +152,7 @@ export function SiteHeader() {
                 {t("founderPack")}
               </Link>
             ) : null}
+            <InboxEnvelopeLink />
             <ThemeToggle />
             <LanguageSwitcher />
           </div>
@@ -202,6 +213,7 @@ export function SiteHeader() {
                     href="/pro"
                     label={t("founderPack")}
                     active={pathname === "/pro" || pathname.startsWith("/pro/")}
+                    featured
                   />
                 ) : null}
                 <MenuLink

@@ -37,6 +37,7 @@ import {
   pickCoverFigureSrc,
   pickHeroSrc,
   leftoverTeaserArticles,
+  isPhotoLikeSrc,
 } from "../lib/scout/xhs-pages";
 
 function testExtractSectionEntryContent() {
@@ -297,6 +298,21 @@ function testPickCoverFigure() {
   assert.match(pickHeroSrc(blocks) ?? "", /image-509/);
   assert.match(pickCoverFigureSrc(blocks) ?? "", /image-511/);
   assert.equal(/image-509/.test(pickCoverFigureSrc(blocks) ?? ""), false);
+
+  const wildcardHtml = `
+    <figure><img src="https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/08/fpl-pre-season-joao-pedro-again-rogers-debut-1024x452.jpg" alt=""></figure>
+    <h2>第四轮 Wildcard 草案</h2>
+    <figure><img src="https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/09/image-191.png" alt=""></figure>
+  `;
+  const wildcardBlocks = articleBlocks(wildcardHtml);
+  assert.match(pickCoverFigureSrc(wildcardBlocks) ?? "", /image-191/);
+
+  assert.equal(
+    isPhotoLikeSrc(
+      "https://cdn.fantasyfootballscout.co.uk/wp-content/uploads/2026/08/fpl-notes-pedro-terrific-1024x504.jpg",
+    ),
+    true,
+  );
 }
 
 function testLeftoverTeaser() {

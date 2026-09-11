@@ -2,7 +2,9 @@ export type NotificationCategory = "news" | "message";
 
 /** UI bucket for inbox — news & match alerts vs app / promo / system messages. */
 export function notificationCategory(type: string): NotificationCategory {
-  if (type === "news" || type === "match_result") return "news";
+  if (type === "news" || type === "match_result" || type === "scout_release") {
+    return "news";
+  }
   return "message";
 }
 
