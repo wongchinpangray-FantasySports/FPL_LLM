@@ -4,11 +4,12 @@ import {
   insertNotifications,
   type NotificationInsert,
 } from "@/lib/notifications/shared";
+import { getServerSupabase } from "@/lib/supabase";
 
 export const SCOUT_RELEASE_NOTIFY_TYPE = "scout_release";
 export const SCOUT_RELEASE_TZ = "Asia/Shanghai";
 const INSERT_CHUNK = 80;
-const MAX_TITLES = 8;
+const MAX_TITLES = 5;
 
 export type ScoutReleaseArticle = {
   slug: string;
@@ -94,20 +95,103 @@ export function buildScoutReleaseCopy(
     };
   }
 
-  const moreZh = extra > 0 ? `\n另有 ${extra} 篇` : "";
-  const moreEn = extra > 0 ? `\n+${extra} more` : "";
+  const bullets = listed.map((title) => `· ${title}`);
+  const moreZh = extra > 0 ? `· 另有 ${extra} 篇` : "";
+  const moreEn = extra > 0 ? `· +${extra} more` : "";
   if (locale === "en") {
     return {
       title: `${n} new Scout articles`,
-      body: `${listed.join("\n")}${moreEn}\n\nFrom Fantasy Football Scout — free to read on Faleague.`,
+      body: [...bullets, moreEn]
+        .filter(Boolean)
+        .join("\n")
+        .concat("\n\nFrom Fantasy Football Scout — free to read on Faleague."),
       href,
     };
   }
   return {
     title: `Scout 中文上新 · ${n} 篇`,
-    body: `${listed.join("\n")}${moreZh}\n\n来自 Fantasy Football Scout，站内免费阅读。`,
+    body: [...bullets, moreZh]
+      .filter(Boolean)
+      .join("\n")
+      .concat("\n\n来自 Fantasy Football Scout，站内免费阅读。"),
     href,
   };
+}
+
+const SCOUT_FOOTER_RE =
+  /(?:^|\n+)\s*((?:来自\s+)?Fantasy Football Scout[^\n]*|From Fantasy Football Scout[^\n]*)$/i;
+
+function stripBulletPrefix(line: string): string {
+  return line.replace(/^[·•]\s*/, "").trim();
+}
+
+function parseMoreCount(text: string): { extra: number; rest: string } {
+  const trimmed = text.trim();
+  const trailing = trimmed.match(
+    /(?:^|\n)[·•]?\s*(?:另有\s+(\d+)\s*篇|\+(\d+)\s+more)\s*$/i,
+  );
+  if (trailing && trailing.index !== undefined) {
+    return {
+      extra: Number(trailing[1] || trailing[2] || 0),
+      rest: trimmed.slice(0, trailing.index).trim(),
+    };
+  }
+  const inline = trimmed.match(/\s+\+(\d+)\s+more\b/i);
+  if (inline && inline.index !== undefined) {
+    return {
+      extra: Number(inline[1] || 0),
+      rest: trimmed.slice(0, inline.index).trim(),
+    };
+  }
+  return { extra: 0, rest: trimmed };
+}
+
+/** Split a Scout digest body into title lines for the inbox card. */
+export function parseScoutReleaseBody(body: string | null | undefined): {
+  titles: string[];
+  extra: number;
+  footer: string | null;
+} {
+  const raw = (body ?? "").replace(/\r\n/g, "\n").trim();
+  if (!raw) return { titles: [], extra: 0, footer: null };
+
+  const footerMatch = raw.match(SCOUT_FOOTER_RE);
+  const footer = footerMatch?.[1]?.trim() ?? null;
+  const withoutFooter = footerMatch
+    ? raw.slice(0, footerMatch.index).trim()
+    : raw;
+  const { extra, rest } = parseMoreCount(withoutFooter);
+
+  let titles = rest
+    .split("\n")
+    .map(stripBulletPrefix)
+    .filter(Boolean);
+
+  if (titles.length <= 1) {
+    const jammed = titles[0] ?? rest;
+    if (jammed.includes("· ")) {
+      titles = jammed.split("·").map((part) => part.trim()).filter(Boolean);
+    } else if (jammed.includes(" + ")) {
+      titles = jammed.split(" + ").map((part) => part.trim()).filter(Boolean);
+    }
+  }
+
+  return { titles, extra, footer };
+}
+
+export function scoutReleaseDisplayTitle(
+  storedTitle: string,
+  articleCount: number,
+): string {
+  if (/^\d+\s+new Scout articles$/i.test(storedTitle.trim())) {
+    const n = articleCount || Number(storedTitle.match(/^(\d+)/)?.[1] || 0);
+    return n > 0 ? `Scout 中文上新 · ${n} 篇` : "Scout 中文上新";
+  }
+  if (/^New Scout article:/i.test(storedTitle.trim())) {
+    const rest = storedTitle.replace(/^New Scout article:\s*/i, "").trim();
+    return rest ? `Scout 中文上新：${rest}` : "Scout 中文上新";
+  }
+  return storedTitle;
 }
 
 export function shanghaiDatesInPushedWindow(
@@ -170,32 +254,17 @@ async function existingReleaseRows(
 
 async function updateExistingCopy(
   admin: SupabaseClient,
-  rows: Array<{ id: string; user_id: string }>,
-  localeByUser: Map<string, "zh" | "en">,
+  href: string,
   copyZh: ScoutReleaseCopy,
-  copyEn: ScoutReleaseCopy,
 ): Promise<number> {
-  const zhIds = rows
-    .filter((r) => localeByUser.get(r.user_id) !== "en")
-    .map((r) => r.id);
-  const enIds = rows
-    .filter((r) => localeByUser.get(r.user_id) === "en")
-    .map((r) => r.id);
-  if (zhIds.length) {
-    const { error } = await admin
-      .from("user_notifications")
-      .update({ title: copyZh.title, body: copyZh.body })
-      .in("id", zhIds);
-    if (error) throw new Error(error.message);
-  }
-  if (enIds.length) {
-    const { error } = await admin
-      .from("user_notifications")
-      .update({ title: copyEn.title, body: copyEn.body })
-      .in("id", enIds);
-    if (error) throw new Error(error.message);
-  }
-  return rows.length;
+  const { data, error } = await admin
+    .from("user_notifications")
+    .update({ title: copyZh.title, body: copyZh.body })
+    .eq("type", SCOUT_RELEASE_NOTIFY_TYPE)
+    .eq("href", href)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 async function insertChunked(
@@ -248,7 +317,6 @@ export async function notifyScoutArticlesReleased(
   }
 
   const copyZh = buildScoutReleaseCopy(articles, "zh", dateIso);
-  const copyEn = buildScoutReleaseCopy(articles, "en", dateIso);
   const profiles = await loadProfiles(admin);
 
   if (dryRun) {
@@ -274,30 +342,19 @@ export async function notifyScoutArticlesReleased(
 
   const existing = force ? [] : await existingReleaseRows(admin, href);
   const already = new Set(existing.map((r) => r.user_id));
-  const localeByUser = new Map(
-    profiles.map((p) => [p.id, profileNotifyLocale(p.locale)] as const),
-  );
   let updated = 0;
   if (existing.length > 0) {
-    updated = await updateExistingCopy(
-      admin,
-      existing,
-      localeByUser,
-      copyZh,
-      copyEn,
-    );
+    updated = await updateExistingCopy(admin, href, copyZh);
   }
 
   const rows: NotificationInsert[] = [];
   for (const p of profiles) {
     if (already.has(p.id)) continue;
-    const locale = profileNotifyLocale(p.locale);
-    const copy = locale === "en" ? copyEn : copyZh;
     rows.push({
       user_id: p.id,
       type: SCOUT_RELEASE_NOTIFY_TYPE,
-      title: copy.title,
-      body: copy.body,
+      title: copyZh.title,
+      body: copyZh.body,
       href,
     });
   }
@@ -312,6 +369,43 @@ export async function notifyScoutArticlesReleased(
     skippedExisting: already.size,
     dryRun: false,
   };
+}
+
+type WaitUntilFn = (promise: Promise<unknown>) => void;
+
+async function cloudflareWaitUntil(): Promise<WaitUntilFn | null> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const cf = await getCloudflareContext({ async: true });
+    const ctx = (
+      cf as {
+        ctx?: { waitUntil?: WaitUntilFn };
+      }
+    ).ctx;
+    const waitUntil = ctx?.waitUntil?.bind(ctx);
+    return typeof waitUntil === "function" ? waitUntil : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fan out Scout inbox rows after publish.
+ * On Cloudflare, run in waitUntil so the admin PATCH cannot 1102.
+ * Locally, await so scripts and `next dev` still finish the insert.
+ */
+export async function scheduleScoutInboxNotify(): Promise<void> {
+  const run = notifyScoutArticlesReleased(getServerSupabase()).catch(
+    (err: unknown) => {
+      console.error("scout inbox notify failed", err);
+    },
+  );
+  const waitUntil = await cloudflareWaitUntil();
+  if (waitUntil) {
+    waitUntil(run);
+    return;
+  }
+  await run;
 }
 
 /** Catch-up: one digest per Shanghai day that has a site publish in the window. */

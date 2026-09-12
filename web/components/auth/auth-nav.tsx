@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
+import { openInbox } from "@/components/inbox/inbox-envelope-link";
 import { cn } from "@/lib/utils";
 
 export function AuthNav({ layout = "inline" }: { layout?: "inline" | "drawer" }) {
@@ -55,12 +56,13 @@ export function AuthNav({ layout = "inline" }: { layout?: "inline" | "drawer" })
           {t("admin")}
         </Link>
       ) : null}
-      <Link
+      <a
         href="/inbox"
-        className={cn(linkClass, "relative inline-flex items-center gap-2")}
+        className={cn(linkClass, "relative inline-flex cursor-pointer items-center gap-2")}
         aria-label={
           unreadCount > 0 ? t("inboxAriaUnread", { n: unreadCount }) : t("inbox")
         }
+        onClick={openInbox}
       >
         <Mail className="pointer-events-none h-4 w-4 shrink-0" aria-hidden />
         {t("inbox")}
@@ -76,7 +78,7 @@ export function AuthNav({ layout = "inline" }: { layout?: "inline" | "drawer" })
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
-      </Link>
+      </a>
       <Link href="/account" className={linkClass}>
         {t("account")}
       </Link>

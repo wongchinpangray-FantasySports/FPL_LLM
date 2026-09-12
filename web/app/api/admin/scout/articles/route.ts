@@ -8,8 +8,7 @@ import {
   setScoutTranslateRequested,
 } from "@/lib/scout/store";
 import { isScoutStatus } from "@/lib/scout/types";
-import { getServerSupabase } from "@/lib/supabase";
-import { notifyScoutArticlesReleased } from "@/lib/notifications/scout-release";
+import { scheduleScoutInboxNotify } from "@/lib/notifications/scout-release";
 
 export const dynamic = "force-dynamic";
 
@@ -65,11 +64,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     if (article.status === "published") {
-      try {
-        await notifyScoutArticlesReleased(getServerSupabase());
-      } catch (notifyErr) {
-        console.error("scout inbox notify failed", notifyErr);
-      }
+      await scheduleScoutInboxNotify();
     }
     return NextResponse.json({ article });
   } catch (e) {

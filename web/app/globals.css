@@ -85,7 +85,6 @@ html.team-themed.dark body {
 }
 
 html.team-themed .site-header {
-  position: relative;
   border-bottom-color: color-mix(in srgb, var(--team-primary) 38%, hsl(var(--border)));
   box-shadow:
     0 1px 0 rgba(var(--brand-accent-rgb), 0.14),
@@ -98,6 +97,7 @@ html.team-themed .site-header::before {
   inset: 0 0 auto;
   z-index: 1;
   height: 3px;
+  pointer-events: none;
   background: var(--team-stripe);
 }
 

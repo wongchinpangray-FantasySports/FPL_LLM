@@ -9,7 +9,7 @@ import { useEntryId } from "@/components/entry-id-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthNav } from "@/components/auth/auth-nav";
-import { InboxEnvelopeLink } from "@/components/inbox/inbox-envelope-link";
+import { InboxEnvelopeLink, openInbox } from "@/components/inbox/inbox-envelope-link";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
 import { founderPackIsPublic } from "@/lib/billing/founder-pack";
@@ -113,8 +113,8 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="site-header sticky top-0 z-50 border-b border-border bg-background">
-        <div className="container flex items-center justify-between gap-3 py-3">
+      <header className="site-header sticky top-0 z-50 isolate border-b border-border bg-background">
+        <div className="relative z-10 container flex items-center justify-between gap-3 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -147,7 +147,7 @@ export function SiteHeader() {
             {founderPackIsPublic() && pathname !== "/pro" && !pathname.startsWith("/scout") ? (
               <Link
                 href="/pro"
-                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 sm:text-xs"
+                className="hidden rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 sm:inline-flex sm:text-xs"
               >
                 {t("founderPack")}
               </Link>
@@ -181,6 +181,18 @@ export function SiteHeader() {
             </div>
             <nav className="flex flex-1 flex-col overflow-y-auto p-3" aria-label={t("ariaMain")}>
               <MenuLink href="/" label={t("home")} active={isHomePath(pathname)} />
+              <a
+                href="/inbox"
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm transition-colors",
+                  pathname === "/inbox" || pathname.startsWith("/inbox/")
+                    ? "nav-link-active bg-brand-accent/10 font-medium text-brand-accent"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                onClick={openInbox}
+              >
+                {t("inbox")}
+              </a>
 
               <MenuSection title={t("menuSectionSquad")}>
                 <MenuLink

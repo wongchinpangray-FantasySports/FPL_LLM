@@ -4,6 +4,10 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { notificationCategory } from "@/lib/notifications/categories";
 import {
+  parseScoutReleaseBody,
+  scoutReleaseDisplayTitle,
+} from "@/lib/notifications/scout-release";
+import {
   FOUNDER_PACK_PATH,
   SAMPLE_REPORT_A_PDF,
   SAMPLE_REPORT_B_PDF,
@@ -18,6 +22,65 @@ export type InboxNotification = {
   read_at: string | null;
   created_at: string;
 };
+
+function NotificationBody({
+  item,
+  compact,
+}: {
+  item: InboxNotification;
+  compact: boolean;
+}) {
+  if (item.type === "scout_release") {
+    const parsed = parseScoutReleaseBody(item.body);
+    const titles = parsed.titles;
+    const shown = compact ? titles.slice(0, 3) : titles;
+    const hidden = compact
+      ? Math.max(0, titles.length - shown.length) + parsed.extra
+      : parsed.extra;
+
+    if (shown.length > 0) {
+      return (
+        <div className={cn("mt-2 min-w-0", compact ? "text-xs" : "text-sm")}>
+          <ul className="space-y-1.5 text-muted-foreground">
+            {shown.map((line, i) => (
+              <li
+                key={`${i}-${line.slice(0, 48)}`}
+                className="flex gap-2 leading-relaxed"
+              >
+                <span
+                  className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand-accent/80"
+                  aria-hidden
+                />
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                  {line}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {hidden > 0 ? (
+            <p className="mt-1.5 pl-3 text-muted-foreground/80">另有 {hidden} 篇</p>
+          ) : null}
+          {parsed.footer && !compact ? (
+            <p className="mt-2 break-words pl-3 text-xs leading-relaxed text-muted-foreground/80">
+              {parsed.footer}
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+  }
+
+  return (
+    <p
+      className={cn(
+        "mt-1 min-w-0 break-words whitespace-pre-line text-muted-foreground [overflow-wrap:anywhere]",
+        compact ? "line-clamp-3 text-xs leading-relaxed" : "line-clamp-8 text-sm leading-relaxed",
+      )}
+    >
+      {item.body}
+    </p>
+  );
+}
 
 export function InboxNotificationRow({
   item,
@@ -38,10 +101,18 @@ export function InboxNotificationRow({
       ? categoryLabels?.news ?? "News"
       : categoryLabels?.message ?? "Message";
   const isOffer = item.type === "founder_pack_offer";
+  const scoutParsed =
+    item.type === "scout_release" ? parseScoutReleaseBody(item.body) : null;
+  const title = scoutParsed
+    ? scoutReleaseDisplayTitle(
+        item.title,
+        scoutParsed.titles.length + scoutParsed.extra,
+      )
+    : item.title;
 
   const content = (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         {showCategory ? (
           <span
             className={cn(
@@ -56,23 +127,15 @@ export function InboxNotificationRow({
         ) : null}
         <p
           className={cn(
+            "min-w-0 flex-1 break-words [overflow-wrap:anywhere]",
             compact ? "text-sm leading-snug" : "text-base leading-snug",
             item.read_at ? "text-muted-foreground" : "font-medium text-foreground",
           )}
         >
-          {item.title}
+          {title}
         </p>
       </div>
-      {item.body ? (
-        <p
-          className={cn(
-            "mt-1 text-muted-foreground",
-            compact ? "line-clamp-2 text-xs leading-relaxed" : "line-clamp-3 text-sm",
-          )}
-        >
-          {item.body}
-        </p>
-      ) : null}
+      {item.body ? <NotificationBody item={item} compact={compact} /> : null}
       {isOffer && !compact ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
@@ -118,7 +181,7 @@ export function InboxNotificationRow({
   );
 
   const className = cn(
-    "block transition-colors",
+    "block min-w-0 overflow-hidden transition-colors",
     compact ? "py-2" : "rounded-xl border p-4",
     !compact &&
       (item.read_at

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import {
   buildScoutReleaseCopy,
+  parseScoutReleaseBody,
   profileNotifyLocale,
+  scoutReleaseDisplayTitle,
   scoutReleaseHref,
   scoutReleaseTitleOf,
   shanghaiDateIso,
@@ -48,13 +50,26 @@ function main(): void {
   ];
   const digest = buildScoutReleaseCopy(many, "zh", "2026-09-11");
   assert.equal(digest.title, "Scout 中文上新 · 3 篇");
-  assert.match(digest.body, /进球预期/);
+  assert.match(digest.body, /· 进球预期/);
+  assert.match(digest.body, /· 零封赔率/);
   assert.match(digest.body, /Fantasy Football Scout/);
   assert.doesNotMatch(digest.body, /Insights Pro|¥|创始人/);
 
   const en = buildScoutReleaseCopy(many, "en", "2026-09-11");
   assert.equal(en.title, "3 new Scout articles");
   assert.match(en.body, /free to read/);
+
+  const parsedDigest = parseScoutReleaseBody(digest.body);
+  assert.deepEqual(parsedDigest.titles, ["进球预期", "零封赔率", "Scout Squad：第四轮首选"]);
+  assert.equal(parsedDigest.extra, 0);
+  assert.match(parsedDigest.footer ?? "", /Fantasy Football Scout/);
+
+  const jammed = parseScoutReleaseBody(
+    "进球预期 零封赔率 +6 more From Fantasy Football Scout — free to read on Faleague.",
+  );
+  assert.equal(jammed.extra, 6);
+  assert.equal(scoutReleaseDisplayTitle("14 new Scout articles", 14), "Scout 中文上新 · 14 篇");
+  assert.match(scoutReleaseDisplayTitle("New Scout article: Who has the best fixtures?", 1), /Scout 中文上新/);
 
   assert.equal(
     scoutReleaseTitleOf(sample({ title_zh: "Who has the best fixtures?" })),
