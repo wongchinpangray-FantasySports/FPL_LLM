@@ -10,7 +10,7 @@ import {
   type ProSubSource,
   type ProSubStatus,
 } from "@/lib/billing/pro-subscriptions";
-import { getProSampleFunnel } from "@/lib/billing/pro-sample-funnel";
+import { getProSampleFunnel, listProSampleOpeners } from "@/lib/billing/pro-sample-funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,14 @@ export async function GET() {
       leads: progress.total,
       payers: progress.payers,
     });
-    return NextResponse.json({ rows, progress, tableMissing, sampleFunnel });
+    const sampleOpeners = await listProSampleOpeners();
+    return NextResponse.json({
+      rows,
+      progress,
+      tableMissing,
+      sampleFunnel,
+      sampleOpeners,
+    });
   } catch (e) {
     const status =
       e instanceof Error && "status" in e && typeof e.status === "number"

@@ -13,7 +13,10 @@ import {
   PRO_SUB_STATUSES,
   skuLabelZh,
 } from "@/lib/billing/pro-subscriptions-shared";
-import type { ProSampleFunnel } from "@/lib/billing/pro-sample-funnel";
+import type {
+  ProSampleFunnel,
+  ProSampleOpener,
+} from "@/lib/billing/pro-sample-funnel";
 
 function fmtWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
@@ -42,6 +45,12 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
   const [sampleFunnel, setSampleFunnel] = useState<ProSampleFunnel | null>(
     null,
   );
+  const [sampleOpeners, setSampleOpeners] = useState<{
+    anonymousClicks: number;
+    openers: ProSampleOpener[];
+  } | null>(null);
+  const [nudgeBusy, setNudgeBusy] = useState(false);
+  const [nudgeMsg, setNudgeMsg] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +73,10 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
         rows?: ProSubscriptionRow[];
         progress?: ProSubProgress;
         sampleFunnel?: ProSampleFunnel;
+        sampleOpeners?: {
+          anonymousClicks: number;
+          openers: ProSampleOpener[];
+        };
         tableMissing?: boolean;
         error?: string;
       };
@@ -71,6 +84,7 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
       setRows(data.rows ?? []);
       setProgress(data.progress ?? null);
       setSampleFunnel(data.sampleFunnel ?? null);
+      setSampleOpeners(data.sampleOpeners ?? null);
       setTableMissing(Boolean(data.tableMissing));
       const drafts: Record<string, string> = {};
       for (const r of data.rows ?? []) {
@@ -87,6 +101,35 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function sendSampleNudge(): Promise<void> {
+    setNudgeBusy(true);
+    setNudgeMsg(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/pro-subscriptions/sample-nudge", {
+        method: "POST",
+      });
+      const data = (await res.json()) as {
+        inserted?: number;
+        skippedPremium?: number;
+        skippedNoAccount?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? t("saveError"));
+      setNudgeMsg(
+        t("sampleNudgeResult", {
+          n: data.inserted ?? 0,
+          premium: data.skippedPremium ?? 0,
+          guest: data.skippedNoAccount ?? 0,
+        }),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("saveError"));
+    } finally {
+      setNudgeBusy(false);
+    }
+  }
 
   const visible = useMemo(() => {
     if (filter === "all") return rows;
@@ -268,6 +311,84 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {sampleOpeners ? (
+        <div className="rounded-xl border border-border bg-card p-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("sampleOpenersTitle")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("sampleOpenersHint", { n: sampleOpeners.anonymousClicks })}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={nudgeBusy}
+              onClick={() => void sendSampleNudge()}
+              className="rounded-lg bg-brand-accent px-3 py-1.5 text-xs font-semibold text-brand-ink disabled:opacity-50"
+            >
+              {nudgeBusy ? t("sampleNudgeSending") : t("sampleNudgeSend")}
+            </button>
+          </div>
+          {nudgeMsg ? (
+            <p className="mt-2 text-xs text-brand-accent">{nudgeMsg}</p>
+          ) : null}
+          {sampleOpeners.openers.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">{t("sampleOpenersEmpty")}</p>
+          ) : (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[40rem] text-left text-sm">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <th className="px-2 py-1 font-medium">{t("colEmail")}</th>
+                    <th className="px-2 py-1 font-medium">{t("colSku")}</th>
+                    <th className="px-2 py-1 font-medium">{t("sampleOpenerClicks")}</th>
+                    <th className="px-2 py-1 font-medium">{t("colWhen")}</th>
+                    <th className="px-2 py-1 font-medium">{t("colStatus")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sampleOpeners.openers.map((o) => (
+                    <tr
+                      key={o.userId ?? o.visitorId ?? o.lastAt}
+                      className="border-t border-border/60"
+                    >
+                      <td className="px-2 py-1.5 align-top">
+                        <p className="font-medium text-foreground">
+                          {o.email ?? o.displayName ?? t("sampleOpenerGuest")}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {o.entryId
+                            ? `Entry ${o.entryId}`
+                            : o.userId
+                              ? o.userId.slice(0, 8)
+                              : t("sampleOpenerNoAccount")}
+                        </p>
+                      </td>
+                      <td className="px-2 py-1.5 text-muted-foreground">
+                        {o.samples.join(" · ")}
+                      </td>
+                      <td className="px-2 py-1.5 tabular-nums">{o.clicks}</td>
+                      <td className="px-2 py-1.5 text-xs text-muted-foreground">
+                        {fmtWhen(o.lastAt, locale)}
+                      </td>
+                      <td className="px-2 py-1.5 text-xs">
+                        {o.premium
+                          ? t("sampleOpenerPremium")
+                          : o.userId
+                            ? t("sampleOpenerCanNudge")
+                            : t("sampleOpenerGuest")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : null}
 

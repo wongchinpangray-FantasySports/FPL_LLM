@@ -1,3 +1,5 @@
+import type { ProNavStats } from "@/lib/analytics/pro-paths";
+
 export const SITE_FEATURES = [
   "home",
   "scout",
@@ -167,4 +169,6 @@ export type SiteActivityStats = {
   login_buckets: SiteLoginBucket[];
   products: SiteProductCounts;
   deltas: SiteDeltas;
+  /** Sessions that reached /pro or a sample open (from pageviews + pro_sample). */
+  pro_nav: ProNavStats;
 };

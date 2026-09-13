@@ -4,6 +4,10 @@ import {
   normalizeTrackedPath,
   shouldSkipTracking,
 } from "../lib/analytics/features";
+import {
+  computeProNavStats,
+  journeyStepLabel,
+} from "../lib/analytics/pro-paths";
 import { aggregateSiteActivity, percentChange, previousRangeWindow, rangeWindow, utcDay } from "../lib/analytics/stats";
 import type { SiteEventRow } from "../lib/analytics/types";
 
@@ -158,10 +162,94 @@ function testAggregate() {
   assert.equal(stats.products.squad_builder_drafts, 3);
   assert.equal(stats.login_buckets.find((b) => b.bucket === "2_7")?.users, 1);
   assert.equal(stats.login_buckets.find((b) => b.bucket === "1")?.users, 2);
+  assert.equal(stats.pro_nav.sessions_to_pro, 0);
+}
+
+function testProNavPaths() {
+  assert.equal(
+    journeyStepLabel({
+      created_at: "",
+      path: "/",
+      feature: "home",
+      visitor_id: "v",
+    }),
+    "home",
+  );
+  assert.equal(
+    journeyStepLabel({
+      created_at: "",
+      path: "/pro/samples/gw4-sample-a-19.pdf",
+      feature: "pro",
+      visitor_id: "v",
+      event_type: "pro_sample",
+    }),
+    "sample A · PDF",
+  );
+
+  const stats = computeProNavStats([
+    {
+      created_at: "2026-09-11T10:00:00.000Z",
+      path: "/",
+      feature: "home",
+      visitor_id: "v1",
+      event_type: "pageview",
+    },
+    {
+      created_at: "2026-09-11T10:01:00.000Z",
+      path: "/planner/1",
+      feature: "planner",
+      visitor_id: "v1",
+      event_type: "pageview",
+    },
+    {
+      created_at: "2026-09-11T10:02:00.000Z",
+      path: "/pro",
+      feature: "pro",
+      visitor_id: "v1",
+      event_type: "pageview",
+    },
+    {
+      created_at: "2026-09-11T10:03:00.000Z",
+      path: "/pro/samples/gw4-sample-b-49.html",
+      feature: "pro",
+      visitor_id: "v1",
+      event_type: "pro_sample",
+    },
+    {
+      created_at: "2026-09-11T12:00:00.000Z",
+      path: "/pro",
+      feature: "pro",
+      visitor_id: "v2",
+      event_type: "pageview",
+    },
+    {
+      created_at: "2026-09-11T12:00:00.000Z",
+      path: "/scout/x",
+      feature: "scout",
+      visitor_id: "v3",
+      event_type: "pageview",
+    },
+  ]);
+
+  assert.equal(stats.sessions_to_pro, 2);
+  assert.equal(stats.visitors_to_pro, 2);
+  assert.equal(stats.top_paths[0]?.path, "home → planner → pro");
+  assert.equal(stats.top_paths[0]?.sessions, 1);
+  assert.ok(stats.top_paths.some((p) => p.path === "pro"));
+  assert.equal(
+    stats.top_before_pro.find((s) => s.step === "planner")?.sessions,
+    1,
+  );
+  assert.equal(
+    stats.top_before_pro.find((s) => s.step === "(direct)")?.sessions,
+    1,
+  );
+  assert.equal(stats.top_entries.find((e) => e.step === "home")?.sessions, 1);
 }
 
 testPathMapping();
 testRangeWindow();
 testPercentChange();
 testAggregate();
+testProNavPaths();
 console.log("site-analytics-self-test: ok");

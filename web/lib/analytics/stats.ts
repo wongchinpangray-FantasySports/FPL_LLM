@@ -1,5 +1,11 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isMissingSiteEventsTable } from "@/lib/analytics/store";
+import {
+  computeProNavStats,
+  emptyProNavStats,
+  type JourneyEvent,
+  type ProNavStats,
+} from "@/lib/analytics/pro-paths";
 import type {
   SiteActivityStats,
   SiteDailyPoint,
@@ -413,6 +419,7 @@ export function aggregateSiteActivity(input: {
     })),
     products,
     deltas: EMPTY_DELTAS,
+    pro_nav: emptyProNavStats(),
   };
 }
 
@@ -675,17 +682,51 @@ async function countScoutPageviews(from: string, to: string): Promise<number> {
   }
 }
 
+async function fetchProSampleEvents(
+  from: string,
+  to: string,
+): Promise<JourneyEvent[]> {
+  const supa = getServerSupabase();
+  const rows: JourneyEvent[] = [];
+  let offset = 0;
+  while (rows.length < EVENT_CAP) {
+    const { data, error } = await supa
+      .from("site_events")
+      .select("created_at,path,feature,visitor_id,event_type")
+      .eq("event_type", "pro_sample")
+      .gte("created_at", from)
+      .lt("created_at", to)
+      .order("created_at", { ascending: true })
+      .range(offset, offset + EVENT_PAGE_SIZE - 1);
+    if (error) {
+      if (isMissingSiteEventsTable(error)) return [];
+      const msg = (error.message ?? "").toLowerCase();
+      if (msg.includes("event_type") || msg.includes("check constraint")) {
+        return [];
+      }
+      throw new Error(error.message);
+    }
+    const batch = (data ?? []) as JourneyEvent[];
+    rows.push(...batch);
+    if (batch.length < EVENT_PAGE_SIZE) break;
+    offset += EVENT_PAGE_SIZE;
+  }
+  return rows;
+}
+
 export async function loadSiteActivityStats(opts: {
   days: number;
 }): Promise<SiteActivityStats> {
   const window = rangeWindow(opts.days);
   const prev = previousRangeWindow(opts.days);
-  const [profiles, events, products, prevEvents] = await Promise.all([
-    fetchAllProfiles(),
-    fetchSiteEvents(window.from, window.to),
-    loadProductCounts(window.from, window.to),
-    fetchSiteEvents(prev.from, prev.to),
-  ]);
+  const [profiles, events, products, prevEvents, sampleEvents] =
+    await Promise.all([
+      fetchAllProfiles(),
+      fetchSiteEvents(window.from, window.to),
+      loadProductCounts(window.from, window.to),
+      fetchSiteEvents(prev.from, prev.to),
+      fetchProSampleEvents(window.from, window.to),
+    ]);
   const current = withStickiness(
     aggregateSiteActivity({
       from: window.from,
@@ -698,8 +739,20 @@ export async function loadSiteActivityStats(opts: {
       tableMissing: events.tableMissing,
     }),
   );
+
+  const journey: JourneyEvent[] = [
+    ...events.rows.map((r) => ({ ...r, event_type: "pageview" as const })),
+    ...sampleEvents.map((r) => ({
+      ...r,
+      event_type: (r.event_type as JourneyEvent["event_type"]) ?? "pro_sample",
+    })),
+  ];
+  const pro_nav: ProNavStats = events.tableMissing
+    ? emptyProNavStats()
+    : computeProNavStats(journey);
+
   if (events.tableMissing || prevEvents.tableMissing) {
-    return withDeltas(current, null, profiles);
+    return { ...withDeltas(current, null, profiles), pro_nav };
   }
   const previous = aggregateSiteActivity({
     from: prev.from,
@@ -711,5 +764,5 @@ export async function loadSiteActivityStats(opts: {
     truncated: prevEvents.truncated,
     tableMissing: prevEvents.tableMissing,
   });
-  return withDeltas(current, previous, profiles);
+  return { ...withDeltas(current, previous, profiles), pro_nav };
 }

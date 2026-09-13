@@ -432,6 +432,90 @@ export function AdminSiteActivityPanel({ locale }: { locale: string }) {
           </div>
 
           <div className="rounded-xl border border-border bg-card/40 p-3">
+            <h3 className="mb-1 text-sm font-medium">{t("sectionProNav")}</h3>
+            <p className="mb-3 text-xs text-muted-foreground">{t("proNavHint")}</p>
+            <div className="mb-3 grid gap-2 sm:grid-cols-2">
+              <StatCard
+                label={t("kpiProNavSessions")}
+                value={stats.pro_nav?.sessions_to_pro ?? 0}
+                hint={t("kpiProNavSessionsHint")}
+              />
+              <StatCard
+                label={t("kpiProNavVisitors")}
+                value={stats.pro_nav?.visitors_to_pro ?? 0}
+                hint={t("kpiProNavVisitorsHint")}
+              />
+            </div>
+            {(stats.pro_nav?.top_paths?.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("proNavEmpty")}</p>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t("proNavTopPaths")}
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {stats.pro_nav.top_paths.map((row) => (
+                      <li
+                        key={row.path}
+                        className="flex items-start justify-between gap-3 rounded-lg border border-border/70 bg-background/50 px-2.5 py-2"
+                      >
+                        <p className="min-w-0 text-sm leading-snug text-foreground">
+                          {row.path}
+                        </p>
+                        <p className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                          {row.sessions} {t("proNavSessionsUnit")}
+                          <span className="mt-0.5 block">
+                            {row.visitors} {t("proNavVisitorsUnit")}
+                          </span>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("proNavTopEntries")}
+                    </p>
+                    <ul className="flex flex-col gap-1">
+                      {stats.pro_nav.top_entries.map((row) => (
+                        <li
+                          key={`e-${row.step}`}
+                          className="flex justify-between gap-2 text-sm"
+                        >
+                          <span className="truncate text-foreground">{row.step}</span>
+                          <span className="tabular-nums text-muted-foreground">
+                            {row.sessions}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("proNavTopBefore")}
+                    </p>
+                    <ul className="flex flex-col gap-1">
+                      {stats.pro_nav.top_before_pro.map((row) => (
+                        <li
+                          key={`b-${row.step}`}
+                          className="flex justify-between gap-2 text-sm"
+                        >
+                          <span className="truncate text-foreground">{row.step}</span>
+                          <span className="tabular-nums text-muted-foreground">
+                            {row.sessions}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card/40 p-3">
             <h3 className="mb-3 text-sm font-medium">{t("sectionDaily")}</h3>
             <DailyChart
               days={stats.daily}
