@@ -1,0 +1,999 @@
+/**
+ * Gold-master GW5 notes for Entry 916934 (A ¥19 + B ¥49) and public /pro samples.
+ *   node scripts/render-delivery-916934-gw5.mjs
+ *
+ * Voice/layout locked to the GW5 56657 template (units, 卡, nowrap, chooser).
+ */
+import { readFileSync, mkdirSync, writeFileSync, copyFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "..");
+const templateSrc = readFileSync(
+  join(__dirname, "sample-reports", "template.html"),
+  "utf8",
+);
+const styleMatch = templateSrc.match(/<style>([\s\S]*?)<\/style>/);
+if (!styleMatch) throw new Error("template style not found");
+const style = styleMatch[1];
+
+const SHIRT = (code, gk = false) =>
+  `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${code}${gk ? "_1" : ""}-220.webp`;
+
+function climbBlock() {
+  return `
+  <h2>4. 规划 4 轮内冲击小联赛冠军（AI League）</h2>
+  <div class="keep">
+  <p class="lede">Package B 专属块：每轮按最新排名改写剩余窗口。套餐窗口仍是 GW4–7；本份剩余 = GW5–7。</p>
+  <div class="stats3">
+    <div class="stat"><b>低</b><span>剩余 3 轮冲榜首可行性</span></div>
+    <div class="stat"><b>−63 分</b><span>落后榜首（AI雕慢飞 325 分）</span></div>
+    <div class="stat"><b>~+21 分/轮</b><span>追平所需平均净优势*</span></div>
+  </div>
+  <p class="note">*粗算：63÷3 = 21 分/轮净胜榜首。现实主线是冲回前 10，不是 3 轮抢冠军。</p>
+
+  <div class="climb-rail">
+    <div class="climb-steps">
+      <div class="climb-step">
+        <div class="gw">GW4 · 已过</div>
+        <div class="tgt">修阵完成 · 分差未收</div>
+        <div class="task">3 FT 清死人。76 分 · 18→16 · 分差 57 分→63 分。水晶宫后卫当零封是错的。</div>
+      </div>
+      <div class="climb-step now">
+        <div class="gw">GW5 · 本周</div>
+        <div class="tgt">止跌 · 争前 14</div>
+        <div class="task">Richards → Guéhi。Haaland (C)。Mitchell 替补。卡全留。</div>
+      </div>
+      <div class="climb-step">
+        <div class="gw">GW6</div>
+        <div class="tgt">前 12</div>
+        <div class="task">City–Liverpool 周。若仍落后 &gt;50 分：评估定向 −4 分；否则稳 1 FT</div>
+      </div>
+      <div class="climb-step">
+        <div class="gw">GW7</div>
+        <div class="tgt">前 8–10</div>
+        <div class="task">Haaland 主场 IPS。卡择一对齐（TC 若本周没用）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">诚实结论</div>
+    63 分 + 只剩 3 轮 → 冲榜首可行性「低」。卡 4/4 还在，4 轮内冲进前 8–10 是「中偏低」。本周不烧卡赌一轮。
+  </div>
+  </div>
+
+  <div class="keep">
+  <h3>4.1 现实阶梯（建议主线）</h3>
+  <table>
+    <thead><tr><th>轮次</th><th>目标排名带</th><th>本周任务</th><th>卡</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>GW5</td>
+        <td>止跌 · 争前 14 · 分差不再扩大</td>
+        <td>#1 Richards → Guéhi；Haaland (C)；Mitchell 替补</td>
+        <td>全留</td>
+      </tr>
+      <tr>
+        <td>GW6</td>
+        <td>前 12</td>
+        <td>看 City–Liverpool。#1 后银行 £0。不要再买水晶宫后卫。</td>
+        <td>仍留，除非空白/双赛</td>
+      </tr>
+      <tr>
+        <td>GW7</td>
+        <td>前 8–10 或接受中游上升</td>
+        <td>Haaland 主场 IPS。这半程卡 4 张都在，择一对齐强赛程周</td>
+        <td>至少准备动一张</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <h3>4.2 冲冠加码路径（高风险 · 结果导向）</h3>
+  <p class="lede">差 63 分还只做 1 FT，窗口内翻盘概率低。下面是真正的加码。对应 §1 的 #4 / #5。</p>
+  <table>
+    <thead><tr><th>对应</th><th>动作</th><th>3 轮 xP</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>#4 · −4 分</td>
+        <td>Richards + Virgil → Guéhi + Calafiori</td>
+        <td>扣 4 分 · 净 +4.5 xP</td>
+        <td>中。利物浦后卫可零封，卖他换阿森纳同级零封，净赚不多</td>
+      </tr>
+      <tr>
+        <td>不要做</td>
+        <td>卖 Saka 追 Palmer / Isak</td>
+        <td>Saka 27.5 xP vs Palmer 17.5 xP</td>
+        <td>否决。榜首有的贵人，你用更高的 3 轮轴盖住</td>
+      </tr>
+      <tr>
+        <td>不要做</td>
+        <td>Calvert-Lewin → Barry</td>
+        <td>Barry 23.3 xP 虚</td>
+        <td>否决。IPS 丢 2.5 球/场抬高；埃弗顿进攻 0.81×联盟</td>
+      </tr>
+      <tr>
+        <td>#5</td>
+        <td>#1 之上，TC Haaland vs SUN</td>
+        <td>约 +12 xP</td>
+        <td>高。空白就把窗口最甜 TC 烧了；差 63 分才考虑</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">做完 #1 之后 XI 见阵型图。VC 保持 Saka。João Pedro 本周不当 C。</p>
+  </div>
+
+  <div class="keep">
+  <table>
+    <thead><tr><th>条件</th><th>选哪条</th></tr></thead>
+    <tbody>
+      <tr><td>只想止跌、不扣分、不烧卡</td><td>#1 买 Guéhi（同队便宜用 #2；锁榜首后卫用 #3）</td></tr>
+      <tr><td>认为要同时上阿森纳零封</td><td>#4；净赚有限</td></tr>
+      <tr><td>63 分必须翻，接受烧卡</td><td>#5：#1 再 TC Haaland</td></tr>
+      <tr><td>默认继续 João Pedro (C)</td><td>太单。上轮差异队长这周让给窗口最甜的 Haaland。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <h3>4.3 每轮复盘清单</h3>
+  <table>
+    <thead><tr><th>#</th><th>检查项</th><th>本周交付</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>与榜首分差变化</td><td>GW3 基线 −57 分 → 现 −63 分</td></tr>
+      <tr><td>2</td><td>上位有、你没有</td><td>Palmer / Isak / Ødegaard / Calafiori（#3）/ Hall（不追）</td></tr>
+      <tr><td>3</td><td>你有、榜首没有</td><td>Saka + Mbeumo + Calvert-Lewin</td></tr>
+      <tr><td>4</td><td>下轮 FT / 卡是否对齐阶梯</td><td>GW5：#1 止跌 · #5 才动 TC · Mitchell 替补</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <div class="t">写进买家微信的一句话</div>
+    AI League 第 16、差 63 分。默认 Richards → Guéhi；Haaland (C)；Mitchell 替补。卡全留。不要再把水晶宫后卫当零封。
+  </div>
+  </div>
+`;
+}
+
+function evidence(n) {
+  return `
+  <h2>${n}. 证据附录</h2>
+  <p class="lede">下面数字支撑前半结论，不是第二套建议。</p>
+  <div class="keep">
+  <h3>${n}.1 转会：出 vs 入 · 未来 3 轮（对手失球 + 本队转化）</h3>
+  <div class="bars">
+    <div class="bar-row"><span class="lab">Richards</span><div class="bar-track"><div class="bar-fill" style="width:34%"></div></div><span class="bar-val">11.6</span></div>
+    <div class="bar-row"><span class="lab">Mitchell</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="bar-val">12.2</span></div>
+    <div class="bar-row"><span class="lab">Virgil</span><div class="bar-track"><div class="bar-fill" style="width:33%"></div></div><span class="bar-val">11.5</span></div>
+    <div class="bar-row"><span class="lab">Calafiori</span><div class="bar-track"><div class="bar-fill" style="width:41%"></div></div><span class="bar-val">14.0</span></div>
+    <div class="bar-row"><span class="lab">Gvardiol</span><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div><span class="bar-val">14.5</span></div>
+    <div class="bar-row"><span class="lab">Guéhi</span><div class="bar-track"><div class="bar-fill" style="width:51%"></div></div><span class="bar-val">17.6</span></div>
+    <div class="bar-row"><span class="lab">Saka</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">27.5</span></div>
+    <div class="bar-row"><span class="lab">Haaland</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">34.4</span></div>
+  </div>
+  <p class="note">俱乐部调整后 3 轮 xP · GW5–7。Palace 后卫被 CRY xGA 1.32×联盟压低；Guéhi / Gvardiol 吃的是曼城可零封（xGA 0.72×联盟）。</p>
+  <table>
+    <thead><tr><th>球员</th><th>角色</th><th>对手丢球</th><th>本队怎么防 / 进</th><th>3轮 xP</th></tr></thead>
+    <tbody>
+      <tr><td>Guéhi</td><td>#1 入</td><td>SUN 主场 FDR 2</td><td>MCI xGA 0.72×联盟 · 4 轮丢 2 球 · 可零封</td><td>17.6</td></tr>
+      <tr><td>Gvardiol</td><td>#2 入</td><td>同 Guéhi 的曼城赛程</td><td>同队更便宜；3 轮比 Guéhi 低 3.1 xP</td><td>14.5</td></tr>
+      <tr><td>Calafiori</td><td>#3 入</td><td>BHA xGA 1.22×联盟 零封危</td><td>ARS xGA 0.72×联盟 · 4 轮丢 0.25 球/场</td><td>14.0</td></tr>
+      <tr><td>Richards</td><td>#1 出</td><td>本轮客场 LEE</td><td>CRY xGA 1.32×联盟 · Disasi 1R · 不当零封</td><td>11.6</td></tr>
+      <tr><td>Mitchell</td><td>替补 · 不卖</td><td>同 Richards</td><td>同一条水晶宫后防。本周 FT 只换一个人</td><td>12.2</td></tr>
+      <tr><td>Hall</td><td>不追</td><td>HUL FDR 2</td><td>NEW xGA 1.23×联盟 · 后卫只看 DefCon</td><td>15.4</td></tr>
+      <tr><td>Barry</td><td>不走</td><td>IPS 丢 2.5 球/场 · 点球</td><td>EVE 进攻 0.81×联盟</td><td>23.3 虚</td></tr>
+      <tr><td>Palmer</td><td>不追</td><td>BRE / BOU / EVE</td><td>你已有 Saka 27.5 xP；Palmer 3 轮只有 17.5 xP</td><td>17.5</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <h3>${n}.2 建议 XI · 本轮 xP / 球队用法（支撑首发）</h3>
+  <p class="note">xP 已含俱乐部层。队长分 = 球员分 ×2。后卫「用法」来自整队 xGA / 零封运气 / 红黄牌，不是球员自己的 xP。</p>
+  <div class="bars">
+    <div class="bar-row"><span class="lab">Haaland (C)</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">11.9×2</span></div>
+    <div class="bar-row"><span class="lab">Saka (VC)</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">9.8</span></div>
+    <div class="bar-row"><span class="lab">Tavernier</span><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div><span class="bar-val">8.8</span></div>
+    <div class="bar-row"><span class="lab">Mbeumo</span><div class="bar-track"><div class="bar-fill" style="width:67%"></div></div><span class="bar-val">8.0</span></div>
+    <div class="bar-row"><span class="lab">Calvert-Lewin</span><div class="bar-track"><div class="bar-fill" style="width:63%"></div></div><span class="bar-val">7.5</span></div>
+    <div class="bar-row"><span class="lab">João Pedro</span><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div><span class="bar-val">6.9</span></div>
+    <div class="bar-row"><span class="lab">Guéhi</span><div class="bar-track"><div class="bar-fill" style="width:52%"></div></div><span class="bar-val">6.2</span></div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>球员</th><th>建议</th><th>FDR</th><th>本轮 xP</th><th>球队整体</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Haaland (C)</td><td>队长</td><td>2</td><td>11.9 xP（×2）</td><td>MCI 进攻 1.32×联盟 · 主场桑德兰</td></tr>
+      <tr><td>Saka (VC)</td><td>副队长</td><td>3</td><td>9.8</td><td>ARS 进攻 1.14×联盟 · 在转化 · @ BHA 零封危</td></tr>
+      <tr><td>Guéhi</td><td>#1 首发后卫</td><td>2</td><td>6.2</td><td>MCI xGA 0.72×联盟 · 可当零封</td></tr>
+      <tr><td>De Cuyper</td><td>三后卫之一</td><td>4</td><td>5.9</td><td>BHA 零封危 · 只看进攻/DefCon · 本轮对 ARS</td></tr>
+      <tr><td>Virgil</td><td>三后卫之一</td><td>3</td><td>3.8</td><td>LIV xGA 0.89×联盟 · 2 零封 / 4 轮 · 可当零封 · @ BOU</td></tr>
+      <tr><td>Calvert-Lewin</td><td>首发前锋</td><td>3</td><td>7.5</td><td>CRY 丢 2.75 球/场；利兹转化略差，本轮仍开</td></tr>
+      <tr><td>Mitchell</td><td>替补</td><td>3</td><td>3.8</td><td>CRY xGA 1.32×联盟 · Disasi 1R · 不当零封</td></tr>
+      <tr><td>Thomas</td><td>替补</td><td>3</td><td>5.1</td><td>COV 4 轮 0 零封 · luck_cs −0.15 · 5.1 xP 是 DefCon</td></tr>
+    </tbody>
+  </table>
+  <p class="note">若仍双水晶宫首发并锁 João Pedro 当 C，等于重复 GW4 的错：把零封危后卫当零封，又把最甜的 Haaland 赛程让给联赛。</p>
+  </div>
+
+  <div class="keep">
+  <h3>${n}.3 队长候选 · FDR vs 产出</h3>
+  <table>
+    <thead><tr><th>球员</th><th>GW5 FDR</th><th>本轮 xP</th><th>球队进攻</th></tr></thead>
+    <tbody>
+      <tr><td>Haaland</td><td>2</td><td>11.9</td><td>MCI 1.32×联盟</td></tr>
+      <tr><td>Saka</td><td>3</td><td>9.8</td><td>ARS 1.14×联盟</td></tr>
+      <tr><td>Tavernier</td><td>4</td><td>8.8</td><td>打 LIV，下轮打没零封 CHE</td></tr>
+      <tr><td>Mbeumo</td><td>3</td><td>8.0</td><td>MUN 1.42×联盟 创造 / 转化仍冷</td></tr>
+      <tr><td>Calvert-Lewin</td><td>3</td><td>7.5</td><td>打 CRY（丢 2.75 球/场）· 利兹略差转化</td></tr>
+      <tr><td>João Pedro</td><td>3</td><td>6.9</td><td>CHE 1.09×联盟 · 上轮差异，本周让位</td></tr>
+      <tr><td>Palmer</td><td>3</td><td>5.6</td><td>榜首的 C；3 轮 17.5 xP 不如你的 Saka</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Haaland 比第二名 Saka 高出约 2.1 xP，比 João Pedro 高出 5.0 xP。本周改回模板队长。榜首锁 Palmer，你吃 Haaland 反而是差异。</p>
+  </div>
+
+  <div class="keep">
+  <h3>${n}.4 本报告否决</h3>
+  <table>
+    <thead><tr><th>建议</th><th>为什么否决</th></tr></thead>
+    <tbody>
+      <tr><td>继续 João Pedro (C)</td><td>上轮对。本轮 Haaland vs SUN 11.9 xP vs João Pedro 6.9 xP。</td></tr>
+      <tr><td>双水晶宫后卫首发</td><td>CRY xGA 1.32×联盟 + Disasi 红。Mitchell 替补，Richards 卖掉。</td></tr>
+      <tr><td>Hall / Wissa 追榜首</td><td>纽卡进攻 0.72×联盟；后卫只看 DefCon，不当零封。</td></tr>
+      <tr><td>卖 Saka 买 Palmer</td><td>Saka 3 轮 27.5 xP vs Palmer 17.5 xP。护住你有、榜首没有的轴。</td></tr>
+      <tr><td>追 Groß 上周高分</td><td>本轮布莱顿对阿森纳（丢 0.25 球/场）。已有 De Cuyper。</td></tr>
+      <tr><td>Calvert-Lewin → Barry</td><td>IPS 丢 2.5 球/场是真的；埃弗顿进攻 0.81×联盟，数字虚。</td></tr>
+      <tr><td>本周 TC 作为默认</td><td>窗口最甜，但差 63 分也不是一张卡能翻。默认全留；要翻才 #5。</td></tr>
+      <tr><td>模型第一名 Guéhi 不当零封</td><td>他是曼城后卫（本季数据），xGA 0.72×联盟。不是水晶宫那个用法。</td></tr>
+      <tr><td>Thomas 首发压 Virgil</td><td>COV 4 轮 0 零封、xGA 7.52 丢 10 球、luck_cs −0.15。5.1 xP 是 DefCon，不是零封。</td></tr>
+      <tr><td>E.Le Fée → Ødegaard / Groß</td><td>第三后卫是 Virgil 时，两位置合计 33.6 / 35.1，低于 Guéhi + Le Fée 的 36.8。只有改上 Thomas 才更抢分。</td></tr>
+    </tbody>
+  </table>
+  </div>
+`;
+}
+
+function body({ skuLabel, climb, evidenceN, watermark, footer }) {
+  return `
+  <p class="watermark">${watermark}</p>
+  <div class="row">
+    <h1>GW5 诊断 · FALEAGUE-AI FC</h1>
+    <span class="pill on">${skuLabel}</span>
+    <span class="pill">1 FT · 卡 4/4 全在</span>
+  </div>
+  <p class="lede">
+    Entry 916934 · 截止 9/19 01:30 北京（英国周五 18:30）<br/>
+    总分 262 · 总榜约 343.6 万 · 银行 £1.0m · 卡 4/4 未用<br/>
+    主战场 AI League · 22 人 · 你第 16（上轮第 18）· 落后榜首 63 分。
+  </p>
+
+  <div class="keep">
+  <div class="stats">
+    <div class="stat"><b>262</b><span>总分 · 总榜约 343.6 万</span></div>
+    <div class="stat"><b>#16 / 22</b><span>AI League · 落后榜首 63 分</span></div>
+    <div class="stat"><b>1 FT · £1.0m</b><span>刚好够 Guéhi</span></div>
+    <div class="stat"><b>卡 4/4</b><span>本周主方案全不开</span></div>
+  </div>
+
+  <div class="callout">
+    <div class="t">本周一句话</div>
+    默认 #1：Richards → Guéhi（不扣分、不开卡）。队长改 Haaland，Mitchell 替补。<br/>
+    GW4 的 3 FT 清死人做对了；把水晶宫后卫当零封、João Pedro 继续当 C，是这周会再丢分的两件事。
+  </div>
+  </div>
+
+  <h2>1. 本周动作</h2>
+  <div class="keep">
+  <p class="lede">
+    只列本周能提交的决定，按推荐从高到低。绿行 = 默认。共同前提：Haaland (C)，Saka (VC)，Virgil 首发，Mitchell / Thomas 替补。
+  </p>
+  <table class="dec">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>动作</th>
+        <th>扣分</th>
+        <th>卡</th>
+        <th>预期 xP（GW5–7）</th>
+        <th>推荐</th>
+        <th>风险</th>
+        <th>回报</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="you">
+        <td>1</td>
+        <td>Richards → Guéhi</td>
+        <td class="num">0</td>
+        <td class="num">不开</td>
+        <td class="num">17.6</td>
+        <td class="lvl good">高</td>
+        <td class="lvl good">低</td>
+        <td class="lvl good">高</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Richards → Gvardiol</td>
+        <td class="num">0</td>
+        <td class="num">不开</td>
+        <td class="num">14.5</td>
+        <td class="lvl good">高</td>
+        <td class="lvl good">低</td>
+        <td class="lvl warn">中</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Richards → Calafiori</td>
+        <td class="num">0</td>
+        <td class="num">不开</td>
+        <td class="num">14.0</td>
+        <td class="lvl warn">中</td>
+        <td class="lvl good">低</td>
+        <td class="lvl warn">中</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Richards + Virgil → Guéhi + Calafiori</td>
+        <td class="num">−4</td>
+        <td class="num">不开</td>
+        <td class="num">净 +4.5 xP</td>
+        <td class="lvl mute">低</td>
+        <td class="lvl warn">中</td>
+        <td class="lvl mute">低</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>同 #1，再 TC Haaland</td>
+        <td class="num">0</td>
+        <td class="num">TC</td>
+        <td class="num">17.6 xP · TC +12 xP</td>
+        <td class="lvl warn">中</td>
+        <td class="lvl bad">高</td>
+        <td class="lvl good">高</td>
+      </tr>
+      <tr>
+        <td>—</td>
+        <td>不要做：João Pedro (C) / 卖 Le Fée / 双 CRY / Hall / Palmer / Barry</td>
+        <td class="num mute">—</td>
+        <td class="num mute">—</td>
+        <td class="num mute">—</td>
+        <td class="lvl mute">否</td>
+        <td class="lvl mute">—</td>
+        <td class="lvl mute">—</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <div class="chooser">
+    <div class="slot"><b>止跌</b><span>#1 Guéhi · 或 #2 Gvardiol</span></div>
+    <div class="slot"><b>锁榜首后卫</b><span>#3 Calafiori</span></div>
+    <div class="slot"><b>压分差</b><span>#1 已够 · #4 净赚少</span></div>
+    <div class="slot"><b>必须翻</b><span>#5 = #1 + TC Haaland</span></div>
+  </div>
+  <p class="note">
+    预期是 GW5–7 俱乐部调整后 xP（−4 分已扣）。#1 花光 £1.0m 银行。*Hall 3 轮 15.4 xP 看着高，纽卡后卫不当零封。
+  </p>
+  </div>
+
+  <div class="keep">
+  <h3>为什么默认不是 Gvardiol / Calafiori</h3>
+  <p class="lede">三个人都能当零封资产。默认看 3 轮窗口 + 本轮谁对桑德兰，不是「阿森纳丢球更少所以买阿森纳」。</p>
+  <table class="cmp">
+    <thead>
+      <tr><th>人选</th><th>GW5 xP</th><th>GW6 xP</th><th>GW7 xP</th><th>3轮 xP</th><th>俱乐部</th></tr>
+    </thead>
+    <tbody>
+      <tr class="you">
+        <td>#1 Guéhi £6.0</td>
+        <td>SUN 主 6.2</td>
+        <td>LIV 客 4.3<span class="sub">同队赛程</span></td>
+        <td>IPS 主 5.1</td>
+        <td class="num">17.6</td>
+        <td>MCI xGA 0.72×联盟 · 可零封</td>
+      </tr>
+      <tr>
+        <td>#2 Gvardiol £5.7</td>
+        <td>SUN 主 5.1</td>
+        <td>LIV 客 4.3</td>
+        <td>IPS 主 5.1</td>
+        <td class="num">14.5</td>
+        <td>同队更便宜，3 轮少 3.1 xP</td>
+      </tr>
+      <tr>
+        <td>#3 Calafiori £5.8</td>
+        <td>BHA 客 4.4<span class="sub">对手零封危</span></td>
+        <td>LEE 主 5.3</td>
+        <td>NFO 客 4.3</td>
+        <td class="num">14.0</td>
+        <td>ARS 丢 0.25 球/场 · 榜首已有</td>
+      </tr>
+      <tr>
+        <td>不追 Hall £5.2</td>
+        <td>HUL 主 5.2<span class="sub">FDR 2 陷阱</span></td>
+        <td>—</td>
+        <td>—</td>
+        <td class="num">15.4</td>
+        <td>NEW xGA 1.23×联盟 · 只看 DefCon</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">银行刚好 £1.0m = Guéhi 净花费。Gvardiol 剩 £0.3m；Calafiori 剩 £0.2m。要锁榜首后卫才走 #3。</p>
+  </div>
+
+  <div class="keep">
+  <h3>为什么第三后卫是 Virgil 不是 Thomas</h3>
+  <p class="lede">Thomas 本轮 5.1 xP &gt; Virgil 3.8 xP。那是 DefCon，不是零封。COV 零封变现已经看过：没有变现，是负的。</p>
+  <table class="cmp">
+    <thead>
+      <tr><th>人选</th><th>本轮 xP</th><th>4 轮零封</th><th>俱乐部</th><th>本周用法</th></tr>
+    </thead>
+    <tbody>
+      <tr class="you">
+        <td>Virgil 首发</td>
+        <td class="num">3.8</td>
+        <td class="num">2 / 4</td>
+        <td>LIV xGA 0.89×联盟 · luck_cs +0.24</td>
+        <td>可当零封 · @ BOU</td>
+      </tr>
+      <tr>
+        <td>Thomas 替补</td>
+        <td class="num">5.1</td>
+        <td class="num">球队 0 / 4</td>
+        <td>COV xGA 1.25×联盟 · luck_cs −0.15</td>
+        <td>只看 DefCon · 不当零封</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">期望零封约 0.6 次，考文垂 0 次。进攻 4.25 xG 进 0 球。GW6 主场 NEW 也是 FDR 2 陷阱（纽卡同样只看 DefCon）。</p>
+  </div>
+
+  <div class="keep">
+  <h3>为什么 1 FT 换后卫，不是卖 E.Le Fée</h3>
+  <p class="lede">
+    23.6 xP 不是这刀多抢的分。Richards 本来就不上场，11.6 → 17.6 是把替补换成首发。
+    Le Fée 会首发，要比「换进来的人 − 被换掉的首发」。
+  </p>
+  <table class="cmp">
+    <thead>
+      <tr><th>方案</th><th>后卫 3 轮</th><th>中场 3 轮</th><th>两位置合计</th><th>相对默认</th></tr>
+    </thead>
+    <tbody>
+      <tr class="you">
+        <td>#1 Guéhi + 留 Le Fée</td>
+        <td>Guéhi 17.6</td>
+        <td>Le Fée 19.2</td>
+        <td class="num">36.8 xP</td>
+        <td>默认 · Virgil 换成 City 零封</td>
+      </tr>
+      <tr>
+        <td>Groß + 上 Virgil</td>
+        <td>Virgil 11.5</td>
+        <td>Groß 23.6</td>
+        <td class="num">35.1 xP</td>
+        <td>−1.7 xP · Groß 对 ARS</td>
+      </tr>
+      <tr>
+        <td>Ødegaard + 上 Virgil</td>
+        <td>Virgil 11.5</td>
+        <td>Ødegaard 22.1</td>
+        <td class="num">33.6 xP</td>
+        <td>−3.2 xP · 已有 Saka</td>
+      </tr>
+      <tr>
+        <td>Groß + 上 Thomas</td>
+        <td>Thomas 16.0</td>
+        <td>Groß 23.6</td>
+        <td class="num">39.6 xP</td>
+        <td>+2.8 xP · 纯抢分 · COV 0 零封</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">
+    第三后卫用 Virgil（可零封）时，换 Guéhi 仍多 1.7 xP。只有改上 Thomas 抢 DefCon，卖 Le Fée 才更抢分。
+    本报告默认不走这条：和 Mitchell 同一口径，不当零封的后卫不进 XI。Groß 本轮对 ARS，还卖掉 Le Fée GW6 主场布莱顿 7.7 xP。
+  </p>
+  </div>
+
+  <h3>建议首发 XI · #1 之后（3-4-3）</h3>
+
+  <div class="keep">
+  <p class="lede">按 #1（1 FT · Guéhi）排。#2 把 Guéhi 换成 Gvardiol；#3 换成 Calafiori。共同：Haaland (C)，Virgil 首发，Mitchell / Thomas 替补。</p>
+  <p class="note">后防按整队：Guéhi（曼城可零封）· De Cuyper（布莱顿只看进攻，本轮对 ARS）· Virgil（利物浦可零封）。Thomas 的 5.1 xP 是 DefCon，COV 4 轮 0 零封，不上。</p>
+
+  <div class="pitch" aria-label="Suggested starting XI pitch">
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(91, true)}" />
+        </div>
+        <div class="name">Petrović</div>
+        <div class="meta">vs LIV · FDR 4</div>
+        <div class="xp">xP 3.5</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(43)}" />
+        </div>
+        <div class="name">Guéhi</div>
+        <div class="meta">vs SUN · FDR 2</div>
+        <div class="xp">xP 6.2</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(36)}" />
+        </div>
+        <div class="name">De Cuyper</div>
+        <div class="meta">vs ARS · FDR 4</div>
+        <div class="xp">xP 5.9</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(14)}" />
+        </div>
+        <div class="name">Virgil</div>
+        <div class="meta">@ BOU · 可零封</div>
+        <div class="xp">xP 3.8</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(91)}" />
+        </div>
+        <div class="name">Tavernier</div>
+        <div class="meta">vs LIV · GW6 CHE 零封危</div>
+        <div class="xp">xP 8.8</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(3)}" />
+          <span class="cap vc">VC</span>
+        </div>
+        <div class="name">Saka</div>
+        <div class="meta">@ BHA · FDR 3</div>
+        <div class="xp">xP 9.8</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(1)}" />
+        </div>
+        <div class="name">Mbeumo</div>
+        <div class="meta">@ FUL · FDR 3</div>
+        <div class="xp">xP 8.0</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(56)}" />
+        </div>
+        <div class="name">E.Le Fée</div>
+        <div class="meta">@ MCI · FDR 5</div>
+        <div class="xp">xP 5.6</div>
+      </div>
+    </div>
+    <div class="xi-row">
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(8)}" />
+        </div>
+        <div class="name">João Pedro</div>
+        <div class="meta">@ BRE · FDR 3</div>
+        <div class="xp">xP 6.9</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(43)}" />
+          <span class="cap">C</span>
+        </div>
+        <div class="name">Haaland</div>
+        <div class="meta">vs SUN · FDR 2</div>
+        <div class="xp">xP 11.9 ×2</div>
+      </div>
+      <div class="player">
+        <div class="shirt-wrap">
+          <img class="shirt" alt="" src="${SHIRT(2)}" />
+        </div>
+        <div class="name">Calvert-Lewin</div>
+        <div class="meta">vs CRY · 丢 2.75 球/场</div>
+        <div class="xp">xP 7.5</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="keep">
+  <p class="kicker">板凳顺序（自动换人按 13→14→15）</p>
+  <div class="bench">
+    <div class="slot">
+      <div class="n">12</div>
+      <div class="nm">Roefs</div>
+      <div class="fx">@ MCI · 只换门将</div>
+    </div>
+    <div class="slot">
+      <div class="n">13</div>
+      <div class="nm">Thomas</div>
+      <div class="fx">@ NFO · 5.1 xP · 最先顶上</div>
+    </div>
+    <div class="slot">
+      <div class="n">14</div>
+      <div class="nm">Buendía</div>
+      <div class="fx">@ TOT · Thomas 也不上才轮到</div>
+    </div>
+    <div class="slot">
+      <div class="n">15</div>
+      <div class="nm">Mitchell</div>
+      <div class="fx">@ LEE · CRY 零封危 · 最后</div>
+    </div>
+  </div>
+  <p class="note">
+    3-4-3 下后卫几乎总能合法顶上（4-3-3 / 4-4-2）。把 Mitchell 放 13 = 中场或前锋不上，也先上水晶宫（3.8 xP）。
+    Thomas 4 次首发、本轮 5.1 xP 最高，放 13；Buendía 4.0 xP 放 14；Mitchell 放 15。Roefs 对 City，只盯 Petrović。
+  </p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="k">C · Haaland</div>
+      MCI vs SUN · FDR 2。曼城进攻 1.32×联盟，主场桑德兰是窗口最甜单人赛程。榜首锁 Palmer——你改 Haaland 才是差异。
+    </div>
+    <div class="card">
+      <div class="k">VC · Saka</div>
+      @ BHA，布莱顿 xGA 1.22×联盟零封危，阿森纳在进球。João Pedro 若轮换由他接管。开赛前确认 App 没把 C 留在 João Pedro。
+    </div>
+  </div>
+  <p class="note">备选 C：没有。Haaland 11.9 xP vs 第二名 Saka 9.8 xP。若 App 仍指 João Pedro，开赛前改回 Haaland。</p>
+  </div>
+
+  <h3>卡：本周主方案全不开</h3>
+  <div class="keep">
+  <table>
+    <thead><tr><th>卡</th><th>本周</th><th>原因</th></tr></thead>
+    <tbody>
+      <tr><td>Wildcard</td><td>不开</td><td>阵容骨架还在（Saka / Tavernier / Haaland）。WC 留给真正的空白/结构周。</td></tr>
+      <tr><td>Bench Boost</td><td>不开</td><td>板凳 Thomas / Buendía / Mitchell / Roefs vs City，4 人不够一起打。</td></tr>
+      <tr><td>Free Hit</td><td>不开</td><td>不是空白轮。1 FT 就能换掉不当零封的后卫。</td></tr>
+      <tr><td>Triple Captain</td><td>#1–#4 不开 · #5 可开</td><td>Haaland vs SUN 是窗口最甜 TC。止跌不开；要翻 63 分就开。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>2. 小联赛 · AI League（主战场）</h2>
+  <div class="keep">
+  <p class="lede">
+    22 人。你 GW4 拿了 76 分，从第 18 升到第 16（262 分），榜首 AI雕慢飞 325 分，差 63 分。
+    Benchmarked 本轮 103 分穿到第 2。本周目标是<strong>换可零封后卫 + Haaland 双倍止跌</strong>——不是再买边卫赌零封。
+  </p>
+
+  <div class="ladder" aria-label="Mini-league ladder">
+    <div class="ladder-head">
+      <div class="title">联赛阶梯 · 相对榜首</div>
+      <div class="ladder-kpis">
+        <div><b>#16</b>你的排名</div>
+        <div><b>−63 分</b>落后榜首</div>
+        <div><b>262 分</b>总分</div>
+      </div>
+    </div>
+    <div class="ladder-track">
+      <div class="ladder-rail">
+        <div class="ladder-fill" style="width:18%"></div>
+      </div>
+      <div class="node" style="left: 8%">
+        <div class="dot" style="background:#9aa3ab"></div>
+        <div class="lab">老虎桥</div>
+        <div class="sub">#18 · 255</div>
+      </div>
+      <div class="node you" style="left: 18%">
+        <div class="dot"></div>
+        <div class="lab">你</div>
+        <div class="sub">#16 · 262</div>
+      </div>
+      <div class="node" style="left: 38%">
+        <div class="dot"></div>
+        <div class="lab">Whiff</div>
+        <div class="sub">#10 · 276</div>
+      </div>
+      <div class="node" style="left: 52%">
+        <div class="dot"></div>
+        <div class="lab">AI尼</div>
+        <div class="sub">#6 · 283</div>
+      </div>
+      <span class="gap-tag" style="left: 72%">差 63 分</span>
+      <div class="node leader" style="left: 92%">
+        <div class="dot"></div>
+        <div class="lab">AI雕慢飞</div>
+        <div class="sub">#1 · 325</div>
+      </div>
+    </div>
+    <div class="ladder-legend">
+      <span><i style="background:#0d6b3c"></i>你</span>
+      <span><i style="background:#5a6570"></i>邻近对手</span>
+      <span><i style="background:#1a1a1a"></i>榜首</span>
+      <span>已掉出顶端包 · 真正要追上的是右侧 63 分</span>
+    </div>
+  </div>
+  </div>
+
+  <div class="keep">
+  <table>
+    <thead><tr><th>排名</th><th>球队</th><th>总分</th><th>GW4 分</th><th>相对你</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>AI雕慢飞</td><td>325</td><td>86</td><td>榜首 · 差你 63 分 · C 锁 Palmer</td></tr>
+      <tr><td>2</td><td>Benchmarked FC</td><td>320</td><td>103</td><td>上面 58 分</td></tr>
+      <tr><td>2</td><td>shorturl.at/sonG8</td><td>320</td><td>77</td><td>上面 58 分 · 上轮榜首</td></tr>
+      <tr><td>6</td><td>AI尼</td><td>283</td><td>81</td><td>上面 21 分 · 前 10 门槛</td></tr>
+      <tr><td>10</td><td>Whiff</td><td>276</td><td>68</td><td>上面 14 分</td></tr>
+      <tr><td>15</td><td>xGPT United</td><td>267</td><td>75</td><td>上面 5 分</td></tr>
+      <tr class="you"><td>16</td><td>FALEAGUE-AI FC（你）</td><td>262</td><td>76</td><td>上轮第 18</td></tr>
+      <tr><td>17</td><td>AI Trafford</td><td>261</td><td>73</td><td>下面 1 分</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <h3>对榜首：他们有、你没有（先别追贵的）</h3>
+  <table>
+    <thead><tr><th>球员</th><th>位置</th><th>身价</th><th>本轮</th><th>本周建议</th></tr></thead>
+    <tbody>
+      <tr><td>Palmer</td><td>MID</td><td>£9.7</td><td>@ BRE</td><td>榜首的 C。你有 Saka 3 轮更高（27.5 xP vs 17.5 xP）。不追。</td></tr>
+      <tr><td>Isak</td><td>FWD</td><td>£9.1</td><td>@ BOU</td><td>要卖 João Pedro 才买得起。3 轮 22.9 xP vs JP 21.8 xP，不值一刀。</td></tr>
+      <tr><td>Ødegaard</td><td>MID</td><td>£6.7</td><td>@ BHA</td><td>ARS 在进球。你已有 Saka，三人上限留给中场骨架。</td></tr>
+      <tr><td>Calafiori</td><td>DEF</td><td>£5.8</td><td>@ BHA</td><td>#3 才补。ARS 可零封；默认 #1 买更甜的 City vs SUN。</td></tr>
+      <tr><td>Hall</td><td>DEF</td><td>£5.2</td><td>vs HUL FDR 2</td><td>纽卡 xGA 1.23×联盟，后卫只看 DefCon，不当零封。不买。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keep">
+  <h3>你有、榜首没有（护住）</h3>
+  <table>
+    <thead><tr><th>球员</th><th>为什么重要</th></tr></thead>
+    <tbody>
+      <tr><td>Saka</td><td>几乎是你的独有中场。3 轮 27.5 xP。不要卖去追 Palmer。</td></tr>
+      <tr><td>Mbeumo</td><td>曼联进攻 1.42×联盟。本轮 @ FUL。不当 C，当骨架。</td></tr>
+      <tr><td>Calvert-Lewin</td><td>本轮打水晶宫（丢 2.75 球/场）。3 轮 19.2 xP，留下首发。</td></tr>
+      <tr><td>Tavernier</td><td>3 轮 25.9 xP。本轮对 LIV 不甜，GW6 打没零封的切尔西。留下。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout ok">
+    <div class="t">小联赛结论如何写进转会</div>
+    默认看 §1 #1：1 FT · 买 Guéhi。要锁榜首后卫用 #3 Calafiori。Mitchell 继续替补。Saka 不许卖。
+  </div>
+  </div>
+
+  <h2>3. 冲击当轮小联赛冠军 · 可行性</h2>
+  <div class="keep">
+  <p class="lede">先判断「这周有没有资格冲」，再给可选加码。主方案仍以修后防 + 止跌为准。</p>
+
+  <div class="feas">
+    <div class="feas-top">
+      <div>
+        <div class="gauge" aria-hidden="true">
+          <svg class="gauge-svg" viewBox="0 0 112 56" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 10 52 A 46 46 0 0 1 18.8 25" fill="none" stroke="#e53935" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 18.8 25 A 46 46 0 0 1 41.8 8.3" fill="none" stroke="#ef6c00" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 41.8 8.3 A 46 46 0 0 1 70.2 8.3" fill="none" stroke="#fbc02d" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 70.2 8.3 A 46 46 0 0 1 93.2 25" fill="none" stroke="#8bc34a" stroke-width="12" stroke-linecap="butt"/>
+            <path d="M 93.2 25 A 46 46 0 0 1 102 52" fill="none" stroke="#2e7d32" stroke-width="12" stroke-linecap="butt"/>
+            <circle cx="10" cy="52" r="6" fill="#e53935"/>
+            <circle cx="102" cy="52" r="6" fill="#2e7d32"/>
+          </svg>
+          <div class="gauge-needle"></div>
+        </div>
+        <div class="gauge-scale"><span>低</span><span>中</span><span>高</span></div>
+        <div class="gauge-label">低</div>
+      </div>
+      <div class="feas-copy">
+        <div class="k">可行性：低 —— 63 分差距单周翻盘不现实，主方案仍不烧卡</div>
+        <div class="feas-pills">
+          <span class="hi">有利 · Haaland vs SUN</span>
+          <span class="hi">有利 · 卡 4/4 还在</span>
+          <span class="lo">不利 · 第 16 / 差 63 分</span>
+          <span class="lo">不利 · 榜首 C 不是 Haaland</span>
+          <span>杠杆 · 队长</span>
+          <span>卡 · 主方案不开</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats3">
+    <div class="stat"><b>低</b><span>当轮冲冠可行性</span></div>
+    <div class="stat"><b>队长</b><span>最大杠杆（Haaland）</span></div>
+    <div class="stat"><b>不开卡</b><span>冲奖也不动 TC（主方案）</span></div>
+  </div>
+  <div class="callout warn">
+    <div class="t">有利 / 不利 / 结论</div>
+    <p><strong>有利</strong> · Haaland 主场桑德兰 + 曼城进攻 1.32×联盟；GW4 已清死人；卡 4/4 全在；榜首锁 Palmer，你改 Haaland 是差异。</p>
+    <p><strong>不利</strong> · GW4 你 76 分、榜首 86 分、Benchmarked 103 分；差距从 57 分扩到 63 分；仍在第 16。</p>
+    <p><strong>结论</strong> · 本周 = 换可零封后卫 + Haaland (C) 止跌。单周不冲「当轮小联赛冠军」。</p>
+  </div>
+  </div>
+  <div class="keep">
+  <table>
+    <thead><tr><th>优先级</th><th>动作</th><th>相对主方案</th><th>为什么</th></tr></thead>
+    <tbody>
+      <tr><td>1 · 必做</td><td>Haaland (C) · Virgil 首发 · Mitchell / Thomas 替补</td><td>所有方案相同</td><td>主场桑德兰。水晶宫 / 考文垂不当零封。</td></tr>
+      <tr><td>2 · 选方案</td><td>按 §1 综合评估 #1→#5</td><td>推荐从高到低</td><td>止跌：#1/#2。锁榜首后卫：#3。必须翻：#5。</td></tr>
+      <tr><td>3 · 不要做</td><td>João Pedro (C) / 卖 Le Fée / Hall / 卖 Saka / Barry</td><td>否决</td><td>见 §1 对照表与附录否决。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  ${climb}
+
+  ${evidence(evidenceN)}
+
+  <div class="foot">
+    Scout 中文仍免费。这不是 Scout Members。<br/>
+    ${footer}<br/>
+    对手看实际失球不只看 FDR；本队看进球转化不只看 xG。§1 为推荐 × 风险 × 回报总表。−4 与 TC 都是可选手段。
+  </div>
+`;
+}
+
+function sampleBuyCta(sku) {
+  const href = `https://www.faleague-ai.com/zh/pro?from=sample&sku=${sku}#pay`;
+  return `
+  <div class="sample-buyfoot">
+    <div class="t">这是 Entry 916934 的报告样本，不是你的阵容</div>
+    <p>GW5 截止 9/19 01:30。针对你的 Entry：A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。留微信号，发哥开通。Scout 中文继续免费。</p>
+    <a href="${href}">留微信号开通</a>
+  </div>
+  <div class="sample-buybar" role="region" aria-label="开通 FALEAGUE PRO">
+    <div>
+      <b>报告样本 · 不是你的阵容</b>
+      <span>GW5 截止 9/19 01:30 · A ¥9.9 / B ¥39.9</span>
+    </div>
+    <a class="sample-buybar-btn" href="${href}">留微信号开通</a>
+  </div>`;
+}
+
+function wrapHtml({ title, htmlBody, buyBarSku }) {
+  const bar = buyBarSku ? sampleBuyCta(buyBarSku) : "";
+  const bodyClass = buyBarSku ? ' class="has-sample-buybar"' : "";
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${title}</title>
+  <style>${style}
+    .gauge-needle { transform: rotate(-62deg); }
+    .gauge-label { color: #9b1c1c; }
+  </style>
+</head>
+<body${bodyClass}>
+  <!-- Structure locked to REPORT_SPEC.md. Gold master = Entry 916934 GW5. -->
+  ${htmlBody}
+  ${bar}
+</body>
+</html>`;
+}
+
+const variants = [
+  {
+    sku: "a",
+    stem: "gw5-916934-a19",
+    sampleStem: "gw5-sample-a-19",
+    legacySample: "gw4-sample-a-19",
+    title: "FALEAGUE PRO · GW5 · FALEAGUE-AI FC · A · ¥19",
+    skuLabel: "报告样本 · A ¥19 单轮",
+    evidenceN: 4,
+    climb: false,
+    watermark:
+      "FALEAGUE PRO · 参考报告样本（Entry 916934 · AI League）· 非买家真实交付件 · 报告样本 · A ¥19 单轮",
+    footer:
+      "本文件为 A · 单轮 参考报告样本。正式交付为针对你 Entry 的 PDF，含一次修订。",
+  },
+  {
+    sku: "b",
+    stem: "gw5-916934-b49",
+    sampleStem: "gw5-sample-b-49",
+    legacySample: "gw4-sample-b-49",
+    title: "FALEAGUE PRO · GW5 · FALEAGUE-AI FC · B · ¥49 · 4轮套餐",
+    skuLabel: "报告样本 · B ¥49 · 4轮套餐",
+    evidenceN: 5,
+    climb: true,
+    watermark:
+      "FALEAGUE PRO · 参考报告样本（Entry 916934 · AI League）· 非买家真实交付件 · 报告样本 · B ¥49 · 4轮套餐",
+    footer:
+      "本文件为 B · 4轮套餐 参考报告样本（含「规划 4 轮内冲击小联赛冠军」）。正式交付每轮更新剩余窗口规划。",
+  },
+];
+
+async function htmlToPdf(browser, htmlPath, pdfPath) {
+  const page = await browser.newPage();
+  await page.goto(`file://${htmlPath.replace(/\\/g, "/")}`, {
+    waitUntil: "networkidle",
+    timeout: 60000,
+  });
+  await page.evaluate(async () => {
+    const imgs = [...document.images];
+    await Promise.all(
+      imgs.map(
+        (img) =>
+          img.complete ||
+          new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          }),
+      ),
+    );
+  });
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
+  await page.pdf({
+    path: pdfPath,
+    format: "A4",
+    printBackground: true,
+    preferCSSPageSize: true,
+    margin: { top: "11mm", bottom: "14mm", left: "10mm", right: "10mm" },
+  });
+  await page.close();
+}
+
+async function main() {
+  const outReports = join(root, "output", "reports");
+  const outPublic = join(root, "public", "pro", "deliveries");
+  const outSamples = join(root, "public", "pro", "samples");
+  mkdirSync(outReports, { recursive: true });
+  mkdirSync(outPublic, { recursive: true });
+  mkdirSync(outSamples, { recursive: true });
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    for (const v of variants) {
+      const htmlBody = body({
+        skuLabel: v.skuLabel,
+        climb: v.climb ? climbBlock() : "",
+        evidenceN: v.evidenceN,
+        watermark: v.watermark,
+        footer: v.footer,
+      });
+      const html = wrapHtml({
+        title: v.title,
+        htmlBody,
+        buyBarSku: null,
+      });
+      const sampleHtml = wrapHtml({
+        title: v.title,
+        htmlBody,
+        buyBarSku: v.sku,
+      });
+      const htmlPath = join(outReports, `${v.stem}.html`);
+      const pdfPath = join(outReports, `${v.stem}.pdf`);
+      writeFileSync(htmlPath, html, "utf8");
+      await htmlToPdf(browser, htmlPath, pdfPath);
+
+      copyFileSync(htmlPath, join(outPublic, `${v.stem}.html`));
+      copyFileSync(pdfPath, join(outPublic, `${v.stem}.pdf`));
+
+      writeFileSync(join(outSamples, `${v.sampleStem}.html`), sampleHtml, "utf8");
+      writeFileSync(join(outSamples, `${v.legacySample}.html`), sampleHtml, "utf8");
+      copyFileSync(pdfPath, join(outSamples, `${v.sampleStem}.pdf`));
+      copyFileSync(pdfPath, join(outSamples, `${v.legacySample}.pdf`));
+
+      console.log("wrote", v.stem);
+    }
+  } finally {
+    await browser.close();
+  }
+  console.log("samples:");
+  console.log("  /pro/samples/gw5-sample-a-19.html");
+  console.log("  /pro/samples/gw5-sample-b-49.html");
+  console.log("  (gw4-sample-* overwritten as aliases)");
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

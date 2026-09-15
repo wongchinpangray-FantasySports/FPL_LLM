@@ -642,9 +642,69 @@
   
     .gauge-needle { transform: rotate(-62deg); }
     .gauge-label { color: #9b1c1c; }
+  
+    /* Public sample H5 only — deliveries omit the markup. Hidden in PDF print. */
+    body.has-sample-buybar { padding-bottom: 92px; }
+    .sample-buyfoot {
+      margin-top: 16px;
+      padding: 12px 14px 14px;
+      border: 2px solid #111;
+      border-radius: 8px;
+      background: #111;
+      color: #fff;
+    }
+    .sample-buyfoot .t { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+    .sample-buyfoot p { margin: 0 0 10px; color: #d7e6dc; font-size: 11.5px; }
+    .sample-buyfoot a {
+      display: inline-block;
+      background: var(--accent);
+      color: #111;
+      font-weight: 800;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .sample-buybar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 50;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: #111;
+      color: #fff;
+      box-shadow: 0 -8px 24px rgba(0,0,0,.2);
+      font-size: 11px;
+    }
+    .sample-buybar b { display: block; font-size: 12px; letter-spacing: -0.02em; }
+    .sample-buybar span { color: #c8d9ce; font-size: 10px; }
+    .sample-buybar-btn {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #111;
+      font-weight: 800;
+      text-decoration: none;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    @media screen and (max-width: 640px) {
+      body.has-sample-buybar { padding-bottom: 118px; }
+      .sample-buybar { flex-wrap: wrap; }
+      .sample-buybar-btn { width: 100%; text-align: center; }
+    }
+    @media print {
+      .sample-buybar, .sample-buyfoot { display: none !important; }
+      body.has-sample-buybar { padding-bottom: 0; }
+    }
+
   </style>
 </head>
-<body>
+<body class="has-sample-buybar">
   <!-- Structure locked to REPORT_SPEC.md. Gold master = Entry 916934 GW5. -->
   
   <p class="watermark">FALEAGUE PRO · 参考报告样本（Entry 916934 · AI League）· 非买家真实交付件 · 报告样本 · A ¥19 单轮</p>
@@ -1321,5 +1381,18 @@
     对手看实际失球不只看 FDR；本队看进球转化不只看 xG。§1 为推荐 × 风险 × 回报总表。−4 与 TC 都是可选手段。
   </div>
 
+
+  <div class="sample-buyfoot">
+    <div class="t">这是 Entry 916934 的报告样本，不是你的阵容</div>
+    <p>GW5 截止 9/19 01:30。针对你的 Entry：A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。留微信号，发哥开通。Scout 中文继续免费。</p>
+    <a href="https://www.faleague-ai.com/zh/pro?from=sample&sku=a#pay">留微信号开通</a>
+  </div>
+  <div class="sample-buybar" role="region" aria-label="开通 FALEAGUE PRO">
+    <div>
+      <b>报告样本 · 不是你的阵容</b>
+      <span>GW5 截止 9/19 01:30 · A ¥9.9 / B ¥39.9</span>
+    </div>
+    <a class="sample-buybar-btn" href="https://www.faleague-ai.com/zh/pro?from=sample&sku=a#pay">留微信号开通</a>
+  </div>
 </body>
 </html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LAUNCH_DISCOUNT_ACTIVE,
   SAMPLE_REPORT_A_HTML,
@@ -122,6 +122,12 @@ export function FounderPackOffer({
   const wechat = getFounderWechatHandle();
   const [sku, setSku] = useState<FounderSkuId>("founder_pack");
   const [teaserEntryId, setTeaserEntryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("sku");
+    if (q === "a" || q === "gw_note") setSku("gw_note");
+    if (q === "b" || q === "founder_pack") setSku("founder_pack");
+  }, []);
   const includes = sku === "gw_note" ? labels.includesA : labels.includesB;
 
   const teaserLabels: ProTeaserPanelLabels = {

@@ -48,7 +48,7 @@ Tone: Chinese, direct, one primary plan — model traps go in appendix “否决
 
 | Role | Path |
 |------|------|
-| Public sample A/B | `render-delivery-916934-gw5.mjs` → `web/public/pro/samples/gw5-sample-{a-19|b-49}.{html,pdf}` |
+| Public sample A/B | `render-delivery-916934-gw5.mjs` → `web/public/pro/samples/gw5-sample-{a-19|b-49}.{html,pdf}` (H5 includes sticky buy bar → `/zh/pro`; PDF does not) |
 | Customer delivery | `web/output/reports/gw{N}-{entry}-{a19\|b49}.{html,pdf}` |
 | This spec | `web/scripts/sample-reports/REPORT_SPEC.md` |
 
