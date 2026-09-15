@@ -39,7 +39,7 @@ function buildPayload(date) {
     titleHtml: `还在纠结开局阵？<span class="accent">点几下就出队</span>`,
     subtitle:
       "FALEAGUE 推荐阵容上线：选风格、排除大热、定目标 —— 一次给出最稳 / 均衡 / 最差分 三套方案。",
-    styleLabel: "STYLE · 风格芯片",
+    styleLabel: "STYLE · 风格卡",
     styles: [
       { label: "模板", on: false },
       { label: "均衡", on: true },
@@ -124,7 +124,7 @@ function buildPayload(date) {
     features: [
       {
         kicker: "01 CHIPS",
-        title: "芯片点选",
+        title: "卡点选",
         body: "风格 / 排除大热 / 开局目标，不用写长文。",
       },
       {
@@ -145,7 +145,7 @@ function buildPayload(date) {
     ],
     rewardPlus: "×3",
     rewardTitle: "一次生成 · 三套方案",
-    rewardBody: "改芯片再生成，可换下一批对比阵容。",
+    rewardBody: "改卡再生成，可换下一批对比阵容。",
     cta: "立刻试推荐阵容 →",
     url: "faleague-ai.com/zh/fpl/insights/recommended-squad",
   };
@@ -156,7 +156,7 @@ function buildCaption(data) {
     "🔥 FPL 开局阵不会选？",
     "",
     "FALEAGUE「推荐阵容」上线了 ——",
-    "点几下芯片，一次给你 3 套对比方案：",
+    "点几下卡，一次给你 3 套对比方案：",
     "",
     "✅ 最稳 / 均衡 / 最差分",
     "✅ 可排除 Haaland、Bruno 等大热",

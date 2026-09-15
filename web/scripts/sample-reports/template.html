@@ -583,17 +583,73 @@
         font-size: 11px;
       }
     }
+
+    /* GW5 voice (916934 gold master): tighter type, no-wrap tables, units in copy */
+    h2 { margin-top: 26px; }
+    h3 { margin: 16px 0 6px; letter-spacing: -0.01em; }
+    p.lede { margin: 0 0 8px; color: var(--muted); line-height: 1.65; }
+    p.note {
+      margin: 2px 0 12px;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .kicker {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 2px 0 6px;
+    }
+    .chooser {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 8px 0 4px;
+    }
+    .chooser .slot {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 8px;
+      background: var(--bg-soft);
+    }
+    .chooser .slot b { display: block; font-size: 10px; margin-bottom: 2px; }
+    .chooser .slot span { font-size: 10px; color: var(--muted); line-height: 1.35; white-space: nowrap; }
+    table.dec td.lvl { text-align: center; font-weight: 700; white-space: nowrap; }
+    table.dec td.num { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    table.dec .good { color: var(--ok); }
+    table.dec .warn { color: var(--warn); }
+    table.dec .bad { color: #9b1c1c; }
+    table.dec .mute { color: #888; }
+    table.dec th { white-space: nowrap; }
+    table { font-size: 10px; }
+    table th, table td {
+      white-space: nowrap;
+      vertical-align: middle;
+      padding: 4px 6px;
+    }
+    table.cmp td.num { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+    span.sub {
+      display: inline;
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--muted);
+      margin: 0;
+    }
+    span.sub::before { content: " · "; }
+    .callout p { margin: 0 0 4px; }
+    .callout p:last-child { margin: 0; }
+    .chooser, table.cmp { break-inside: avoid; page-break-inside: avoid; }
   </style>
 </head>
 <body>
-  <p class="watermark">FALEAGUE PRO · 参考样张（Entry 916934 · AI League）· 非买家真实交付件 · {{SKU_LABEL}}</p>
+  <p class="watermark">FALEAGUE PRO · 参考报告样本（Entry 916934 · AI League）· 非买家真实交付件 · {{SKU_LABEL}}</p>
   <div class="row">
     <h1>GW4 诊断 · FALEAGUE-AI FC</h1>
     <span class="pill on">{{SKU_LABEL}}</span>
-    <span class="pill">3 FT · 芯片全在</span>
+    <span class="pill">3 FT · 卡全在</span>
   </div>
   <p class="muted">
-    Entry 916934 · 截止示例。本季 0 次转会、四张芯片未用；按 3 次免费转会写。
+    Entry 916934 · 截止示例。本季 0 次转会、四张卡未用；按 3 次免费转会写。
     小联赛主看 AI League（22 人，你第 18）。
   </p>
 
@@ -602,13 +658,13 @@
     <div class="stat"><b>186</b><span>总分 · 总榜约 404 万</span></div>
     <div class="stat"><b>#18 / 22</b><span>AI League · 落后榜首 57</span></div>
     <div class="stat"><b>3 FT · £0</b><span>应用满，0 扣分</span></div>
-    <div class="stat"><b>芯片 4/4</b><span>本周全不开</span></div>
+    <div class="stat"><b>卡 4/4</b><span>本周全不开</span></div>
   </div>
 
   <div class="callout">
     <div class="t">本周一句话</div>
     用满 3 次 FT 清掉 Rodon（伤停至 11 月）和 Keane（0 分钟），再把 Thiaw 换成赛程更好的廉价后卫。
-    不开任何芯片。队长 João Pedro（CHE vs HUL，FDR 2）——AI League 里约 80% 人仍队长 Haaland，
+    不开任何卡。队长 João Pedro（CHE vs HUL，FDR 2）——AI League 里约 80% 人仍队长 Haaland，
     这是你追分的一周，不是跟模板。
   </div>
   </div>
@@ -795,10 +851,10 @@
   <p class="muted small">备选 VC：Tavernier（主场布伦特福德）。若 App 自动把 VC 指到 Haaland，开赛前改回 Saka。</p>
   </div>
 
-  <h3>芯片：四张都留</h3>
+  <h3>卡：四张都留</h3>
   <div class="keep">
   <table>
-    <thead><tr><th>芯片</th><th>本周</th><th>原因</th></tr></thead>
+    <thead><tr><th>卡</th><th>本周</th><th>原因</th></tr></thead>
     <tbody>
       <tr><td>Wildcard</td><td>不开</td><td>3 FT 已够修板凳；核心进攻还在，空白轮再用。</td></tr>
       <tr><td>Bench Boost</td><td>不开</td><td>换完后板凳仍不够 4 个都值得打。</td></tr>
@@ -931,7 +987,7 @@
         <div class="gauge-label">中</div>
       </div>
       <div class="feas-copy">
-        <div class="k">可行性：中 —— 可以冲分差，不适合烧芯片</div>
+        <div class="k">可行性：中 —— 可以冲分差，不适合烧卡</div>
         <p class="small muted" style="margin:0">
           仪表只传达「判断」；下面三条仍是完整理由，信息不丢。
         </p>
@@ -941,7 +997,7 @@
           <span class="lo">不利 · FDR 4 德比</span>
           <span class="lo">不利 · 银行 £0</span>
           <span>杠杆 · 队长</span>
-          <span>芯片 · 不开</span>
+          <span>卡 · 不开</span>
         </div>
       </div>
     </div>
@@ -950,7 +1006,7 @@
   <div class="stats3">
     <div class="stat"><b>中</b><span>可行性</span></div>
     <div class="stat"><b>队长</b><span>最大杠杆</span></div>
-    <div class="stat"><b>不开芯片</b><span>冲奖也不动 TC/BB</span></div>
+    <div class="stat"><b>不开卡</b><span>冲奖也不动 TC/BB</span></div>
   </div>
   <div class="callout warn">
     <div class="t">有利 / 不利 / 结论</div>
@@ -984,7 +1040,7 @@
     <div class="bar-row"><span class="lab">Thiaw (出)</span><div class="bar-track"><div class="bar-fill" style="width:49%"></div></div><span class="bar-val">9.7</span></div>
     <div class="bar-row"><span class="lab">De Cuyper (入)</span><div class="bar-track"><div class="bar-fill" style="width:97%"></div></div><span class="bar-val">19.4</span></div>
   </div>
-  <p class="muted small">来源：Faleague xP 模型 · 窗口 GW4–6 · 样张日期 2026-09-10。</p>
+  <p class="muted small">来源：Faleague xP 模型 · 窗口 GW4–6 · 报告样本日期 2026-09-10。</p>
 
   <table>
     <thead><tr><th>球员</th><th>角色</th><th>GW4</th><th>FDR</th><th>3轮xP</th><th>备注</th></tr></thead>

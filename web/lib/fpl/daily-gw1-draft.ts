@@ -72,7 +72,7 @@ export const DRAFT_THEMES: DailyDraftTheme[] = [
     title_en: "Boosting triple stack",
     title_zh: "三核加强阵",
     hook_en: "Haaland + premium mid + premium def — built for a big chip week.",
-    hook_zh: "Haaland + 贵价中场 + 贵价后卫 — 为大芯片周蓄力。",
+    hook_zh: "Haaland + 贵价中场 + 贵价后卫 — 为大卡周蓄力。",
   },
 ];
 
@@ -530,7 +530,7 @@ function talkingPoints(
       lockedNames.slice(0, 3).join(" + ") || "Haaland 三核";
     return {
       en: `Talking point: Boosting stack — ${names}. Chip week?`,
-      zh: `今日话题：三核加强阵 — ${names}，芯片周怎么用？`,
+      zh: `今日话题：三核加强阵 — ${names}，卡周怎么用？`,
     };
   }
   const cap = extras?.captain ? ` · C ${extras.captain}` : "";
@@ -572,7 +572,7 @@ function templateRationale(
       `- **Triple stack:** ${anchors.join(" + ")} — built to smash a Triple Captain / Bench Boost week.`,
     );
     themeBulletsZh.push(
-      `- **三核加强：** ${anchors.join(" + ")} — 为大芯片（三队长 / 替补加分）周蓄力。`,
+      `- **三核加强：** ${anchors.join(" + ")} — 为大卡（三队长 / 替补加分）周蓄力。`,
     );
   } else {
     themeBulletsEn.push(

@@ -25,10 +25,10 @@ export const FOUNDER_PACK_PATH = "/pro";
 export const FOUNDER_PACK_EXPIRES_AT = new Date("2026-10-22T15:59:59.000Z");
 
 /** Public sample report asset paths (static files under /public). */
-export const SAMPLE_REPORT_A_PDF_ASSET = "/pro/samples/gw4-sample-a-19.pdf";
-export const SAMPLE_REPORT_B_PDF_ASSET = "/pro/samples/gw4-sample-b-49.pdf";
-export const SAMPLE_REPORT_A_HTML_ASSET = "/pro/samples/gw4-sample-a-19.html";
-export const SAMPLE_REPORT_B_HTML_ASSET = "/pro/samples/gw4-sample-b-49.html";
+export const SAMPLE_REPORT_A_PDF_ASSET = "/pro/samples/gw5-sample-a-19.pdf";
+export const SAMPLE_REPORT_B_PDF_ASSET = "/pro/samples/gw5-sample-b-49.pdf";
+export const SAMPLE_REPORT_A_HTML_ASSET = "/pro/samples/gw5-sample-a-19.html";
+export const SAMPLE_REPORT_B_HTML_ASSET = "/pro/samples/gw5-sample-b-49.html";
 
 /**
  * Tracked sample links (log open/download then redirect to the asset).

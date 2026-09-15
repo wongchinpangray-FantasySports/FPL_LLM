@@ -322,7 +322,7 @@ export async function nudgeSampleOpenersInbox(): Promise<{
     .map((user_id) => ({
       user_id,
       type: SAMPLE_NUDGE_TYPE,
-      title: "样张看过了 · 本轮可以开通",
+      title: "报告样本看过了 · 本轮可以开通",
       body: "你打开过参考报告。A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。点「去开通」留微信号，或微信私信发哥「开通」。Scout 中文继续免费。",
       href: FOUNDER_PACK_PATH,
     }));

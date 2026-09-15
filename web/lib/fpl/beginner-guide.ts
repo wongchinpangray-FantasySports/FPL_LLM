@@ -83,7 +83,7 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
       "超出免费额度的换人，每个额外转会 -4 分（俗称 taking a hit）。",
       "买人必须卖人，且位置相同（卖中场才能买中场）；新球员须符合 £100m 总预算与同队 3 人上限。",
       "卖出价可能低于买入价：球员涨价后，你仅保留一半涨幅（向下取整至 £0.1m）。",
-      "单轮最多 20 次转会（使用 Wildcard 或 Free Hit 芯片时不受此限）。",
+      "单轮最多 20 次转会（使用 Wildcard 或 Free Hit 卡时不受此限）。",
     ],
   },
   {
@@ -92,7 +92,7 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
     title: "积分规则",
     bullets: [
       "球员积分来自真实比赛数据：出场、进球、助攻、零封、扑救、防守贡献、Bonus 等。",
-      "队长积分 ×2；使用 Triple Captain 芯片时为 ×3。",
+      "队长积分 ×2；使用 Triple Captain 卡时为 ×3。",
       "零封（Clean Sheet）：门将/后卫 +4，中场 +1；须上场 ≥60 分钟且该时段球队未失球。",
       "门将每 3 次扑救 +1；扑点 +5；射失点球 -2。",
       "Bonus 由官方算法根据当场表现分配，每名球员 0–3 分。",
@@ -123,10 +123,10 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
   {
     id: "chips",
     num: 8,
-    title: "芯片（Chips）",
+    title: "卡（Chips）",
     bullets: [
-      "每轮只能使用 1 枚芯片；在 Pick Team 或 Transfers 页面激活。",
-      "赛季分上下半场各一套芯片；未在有效期内使用即作废，不可顺延。",
+      "每轮只能使用 1 张卡；在 Pick Team 或 Transfers 页面激活。",
+      "赛季分上下半场各一套卡；未在有效期内使用即作废，不可顺延。",
       "Wildcard / Free Hit 使用后不可撤销；Bench Boost / Triple Captain 可在 Deadline 前取消。",
       "使用 Wildcard 或 Free Hit 时，已累积的免费转会次数会保留至下一轮。",
       "Free Hit 不可在连续两个 GW 使用。",
@@ -137,7 +137,7 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
       { action: "Bench Boost 替补加分", points: "当轮 15 人全部计分" },
       { action: "Triple Captain 三倍队长", points: "当轮队长积分 ×3 而非 ×2" },
     ],
-    note: "上半场芯片（含 Wildcard、Free Hit、Bench Boost、Triple Captain）须在 GW19 Deadline 前使用；下半场芯片在 GW19 之后开放。",
+    note: "上半场卡（含 Wildcard、Free Hit、Bench Boost、Triple Captain）须在 GW19 Deadline 前使用；下半场卡在 GW19 之后开放。",
   },
   {
     id: "glossary",
@@ -145,7 +145,7 @@ export const FPL_BEGINNER_GUIDE_SECTIONS: GuideSection[] = [
     title: "常用术语",
     bullets: [
       "GW / Gameweek：比赛轮次，通常一个周末为一轮。",
-      "Deadline：该轮阵容锁定时间，之后无法修改当轮首发与芯片。",
+      "Deadline：该轮阵容锁定时间，之后无法修改当轮首发与卡。",
       "Template：高拥有率、大众模板球员。",
       "Differential：低拥有率差分球员，用来冲排名。",
       "xP / xPts：预期积分，基于模型或历史数据的参考值。",
@@ -193,7 +193,7 @@ export function buildGuidePosterPages(date: string): GuidePosterPage[] {
       eyebrow: "FPL BEGINNER GUIDE · 2026/27",
       title: "完整 FPL 新手上手指南",
       titleHtml: '完整 <span class="accent">FPL</span> 新手上手指南',
-      subtitle: "从注册、选队、换人到积分与芯片 —— 一篇搞懂英超范特西",
+      subtitle: "从注册、选队、换人到积分与卡 —— 一篇搞懂英超范特西",
       bullets: [
         "基于 fantasy.premierleague.com 官方规则整理",
         "适合从未玩过 FPL 的英超球迷",
@@ -258,9 +258,9 @@ export function buildGuidePosterPages(date: string): GuidePosterPage[] {
       page: 7,
       total: TOTAL,
       eyebrow: "06 · CHIPS",
-      title: "四枚芯片",
-      titleHtml: '四枚<span class="accent">芯片</span>',
-      subtitle: "每轮只能用 1 枚 · 上下半场各一套",
+      title: "四张卡",
+      titleHtml: '四张<span class="accent">卡</span>',
+      subtitle: "每轮只能用 1 张 · 上下半场各一套",
       chips: (s[7].table ?? []).map((r) => ({
         label: r.action,
         desc: r.points,
@@ -307,7 +307,7 @@ export function buildGuidePosterCaption(date: string): string {
     "✅ 首发 / 队长 / 替补自动换人",
     "✅ Deadline · 免费转会 · -4 Hit",
     "✅ 完整积分表 + 防守贡献 DC",
-    "✅ Wildcard / Free Hit / BB / TC 芯片",
+    "✅ Wildcard / Free Hit / BB / TC 卡",
     "",
     "左滑 8 页看完，建议收藏备用。",
     "完整图文版（可搜索、可复制）：",

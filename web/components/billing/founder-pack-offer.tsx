@@ -11,6 +11,10 @@ import {
   getFounderWechatHandle,
 } from "@/lib/billing/founder-pack";
 import { FounderPackPayActions } from "@/components/billing/founder-pack-pay-actions";
+import {
+  ProTeaserPanel,
+  type ProTeaserPanelLabels,
+} from "@/components/billing/pro-teaser-panel";
 
 function SkuPrice({
   sale,
@@ -87,12 +91,66 @@ export function FounderPackOffer({
     signupBody: string;
     signupCta: string;
     signupLater: string;
+    teaserTitle: string;
+    teaserHint: string;
+    teaserPlaceholder: string;
+    teaserLookup: string;
+    teaserLookingUp: string;
+    teaserConfirmPrompt: string;
+    teaserConfirmYes: string;
+    teaserChange: string;
+    teaserInvalid: string;
+    teaserNotFound: string;
+    teaserLookupFailed: string;
+    teaserTeam: string;
+    teaserManager: string;
+    teaserGenerate: string;
+    teaserGenerating: string;
+    teaserError: string;
+    teaserPoints: string;
+    teaserOr: string;
+    teaserBank: string;
+    teaserFt: string;
+    teaserChips: string;
+    teaserDeadline: string;
+    teaserProblems: string;
+    teaserLocked: string;
+    teaserCta: string;
   };
   signedInEmail?: string | null;
 }) {
   const wechat = getFounderWechatHandle();
   const [sku, setSku] = useState<FounderSkuId>("founder_pack");
+  const [teaserEntryId, setTeaserEntryId] = useState<number | null>(null);
   const includes = sku === "gw_note" ? labels.includesA : labels.includesB;
+
+  const teaserLabels: ProTeaserPanelLabels = {
+    teaserTitle: labels.teaserTitle,
+    teaserHint: labels.teaserHint,
+    teaserPlaceholder: labels.teaserPlaceholder,
+    teaserLookup: labels.teaserLookup,
+    teaserLookingUp: labels.teaserLookingUp,
+    teaserConfirmPrompt: labels.teaserConfirmPrompt,
+    teaserConfirmYes: labels.teaserConfirmYes,
+    teaserChange: labels.teaserChange,
+    teaserInvalid: labels.teaserInvalid,
+    teaserNotFound: labels.teaserNotFound,
+    teaserLookupFailed: labels.teaserLookupFailed,
+    teaserTeam: labels.teaserTeam,
+    teaserManager: labels.teaserManager,
+    teaserGenerate: labels.teaserGenerate,
+    teaserGenerating: labels.teaserGenerating,
+    teaserError: labels.teaserError,
+    teaserPoints: labels.teaserPoints,
+    teaserOr: labels.teaserOr,
+    teaserBank: labels.teaserBank,
+    teaserFt: labels.teaserFt,
+    teaserChips: labels.teaserChips,
+    teaserDeadline: labels.teaserDeadline,
+    teaserProblems: labels.teaserProblems,
+    teaserLocked: labels.teaserLocked,
+    teaserCta: labels.teaserCta,
+  };
 
   const cards = [
     {
@@ -124,6 +182,8 @@ export function FounderPackOffer({
 
   return (
     <div className="flex flex-col gap-6">
+      <ProTeaserPanel labels={teaserLabels} onEntryIdChange={setTeaserEntryId} />
+
       <div>
         <h2 className="text-sm font-semibold text-foreground">{labels.chooseSku}</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -204,7 +264,7 @@ export function FounderPackOffer({
         </ol>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div id="pay" className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-semibold text-foreground">{labels.payTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.payBody}</p>
         <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/[0.1] px-4 py-3">
@@ -232,6 +292,7 @@ export function FounderPackOffer({
         <FounderPackPayActions
           sku={sku}
           signedInEmail={signedInEmail}
+          fplEntryId={teaserEntryId}
           labels={{
             wechatIdLabel: labels.wechatIdLabel,
             wechatIdPlaceholder: labels.wechatIdPlaceholder,

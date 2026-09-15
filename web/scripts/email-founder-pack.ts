@@ -83,9 +83,9 @@ function buildHtml(site: string): string {
   </p>
   <p style="margin:8px 0 4px;font-weight:600">先下载参考报告（PDF）：</p>
   <p>
-    <a href="${a}" style="color:#0a6b3c">样张 A · ¥${GW_NOTE_PRICE_CNY} 单轮</a>
+    <a href="${a}" style="color:#0a6b3c">报告样本 A · ¥${GW_NOTE_PRICE_CNY} 单轮</a>
     &nbsp;·&nbsp;
-    <a href="${b}" style="color:#0a6b3c">样张 B · ¥${FOUNDER_PACK_PRICE_CNY} 四轮（含冲冠规划）</a>
+    <a href="${b}" style="color:#0a6b3c">报告样本 B · ¥${FOUNDER_PACK_PRICE_CNY} 四轮（含冲冠规划）</a>
   </p>
   <p style="font-size:12px;color:#666;margin-top:28px">Scout 中文继续免费。这不是 Scout 会员替代。<br/>Faleague · faleague-ai.com</p>
 </body></html>`;

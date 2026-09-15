@@ -9,10 +9,12 @@ import { FOUNDER_PACK_PATH, type FounderSkuId } from "@/lib/billing/founder-pack
 export function FounderPackPayActions({
   sku,
   signedInEmail,
+  fplEntryId,
   labels,
 }: {
   sku: FounderSkuId;
   signedInEmail?: string | null;
+  fplEntryId?: number | null;
   labels: {
     wechatIdLabel: string;
     wechatIdPlaceholder: string;
@@ -68,6 +70,7 @@ export function FounderPackPayActions({
           wechatId: id,
           sku,
           email: signedInEmail ? undefined : email,
+          entryId: fplEntryId ?? undefined,
         }),
       });
       const data = (await res.json()) as {

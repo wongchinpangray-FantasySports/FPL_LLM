@@ -1,7 +1,7 @@
 # FALEAGUE PRO report template (canonical)
 
-**Gold master:** Entry **916934** sample — `web/scripts/sample-reports/template.html`  
-(+ canvas `gw4-note-916934.canvas.tsx` for the same outline).
+**Gold master:** Entry **916934** GW5 sample — `web/scripts/render-delivery-916934-gw5.mjs`  
+(CSS shell still lives in `web/scripts/sample-reports/template.html`).
 
 Every customer delivery (A ¥19 or B ¥49) **must** follow this outline.  
 Fill in their Entry / league / transfers — do **not** invent a new section order.
@@ -13,10 +13,10 @@ Fill in their Entry / league / transfers — do **not** invent a new section ord
 | — | Watermark · title · pills · muted intro | yes |
 | — | 4 KPI stats | yes |
 | — | 本周一句话 callout | yes |
-| **1** | 本周动作（先看完再翻证据）— FT table + small “不要 -4” note | yes |
-| | 建议首发 XI · N FT 之后（formation）— intro · XI table · bench table | yes |
-| | C / VC cards (+ 备选 VC note) | yes |
-| | 芯片 table（本周 / 原因；已用的芯片标出来） | yes |
+| **1** | 本周动作 — FT table + small “不要 -4” note | yes |
+| — | 建议首发 XI · N FT 之后（formation）— intro · XI table · bench table | yes |
+| — | C / VC cards (+ 备选 VC note) | yes |
+| — | 卡 table（本周 / 原因；已用的卡标出来） | yes |
 | **2** | 小联赛 · {主战场名} — intro · standings · 对榜首：他们有你没有 · 你有榜首没有 · 小联赛结论 callout | yes |
 | **3** | 冲击当轮小联赛冠军 · 可行性 — 3 stats · 有利/不利/结论 · 优先级 table | yes |
 | **4** | 规划 4 轮内冲击小联赛冠军 — 仅 **B ¥49**（阶梯 · 加码路径 · 复盘清单 · 微信一句话） | B only |
@@ -25,6 +25,10 @@ Fill in their Entry / league / transfers — do **not** invent a new section ord
 
 - **A ¥19:** evidence is **§4** (no climb block).  
 - **B ¥49:** climb is **§4**, evidence is **§5**.
+
+### §1 球队整体（强制）
+
+买入球员 **必须**写所属球队整体：进攻状态 / xGA 渗漏 / 零封运气 / 后防红黄牌队友。禁止只写该球员 xP 或 FDR。后卫若俱乐部 `def_use=只看 DefCon` 或纪律风险高，不得包装成零封资产（Palace 边卫吃中卫红牌即属此类）。
 
 ## Style
 
@@ -44,7 +48,7 @@ Tone: Chinese, direct, one primary plan — model traps go in appendix “否决
 
 | Role | Path |
 |------|------|
-| Public sample A/B | `web/scripts/sample-reports/template.html` + `render-sample-report-pdfs.mjs` |
+| Public sample A/B | `render-delivery-916934-gw5.mjs` → `web/public/pro/samples/gw5-sample-{a-19|b-49}.{html,pdf}` |
 | Customer delivery | `web/output/reports/gw{N}-{entry}-{a19\|b49}.{html,pdf}` |
 | This spec | `web/scripts/sample-reports/REPORT_SPEC.md` |
 

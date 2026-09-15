@@ -30,7 +30,7 @@ const HREF_EN = "/en/fpl/insights/recommended-squad";
 
 const COPY = {
   zh: {
-    title: "推荐阵容上线：点芯片，一次出三套",
+    title: "推荐阵容上线：点卡，一次出三套",
     body: "选风格、排除大热、定目标 —— 最稳 / 均衡 / 最差分并排对比，一键导入构建器微调。",
   },
   en: {

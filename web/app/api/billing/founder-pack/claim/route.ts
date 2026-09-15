@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       wechatId?: string;
       sku?: string;
       email?: string;
+      entryId?: number | string;
     };
     const wechatId = String(body.wechatId ?? "").trim();
     const sku = parseSku(body.sku) ?? "founder_pack";
@@ -84,6 +85,11 @@ export async function POST(req: Request) {
     }
 
     const skuMeta = FOUNDER_SKUS[sku];
+    const rawEntry = Number(body.entryId);
+    const entryNote =
+      Number.isFinite(rawEntry) && rawEntry > 0
+        ? ` Entry ${Math.trunc(rawEntry)}.`
+        : "";
     const href = existingUserId
       ? founderPackClaimHref(existingUserId)
       : `/admin?tab=pro&grantEmail=${encodeURIComponent(email)}`;
@@ -115,7 +121,7 @@ export async function POST(req: Request) {
         user_id: a.id,
         type: "founder_pack_claim",
         title: `Lead · ${skuMeta.labelZh} ¥${skuMeta.priceCny}`,
-        body: `Contact WeChat "${wechatId}" (wx:${wechatId}). Email ${email}${needsSignup ? " (not registered yet)" : ""}. SKU ${sku} ¥${skuMeta.priceCny} (list ¥${skuMeta.listPriceCny}). Collect privately — no on-site QR. Open Admin → PRO. ${dedupeKey}`,
+        body: `Contact WeChat "${wechatId}" (wx:${wechatId}). Email ${email}${needsSignup ? " (not registered yet)" : ""}.${entryNote} SKU ${sku} ¥${skuMeta.priceCny} (list ¥${skuMeta.listPriceCny}). Collect privately — no on-site QR. Open Admin → PRO. ${dedupeKey}`,
         href,
       })),
     );
