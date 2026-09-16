@@ -46,7 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/account/me");
+      const res = await fetch("/api/account/me", {
+        signal: AbortSignal.timeout(8_000),
+      });
       if (!res.ok) {
         setUser(null);
         setProfile(null);
@@ -95,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | undefined;
     let cancelled = false;
+    const safety = window.setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 10_000);
 
     void (async () => {
       try {
@@ -116,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(safety);
       subscription?.unsubscribe();
     };
   }, [refresh]);

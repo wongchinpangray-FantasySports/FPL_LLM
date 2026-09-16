@@ -10,7 +10,9 @@ async function loadAuthConfig(): Promise<{ url: string; key: string }> {
 
   if (runtimeConfig) return runtimeConfig;
 
-  const res = await fetch("/api/auth/config");
+  const res = await fetch("/api/auth/config", {
+    signal: AbortSignal.timeout(8_000),
+  });
   const data = (await res.json()) as {
     url?: string;
     anonKey?: string;

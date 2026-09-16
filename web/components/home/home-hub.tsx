@@ -1113,17 +1113,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     fplDailyDigest: null,
   };
 
-  if (!authLoading && !user) {
+  if (authLoading || !user) {
     return <HomeGuestLanding news={hub.eplNews.length > 0 ? hub.eplNews : hub.news} />;
-  }
-
-  if (authLoading) {
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-        <div className="h-14 animate-pulse rounded-xl border border-border bg-card" />
-        <div className="h-48 animate-pulse rounded-xl border border-border bg-card" />
-      </div>
-    );
   }
 
   const showFounderOffer =
