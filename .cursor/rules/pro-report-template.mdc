@@ -13,3 +13,4 @@ When drafting / revising a **FALEAGUE PRO** GW note (¥19 A or ¥49 B) for any E
 4. **A:** evidence is §4 (no climb). **B:** climb is §4, evidence is §5.
 5. Write customer files under `web/output/reports/gw{N}-{entry}-{a19|b49}.{html,pdf}`.
 6. Model traps go in appendix “否决”, not in §1 本周动作.
+7. Any recommended IN player must include **club context** (team attack form, xGA leak, CS luck, teammate cards). Never sell a DEF as a CS asset on player xP alone — a CB red/error (Disasi-type) can wipe the full-back’s week.
