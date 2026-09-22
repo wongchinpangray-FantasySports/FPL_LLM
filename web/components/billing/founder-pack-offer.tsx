@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   LAUNCH_DISCOUNT_ACTIVE,
   SAMPLE_REPORT_A_HTML,
@@ -120,6 +121,8 @@ export function FounderPackOffer({
   signedInEmail?: string | null;
 }) {
   const wechat = getFounderWechatHandle();
+  const { user } = useAuth();
+  const email = signedInEmail ?? user?.email ?? null;
   const [sku, setSku] = useState<FounderSkuId>("founder_pack");
   const [teaserEntryId, setTeaserEntryId] = useState<number | null>(null);
 
@@ -290,14 +293,14 @@ export function FounderPackOffer({
             {labels.wechatLabel}: <span className="font-medium">{wechat}</span>
           </p>
         ) : null}
-        {signedInEmail ? (
+        {email ? (
           <p className="mt-3 text-sm text-foreground">
-            {labels.signedInAs.replace("{email}", signedInEmail)}
+            {labels.signedInAs.replace("{email}", email)}
           </p>
         ) : null}
         <FounderPackPayActions
           sku={sku}
-          signedInEmail={signedInEmail}
+          signedInEmail={email}
           fplEntryId={teaserEntryId}
           labels={{
             wechatIdLabel: labels.wechatIdLabel,

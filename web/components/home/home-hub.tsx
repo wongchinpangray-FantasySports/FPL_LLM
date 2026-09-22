@@ -1073,6 +1073,9 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
       }
       try {
         const res = await fetch(`/api/home/hub?locale=${encodeURIComponent(locale)}`);
+        if (res.status >= 500) {
+          throw new Error(`hub ${res.status}`);
+        }
         const json = (await res.json()) as HomeHubData & { error?: string };
         if (!res.ok) throw new Error(json.error ?? "Failed to load");
         if (!cancelled) {
@@ -1081,7 +1084,8 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
         }
       } catch (e) {
         if (cancelled) return;
-        if (attempt < 2) {
+        // Do not retry 5xx / 1102 — that re-stresses a dying isolate.
+        if (attempt < 2 && e instanceof TypeError) {
           await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
           return fetchHub(attempt + 1);
         }

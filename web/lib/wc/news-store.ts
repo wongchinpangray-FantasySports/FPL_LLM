@@ -61,7 +61,7 @@ function filterItems(
 ): WcNewsItem[] {
   if (opts.category === "worldcup" || opts.category === "creators") return [];
 
-  let out = withoutFplCreatorFeeds(withoutWorldCupNews(items.map(normalizeItem)));
+  let out = withoutFplCreatorFeeds(withoutWorldCupNews(items));
   if (opts.category && opts.category !== "ALL") {
     if (opts.category === "trending") {
       out = [...out].sort((a, b) => {
@@ -74,7 +74,7 @@ function filterItems(
     }
   }
   if (opts.editorialOnly) out = out.filter((i) => i.editorial_score >= 2);
-  return out.slice(0, opts.limit);
+  return out.slice(0, opts.limit).map(normalizeItem);
 }
 
 export async function loadWcNewsFromDb(): Promise<{
@@ -89,7 +89,7 @@ export async function loadWcNewsFromDb(): Promise<{
       .eq("id", CACHE_ID)
       .maybeSingle();
     if (error || !data) return { items: [], fetched_at: null };
-    const items = ((data.items as WcNewsItem[]) ?? []).map(normalizeItem);
+    const items = (data.items as WcNewsItem[]) ?? [];
     return {
       items,
       fetched_at: (data.fetched_at as string | null) ?? null,

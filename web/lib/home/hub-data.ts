@@ -72,6 +72,21 @@ export type HomeHubData = {
   fplDailyDigest: HomeFplDailyTeaser | null;
 };
 
+export const EMPTY_HOME_HUB: HomeHubData = {
+  today: { ticker: [], fpl: { gw: null, deadline: null, open: false } },
+  wc: {
+    nextMatches: [],
+    groupsPreview: [],
+    topScorers: [],
+    topAssists: [],
+  },
+  news: [],
+  transferNews: [],
+  eplNews: [],
+  fplTweets: [],
+  fplDailyDigest: null,
+};
+
 function toSnippet(m: WcMatchRow): HomeMatchSnippet {
   return {
     id: m.id,
@@ -268,10 +283,14 @@ export async function loadHomeHubData(locale = "en"): Promise<HomeHubData> {
   };
 }
 
+function slimHubNews(items: WcNewsItem[]): WcNewsItem[] {
+  return items.map((item) => ({ ...item, summary: "" }));
+}
+
 /** Home hub only needs FPL deadline + news — skip WC match/standings work (Worker CPU). */
 export async function loadHomeHubDataLite(locale = "en"): Promise<HomeHubData> {
   const [newsResult, fplResult, digestResult] = await Promise.allSettled([
-    getWcNewsForApi({ limit: 150, editorialOnly: false, category: "ALL" }),
+    getWcNewsForApi({ limit: 40, editorialOnly: false, category: "ALL" }),
     getMiniGameweekContext(),
     loadFplDailyTeaser(locale),
   ]);
@@ -321,10 +340,10 @@ export async function loadHomeHubDataLite(locale = "en"): Promise<HomeHubData> {
       topScorers: [],
       topAssists: [],
     },
-    news: trending.length > 0 ? trending : allNews.slice(0, 8),
-    transferNews: transferItems,
-    eplNews: eplNewsItems.length > 0 ? eplNewsItems : trending,
-    fplTweets: fplTweetItems,
+    news: slimHubNews(trending.length > 0 ? trending : allNews.slice(0, 8)),
+    transferNews: slimHubNews(transferItems),
+    eplNews: slimHubNews(eplNewsItems.length > 0 ? eplNewsItems : trending),
+    fplTweets: slimHubNews(fplTweetItems),
     fplDailyDigest:
       digestResult.status === "fulfilled" ? digestResult.value : null,
   };

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
 import { FounderPackOffer } from "@/components/billing/founder-pack-offer";
-import { getAuthUser } from "@/lib/auth/session";
 import {
   FOUNDER_PACK_LIST_PRICE_CNY,
   FOUNDER_PACK_PRICE_CNY,
@@ -12,7 +11,8 @@ import {
   founderPackIsPublic,
 } from "@/lib/billing/founder-pack";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 300;
 
 type Props = { params: { locale: string } };
 
@@ -23,7 +23,6 @@ export default async function FounderPackPage({ params }: Props) {
   }
   const t = await getTranslations({ locale: params.locale, namespace: "founderPack" });
   const common = await getTranslations("common");
-  const user = await getAuthUser();
 
   return (
     <PageShell
@@ -35,7 +34,6 @@ export default async function FounderPackPage({ params }: Props) {
       width="2xl"
     >
       <FounderPackOffer
-        signedInEmail={user?.email ?? null}
         labels={{
           chooseSku: t("chooseSku"),
           skuATitle: t("skuATitle"),
