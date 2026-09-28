@@ -10,9 +10,7 @@
 		"nodejs_compat_populate_process_env",
 		"global_fetch_strictly_public"
 	],
-	"limits": {
-		"cpu_ms": 60000
-	},
+	// Do not set limits.cpu_ms — this account is Workers Free (API 100328).
 	"ai": {
 		"binding": "AI"
 	},
