@@ -29,17 +29,24 @@ export type SetPieceTeamGroup = {
   rows: SetPieceRow[];
 };
 
-function num(v: unknown): number | null {
+/** Integer FPL order / minutes. Do not use for xG/xA — those are fractional. */
+function orderNum(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
 }
 
+function rateTotal(v: unknown): number {
+  if (v == null || v === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
 function hasSetPieceRole(row: Record<string, unknown>): boolean {
   return (
-    num(row.penalties_order) != null ||
-    num(row.direct_freekicks_order) != null ||
-    num(row.corners_and_indirect_freekicks_order) != null
+    orderNum(row.penalties_order) != null ||
+    orderNum(row.direct_freekicks_order) != null ||
+    orderNum(row.corners_and_indirect_freekicks_order) != null
   );
 }
 
@@ -49,9 +56,9 @@ function per90(total: number, minutes: number): number | null {
 }
 
 function toRow(row: Record<string, unknown>): SetPieceRow {
-  const minutes = num(row.minutes) ?? 0;
-  const xg = num(row.expected_goals) ?? 0;
-  const xa = num(row.expected_assists) ?? 0;
+  const minutes = orderNum(row.minutes) ?? 0;
+  const xg = rateTotal(row.expected_goals);
+  const xa = rateTotal(row.expected_assists);
   return {
     fpl_id: row.fpl_id as number,
     web_name: (row.web_name as string | null) ?? (row.name as string) ?? `#${row.fpl_id}`,
@@ -61,9 +68,9 @@ function toRow(row: Record<string, unknown>): SetPieceRow {
     minutes,
     xg_per_90: per90(xg, minutes),
     xa_per_90: per90(xa, minutes),
-    penalties_order: num(row.penalties_order),
-    direct_freekicks_order: num(row.direct_freekicks_order),
-    corners_order: num(row.corners_and_indirect_freekicks_order),
+    penalties_order: orderNum(row.penalties_order),
+    direct_freekicks_order: orderNum(row.direct_freekicks_order),
+    corners_order: orderNum(row.corners_and_indirect_freekicks_order),
   };
 }
 
@@ -194,6 +201,6 @@ async function loadSetPiecesRawUncached(): Promise<{
 
 export const loadSetPieces = unstable_cache(
   loadSetPiecesRaw,
-  ["fpl-insights-set-pieces-v6"],
+  ["fpl-insights-set-pieces-v7"],
   { revalidate: 300 },
 );

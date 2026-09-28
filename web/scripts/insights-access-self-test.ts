@@ -159,6 +159,11 @@ async function main(): Promise<void> {
   const setPieces = await loadSetPiecesRaw();
   assert.ok(setPieces.teams.length > 0, "expected set-piece teams");
   const setPieceRows = setPieces.teams.flatMap((g) => g.rows);
+  const withXa = setPieceRows.filter((r) => (r.xa_per_90 ?? 0) > 0).length;
+  assert.ok(
+    withXa >= 10,
+    `set-pieces: xa_per_90 must keep fractional expected_assists (got ${withXa} > 0)`,
+  );
   assert.equal(
     hasDuplicateFplIds(setPieceRows),
     false,
