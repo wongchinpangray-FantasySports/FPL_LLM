@@ -47,6 +47,7 @@ export default async function FplGuidePage({ params }: Props) {
           tablePoints: t("tablePoints"),
           note: t("note"),
           updatedNote: t("updatedNote"),
+          findHint: t("findHint"),
         }}
       />
     </PageShell>

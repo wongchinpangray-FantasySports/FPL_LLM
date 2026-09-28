@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useEntryId } from "@/components/entry-id-context";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth/auth-provider";
 import { founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 function HubTile({
@@ -37,6 +38,9 @@ function HubTile({
 export function FplHub() {
   const t = useTranslations("fplHub");
   const { entryId } = useEntryId();
+  const { user, profile } = useAuth();
+  const showProTile =
+    founderPackIsPublic() && Boolean(user) && profile?.insights_plan !== "premium";
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
   const plannerHref = entryId ? `/planner/${entryId}` : "/planner";
   const managerHref = entryId ? `/manager/${entryId}` : "/manager";
@@ -62,12 +66,11 @@ export function FplHub() {
         />
         <HubTile href={managerHref} title={t("manager")} description={t("managerBody")} />
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
-        {founderPackIsPublic() ? (
+        {showProTile ? (
           <HubTile
             href="/pro"
             title={t("founderPackTitle")}
             description={t("founderPackBody")}
-            accent
           />
         ) : null}
         <HubTile

@@ -28,7 +28,7 @@ export default async function FplInsightsHubPage({ params }: Props) {
     >
       <div className="flex flex-col gap-5">
         <InsightsSubNav />
-        {founderPackIsPublic() ? (
+        {founderPackIsPublic() && user ? (
           <Link
             href="/pro"
             className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-3 text-sm text-foreground no-underline hover:bg-amber-500/10"

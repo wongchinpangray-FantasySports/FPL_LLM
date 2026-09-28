@@ -2,15 +2,20 @@
 
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   FOUNDER_PACK_PATH,
   founderPackIsPublic,
 } from "@/lib/billing/founder-pack";
 
+/** Sticky PRO chip for signed-in non-premium only — guests see free signup first. */
 export function FounderPackFloatingCta() {
   const pathname = usePathname() ?? "";
   const t = useTranslations("nav");
+  const { user, profile, loading } = useAuth();
 
+  if (loading || !user) return null;
+  if (profile?.insights_plan === "premium") return null;
   if (!founderPackIsPublic()) return null;
   if (pathname === "/pro" || pathname.startsWith("/pro/")) return null;
   if (pathname.startsWith("/auth")) return null;

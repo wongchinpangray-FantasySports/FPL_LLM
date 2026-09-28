@@ -8,6 +8,7 @@ import { NewsThumb } from "@/components/news/news-thumb";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
 import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FplScreenCard } from "@/components/home/fpl-screen-card";
 
 /** Soft card gradients — distinct tints, readable in light and dark themes. */
 const FEATURE_GRADIENTS = [
@@ -104,19 +105,15 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
   const t = useTranslations("home");
 
   const features = [
-    ...(founderPackIsPublic()
-      ? [
-          {
-            title: t("guestFounderTitle"),
-            body: t("guestFounderBody"),
-            href: "/pro",
-          },
-        ]
-      : []),
     {
       title: t("guestGuideTitle"),
       body: t("guestGuideBody"),
       href: "/fpl/guide",
+    },
+    {
+      title: t("guestScoutTitle"),
+      body: t("guestScoutBody"),
+      href: "/scout",
     },
     {
       title: t("guestFeature1Title"),
@@ -153,16 +150,16 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           {t("guestHeroBody")}
         </p>
+        <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground/90">
+          {t("guestFreeNote")}
+        </p>
+        <div className="mt-4">
+          <FplScreenCard />
+        </div>
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <Link
             href="/auth/signup"
-            className={cn(
-              buttonVariants({
-                size: "sm",
-                variant: founderPackIsPublic() ? "secondary" : "primary",
-              }),
-              "no-underline",
-            )}
+            className={cn(buttonVariants({ size: "sm" }), "no-underline")}
           >
             {t("guestRegister")}
           </Link>
@@ -172,21 +169,23 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
           >
             {t("guestLogin")}
           </Link>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Link
+            href="/fpl"
+            className="inline-flex text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
+          >
+            {t("guestBrowseFpl")} →
+          </Link>
           {founderPackIsPublic() ? (
             <Link
               href="/pro"
-              className={cn(buttonVariants({ size: "sm" }), "no-underline")}
+              className="inline-flex text-xs text-muted-foreground/80 hover:text-brand-accent no-underline"
             >
-              {t("guestFounderCta")}
+              {t("guestFounderCta")} →
             </Link>
           ) : null}
         </div>
-        <Link
-          href="/fpl"
-          className="mt-3 inline-flex text-xs font-medium text-muted-foreground hover:text-brand-accent no-underline"
-        >
-          {t("guestBrowseFpl")} →
-        </Link>
         </div>
       </section>
 

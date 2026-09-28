@@ -91,8 +91,17 @@ export function SiteHeader() {
   const t = useTranslations("nav");
   const pathname = usePathname() ?? "";
   const { entryId } = useEntryId();
-  const { theme } = useAuth();
+  const { theme, user, profile, loading } = useAuth();
   const [open, setOpen] = useState(false);
+  const isPremium = profile?.insights_plan === "premium";
+  const showGuestSignup = !user && !pathname.startsWith("/auth");
+  const showSignedInPro =
+    !loading &&
+    founderPackIsPublic() &&
+    Boolean(user) &&
+    !isPremium &&
+    pathname !== "/pro" &&
+    !pathname.startsWith("/scout");
 
   const dashboardHref = entryId ? `/dashboard/${entryId}` : "/dashboard";
   const plannerHref = entryId ? `/planner/${entryId}` : "/planner";
@@ -144,7 +153,15 @@ export function SiteHeader() {
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {founderPackIsPublic() && pathname !== "/pro" && !pathname.startsWith("/scout") ? (
+            {showGuestSignup ? (
+              <Link
+                href="/auth/signup"
+                className="inline-flex rounded-full border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-[11px] font-semibold text-brand-accent hover:bg-brand-accent/20 sm:text-xs"
+              >
+                {t("signUp")}
+              </Link>
+            ) : null}
+            {showSignedInPro ? (
               <Link
                 href="/pro"
                 className="hidden rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 sm:inline-flex sm:text-xs"
@@ -181,18 +198,26 @@ export function SiteHeader() {
             </div>
             <nav className="flex flex-1 flex-col overflow-y-auto p-3" aria-label={t("ariaMain")}>
               <MenuLink href="/" label={t("home")} active={isHomePath(pathname)} />
-              <a
-                href="/inbox"
-                className={cn(
-                  "rounded-lg px-3 py-2 text-sm transition-colors",
-                  pathname === "/inbox" || pathname.startsWith("/inbox/")
-                    ? "nav-link-active bg-brand-accent/10 font-medium text-brand-accent"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-                onClick={openInbox}
-              >
-                {t("inbox")}
-              </a>
+
+              <MenuSection title={t("menuSectionMe")}>
+                <a
+                  href="/inbox"
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-sm transition-colors",
+                    pathname === "/inbox" || pathname.startsWith("/inbox/")
+                      ? "nav-link-active bg-brand-accent/10 font-medium text-brand-accent"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                  onClick={openInbox}
+                >
+                  {t("inbox")}
+                </a>
+                <MenuLink
+                  href={managerHref}
+                  label={t("manager")}
+                  active={pathname === "/manager" || pathname.startsWith("/manager/")}
+                />
+              </MenuSection>
 
               <MenuSection title={t("menuSectionSquad")}>
                 <MenuLink
@@ -212,26 +237,13 @@ export function SiteHeader() {
                     pathname === "/squad-builder" || pathname.startsWith("/squad-builder/")
                   }
                 />
-                <MenuLink
-                  href={managerHref}
-                  label={t("manager")}
-                  active={pathname === "/manager" || pathname.startsWith("/manager/")}
-                />
               </MenuSection>
 
               <MenuSection title={t("menuSectionTools")}>
-                {founderPackIsPublic() ? (
-                  <MenuLink
-                    href="/pro"
-                    label={t("founderPack")}
-                    active={pathname === "/pro" || pathname.startsWith("/pro/")}
-                    featured
-                  />
-                ) : null}
                 <MenuLink
-                  href="/fpl/mini-league"
-                  label={t("miniLeague")}
-                  active={pathname === "/fpl/mini-league" || pathname.startsWith("/fpl/mini-league/")}
+                  href="/fpl/guide"
+                  label={t("guide")}
+                  active={pathname === "/fpl/guide" || pathname.startsWith("/fpl/guide/")}
                 />
                 <MenuLink
                   href="/fpl/insights/recommended-squad"
@@ -239,10 +251,18 @@ export function SiteHeader() {
                   active={pathname.startsWith("/fpl/insights/recommended-squad")}
                 />
                 <MenuLink
-                  href="/fpl/guide"
-                  label={t("guide")}
-                  active={pathname === "/fpl/guide" || pathname.startsWith("/fpl/guide/")}
+                  href="/fpl/mini-league"
+                  label={t("miniLeague")}
+                  active={pathname === "/fpl/mini-league" || pathname.startsWith("/fpl/mini-league/")}
                 />
+                {founderPackIsPublic() ? (
+                  <MenuLink
+                    href="/pro"
+                    label={t("founderPackReport")}
+                    active={pathname === "/pro" || pathname.startsWith("/pro/")}
+                    featured={Boolean(user) && !isPremium}
+                  />
+                ) : null}
               </MenuSection>
 
               <MenuSection title={t("menuSectionStat")}>

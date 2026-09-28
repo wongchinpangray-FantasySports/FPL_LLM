@@ -109,6 +109,7 @@ export function FplBeginnerGuide({
     tablePoints: string;
     note: string;
     updatedNote: string;
+    findHint?: string;
   };
 }) {
   return (
@@ -137,7 +138,12 @@ export function FplBeginnerGuide({
         </ol>
       </nav>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+        {labels.findHint ? (
+          <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3.5 text-sm leading-relaxed text-foreground">
+            {labels.findHint}
+          </div>
+        ) : null}
         <div className="rounded-xl border border-border bg-muted/30 px-4 py-3.5 text-base leading-relaxed text-muted-foreground">
           {labels.officialRules}{" "}
           <a
