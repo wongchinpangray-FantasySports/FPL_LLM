@@ -8,6 +8,7 @@ import {
   SAMPLE_REPORT_A_PDF,
   SAMPLE_REPORT_B_HTML,
   SAMPLE_REPORT_B_PDF,
+  SAMPLE_TEASER_NUDGE_SESSION_KEY,
   type FounderSkuId,
   getFounderWechatHandle,
 } from "@/lib/billing/founder-pack";
@@ -16,6 +17,10 @@ import {
   ProTeaserPanel,
   type ProTeaserPanelLabels,
 } from "@/components/billing/pro-teaser-panel";
+import {
+  SamplePdfGate,
+  type SamplePdfGateLabels,
+} from "@/components/billing/sample-pdf-gate";
 
 function SkuPrice({
   sale,
@@ -64,6 +69,17 @@ export function FounderPackOffer({
     limitedOffer: string;
     sampleView: string;
     sampleDownload: string;
+    pdfGateEyebrow: string;
+    pdfGateTitle: string;
+    pdfGateBody: string;
+    pdfGateSignup: string;
+    pdfGateWechat: string;
+    pdfGateWechatCopied: string;
+    pdfGateWechatHint: string;
+    pdfGateWechatFallback: string;
+    pdfGateDownload: string;
+    pdfGateClose: string;
+    teaserNudge: string;
     includesTitle: string;
     includesA: string[];
     includesB: string[];
@@ -125,6 +141,28 @@ export function FounderPackOffer({
   const email = signedInEmail ?? user?.email ?? null;
   const [sku, setSku] = useState<FounderSkuId>("founder_pack");
   const [teaserEntryId, setTeaserEntryId] = useState<number | null>(null);
+  const [showTeaserNudge, setShowTeaserNudge] = useState(false);
+
+  function revealTeaser(): void {
+    setShowTeaserNudge(true);
+    requestAnimationFrame(() => {
+      document.getElementById("teaser")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SAMPLE_TEASER_NUDGE_SESSION_KEY) === "1") {
+        sessionStorage.removeItem(SAMPLE_TEASER_NUDGE_SESSION_KEY);
+        revealTeaser();
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("sku");
@@ -161,6 +199,20 @@ export function FounderPackOffer({
     teaserCta: labels.teaserCta,
   };
 
+  const pdfGateLabels: SamplePdfGateLabels = {
+    sampleDownload: labels.sampleDownload,
+    pdfGateEyebrow: labels.pdfGateEyebrow,
+    pdfGateTitle: labels.pdfGateTitle,
+    pdfGateBody: labels.pdfGateBody,
+    pdfGateSignup: labels.pdfGateSignup,
+    pdfGateWechat: labels.pdfGateWechat,
+    pdfGateWechatCopied: labels.pdfGateWechatCopied,
+    pdfGateWechatHint: labels.pdfGateWechatHint,
+    pdfGateWechatFallback: labels.pdfGateWechatFallback,
+    pdfGateDownload: labels.pdfGateDownload,
+    pdfGateClose: labels.pdfGateClose,
+  };
+
   const cards = [
     {
       id: "gw_note" as const,
@@ -170,7 +222,6 @@ export function FounderPackOffer({
       body: labels.skuABody,
       sampleHtml: SAMPLE_REPORT_A_HTML,
       samplePdf: SAMPLE_REPORT_A_PDF,
-      sampleName: "faleague-sample-a-19.pdf",
     },
     {
       id: "founder_pack" as const,
@@ -180,7 +231,6 @@ export function FounderPackOffer({
       body: labels.skuBBody,
       sampleHtml: SAMPLE_REPORT_B_HTML,
       samplePdf: SAMPLE_REPORT_B_PDF,
-      sampleName: "faleague-sample-b-49.pdf",
     },
   ];
 
@@ -191,6 +241,11 @@ export function FounderPackOffer({
 
   return (
     <div className="flex flex-col gap-6">
+      {showTeaserNudge ? (
+        <p className="rounded-xl border border-brand-accent/40 bg-brand-accent/10 px-4 py-3 text-sm text-foreground">
+          {labels.teaserNudge}
+        </p>
+      ) : null}
       <ProTeaserPanel labels={teaserLabels} onEntryIdChange={setTeaserEntryId} />
 
       <div>
@@ -230,13 +285,12 @@ export function FounderPackOffer({
                   >
                     {labels.sampleView}
                   </a>
-                  <a
+                  <SamplePdfGate
                     href={card.samplePdf}
-                    download={card.sampleName}
+                    labels={pdfGateLabels}
+                    onSignedInDownload={revealTeaser}
                     className="inline-flex items-center justify-center rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground no-underline hover:border-brand-accent/40 hover:bg-muted hover:text-brand-accent"
-                  >
-                    {labels.sampleDownload}
-                  </a>
+                  />
                 </div>
               </div>
             );

@@ -22,6 +22,10 @@ export const FOUNDER_PACK_PRICE_CNY = LAUNCH_DISCOUNT_ACTIVE
 
 export const FOUNDER_PACK_THROUGH_GW = 7;
 export const FOUNDER_PACK_PATH = "/pro";
+/** Session: guest already saw the PDF download gate (soft-block, once per tab). */
+export const SAMPLE_PDF_GATE_SESSION_KEY = "faleague_sample_pdf_gate_v1";
+/** Session: after sample PDF / signup, nudge the Entry-ID teaser on /pro. */
+export const SAMPLE_TEASER_NUDGE_SESSION_KEY = "faleague_sample_teaser_nudge_v1";
 export const FOUNDER_PACK_EXPIRES_AT = new Date("2026-10-22T15:59:59.000Z");
 
 /** Public sample report asset paths (static files under /public). */

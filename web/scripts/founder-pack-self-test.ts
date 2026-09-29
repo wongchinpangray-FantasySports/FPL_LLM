@@ -9,6 +9,8 @@ import {
   GW_NOTE_LIST_PRICE_CNY,
   GW_NOTE_PRICE_CNY,
   LAUNCH_DISCOUNT_ACTIVE,
+  SAMPLE_PDF_GATE_SESSION_KEY,
+  SAMPLE_TEASER_NUDGE_SESSION_KEY,
   founderPackClaimHref,
   founderPackIsLive,
   founderPackIsPublic,
@@ -25,6 +27,8 @@ function main(): void {
   assert.equal(FOUNDER_PACK_PRICE_CNY, 39.9);
   assert.equal(FOUNDER_PACK_THROUGH_GW, 7);
   assert.equal(FOUNDER_PACK_PATH, "/pro");
+  assert.equal(SAMPLE_PDF_GATE_SESSION_KEY, "faleague_sample_pdf_gate_v1");
+  assert.equal(SAMPLE_TEASER_NUDGE_SESSION_KEY, "faleague_sample_teaser_nudge_v1");
   assert.equal(
     founderPackClaimHref("abc"),
     "/admin?tab=pro&grant=abc",
