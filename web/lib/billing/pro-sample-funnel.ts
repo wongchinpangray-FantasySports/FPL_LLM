@@ -17,6 +17,15 @@ export type ProSampleBucket = {
   visitors: number;
 };
 
+export type ProSampleDailyPoint = {
+  /** Calendar day in Asia/Shanghai (YYYY-MM-DD). */
+  date: string;
+  clicks: number;
+  htmlClicks: number;
+  pdfClicks: number;
+  visitors: number;
+};
+
 export type ProSampleFunnel = {
   tableMissing: boolean;
   clicks: number;
@@ -26,11 +35,86 @@ export type ProSampleFunnel = {
   aClicks: number;
   bClicks: number;
   bySample: ProSampleBucket[];
+  /** Last 30 Shanghai days, including today (zeros filled). */
+  daily: ProSampleDailyPoint[];
   /** payers / sample visitors × 100 (null if no sample visitors) */
   sampleToPaidRate: number | null;
   /** leads (all statuses except lost?) / sample visitors — use total leads pipeline */
   sampleToLeadRate: number | null;
 };
+
+export const SAMPLE_DAILY_DAYS = 30;
+const SHANGHAI_TZ = "Asia/Shanghai";
+
+export function shanghaiYmd(isoOrDate: string | Date): string {
+  const d = typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate;
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: SHANGHAI_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+export function emptySampleDays(
+  endYmd: string,
+  days = SAMPLE_DAILY_DAYS,
+): ProSampleDailyPoint[] {
+  const [y, m, d] = endYmd.split("-").map(Number);
+  if (!y || !m || !d) return [];
+  const out: ProSampleDailyPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(Date.UTC(y, m - 1, d - i)).toISOString().slice(0, 10);
+    out.push({
+      date,
+      clicks: 0,
+      htmlClicks: 0,
+      pdfClicks: 0,
+      visitors: 0,
+    });
+  }
+  return out;
+}
+
+export function rollupProSampleDaily(
+  rows: Array<{
+    path: string | null;
+    visitor_id: string | null;
+    created_at: string;
+  }>,
+  knownPaths: Set<string>,
+  now = new Date(),
+  days = SAMPLE_DAILY_DAYS,
+): ProSampleDailyPoint[] {
+  const end = shanghaiYmd(now);
+  const daily = emptySampleDays(end, days);
+  const idx = new Map(daily.map((p, i) => [p.date, i]));
+  const visitorsByDay = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const path = row.path ?? "";
+    if (!knownPaths.has(path)) continue;
+    const day = shanghaiYmd(row.created_at);
+    const i = idx.get(day);
+    if (i == null) continue;
+    const point = daily[i]!;
+    point.clicks += 1;
+    if (path.endsWith(".pdf")) point.pdfClicks += 1;
+    if (path.endsWith(".html")) point.htmlClicks += 1;
+    const vid = row.visitor_id?.trim();
+    if (!vid) continue;
+    let set = visitorsByDay.get(day);
+    if (!set) {
+      set = new Set();
+      visitorsByDay.set(day, set);
+    }
+    set.add(vid);
+  }
+  for (const point of daily) {
+    point.visitors = visitorsByDay.get(point.date)?.size ?? 0;
+  }
+  return daily;
+}
 
 export type ProSampleOpener = {
   userId: string | null;
@@ -91,6 +175,7 @@ export async function getProSampleFunnel(input: {
       clicks: 0,
       visitors: 0,
     })),
+    daily: emptySampleDays(shanghaiYmd(new Date())),
     sampleToPaidRate: null,
     sampleToLeadRate: null,
   };
@@ -98,7 +183,7 @@ export async function getProSampleFunnel(input: {
   const supa = getServerSupabase();
   const { data, error } = await supa
     .from("site_events")
-    .select("path,visitor_id")
+    .select("path,visitor_id,created_at")
     .eq("event_type", "pro_sample")
     .eq("feature", "pro")
     .limit(20000);
@@ -117,7 +202,9 @@ export async function getProSampleFunnel(input: {
   const rows = (data ?? []) as Array<{
     path: string | null;
     visitor_id: string | null;
+    created_at: string;
   }>;
+  const knownPaths = new Set(BUCKETS.map((b) => b.path));
 
   const visitors = new Set<string>();
   const byPath = new Map<string, { clicks: number; visitors: Set<string> }>();
@@ -162,6 +249,7 @@ export async function getProSampleFunnel(input: {
         visitors: s.visitors.size,
       };
     }),
+    daily: rollupProSampleDaily(rows, knownPaths),
     sampleToPaidRate: pct(input.payers, uniqueVisitors),
     sampleToLeadRate: pct(input.leads, uniqueVisitors),
   };

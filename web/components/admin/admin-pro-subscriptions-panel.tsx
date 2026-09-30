@@ -14,6 +14,7 @@ import {
   skuLabelZh,
 } from "@/lib/billing/pro-subscriptions-shared";
 import type {
+  ProSampleDailyPoint,
   ProSampleFunnel,
   ProSampleOpener,
 } from "@/lib/billing/pro-sample-funnel";
@@ -311,6 +312,24 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
               </div>
             ))}
           </div>
+          {(sampleFunnel.daily?.length ?? 0) > 0 ? (
+            <SampleDailyChart
+              days={sampleFunnel.daily}
+              locale={locale}
+              labels={{
+                title: t("sampleDailyTitle"),
+                hint: t("sampleDailyHint"),
+                pdf: t("sampleDailyPdf"),
+                html: t("sampleDailyHtml"),
+                visitors: t("sampleDailyVisitors"),
+                today: t("sampleDailyToday", {
+                  pdf: sampleFunnel.daily.at(-1)?.pdfClicks ?? 0,
+                  html: sampleFunnel.daily.at(-1)?.htmlClicks ?? 0,
+                  visitors: sampleFunnel.daily.at(-1)?.visitors ?? 0,
+                }),
+              }}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -591,6 +610,111 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function fmtChartDay(isoDate: string, locale: string): string {
+  try {
+    const [y, m, d] = isoDate.split("-").map(Number);
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(Date.UTC(y, m - 1, d)));
+  } catch {
+    return isoDate.slice(5);
+  }
+}
+
+function SampleDailyChart({
+  days,
+  locale,
+  labels,
+}: {
+  days: ProSampleDailyPoint[];
+  locale: string;
+  labels: {
+    title: string;
+    hint: string;
+    pdf: string;
+    html: string;
+    visitors: string;
+    today: string;
+  };
+}) {
+  const max = Math.max(
+    1,
+    ...days.map((d) => Math.max(d.pdfClicks, d.htmlClicks, d.visitors)),
+  );
+  const tickEvery = days.length > 40 ? 14 : days.length > 14 ? 7 : 1;
+  return (
+    <div className="mt-4 border-t border-border/70 pt-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold text-foreground">{labels.title}</p>
+        <p className="text-[11px] tabular-nums text-muted-foreground">
+          {labels.today}
+        </p>
+      </div>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">{labels.hint}</p>
+      <div className="mb-2 mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#00ff87]" />
+          {labels.pdf}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-zinc-400" />
+          {labels.html}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
+          {labels.visitors}
+        </span>
+      </div>
+      <div
+        className="flex h-40 items-end gap-px sm:gap-0.5"
+        role="img"
+        aria-label={labels.title}
+      >
+        {days.map((d) => (
+          <div
+            key={d.date}
+            className="flex min-w-0 flex-1 flex-col items-center justify-end"
+            title={`${d.date}: ${d.pdfClicks} ${labels.pdf}, ${d.htmlClicks} ${labels.html}, ${d.visitors} ${labels.visitors}`}
+          >
+            <div className="flex h-32 w-full items-end justify-center gap-px">
+              <div
+                className="w-[40%] max-w-[10px] rounded-t bg-[#00ff87]"
+                style={{
+                  height: `${Math.max(d.pdfClicks ? 4 : 0, (d.pdfClicks / max) * 100)}%`,
+                }}
+              />
+              <div
+                className="w-[30%] max-w-[8px] rounded-t bg-zinc-400"
+                style={{
+                  height: `${Math.max(d.htmlClicks ? 3 : 0, (d.htmlClicks / max) * 100)}%`,
+                }}
+              />
+              <div
+                className="w-[25%] max-w-[7px] rounded-t bg-amber-400"
+                style={{
+                  height: `${Math.max(d.visitors ? 3 : 0, (d.visitors / max) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        {days.map((d, i) =>
+          i === 0 || i === days.length - 1 || i % tickEvery === 0 ? (
+            <span key={d.date} className="min-w-0 truncate">
+              {fmtChartDay(d.date, locale)}
+            </span>
+          ) : (
+            <span key={d.date} className="min-w-0 flex-1" />
+          ),
+        )}
+      </div>
     </div>
   );
 }
