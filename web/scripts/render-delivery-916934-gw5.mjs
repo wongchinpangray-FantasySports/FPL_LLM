@@ -1,6 +1,9 @@
 /**
  * Gold-master GW5 notes for Entry 916934 (A ¥19 + B ¥49) and public /pro samples.
  *   node scripts/render-delivery-916934-gw5.mjs
+ *     → live A/B HTML+PDF samples include the black sample hook + 诊断 CTA
+ *   node scripts/render-delivery-916934-gw5.mjs --review-tight
+ *     → review-only B sample (also writes _review-tight-b49)
  *
  * Voice/layout locked to template.html (phone-first, graphs, pitch, packs).
  */
@@ -131,7 +134,62 @@ function climbBlock() {
 `;
 }
 
-function evidence(n) {
+function sampleHook(sku = "b") {
+  return `
+  <div class="sample-hook keep">
+    <div class="kicker">报告样本</div>
+    <div class="t">此报告是样本，点击“诊断”先免费了解自己阵容问题</div>
+    <p>Entry 916934 · AI League 第 16。默认 Richards → Guéhi，Haaland (C)。输入你的 Entry，免费看你的球队问题，再留微信号开通。</p>
+    <a href="/api/pro/diagnose?sku=${sku}">诊断</a>
+  </div>`;
+}
+
+function whyMovedToAppendix(n) {
+  return `
+  <div class="keep">
+  <h3>${n}.1b 为什么默认 Guéhi（从 §1 移入附录）</h3>
+  <p class="lede">三个人都能当零封资产。默认看 3 轮窗口 + 本轮谁对桑德兰，不是「阿森纳丢球更少所以买阿森纳」。</p>
+  <p class="kicker">三轮期望</p>
+  <div class="bars">
+    <div class="bar-row you"><span class="lab">Guéhi £6.0</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">17.6</span></div>
+    <div class="bar-row"><span class="lab">Gvardiol £5.7</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">14.5</span></div>
+    <div class="bar-row"><span class="lab">Calafiori £5.8</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">14.0</span></div>
+    <div class="bar-row mute"><span class="lab">Hall £5.2</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">15.4</span></div>
+  </div>
+  <p class="note">Guéhi 本轮主场桑德兰 6.2，Gvardiol 同场 5.1。Calafiori 客场布莱顿 4.4。Hall 15.4 看着高，纽卡失球期望是联盟的 1.23 倍，后卫只看防守贡献。银行刚好 £1.0m = Guéhi。</p>
+  </div>
+
+  <div class="keep">
+  <h3>${n}.1c 为什么第三后卫是 Virgil 不是 Thomas</h3>
+  <p class="lede">Thomas 本轮 5.1 高于 Virgil 3.8。那是防守贡献，不是零封。考文垂零封变现已经看过：没有变现，是负的。</p>
+  <div class="face">
+    <div class="card">
+      <h4>Virgil · 利物浦 · 首发</h4>
+      <p>四轮 2 次零封。失球期望 0.89 倍联盟。客场伯恩茅斯可当零封。本轮 3.8。</p>
+    </div>
+    <div class="card">
+      <h4>Bobby Thomas · 考文垂 · 第三替补</h4>
+      <p>5.1 全是防守贡献。考文垂四轮零封为零，失球期望是联盟的 1.25 倍。不当零封。</p>
+    </div>
+  </div>
+  </div>
+
+  <div class="keep">
+  <h3>${n}.1d 为什么 1 次转会换后卫，不是卖 E.Le Fée</h3>
+  <p class="lede">Richards 本来就不上场，11.6 → 17.6 是把替补换成首发。Le Fée 会首发，要比「换进来的人 − 被换掉的首发」。</p>
+  <p class="kicker">后卫 + 中场两位置合计 · 三轮</p>
+  <div class="bars">
+    <div class="bar-row you"><span class="lab">Guéhi + Le Fée</span><div class="bar-track"><div class="bar-fill" style="width:93%"></div></div><span class="bar-val">36.8</span></div>
+    <div class="bar-row mute"><span class="lab">Thomas + Groß</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">39.6</span></div>
+    <div class="bar-row"><span class="lab">Virgil + Groß</span><div class="bar-track"><div class="bar-fill" style="width:89%"></div></div><span class="bar-val">35.1</span></div>
+    <div class="bar-row"><span class="lab">Virgil + Øde</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">33.6</span></div>
+  </div>
+  <p class="note">第三后卫用 Virgil（可零封）时，换 Guéhi 仍多 1.7 分。灰色那条要上 Thomas 抢 DefCon 才更抢分——默认不走。</p>
+  </div>
+`;
+}
+
+function evidence(n, { extraWhy = false } = {}) {
   return `
   <h2>${n}. 证据附录</h2>
   <p class="lede">下面数字支撑前半结论，不是第二套建议。</p>
@@ -201,6 +259,7 @@ function evidence(n) {
   <p class="note">Haaland 比第二名 Saka 高出约 2.1 分，比 João Pedro 高出 5.0 分。本周改回模板队长。榜首锁 Palmer，你吃 Haaland 反而是差异。</p>
   </div>
 
+  ${extraWhy ? whyMovedToAppendix(n) : ""}
   <div class="keep">
   <h3>${n}.4 本报告否决</h3>
   <div class="veto">
@@ -216,9 +275,62 @@ function evidence(n) {
 `;
 }
 
-function body({ skuLabel, climb, evidenceN, watermark, footer }) {
+function body({ skuLabel, climb, evidenceN, watermark, footer, tight = false, sku = "b" }) {
+  const whyInSection1 = tight
+    ? `
+  <p class="note">
+    默认 Guéhi：曼城可零封、本轮主场桑德兰、刚好 £1.0m。同队更便宜走 Gvardiol；锁榜首后卫才 Calafiori。Virgil 首发（可零封），Thomas / Mitchell 替补。Richards 本来就不上场，所以不卖 Le Fée。完整对比在证据附录。
+  </p>`
+    : `
+  <div class="keep">
+  <h3>为什么默认不是 Gvardiol / Calafiori</h3>
+  <p class="lede">三个人都能当零封资产。默认看 3 轮窗口 + 本轮谁对桑德兰，不是「阿森纳丢球更少所以买阿森纳」。</p>
+  <p class="kicker">三轮期望</p>
+  <div class="bars">
+    <div class="bar-row you"><span class="lab">Guéhi £6.0</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">17.6</span></div>
+    <div class="bar-row"><span class="lab">Gvardiol £5.7</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">14.5</span></div>
+    <div class="bar-row"><span class="lab">Calafiori £5.8</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">14.0</span></div>
+    <div class="bar-row mute"><span class="lab">Hall £5.2</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">15.4</span></div>
+  </div>
+  <p class="note">Guéhi 本轮主场桑德兰 6.2，Gvardiol 同场 5.1。Calafiori 客场布莱顿 4.4。Hall 15.4 看着高，纽卡失球期望是联盟的 1.23 倍，后卫只看防守贡献。银行刚好 £1.0m = Guéhi；Gvardiol 剩 0.3，Calafiori 剩 0.2。要锁榜首后卫才走 #3。</p>
+  </div>
+
+  <div class="keep">
+  <h3>为什么第三后卫是 Virgil 不是 Thomas</h3>
+  <p class="lede">Thomas 本轮 5.1 高于 Virgil 3.8。那是防守贡献，不是零封。考文垂零封变现已经看过：没有变现，是负的。</p>
+  <div class="face">
+    <div class="card">
+      <h4>Virgil · 利物浦 · 首发</h4>
+      <p>四轮 2 次零封。失球期望 0.89 倍联盟。客场伯恩茅斯可当零封。本轮 3.8。</p>
+    </div>
+    <div class="card">
+      <h4>Bobby Thomas · 考文垂 · 第三替补</h4>
+      <p>5.1 全是防守贡献。考文垂四轮零封为零，失球期望是联盟的 1.25 倍。不当零封。</p>
+    </div>
+  </div>
+  <p class="note">期望零封约 0.6 次，考文垂 0 次。进攻 4.25 预期进球进 0 球。下一轮主场纽卡也是同样陷阱。</p>
+  </div>
+
+  <div class="keep">
+  <h3>为什么 1 次转会换后卫，不是卖 E.Le Fée</h3>
+  <p class="lede">
+    Richards 本来就不上场，11.6 → 17.6 是把替补换成首发。Le Fée 会首发，要比「换进来的人 − 被换掉的首发」。
+  </p>
+  <p class="kicker">后卫 + 中场两位置合计 · 三轮</p>
+  <div class="bars">
+    <div class="bar-row you"><span class="lab">Guéhi + Le Fée</span><div class="bar-track"><div class="bar-fill" style="width:93%"></div></div><span class="bar-val">36.8</span></div>
+    <div class="bar-row mute"><span class="lab">Thomas + Groß</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">39.6</span></div>
+    <div class="bar-row"><span class="lab">Virgil + Groß</span><div class="bar-track"><div class="bar-fill" style="width:89%"></div></div><span class="bar-val">35.1</span></div>
+    <div class="bar-row"><span class="lab">Virgil + Øde</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">33.6</span></div>
+  </div>
+  <p class="note">
+    第三后卫用 Virgil（可零封）时，换 Guéhi 仍多 1.7 分。只有改上 Thomas 抢防守贡献，卖 Le Fée 才更抢分——灰色那条。默认不走：不当零封的后卫不进首发。Groß 本轮对阿森纳，还卖掉 Le Fée 下一轮主场布莱顿 7.7。
+  </p>
+  </div>`;
+
   return `
   <p class="watermark">${watermark}</p>
+  ${tight ? sampleHook(sku) : ""}
   <div class="row">
     <h1>GW5 诊断 · FALEAGUE-AI FC</h1>
     <span class="pill on">${skuLabel}</span>
@@ -293,51 +405,7 @@ function body({ skuLabel, climb, evidenceN, watermark, footer }) {
   </p>
   </div>
 
-  <div class="keep">
-  <h3>为什么默认不是 Gvardiol / Calafiori</h3>
-  <p class="lede">三个人都能当零封资产。默认看 3 轮窗口 + 本轮谁对桑德兰，不是「阿森纳丢球更少所以买阿森纳」。</p>
-  <p class="kicker">三轮期望</p>
-  <div class="bars">
-    <div class="bar-row you"><span class="lab">Guéhi £6.0</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">17.6</span></div>
-    <div class="bar-row"><span class="lab">Gvardiol £5.7</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">14.5</span></div>
-    <div class="bar-row"><span class="lab">Calafiori £5.8</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">14.0</span></div>
-    <div class="bar-row mute"><span class="lab">Hall £5.2</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">15.4</span></div>
-  </div>
-  <p class="note">Guéhi 本轮主场桑德兰 6.2，Gvardiol 同场 5.1。Calafiori 客场布莱顿 4.4。Hall 15.4 看着高，纽卡失球期望是联盟的 1.23 倍，后卫只看防守贡献。银行刚好 £1.0m = Guéhi；Gvardiol 剩 0.3，Calafiori 剩 0.2。要锁榜首后卫才走 #3。</p>
-  </div>
-
-  <div class="keep">
-  <h3>为什么第三后卫是 Virgil 不是 Thomas</h3>
-  <p class="lede">Thomas 本轮 5.1 高于 Virgil 3.8。那是防守贡献，不是零封。考文垂零封变现已经看过：没有变现，是负的。</p>
-  <div class="face">
-    <div class="card">
-      <h4>Virgil · 利物浦 · 首发</h4>
-      <p>四轮 2 次零封。失球期望 0.89 倍联盟。客场伯恩茅斯可当零封。本轮 3.8。</p>
-    </div>
-    <div class="card">
-      <h4>Bobby Thomas · 考文垂 · 第三替补</h4>
-      <p>5.1 全是防守贡献。考文垂四轮零封为零，失球期望是联盟的 1.25 倍。不当零封。</p>
-    </div>
-  </div>
-  <p class="note">期望零封约 0.6 次，考文垂 0 次。进攻 4.25 预期进球进 0 球。下一轮主场纽卡也是同样陷阱。</p>
-  </div>
-
-  <div class="keep">
-  <h3>为什么 1 次转会换后卫，不是卖 E.Le Fée</h3>
-  <p class="lede">
-    Richards 本来就不上场，11.6 → 17.6 是把替补换成首发。Le Fée 会首发，要比「换进来的人 − 被换掉的首发」。
-  </p>
-  <p class="kicker">后卫 + 中场两位置合计 · 三轮</p>
-  <div class="bars">
-    <div class="bar-row you"><span class="lab">Guéhi + Le Fée</span><div class="bar-track"><div class="bar-fill" style="width:93%"></div></div><span class="bar-val">36.8</span></div>
-    <div class="bar-row mute"><span class="lab">Thomas + Groß</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">39.6</span></div>
-    <div class="bar-row"><span class="lab">Virgil + Groß</span><div class="bar-track"><div class="bar-fill" style="width:89%"></div></div><span class="bar-val">35.1</span></div>
-    <div class="bar-row"><span class="lab">Virgil + Øde</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">33.6</span></div>
-  </div>
-  <p class="note">
-    第三后卫用 Virgil（可零封）时，换 Guéhi 仍多 1.7 分。只有改上 Thomas 抢防守贡献，卖 Le Fée 才更抢分——灰色那条。默认不走：不当零封的后卫不进首发。Groß 本轮对阿森纳，还卖掉 Le Fée 下一轮主场布莱顿 7.7。
-  </p>
-  </div>
+  ${whyInSection1}
 
   <h3>建议首发 XI · #1 之后（3-4-3）</h3>
 
@@ -574,7 +642,7 @@ function body({ skuLabel, climb, evidenceN, watermark, footer }) {
 
   ${climb}
 
-  ${evidence(evidenceN)}
+  ${evidence(evidenceN, { extraWhy: tight })}
 
   <div class="foot">
     Scout 中文仍免费。这不是 Scout Members。<br/>
@@ -584,25 +652,87 @@ function body({ skuLabel, climb, evidenceN, watermark, footer }) {
 `;
 }
 
-function sampleBuyCta(sku) {
-  const href = `https://www.faleague-ai.com/zh/pro?from=sample&sku=${sku}#pay`;
+function sampleBuyCta(sku, { tight = false } = {}) {
+  const href = tight
+    ? `/api/pro/diagnose?sku=${sku}`
+    : `https://www.faleague-ai.com/zh/pro?from=sample&sku=${sku}#pay`;
+  if (tight) {
+    return `
+  <div class="sample-buyfoot print-cta">
+    <div class="t">报告样本</div>
+    <p>此报告是样本，点击“诊断”先免费了解自己阵容问题</p>
+    <a href="${href}">诊断</a>
+  </div>
+  <div class="sample-buybar" role="region" aria-label="诊断">
+    <div>
+      <b>报告样本</b>
+      <span>此报告是样本，点击“诊断”先免费了解自己阵容问题</span>
+    </div>
+    <a class="sample-buybar-btn" href="${href}">诊断</a>
+  </div>`;
+  }
   return `
-  <div class="sample-buyfoot">
+  <div class="sample-buyfoot print-cta">
     <div class="t">这是 Entry 916934 的报告样本，不是你的阵容</div>
-    <p>GW5 截止 9/19 01:30。针对你的 Entry：A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。留微信号，发哥开通。Scout 中文继续免费。</p>
+    <p>针对你的 Entry：A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。输入 Entry 看你的 3 个问题，再留微信号开通。Scout 中文继续免费。</p>
     <a href="${href}">留微信号开通</a>
   </div>
   <div class="sample-buybar" role="region" aria-label="开通 FALEAGUE PRO">
     <div>
       <b>报告样本 · 不是你的阵容</b>
-      <span>GW5 截止 9/19 01:30 · A ¥9.9 / B ¥39.9</span>
+      <span>输入你的 Entry，看你的 3 个问题</span>
     </div>
     <a class="sample-buybar-btn" href="${href}">留微信号开通</a>
   </div>`;
 }
 
-function wrapHtml({ title, htmlBody, buyBarSku }) {
-  const bar = buyBarSku ? sampleBuyCta(buyBarSku) : "";
+const TIGHT_REVIEW_CSS = `
+    .sample-hook {
+      border: 2px solid #111;
+      background: #111;
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 0 0 14px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sample-hook .kicker {
+      color: #00ff85;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+    .sample-hook .t {
+      font-size: 15px;
+      font-weight: 800;
+      margin: 6px 0 8px;
+      letter-spacing: -0.02em;
+    }
+    .sample-hook p { color: #d7e6dc; margin: 0 0 10px; font-size: 12px; }
+    .sample-hook a {
+      display: inline-block;
+      background: #00ff85;
+      color: #111;
+      font-weight: 800;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    @media print {
+      .sample-buybar { display: none !important; }
+      .sample-buyfoot.print-cta {
+        display: block !important;
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+`;
+
+function wrapHtml({ title, htmlBody, buyBarSku, extraCss = "", tightCta = false }) {
+  const bar = buyBarSku ? sampleBuyCta(buyBarSku, { tight: tightCta }) : "";
   const bodyClass = buyBarSku ? ' class="has-sample-buybar"' : "";
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -613,6 +743,7 @@ function wrapHtml({ title, htmlBody, buyBarSku }) {
   <style>${style}
     .gauge-needle { transform: rotate(-62deg); }
     .gauge-label { color: #9b1c1c; }
+    ${extraCss}
   </style>
 </head>
 <body${bodyClass}>
@@ -685,15 +816,51 @@ async function htmlToPdf(browser, htmlPath, pdfPath) {
 }
 
 async function main() {
+  const reviewTight = process.argv.includes("--review-tight");
   const outReports = join(root, "output", "reports");
   const outPublic = join(root, "public", "pro", "deliveries");
   const outSamples = join(root, "public", "pro", "samples");
+  const outReview = join(root, "output", "reports", "review");
   mkdirSync(outReports, { recursive: true });
   mkdirSync(outPublic, { recursive: true });
   mkdirSync(outSamples, { recursive: true });
+  mkdirSync(outReview, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
   try {
+    if (reviewTight) {
+      const v = variants.find((x) => x.sku === "b");
+      if (!v) throw new Error("B variant missing");
+      const htmlBody = body({
+        skuLabel: v.skuLabel,
+        climb: climbBlock(),
+        evidenceN: v.evidenceN,
+        watermark: v.watermark,
+        footer: v.footer,
+        tight: true,
+        sku: v.sku,
+      });
+      const sampleHtml = wrapHtml({
+        title: `${v.title} · tight review`,
+        htmlBody,
+        buyBarSku: v.sku,
+        extraCss: TIGHT_REVIEW_CSS,
+        tightCta: true,
+      });
+      const htmlPath = join(outReview, "gw5-916934-b49-tight.html");
+      const pdfPath = join(outReview, "gw5-916934-b49-tight.pdf");
+      writeFileSync(htmlPath, sampleHtml, "utf8");
+      await htmlToPdf(browser, htmlPath, pdfPath);
+      const publicReview = join(outSamples, "_review-tight-b49.html");
+      writeFileSync(publicReview, sampleHtml, "utf8");
+      copyFileSync(pdfPath, join(outSamples, "_review-tight-b49.pdf"));
+      console.log("tight review (live samples untouched):");
+      console.log("  http://localhost:3000/pro/samples/_review-tight-b49.html");
+      console.log("  /pro/samples/_review-tight-b49.pdf");
+      console.log("  output/reports/review/gw5-916934-b49-tight.{html,pdf}");
+      return;
+    }
+
     for (const v of variants) {
       const htmlBody = body({
         skuLabel: v.skuLabel,
@@ -702,6 +869,15 @@ async function main() {
         watermark: v.watermark,
         footer: v.footer,
       });
+      const sampleBody = body({
+        skuLabel: v.skuLabel,
+        climb: v.climb ? climbBlock() : "",
+        evidenceN: v.evidenceN,
+        watermark: v.watermark,
+        footer: v.footer,
+        tight: true,
+        sku: v.sku,
+      });
       const html = wrapHtml({
         title: v.title,
         htmlBody,
@@ -709,8 +885,10 @@ async function main() {
       });
       const sampleHtml = wrapHtml({
         title: v.title,
-        htmlBody,
+        htmlBody: sampleBody,
         buyBarSku: v.sku,
+        extraCss: TIGHT_REVIEW_CSS,
+        tightCta: true,
       });
       const htmlPath = join(outReports, `${v.stem}.html`);
       const pdfPath = join(outReports, `${v.stem}.pdf`);
@@ -720,10 +898,12 @@ async function main() {
       copyFileSync(htmlPath, join(outPublic, `${v.stem}.html`));
       copyFileSync(pdfPath, join(outPublic, `${v.stem}.pdf`));
 
-      writeFileSync(join(outSamples, `${v.sampleStem}.html`), sampleHtml, "utf8");
+      const sampleHtmlPath = join(outSamples, `${v.sampleStem}.html`);
+      const samplePdfPath = join(outSamples, `${v.sampleStem}.pdf`);
+      writeFileSync(sampleHtmlPath, sampleHtml, "utf8");
       writeFileSync(join(outSamples, `${v.legacySample}.html`), sampleHtml, "utf8");
-      copyFileSync(pdfPath, join(outSamples, `${v.sampleStem}.pdf`));
-      copyFileSync(pdfPath, join(outSamples, `${v.legacySample}.pdf`));
+      await htmlToPdf(browser, sampleHtmlPath, samplePdfPath);
+      copyFileSync(samplePdfPath, join(outSamples, `${v.legacySample}.pdf`));
 
       console.log("wrote", v.stem);
     }
