@@ -25,7 +25,7 @@ import {
 } from "@/components/inbox/inbox-notification-row";
 import { groupNotificationsByCategory } from "@/lib/notifications/categories";
 import {
-  FOUNDER_PACK_PATH,
+  FOUNDER_PACK_TEASER_PATH,
   founderPackIsPublic,
 } from "@/lib/billing/founder-pack";
 
@@ -1128,7 +1128,7 @@ export function HomeHub({ initialData }: { initialData?: HomeHubData | null }) {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6">
       {showFounderOffer ? (
         <Link
-          href={FOUNDER_PACK_PATH}
+          href={FOUNDER_PACK_TEASER_PATH}
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 no-underline hover:bg-amber-500/15"
         >
           <span className="text-sm font-semibold text-foreground">

@@ -12,7 +12,7 @@ import { AuthNav } from "@/components/auth/auth-nav";
 import { InboxEnvelopeLink, openInbox } from "@/components/inbox/inbox-envelope-link";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
-import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 function isHomePath(pathname: string): boolean {
   return pathname === "/";
@@ -163,7 +163,7 @@ export function SiteHeader() {
             ) : null}
             {showSignedInPro ? (
               <Link
-                href="/pro"
+                href={FOUNDER_PACK_TEASER_PATH}
                 className="hidden rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 sm:inline-flex sm:text-xs"
               >
                 {t("founderPack")}
@@ -257,7 +257,7 @@ export function SiteHeader() {
                 />
                 {founderPackIsPublic() ? (
                   <MenuLink
-                    href="/pro"
+                    href={FOUNDER_PACK_TEASER_PATH}
                     label={t("founderPackReport")}
                     active={pathname === "/pro" || pathname.startsWith("/pro/")}
                     featured={Boolean(user) && !isPremium}

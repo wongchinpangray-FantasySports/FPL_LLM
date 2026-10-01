@@ -31,7 +31,7 @@ export function destinationFor(screen: FplScreen): {
     case "mini":
       return { href: "/fpl/mini-league", needsAuth: true };
     case "pro":
-      return { href: "/pro", needsAuth: false };
+      return { href: "/pro#teaser", needsAuth: false };
   }
 }
 

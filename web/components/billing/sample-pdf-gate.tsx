@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  FOUNDER_PACK_PATH,
+  FOUNDER_PACK_TEASER_PATH,
   SAMPLE_PDF_GATE_SESSION_KEY,
   SAMPLE_TEASER_NUDGE_SESSION_KEY,
   getFounderWechatHandle,
@@ -111,7 +111,7 @@ export function SamplePdfGate({
     setOpen(true);
   }
 
-  const signupHref = `/auth/signup?next=${encodeURIComponent(FOUNDER_PACK_PATH)}`;
+  const signupHref = `/auth/signup?next=${encodeURIComponent(FOUNDER_PACK_TEASER_PATH)}`;
 
   return (
     <>

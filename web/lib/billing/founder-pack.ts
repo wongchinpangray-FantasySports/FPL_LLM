@@ -22,6 +22,8 @@ export const FOUNDER_PACK_PRICE_CNY = LAUNCH_DISCOUNT_ACTIVE
 
 export const FOUNDER_PACK_THROUGH_GW = 7;
 export const FOUNDER_PACK_PATH = "/pro";
+/** Shopper CTAs land on the free Entry teaser, not the WeChat pay form. */
+export const FOUNDER_PACK_TEASER_PATH = "/pro#teaser";
 /** Session: guest already saw the PDF download gate (soft-block, once per tab). */
 export const SAMPLE_PDF_GATE_SESSION_KEY = "faleague_sample_pdf_gate_v1";
 /** Session: after sample PDF / signup, nudge the Entry-ID teaser on /pro. */
@@ -154,7 +156,7 @@ export function wechatOutreachMessage(): string {
     "Faleague 阵容诊断已开：",
     `A. 本轮 GW诊断 ${a}${discount}（原价 ¥${GW_NOTE_LIST_PRICE_CNY}；微信发你一份，含小联赛 + MOTW）`,
     `B. 创始人套餐 ${b}${discount}（原价 ¥${FOUNDER_PACK_LIST_PRICE_CNY}）用到第7轮（10月22日）：每轮诊断 + Insights Pro + 小联赛大杀器`,
-    "怎么买：1）faleague-ai.com 注册  2）打开 /pro 留下微信号  3）我加你微信，私下收款后开通。站内不放收款码。",
+    "怎么买：1）faleague-ai.com 注册  2）打开 /pro 先免费诊断  3）需要完整报告再留微信号，我加你私下收款。站内不放收款码。",
     "Scout 中文继续免费，这不是 Scout 会员替代。",
   ].join("\n");
 }
@@ -164,5 +166,5 @@ export function founderPackPostCta(): string {
   const a = formatPriceCny(GW_NOTE_PRICE_CNY);
   const b = formatPriceCny(FOUNDER_PACK_PRICE_CNY);
   const tag = LAUNCH_DISCOUNT_ACTIVE ? "限时优惠 " : "";
-  return `针对你自己阵容的转会建议：/pro 留微信号，我加你开通。${tag}${a} 单轮 / ${b} 用到第7轮。`;
+  return `先免费诊断：打开 /pro 输入 Entry。完整报告再留微信号。${tag}${a} 单轮 / ${b} 用到第7轮。`;
 }

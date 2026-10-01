@@ -8,7 +8,7 @@ import {
   scoutReleaseDisplayTitle,
 } from "@/lib/notifications/scout-release";
 import {
-  FOUNDER_PACK_PATH,
+  FOUNDER_PACK_TEASER_PATH,
   SAMPLE_REPORT_A_PDF,
   SAMPLE_REPORT_B_PDF,
 } from "@/lib/billing/founder-pack";
@@ -139,14 +139,14 @@ export function InboxNotificationRow({
       {isOffer && !compact ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
-            href={item.href?.startsWith("/") ? item.href : FOUNDER_PACK_PATH}
+            href={item.href?.startsWith("/") ? item.href : FOUNDER_PACK_TEASER_PATH}
             className="inline-flex rounded-lg bg-brand-accent px-3 py-1.5 text-xs font-semibold text-brand-ink no-underline hover:opacity-90"
             onClick={(e) => {
               e.stopPropagation();
               onActivate?.();
             }}
           >
-            去开通
+            免费诊断
           </Link>
           <a
             href={SAMPLE_REPORT_A_PDF}

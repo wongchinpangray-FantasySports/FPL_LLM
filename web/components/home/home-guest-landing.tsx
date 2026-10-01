@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { proxiedNewsImageUrl } from "@/lib/news-image";
 import type { WcNewsItem } from "@/lib/wc/news-feeds";
-import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 import { FplScreenCard } from "@/components/home/fpl-screen-card";
 
 /** Soft card gradients — distinct tints, readable in light and dark themes. */
@@ -179,7 +179,7 @@ export function HomeGuestLanding({ news }: { news: WcNewsItem[] }) {
           </Link>
           {founderPackIsPublic() ? (
             <Link
-              href="/pro"
+              href={FOUNDER_PACK_TEASER_PATH}
               className="inline-flex text-xs text-muted-foreground/80 hover:text-brand-accent no-underline"
             >
               {t("guestFounderCta")} →

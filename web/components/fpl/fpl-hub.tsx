@@ -6,7 +6,7 @@ import { useEntryId } from "@/components/entry-id-context";
 import { EntryIdForm } from "@/components/entry-id-form";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
-import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 function HubTile({
   href,
@@ -68,7 +68,7 @@ export function FplHub() {
         <HubTile href="/players" title={t("players")} description={t("playersBody")} />
         {showProTile ? (
           <HubTile
-            href="/pro"
+            href={FOUNDER_PACK_TEASER_PATH}
             title={t("founderPackTitle")}
             description={t("founderPackBody")}
           />

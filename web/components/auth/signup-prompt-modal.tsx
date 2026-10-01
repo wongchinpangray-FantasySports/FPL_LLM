@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useSignupPrompt } from "@/components/auth/signup-prompt-context";
-import { FOUNDER_PACK_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 import {
   isFplScreenDismissed,
   readFplScreen,
@@ -138,9 +138,9 @@ export function HomeSignupPrompt() {
           t("founderBenefit2"),
           t("founderBenefit3"),
         ],
-        primaryHref: FOUNDER_PACK_PATH,
+        primaryHref: FOUNDER_PACK_TEASER_PATH,
         primaryLabel: t("founderCta"),
-        nextPath: FOUNDER_PACK_PATH,
+        nextPath: FOUNDER_PACK_TEASER_PATH,
         dismissKey: SIGNED_IN_PRO_KEY,
       });
     }, SIGNED_IN_PRO_MS);

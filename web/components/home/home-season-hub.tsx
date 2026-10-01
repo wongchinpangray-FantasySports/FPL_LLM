@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { ShareButton } from "@/components/share/share-button";
 import { HomeRankSparkline } from "@/components/home/home-rank-sparkline";
 import { cn } from "@/lib/utils";
-import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 import type { RankHistoryPoint } from "@/lib/fpl-rank-series";
 
 type HealthFlag = {
@@ -764,7 +764,7 @@ export function HomeSeasonHubLayout({
     ...(founderPackIsPublic()
       ? [
           {
-            href: "/pro",
+            href: FOUNDER_PACK_TEASER_PATH,
             label: t("seasonToolFounderPack"),
             body: t("seasonToolFounderPackBody"),
           },

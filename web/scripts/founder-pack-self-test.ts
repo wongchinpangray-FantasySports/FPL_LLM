@@ -3,6 +3,7 @@ import {
   FOUNDER_PACK_EXPIRES_AT,
   FOUNDER_PACK_LIST_PRICE_CNY,
   FOUNDER_PACK_PATH,
+  FOUNDER_PACK_TEASER_PATH,
   FOUNDER_PACK_PRICE_CNY,
   FOUNDER_PACK_PUBLIC,
   FOUNDER_PACK_THROUGH_GW,
@@ -29,6 +30,7 @@ function main(): void {
   assert.equal(FOUNDER_PACK_PRICE_CNY, 39.9);
   assert.equal(FOUNDER_PACK_THROUGH_GW, 7);
   assert.equal(FOUNDER_PACK_PATH, "/pro");
+  assert.equal(FOUNDER_PACK_TEASER_PATH, "/pro#teaser");
   assert.equal(SAMPLE_PDF_GATE_SESSION_KEY, "faleague_sample_pdf_gate_v1");
   assert.equal(SAMPLE_TEASER_NUDGE_SESSION_KEY, "faleague_sample_teaser_nudge_v1");
   assert.equal(DIAGNOSE_CTA_PATH, "/pro/cta/diagnose");
@@ -68,6 +70,7 @@ function main(): void {
 
   const cta = founderPackPostCta();
   assert.match(cta, /\/pro/);
+  assert.match(cta, /免费诊断/);
   assert.match(cta, /限时优惠/);
   assert.doesNotMatch(cta, /Scout Premium/);
 

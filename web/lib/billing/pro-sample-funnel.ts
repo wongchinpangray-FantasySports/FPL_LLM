@@ -1,7 +1,7 @@
 import { getServerSupabase } from "@/lib/supabase";
 import { isMissingSiteEventsTable } from "@/lib/analytics/store";
 import {
-  FOUNDER_PACK_PATH,
+  FOUNDER_PACK_TEASER_PATH,
   SAMPLE_REPORT_A_HTML_ASSET,
   SAMPLE_REPORT_A_PDF_ASSET,
   SAMPLE_REPORT_B_HTML_ASSET,
@@ -438,7 +438,7 @@ export async function nudgeSampleOpenersInbox(): Promise<{
     .from("user_notifications")
     .select("user_id")
     .eq("type", SAMPLE_NUDGE_TYPE)
-    .eq("href", FOUNDER_PACK_PATH)
+    .eq("href", FOUNDER_PACK_TEASER_PATH)
     .gte("created_at", since)
     .in("user_id", ids);
   if (error) throw new Error(error.message);
@@ -449,9 +449,9 @@ export async function nudgeSampleOpenersInbox(): Promise<{
     .map((user_id) => ({
       user_id,
       type: SAMPLE_NUDGE_TYPE,
-      title: "报告样本看过了 · 本轮可以开通",
-      body: "你打开过参考报告。A ¥9.9 本轮诊断 / B ¥39.9 用到第7轮。点「去开通」留微信号，或微信私信发哥「开通」。Scout 中文继续免费。",
-      href: FOUNDER_PACK_PATH,
+      title: "报告样本看过了 · 先免费诊断",
+      body: "你打开过参考报告。输入 Entry，免费看你的球队问题。完整报告需要再留微信号。Scout 中文继续免费。",
+      href: FOUNDER_PACK_TEASER_PATH,
     }));
 
   const inserted = await insertNotifications(admin, rows);

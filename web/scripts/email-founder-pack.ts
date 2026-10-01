@@ -67,19 +67,19 @@ async function listUserEmails(): Promise<string[]> {
 function buildHtml(site: string): string {
   const a = `${site}${SAMPLE_REPORT_A_PDF}`;
   const b = `${site}${SAMPLE_REPORT_B_PDF}`;
-  const pro = `${site}/zh/pro`;
+  const pro = `${site}/zh/pro#teaser`;
   return `<!DOCTYPE html>
 <html lang="zh-CN"><body style="font-family:Segoe UI,Arial,sans-serif;line-height:1.55;color:#111;max-width:560px;margin:0 auto;padding:24px">
   <p style="font-size:12px;color:#00a65a;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">FALEAGUE PRO</p>
-  <h1 style="font-size:22px;margin:8px 0 12px">阵容诊断 · 付费数据已上线</h1>
-  <p>发哥结合 Faleague-ai，为你打造收获绿箭头的秘密武器。</p>
+  <h1 style="font-size:22px;margin:8px 0 12px">免费诊断 · 先看你的球队问题</h1>
+  <p>输入 FPL Entry，免费看问题。需要完整报告（转会 / 队长 / 小联赛）再留微信号开通。</p>
   <ul>
     <li><strong>A · 单轮 ¥${GW_NOTE_PRICE_CNY}</strong>：本轮诊断 + 小联赛分析 · PDF 交付</li>
     <li><strong>B · 4轮套餐 ¥${FOUNDER_PACK_PRICE_CNY}</strong>：4 份报告 + 付费数据 + 小联赛大杀器 + 4 轮冲冠规划</li>
   </ul>
-  <p>开通方法：打开页面选择套餐，留下微信号，发哥联系开通。</p>
+  <p>先诊断，再决定要不要买。</p>
   <p style="margin:20px 0">
-    <a href="${pro}" style="display:inline-block;background:#00ff85;color:#04120a;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px">去开通 FALEAGUE PRO</a>
+    <a href="${pro}" style="display:inline-block;background:#00ff85;color:#04120a;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px">免费诊断</a>
   </p>
   <p style="margin:8px 0 4px;font-weight:600">先下载参考报告（PDF）：</p>
   <p>

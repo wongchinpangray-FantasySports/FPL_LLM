@@ -9,9 +9,7 @@ import { join } from "node:path";
 import { getServerSupabase } from "../lib/supabase";
 import { insertNotifications } from "../lib/notifications/shared";
 import {
-  FOUNDER_PACK_PATH,
-  FOUNDER_PACK_PRICE_CNY,
-  GW_NOTE_PRICE_CNY,
+  FOUNDER_PACK_TEASER_PATH,
 } from "../lib/billing/founder-pack";
 
 function loadEnvLocal(): void {
@@ -79,7 +77,7 @@ async function main(): Promise<void> {
     .from("user_notifications")
     .select("user_id")
     .eq("type", "founder_pack_offer")
-    .eq("href", FOUNDER_PACK_PATH);
+    .eq("href", FOUNDER_PACK_TEASER_PATH);
   if (existErr) throw new Error(existErr.message);
   const already = new Set((existing ?? []).map((r) => r.user_id as string));
 
@@ -88,9 +86,9 @@ async function main(): Promise<void> {
     .map((p) => ({
       user_id: p.id as string,
       type: "founder_pack_offer",
-      title: `FALEAGUE PRO · ¥${GW_NOTE_PRICE_CNY} 单轮 / ¥${FOUNDER_PACK_PRICE_CNY} 四轮套餐`,
-      body: "发哥 × Faleague-ai：针对你阵容的诊断报告 + 付费数据。站内留下微信号即可开通。可先下载参考报告。",
-      href: FOUNDER_PACK_PATH,
+      title: `免费诊断 · 先看你的球队问题`,
+      body: "输入 FPL Entry，免费看问题。完整报告（转会 / 队长 / 小联赛）需要再留微信号。可先看样本。",
+      href: FOUNDER_PACK_TEASER_PATH,
     }));
 
   let inserted = 0;

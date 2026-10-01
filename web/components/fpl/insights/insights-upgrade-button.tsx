@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { FOUNDER_PACK_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { FOUNDER_PACK_TEASER_PATH, founderPackIsPublic } from "@/lib/billing/founder-pack";
 
 export function InsightsUpgradeButton({
   label,
@@ -30,7 +30,7 @@ export function InsightsUpgradeButton({
   if (!billingConfigured) {
     if (!founderPackIsPublic()) return null;
     return (
-      <Link href={FOUNDER_PACK_PATH} className={`${className} no-underline`}>
+      <Link href={FOUNDER_PACK_TEASER_PATH} className={`${className} no-underline`}>
         {label}
       </Link>
     );
@@ -48,7 +48,7 @@ export function InsightsUpgradeButton({
       const data = (await res.json()) as { url?: string; error?: string };
       if (res.status === 503) {
         if (founderPackIsPublic()) {
-          window.location.href = FOUNDER_PACK_PATH;
+          window.location.href = FOUNDER_PACK_TEASER_PATH;
         }
         setLoading(false);
         return;
