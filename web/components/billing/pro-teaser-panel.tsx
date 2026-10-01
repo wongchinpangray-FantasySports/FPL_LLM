@@ -148,7 +148,9 @@ export function ProTeaserPanel({
       id="teaser"
       className="rounded-2xl border border-brand-accent/35 bg-card p-4 sm:p-5"
     >
-      <h2 className="text-sm font-semibold text-foreground">{labels.teaserTitle}</h2>
+      <h2 className="text-xl font-semibold tracking-tight text-brand-accent sm:text-2xl">
+        {labels.teaserTitle}
+      </h2>
       <p className="mt-1 text-sm text-muted-foreground">{labels.teaserHint}</p>
 
       <div className="mt-4">
