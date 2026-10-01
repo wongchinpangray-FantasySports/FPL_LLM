@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { Lock } from "lucide-react";
 import { FplEntryConfirmField } from "@/components/fpl/fpl-entry-confirm-field";
@@ -48,15 +48,64 @@ export function ProTeaserPanel({
   const [teaser, setTeaser] = useState<ProTeaser | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const liveOverride = useRef(false);
 
   function handleConfirmed(preview: FplEntryPreview | null) {
+    // A real lookup must leave the offline fixture path, or POST never fires.
+    liveOverride.current = true;
+    setPreviewMode(false);
     setConfirmed(preview);
     setTeaser(null);
     setError(null);
+    setBusy(preview != null);
     onEntryIdChange?.(preview?.entry_id ?? null);
   }
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (liveOverride.current) return;
+    const isPreview =
+      new URLSearchParams(window.location.search).get("preview") === "teaser";
+    setPreviewMode(isPreview);
+    if (!isPreview) return;
+    let cancelled = false;
+    setBusy(true);
+    setError(null);
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/pro/teaser?preview=1&locale=${locale === "en" ? "en" : "zh"}`,
+        );
+        const data = (await res.json()) as { teaser?: ProTeaser; error?: string };
+        if (cancelled) return;
+        if (!res.ok || !data.teaser) {
+          throw new Error(data.error ?? labels.teaserError);
+        }
+        setTeaser(data.teaser);
+        setConfirmed({
+          entry_id: data.teaser.entryId,
+          team_name: data.teaser.teamName,
+          manager_name: data.teaser.managerName,
+        });
+        setValue(String(data.teaser.entryId));
+        onEntryIdChange?.(data.teaser.entryId);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : labels.teaserError);
+        }
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one fixture load per locale
+  }, [locale]);
+
+  useEffect(() => {
+    if (previewMode) return;
     if (!confirmed) return;
     const entryId = confirmed.entry_id;
     let cancelled = false;
@@ -91,7 +140,7 @@ export function ProTeaserPanel({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- generate once per confirmed entry
-  }, [confirmed?.entry_id, locale]);
+  }, [confirmed?.entry_id, locale, previewMode]);
 
 
   return (
@@ -163,13 +212,15 @@ export function ProTeaserPanel({
             <ol className="mt-2 space-y-2">
               {teaser.problems.map((p, i) => (
                 <li
-                  key={p.kind}
-                  className="rounded-lg border border-border bg-muted/30 px-3 py-2"
+                  key={`${p.kind}-${p.title}-${i}`}
+                  className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5"
                 >
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     {i + 1}. {p.title}
                   </p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{p.body}</p>
+                  <p className="mt-1 text-sm leading-snug text-foreground/90">
+                    {p.body}
+                  </p>
                 </li>
               ))}
             </ol>

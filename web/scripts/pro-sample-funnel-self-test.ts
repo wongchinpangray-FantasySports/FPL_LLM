@@ -11,6 +11,7 @@ import {
   rollupProSampleDaily,
   shanghaiYmd,
 } from "../lib/billing/pro-sample-funnel";
+import { DIAGNOSE_CTA_PATH } from "../lib/billing/founder-pack";
 
 const KNOWN = new Set([
   SAMPLE_REPORT_A_HTML_ASSET,
@@ -49,6 +50,16 @@ function main(): void {
         created_at: "2026-09-30T03:00:00.000Z",
       },
       {
+        path: DIAGNOSE_CTA_PATH,
+        visitor_id: "v5",
+        created_at: "2026-09-30T05:00:00.000Z",
+      },
+      {
+        path: DIAGNOSE_CTA_PATH,
+        visitor_id: "v5",
+        created_at: "2026-09-30T06:00:00.000Z",
+      },
+      {
         path: "/pro/samples/old.pdf",
         visitor_id: "v3",
         created_at: "2026-09-30T04:00:00.000Z",
@@ -74,6 +85,8 @@ function main(): void {
   assert.equal(daily[2]?.htmlClicks, 1);
   assert.equal(daily[2]?.clicks, 3);
   assert.equal(daily[2]?.visitors, 2);
+  assert.equal(daily[2]?.diagnoseClicks, 2);
+  assert.equal(daily[2]?.diagnoseVisitors, 1);
 
   const month = rollupProSampleDaily([], KNOWN, now);
   assert.equal(month.length, SAMPLE_DAILY_DAYS);

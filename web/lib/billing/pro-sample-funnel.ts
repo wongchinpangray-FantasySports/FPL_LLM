@@ -6,6 +6,7 @@ import {
   SAMPLE_REPORT_A_PDF_ASSET,
   SAMPLE_REPORT_B_HTML_ASSET,
   SAMPLE_REPORT_B_PDF_ASSET,
+  DIAGNOSE_CTA_PATH,
 } from "@/lib/billing/founder-pack";
 import { insertNotifications } from "@/lib/notifications/shared";
 
@@ -24,6 +25,8 @@ export type ProSampleDailyPoint = {
   htmlClicks: number;
   pdfClicks: number;
   visitors: number;
+  diagnoseClicks: number;
+  diagnoseVisitors: number;
 };
 
 export type ProSampleFunnel = {
@@ -37,9 +40,13 @@ export type ProSampleFunnel = {
   bySample: ProSampleBucket[];
   /** Last 30 Shanghai days, including today (zeros filled). */
   daily: ProSampleDailyPoint[];
+  diagnoseClicks: number;
+  diagnoseVisitors: number;
+  /** diagnose visitors / sample visitors × 100 */
+  sampleToDiagnoseRate: number | null;
   /** payers / sample visitors × 100 (null if no sample visitors) */
   sampleToPaidRate: number | null;
-  /** leads (all statuses except lost?) / sample visitors — use total leads pipeline */
+  /** leads / sample visitors */
   sampleToLeadRate: number | null;
 };
 
@@ -72,6 +79,8 @@ export function emptySampleDays(
       htmlClicks: 0,
       pdfClicks: 0,
       visitors: 0,
+      diagnoseClicks: 0,
+      diagnoseVisitors: 0,
     });
   }
   return out;
@@ -91,13 +100,27 @@ export function rollupProSampleDaily(
   const daily = emptySampleDays(end, days);
   const idx = new Map(daily.map((p, i) => [p.date, i]));
   const visitorsByDay = new Map<string, Set<string>>();
+  const diagnoseVisitorsByDay = new Map<string, Set<string>>();
   for (const row of rows) {
     const path = row.path ?? "";
-    if (!knownPaths.has(path)) continue;
     const day = shanghaiYmd(row.created_at);
     const i = idx.get(day);
     if (i == null) continue;
     const point = daily[i]!;
+    if (path === DIAGNOSE_CTA_PATH) {
+      point.diagnoseClicks += 1;
+      const vid = row.visitor_id?.trim();
+      if (vid) {
+        let set = diagnoseVisitorsByDay.get(day);
+        if (!set) {
+          set = new Set();
+          diagnoseVisitorsByDay.set(day, set);
+        }
+        set.add(vid);
+      }
+      continue;
+    }
+    if (!knownPaths.has(path)) continue;
     point.clicks += 1;
     if (path.endsWith(".pdf")) point.pdfClicks += 1;
     if (path.endsWith(".html")) point.htmlClicks += 1;
@@ -112,6 +135,7 @@ export function rollupProSampleDaily(
   }
   for (const point of daily) {
     point.visitors = visitorsByDay.get(point.date)?.size ?? 0;
+    point.diagnoseVisitors = diagnoseVisitorsByDay.get(point.date)?.size ?? 0;
   }
   return daily;
 }
@@ -176,6 +200,9 @@ export async function getProSampleFunnel(input: {
       visitors: 0,
     })),
     daily: emptySampleDays(shanghaiYmd(new Date())),
+    diagnoseClicks: 0,
+    diagnoseVisitors: 0,
+    sampleToDiagnoseRate: null,
     sampleToPaidRate: null,
     sampleToLeadRate: null,
   };
@@ -216,9 +243,16 @@ export async function getProSampleFunnel(input: {
   let pdfClicks = 0;
   let aClicks = 0;
   let bClicks = 0;
+  let diagnoseClicks = 0;
+  const diagnoseVisitors = new Set<string>();
 
   for (const row of rows) {
     const path = row.path ?? "";
+    if (path === DIAGNOSE_CTA_PATH) {
+      diagnoseClicks += 1;
+      if (row.visitor_id) diagnoseVisitors.add(row.visitor_id);
+      continue;
+    }
     const bucket = byPath.get(path);
     if (!bucket) continue;
     bucket.clicks += 1;
@@ -235,7 +269,7 @@ export async function getProSampleFunnel(input: {
   const uniqueVisitors = visitors.size;
   return {
     tableMissing: false,
-    clicks: rows.length,
+    clicks: htmlClicks + pdfClicks,
     uniqueVisitors,
     htmlClicks,
     pdfClicks,
@@ -250,6 +284,9 @@ export async function getProSampleFunnel(input: {
       };
     }),
     daily: rollupProSampleDaily(rows, knownPaths),
+    diagnoseClicks,
+    diagnoseVisitors: diagnoseVisitors.size,
+    sampleToDiagnoseRate: pct(diagnoseVisitors.size, uniqueVisitors),
     sampleToPaidRate: pct(input.payers, uniqueVisitors),
     sampleToLeadRate: pct(input.leads, uniqueVisitors),
   };
@@ -301,6 +338,8 @@ export async function listProSampleOpeners(): Promise<{
   let anonymousClicks = 0;
 
   for (const row of rows) {
+    const path = row.path ?? "";
+    if (path === DIAGNOSE_CTA_PATH) continue;
     const userId = row.user_id?.trim() || null;
     const visitorId = row.visitor_id?.trim() || null;
     if (!userId) anonymousClicks += 1;

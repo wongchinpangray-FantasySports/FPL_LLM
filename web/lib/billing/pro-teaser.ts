@@ -11,20 +11,12 @@ import {
 import { fplGet, type FplClassicLeague } from "@/lib/fpl";
 import { validateFplEntryExists } from "@/lib/auth/fpl-access";
 import { getMiniGameweekContext } from "@/lib/mini/gameweek";
-import { loadClubFormRaw } from "@/lib/fpl/team-form";
 import { getServerSupabase } from "@/lib/supabase";
 
 export type TeaserLocale = "zh" | "en";
 
 export type TeaserProblem = {
-  kind:
-    | "injury"
-    | "bench_trap"
-    | "league_gap"
-    | "club_def"
-    | "ft"
-    | "chips"
-    | "bank";
+  kind: "overall" | "league" | "transfer";
   title: string;
   body: string;
 };
@@ -72,13 +64,14 @@ export type TeaserSquadFlag = {
 
 export type TeaserProblemFacts = {
   locale: TeaserLocale;
-  bank: number;
-  freeTransfers: number;
-  chipsAllRemaining: boolean;
+  overallRank: number | null;
+  lastGw: number | null;
+  lastGwPoints: number | null;
+  prevOverallRank: number | null;
+  nextGw: number | null;
   league: { name: string; rank: number | null; gap: number | null } | null;
+  freeTransfers: number;
   flags: TeaserSquadFlag[];
-  clubDefStacks: Array<{ team: string; n: number; leaky: boolean }>;
-  pointsOnBenchLast: number | null;
 };
 
 const LEAK_KEYS = [
@@ -141,141 +134,129 @@ function isRiskStatus(status: string | null, chance: number | null): boolean {
   return false;
 }
 
-function posWord(pos: string | null, locale: TeaserLocale): string {
-  const p = (pos ?? "").toUpperCase();
-  if (locale === "zh") {
-    if (p === "DEF") return "后卫";
-    if (p === "MID") return "中场";
-    if (p === "FWD") return "前锋";
-    if (p === "GKP") return "门将";
-    return "位置";
-  }
-  if (p === "DEF") return "DEF";
-  if (p === "MID") return "MID";
-  if (p === "FWD") return "FWD";
-  if (p === "GKP") return "GKP";
-  return "slot";
+function pickSellCandidate(flags: TeaserSquadFlag[]): TeaserSquadFlag | null {
+  const named = flags.filter((f) => (f.web_name ?? "").trim());
+  const riskStarters = named
+    .filter((f) => f.is_starter && isRiskStatus(f.status, f.chance))
+    .sort(
+      (a, b) =>
+        (a.chance ?? 100) - (b.chance ?? 100) || a.slot - b.slot,
+    );
+  if (riskStarters[0]) return riskStarters[0];
+  const starter = named
+    .filter((f) => f.is_starter && (f.position ?? "").toUpperCase() !== "GKP")
+    .sort((a, b) => a.slot - b.slot)[0];
+  return starter ?? named[0] ?? null;
 }
 
 export function redactedPlanLine(
   flags: TeaserSquadFlag[],
   locale: TeaserLocale,
 ): string {
-  const risk = flags
-    .filter((f) => f.is_starter && isRiskStatus(f.status, f.chance))
-    .sort((a, b) => a.slot - b.slot)[0];
-  const pos = posWord(risk?.position ?? null, locale);
+  const sell = pickSellCandidate(flags);
+  const name = sell?.web_name.trim() || (locale === "zh" ? "一人" : "a starter");
   return locale === "zh"
-    ? `默认方案：${pos} × → …（开通后写清 IN/OUT 与价格）`
-    : `Default plan: ${pos} × → … (names and prices after unlock)`;
+    ? `报告建议：卖走 ${name} 买进 XXX 报告分析利与弊`
+    : `Report pick: sell ${name} for XXX — unlock for the trade-off`;
 }
 
-export function buildTeaserProblems(facts: TeaserProblemFacts): TeaserProblem[] {
-  const { locale } = facts;
-  const out: TeaserProblem[] = [];
+function rankMoveLine(
+  prev: number | null,
+  now: number | null,
+  locale: TeaserLocale,
+): string | null {
+  if (prev == null || now == null || !Number.isFinite(prev) || !Number.isFinite(now)) {
+    return null;
+  }
+  const delta = prev - now;
   const zh = locale === "zh";
+  if (delta === 0) return zh ? "排名没动" : "rank unchanged";
+  const abs = formatOverallRank(Math.abs(delta), locale);
+  if (delta > 0) return zh ? `排名升了 ${abs}` : `climbed ${abs}`;
+  return zh ? `排名掉了 ${abs}` : `dropped ${abs}`;
+}
 
-  const riskStarters = facts.flags.filter(
-    (f) => f.is_starter && isRiskStatus(f.status, f.chance),
+/** Overall rank, one mini-league, coming-GW transfer tease. Never names the IN. */
+export function buildTeaserProblems(facts: TeaserProblemFacts): TeaserProblem[] {
+  const zh = facts.locale === "zh";
+  const rankLabel = formatOverallRank(facts.overallRank, facts.locale);
+  const move = rankMoveLine(
+    facts.prevOverallRank,
+    facts.overallRank,
+    facts.locale,
   );
-  if (riskStarters.length > 0) {
-    const names = riskStarters
-      .slice(0, 2)
-      .map((f) => f.web_name)
-      .join(zh ? "、" : ", ");
-    out.push({
-      kind: "injury",
-      title: zh ? "出战风险" : "Availability",
-      body: zh
-        ? `首发里有出战问题：${names}。开通PRO了解实际操作建议。`
-        : `Starter availability issue: ${names}. The full note names the replacement, the price, and bench order.`,
-    });
-  }
+  const gwBit =
+    facts.lastGw != null
+      ? zh
+        ? `上轮 GW${facts.lastGw}`
+        : `GW${facts.lastGw}`
+      : zh
+        ? "上轮"
+        : "Last GW";
+  const ptsBit =
+    facts.lastGwPoints != null
+      ? zh
+        ? `拿了 ${facts.lastGwPoints} 分`
+        : `scored ${facts.lastGwPoints}`
+      : null;
+  const overallBits = [
+    zh ? `现在总榜第 ${rankLabel}` : `Overall rank ${rankLabel}`,
+    ptsBit ? `${gwBit} ${ptsBit}` : null,
+    move,
+  ].filter(Boolean);
+  const overallBody = zh
+    ? `${overallBits.join("，")}。要有绿箭头 看样本教你怎么走`
+    : `${overallBits.join(" · ")}. Green arrows — the sample shows how.`;
 
-  const starterDefs = facts.flags.filter(
-    (f) => f.is_starter && (f.position ?? "").toUpperCase() === "DEF",
-  );
-  const benchTrap =
-    riskStarters.length > 0 &&
-    (starterDefs.length <= 3 || (facts.pointsOnBenchLast ?? 0) >= 6);
-  if (benchTrap) {
-    out.push({
-      kind: "bench_trap",
-      title: zh ? "自动换人陷阱" : "Auto-sub trap",
-      body: zh
-        ? "本周可能自动换人。板凳顺序要按阵型算——放错第 13 人会吃掉每一次替补。开通后写清 13 / 14 / 15。"
-        : "Autosubs may fire. Bench order depends on formation — the 13th pick can swallow every sub. Unlock for 13 / 14 / 15.",
-    });
-  }
-
-  if (facts.league && facts.league.rank != null) {
+  let leagueBody: string;
+  if (facts.league?.name) {
+    const rank =
+      facts.league.rank != null
+        ? zh
+          ? `你现在第 ${facts.league.rank}`
+          : `rank ${facts.league.rank}`
+        : zh
+          ? "名次待更新"
+          : "rank pending";
     const gapBit =
       facts.league.gap != null
         ? zh
           ? `，距榜首 ${facts.league.gap} 分`
           : `, ${facts.league.gap} pts behind the leader`
         : "";
-    out.push({
-      kind: "league_gap",
-      title: zh ? "小联赛位置" : "Mini-league",
-      body: zh
-        ? `「${facts.league.name}」第 ${facts.league.rank}${gapBit}。开通PRO解锁冲击路径和 4 轮规划完整报告。`
-        : `"${facts.league.name}" rank ${facts.league.rank}${gapBit}. Unlock PRO for the climb path and 4-GW plan.`,
-    });
+    leagueBody = zh
+      ? `「${facts.league.name}」${rank}${gapBit}。周冠军、月冠军 报告帮你冲一冲`
+      : `"${facts.league.name}" ${rank}${gapBit}. GW / monthly titles — the note helps you climb.`;
+  } else {
+    leagueBody = zh
+      ? "没有读到私人小联赛。把联赛放进阵容后，完整报告会按那个联赛写追分。"
+      : "No private mini-league on this entry. Unlock after you add one.";
   }
 
-  const leakyStack = facts.clubDefStacks.find((c) => c.n >= 2 && c.leaky);
-  const anyStack = facts.clubDefStacks.find((c) => c.n >= 2);
-  const stack = leakyStack ?? anyStack;
-  if (stack) {
-    out.push({
-      kind: "club_def",
-      title: zh ? "后防同队" : "Same-club defence",
-      body: zh
-        ? `后防有 ${stack.n} 人同属 ${stack.team}。零封要看整队 xGA / 红牌队友，不能只看球员 xP。开通PRO后了解买谁卖谁。`
-        : `${stack.n} defenders from ${stack.team}. CS is a club call (xGA / cards), not player xP. Unlock PRO to see who to buy and sell.`,
-    });
-  }
+  const ft = Math.max(0, facts.freeTransfers);
+  const gwPlan =
+    facts.nextGw != null ? (zh ? `GW${facts.nextGw}` : `GW${facts.nextGw}`) : zh ? "本周" : "This GW";
+  const transferBody = zh
+    ? `${gwPlan} 你有 ${ft} 次免费转会。${redactedPlanLine(facts.flags, facts.locale)}`
+    : `${gwPlan}: ${ft} FT. ${redactedPlanLine(facts.flags, facts.locale)}`;
 
-  if (facts.freeTransfers >= 1) {
-    out.push({
-      kind: "ft",
-      title: zh ? "免费转会" : "Free transfer",
-      body: zh
-        ? `你有 ${facts.freeTransfers} 次免费转会。默认方案不会先让你 -4；开通PRO后获取更多转会方案。`
-        : `You have ${facts.freeTransfers} FT. The default plan will not take a -4 first. Unlock PRO for more transfer options.`,
-    });
-  }
-
-  if (facts.chipsAllRemaining) {
-    out.push({
-      kind: "chips",
-      title: zh ? "卡还在" : "Chips unused",
-      body: zh
-        ? "卡都还在。本周开不开、开哪张，开通PRO了解实际操作建议——报告样本里不会先让你烧卡。"
-        : "All chips remain. Whether to play one this GW is in the full note — the teaser will not burn a chip.",
-    });
-  }
-
-  if (facts.bank >= 0) {
-    out.push({
-      kind: "bank",
-      title: zh ? "银行" : "Bank",
-      body: zh
-        ? `银行 £${facts.bank.toFixed(1)}m。换人必须卡在这个预算里，开通后写清差价。`
-        : `Bank £${facts.bank.toFixed(1)}m. The paid note fits the IN inside this budget.`,
-    });
-  }
-
-  const picked: TeaserProblem[] = [];
-  const seen = new Set<TeaserProblem["kind"]>();
-  for (const p of out) {
-    if (seen.has(p.kind)) continue;
-    seen.add(p.kind);
-    picked.push(p);
-    if (picked.length >= 3) break;
-  }
-  return picked;
+  return [
+    {
+      kind: "overall",
+      title: zh ? "总排名" : "Overall rank",
+      body: overallBody,
+    },
+    {
+      kind: "league",
+      title: zh ? "小联赛" : "Mini-league",
+      body: leagueBody,
+    },
+    {
+      kind: "transfer",
+      title: zh ? "本周转会" : "This GW transfer",
+      body: transferBody,
+    },
+  ];
 }
 
 export function teaserLeakReasons(payload: unknown): string[] {
@@ -328,7 +309,12 @@ function lockedBlocks(locale: TeaserLocale): TeaserLockedBlock[] {
 }
 
 type HistoryJson = {
-  current?: Array<{ event: number; points_on_bench?: number }>;
+  current?: Array<{
+    event: number;
+    points?: number;
+    overall_rank?: number;
+    points_on_bench?: number;
+  }>;
 };
 
 type StandingsJson = {
@@ -378,11 +364,9 @@ export async function buildProTeaser(
 ): Promise<ProTeaser> {
   const entry = await validateFplEntryExists(entryId);
   const gwCtx = await getMiniGameweekContext();
-  const throughGw = Math.max(1, (gwCtx.submission_gw ?? gwCtx.scoring_gw) - 1);
 
-  const [team, clubForm, history] = await Promise.all([
+  const [team, history] = await Promise.all([
     fetchTeamForUi(entryId, false),
-    loadClubFormRaw({ throughGw }).catch(() => null),
     fplGet<HistoryJson>(`/entry/${entryId}/history/`).catch(() => null),
   ]);
 
@@ -406,31 +390,6 @@ export async function buildProTeaser(
     };
   });
 
-  const defByTeam = new Map<
-    number,
-    { team: string; n: number; leaky: boolean }
-  >();
-  for (const f of flags) {
-    if (!f.is_starter || (f.position ?? "").toUpperCase() !== "DEF") continue;
-    if (f.team_id == null) continue;
-    const club = clubForm?.byTeam.get(f.team_id);
-    const prev = defByTeam.get(f.team_id);
-    const leaky =
-      club?.def_use === "dc" ||
-      (club?.defence_leak ?? 0) >= 1.15 ||
-      (club?.luck_cs ?? 0) < -0.05;
-    if (prev) {
-      prev.n += 1;
-      prev.leaky = prev.leaky || leaky;
-    } else {
-      defByTeam.set(f.team_id, {
-        team: f.team ?? club?.short ?? `#${f.team_id}`,
-        n: 1,
-        leaky,
-      });
-    }
-  }
-
   const mini = pickMiniLeague(entry.leagues?.classic);
   let gap: number | null = null;
   if (mini?.id) {
@@ -450,21 +409,14 @@ export async function buildProTeaser(
   }
 
   const chips = computeChipsRemaining(team.chips_used ?? []);
-  const chipsAllRemaining =
-    chips.wildcardsRemaining >= 2 &&
-    chips.freeHitsRemaining >= 2 &&
-    chips.benchBoostsRemaining >= 2 &&
-    chips.tripleCaptainsRemaining >= 2;
   const chipsLabel =
     locale === "zh"
       ? `WC ${chips.wildcardsRemaining} · FH ${chips.freeHitsRemaining} · BB ${chips.benchBoostsRemaining} · TC ${chips.tripleCaptainsRemaining}`
       : `WC ${chips.wildcardsRemaining} · FH ${chips.freeHitsRemaining} · BB ${chips.benchBoostsRemaining} · TC ${chips.tripleCaptainsRemaining}`;
 
-  const lastHist = (history?.current ?? []).at(-1);
-  const pointsOnBenchLast =
-    typeof lastHist?.points_on_bench === "number"
-      ? lastHist.points_on_bench
-      : null;
+  const histRows = history?.current ?? [];
+  const lastHist = histRows.at(-1);
+  const prevHist = histRows.at(-2);
 
   const league = mini
     ? {
@@ -476,13 +428,14 @@ export async function buildProTeaser(
 
   const problems = buildTeaserProblems({
     locale,
-    bank: team.bank,
-    freeTransfers: team.free_transfers ?? 1,
-    chipsAllRemaining,
+    overallRank: entry.summary_overall_rank ?? lastHist?.overall_rank ?? null,
+    lastGw: lastHist?.event ?? null,
+    lastGwPoints: lastHist?.points ?? null,
+    prevOverallRank: prevHist?.overall_rank ?? null,
+    nextGw: gwCtx.submission_gw,
     league,
+    freeTransfers: team.free_transfers ?? 1,
     flags,
-    clubDefStacks: [...defByTeam.values()],
-    pointsOnBenchLast,
   });
 
   const managerName =
@@ -511,6 +464,79 @@ export async function buildProTeaser(
     locked: lockedBlocks(locale),
   };
 
+  const leaks = teaserLeakReasons(teaser);
+  if (leaks.length) {
+    throw new Error(`Teaser leak: ${leaks.join(", ")}`);
+  }
+  return teaser;
+}
+
+/** Fixture teaser for local preview when FPL is 503. Same copy path as live. */
+export function buildPreviewProTeaser(locale: TeaserLocale): ProTeaser {
+  const flags: TeaserSquadFlag[] = [
+    {
+      web_name: "Richards",
+      position: "DEF",
+      team: "Crystal Palace",
+      team_id: 7,
+      is_starter: true,
+      slot: 2,
+      status: "a",
+      chance: 100,
+    },
+    {
+      web_name: "Mitchell",
+      position: "DEF",
+      team: "Crystal Palace",
+      team_id: 7,
+      is_starter: true,
+      slot: 3,
+      status: "a",
+      chance: 100,
+    },
+    {
+      web_name: "E.Le Fée",
+      position: "MID",
+      team: "Sunderland",
+      team_id: 20,
+      is_starter: true,
+      slot: 8,
+      status: "d",
+      chance: 25,
+    },
+  ];
+  const league = { name: "AI League", rank: 16, gap: 63 };
+  const problems = buildTeaserProblems({
+    locale,
+    overallRank: 1_640_000,
+    lastGw: 6,
+    lastGwPoints: 48,
+    prevOverallRank: 1_520_000,
+    nextGw: 7,
+    league,
+    freeTransfers: 1,
+    flags,
+  });
+  const teaser: ProTeaser = {
+    entryId: 916934,
+    teamName: locale === "zh" ? "样本阵容（预览）" : "Sample squad (preview)",
+    managerName: locale === "zh" ? "不走 FPL 实时接口" : "Offline FPL preview",
+    snapshot: {
+      points: 284,
+      overallRank: 1_640_000,
+      overallRankLabel: formatOverallRank(1_640_000, locale),
+      bankLabel: "£1.0m",
+      freeTransfers: 1,
+      chipsLabel: "WC 2 · FH 2 · BB 2 · TC 2",
+      nextGw: 7,
+      deadlineIso: "2026-10-03T10:00:00Z",
+      deadlineLabel: formatDeadlineLabel("2026-10-03T10:00:00Z", locale),
+    },
+    league,
+    problems,
+    redactedPlan: redactedPlanLine(flags, locale),
+    locked: lockedBlocks(locale),
+  };
   const leaks = teaserLeakReasons(teaser);
   if (leaks.length) {
     throw new Error(`Teaser leak: ${leaks.join(", ")}`);

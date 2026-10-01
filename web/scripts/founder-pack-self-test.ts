@@ -11,6 +11,8 @@ import {
   LAUNCH_DISCOUNT_ACTIVE,
   SAMPLE_PDF_GATE_SESSION_KEY,
   SAMPLE_TEASER_NUDGE_SESSION_KEY,
+  DIAGNOSE_CTA_PATH,
+  diagnoseCtaHref,
   founderPackClaimHref,
   founderPackIsLive,
   founderPackIsPublic,
@@ -29,6 +31,8 @@ function main(): void {
   assert.equal(FOUNDER_PACK_PATH, "/pro");
   assert.equal(SAMPLE_PDF_GATE_SESSION_KEY, "faleague_sample_pdf_gate_v1");
   assert.equal(SAMPLE_TEASER_NUDGE_SESSION_KEY, "faleague_sample_teaser_nudge_v1");
+  assert.equal(DIAGNOSE_CTA_PATH, "/pro/cta/diagnose");
+  assert.equal(diagnoseCtaHref("b"), "/api/pro/diagnose?sku=b");
   assert.equal(
     founderPackClaimHref("abc"),
     "/admin?tab=pro&grant=abc",

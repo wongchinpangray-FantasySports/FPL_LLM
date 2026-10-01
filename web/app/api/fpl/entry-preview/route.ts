@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         error:
           status === 404
             ? "Entry ID not found on Fantasy Premier League."
-            : message,
+            : "Could not look up that Entry ID. FPL is busy — try again in a moment.",
       },
       { status },
     );

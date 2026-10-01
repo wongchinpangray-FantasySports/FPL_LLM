@@ -43,6 +43,13 @@ export const SAMPLE_REPORT_B_PDF = "/api/pro/sample?sku=b&fmt=pdf";
 export const SAMPLE_REPORT_A_HTML = "/api/pro/sample?sku=a&fmt=html";
 export const SAMPLE_REPORT_B_HTML = "/api/pro/sample?sku=b&fmt=html";
 
+/** Logged as event_type=pro_sample so the existing site_events check still applies. */
+export const DIAGNOSE_CTA_PATH = "/pro/cta/diagnose";
+
+export function diagnoseCtaHref(sku: ProSampleSku): string {
+  return `/api/pro/diagnose?sku=${sku}`;
+}
+
 export type ProSampleSku = "a" | "b";
 export type ProSampleFmt = "html" | "pdf";
 
