@@ -47,9 +47,23 @@ export const SAMPLE_REPORT_B_HTML = "/api/pro/sample?sku=b&fmt=html";
 
 /** Logged as event_type=pro_sample so the existing site_events check still applies. */
 export const DIAGNOSE_CTA_PATH = "/pro/cta/diagnose";
+/** Logged when someone runs the free Entry teaser: `/pro/cta/teaser/{entryId}`. */
+export const TEASER_LOOKUP_PATH_PREFIX = "/pro/cta/teaser/";
 
 export function diagnoseCtaHref(sku: ProSampleSku): string {
   return `/api/pro/diagnose?sku=${sku}`;
+}
+
+export function teaserLookupPath(entryId: number): string {
+  return `${TEASER_LOOKUP_PATH_PREFIX}${entryId}`;
+}
+
+export function parseTeaserLookupEntryId(path: string): number | null {
+  if (!path.startsWith(TEASER_LOOKUP_PATH_PREFIX)) return null;
+  const raw = path.slice(TEASER_LOOKUP_PATH_PREFIX.length).split(/[/?#]/)[0] ?? "";
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
 }
 
 export type ProSampleSku = "a" | "b";

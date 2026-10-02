@@ -7,6 +7,8 @@ import {
   SAMPLE_REPORT_B_HTML_ASSET,
   SAMPLE_REPORT_B_PDF_ASSET,
   DIAGNOSE_CTA_PATH,
+  TEASER_LOOKUP_PATH_PREFIX,
+  parseTeaserLookupEntryId,
 } from "@/lib/billing/founder-pack";
 import { insertNotifications } from "@/lib/notifications/shared";
 
@@ -339,7 +341,7 @@ export async function listProSampleOpeners(): Promise<{
 
   for (const row of rows) {
     const path = row.path ?? "";
-    if (path === DIAGNOSE_CTA_PATH) continue;
+    if (path === DIAGNOSE_CTA_PATH || path.startsWith(TEASER_LOOKUP_PATH_PREFIX)) continue;
     const userId = row.user_id?.trim() || null;
     const visitorId = row.visitor_id?.trim() || null;
     if (!userId) anonymousClicks += 1;
@@ -414,6 +416,142 @@ export async function listProSampleOpeners(): Promise<{
     });
 
   return { tableMissing: false, anonymousClicks, openers };
+}
+
+export type ProDiagnoseClicker = {
+  lastAt: string;
+  clicks: number;
+  entryId: number | null;
+  email: string | null;
+  displayName: string | null;
+  userId: string | null;
+  visitorId: string | null;
+};
+
+export async function listProDiagnoseClickers(): Promise<{
+  tableMissing: boolean;
+  clickers: ProDiagnoseClicker[];
+}> {
+  const empty = { tableMissing: false, clickers: [] as ProDiagnoseClicker[] };
+  const supa = getServerSupabase();
+  const { data, error } = await supa
+    .from("site_events")
+    .select("user_id,visitor_id,path,created_at")
+    .eq("event_type", "pro_sample")
+    .eq("feature", "pro")
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  if (error) {
+    if (isMissingSiteEventsTable(error)) {
+      return { ...empty, tableMissing: true };
+    }
+    const msg = (error.message ?? "").toLowerCase();
+    if (msg.includes("event_type") || msg.includes("check constraint")) {
+      return { ...empty, tableMissing: true };
+    }
+    throw new Error(error.message);
+  }
+
+  const rows = (data ?? []) as Array<{
+    user_id: string | null;
+    visitor_id: string | null;
+    path: string | null;
+    created_at: string;
+  }>;
+
+  const teaserByVisitor = new Map<string, number>();
+  const teaserByUser = new Map<string, number>();
+  for (const row of rows) {
+    const entryId = parseTeaserLookupEntryId(row.path ?? "");
+    if (entryId == null) continue;
+    const visitorId = row.visitor_id?.trim();
+    if (visitorId && !teaserByVisitor.has(visitorId)) {
+      teaserByVisitor.set(visitorId, entryId);
+    }
+    const userId = row.user_id?.trim();
+    if (userId && !teaserByUser.has(userId)) {
+      teaserByUser.set(userId, entryId);
+    }
+  }
+
+  const byKey = new Map<
+    string,
+    {
+      userId: string | null;
+      visitorId: string | null;
+      lastAt: string;
+      clicks: number;
+    }
+  >();
+  for (const row of rows) {
+    if ((row.path ?? "") !== DIAGNOSE_CTA_PATH) continue;
+    const userId = row.user_id?.trim() || null;
+    const visitorId = row.visitor_id?.trim() || null;
+    const key = openerKey(userId, visitorId);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { userId, visitorId, lastAt: row.created_at, clicks: 1 });
+      continue;
+    }
+    existing.clicks += 1;
+    if (row.created_at > existing.lastAt) existing.lastAt = row.created_at;
+  }
+
+  const userIds = [...new Set([...byKey.values()].map((v) => v.userId).filter(Boolean))] as string[];
+  const profileById = new Map<
+    string,
+    { display_name: string | null; fpl_entry_id: number | null }
+  >();
+  for (let i = 0; i < userIds.length; i += 80) {
+    const batch = userIds.slice(i, i + 80);
+    const { data: profiles, error: pErr } = await supa
+      .from("profiles")
+      .select("id,display_name,fpl_entry_id")
+      .in("id", batch);
+    if (pErr) throw new Error(pErr.message);
+    for (const p of profiles ?? []) {
+      profileById.set(p.id as string, {
+        display_name: (p.display_name as string | null) ?? null,
+        fpl_entry_id: (p.fpl_entry_id as number | null) ?? null,
+      });
+    }
+  }
+
+  const emailById = new Map<string, string>();
+  for (const id of userIds) {
+    try {
+      const { data: auth } = await supa.auth.admin.getUserById(id);
+      const email = auth.user?.email?.trim();
+      if (email) emailById.set(id, email);
+    } catch {
+      /* skip */
+    }
+  }
+
+  const clickers: ProDiagnoseClicker[] = [...byKey.values()]
+    .map((v) => {
+      const profile = v.userId ? profileById.get(v.userId) : undefined;
+      const entryId =
+        profile?.fpl_entry_id ??
+        (v.userId ? teaserByUser.get(v.userId) ?? null : null) ??
+        (v.visitorId ? teaserByVisitor.get(v.visitorId) ?? null : null);
+      return {
+        lastAt: v.lastAt,
+        clicks: v.clicks,
+        entryId,
+        email: v.userId ? emailById.get(v.userId) ?? null : null,
+        displayName: profile?.display_name ?? null,
+        userId: v.userId,
+        visitorId: v.userId ? null : v.visitorId,
+      };
+    })
+    .sort((a, b) => {
+      if (Boolean(a.entryId) !== Boolean(b.entryId)) return a.entryId ? -1 : 1;
+      return b.lastAt.localeCompare(a.lastAt);
+    });
+
+  return { tableMissing: false, clickers };
 }
 
 const SAMPLE_NUDGE_TYPE = "founder_pack_offer";

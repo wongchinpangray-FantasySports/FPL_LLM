@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { founderPackIsPublic } from "@/lib/billing/founder-pack";
+import { getAuthUser } from "@/lib/auth/session";
+import { founderPackIsPublic, teaserLookupPath } from "@/lib/billing/founder-pack";
 import {
   buildPreviewProTeaser,
   buildProTeaser,
@@ -8,6 +9,12 @@ import {
   type TeaserLocale,
 } from "@/lib/billing/pro-teaser";
 import { getClientIp, getNamedRateLimiter } from "@/lib/ratelimit";
+import {
+  insertSiteEvent,
+  isSiteVisitorId,
+  SCOUT_VISITOR_COOKIE,
+  SITE_VISITOR_COOKIE,
+} from "@/lib/analytics/store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -73,6 +80,28 @@ export async function POST(req: NextRequest) {
     );
 
     const teaser = await buildProTeaser(entryId, locale);
+    try {
+      const visitor =
+        req.cookies.get(SITE_VISITOR_COOKIE)?.value?.trim() ||
+        req.cookies.get(SCOUT_VISITOR_COOKIE)?.value?.trim() ||
+        null;
+      let userId: string | null = null;
+      try {
+        userId = (await getAuthUser())?.id ?? null;
+      } catch {
+        userId = null;
+      }
+      await insertSiteEvent({
+        event_type: "pro_sample",
+        path: teaserLookupPath(entryId),
+        feature: "pro",
+        visitor_id: visitor && isSiteVisitorId(visitor) ? visitor : null,
+        user_id: userId,
+        referrer: req.headers.get("referer"),
+      });
+    } catch {
+      /* still return the teaser */
+    }
     return NextResponse.json({ teaser });
   } catch (e) {
     if (isMissingFplEntry(e)) {

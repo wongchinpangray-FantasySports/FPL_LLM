@@ -13,7 +13,10 @@ import {
   SAMPLE_PDF_GATE_SESSION_KEY,
   SAMPLE_TEASER_NUDGE_SESSION_KEY,
   DIAGNOSE_CTA_PATH,
+  TEASER_LOOKUP_PATH_PREFIX,
   diagnoseCtaHref,
+  parseTeaserLookupEntryId,
+  teaserLookupPath,
   founderPackClaimHref,
   founderPackIsLive,
   founderPackIsPublic,
@@ -34,6 +37,10 @@ function main(): void {
   assert.equal(SAMPLE_PDF_GATE_SESSION_KEY, "faleague_sample_pdf_gate_v1");
   assert.equal(SAMPLE_TEASER_NUDGE_SESSION_KEY, "faleague_sample_teaser_nudge_v1");
   assert.equal(DIAGNOSE_CTA_PATH, "/pro/cta/diagnose");
+  assert.equal(TEASER_LOOKUP_PATH_PREFIX, "/pro/cta/teaser/");
+  assert.equal(teaserLookupPath(56657), "/pro/cta/teaser/56657");
+  assert.equal(parseTeaserLookupEntryId("/pro/cta/teaser/56657"), 56657);
+  assert.equal(parseTeaserLookupEntryId("/pro/cta/diagnose"), null);
   assert.equal(diagnoseCtaHref("b"), "/api/pro/diagnose?sku=b");
   assert.equal(
     founderPackClaimHref("abc"),

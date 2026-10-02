@@ -17,6 +17,7 @@ import type {
   ProSampleDailyPoint,
   ProSampleFunnel,
   ProSampleOpener,
+  ProDiagnoseClicker,
 } from "@/lib/billing/pro-sample-funnel";
 
 function fmtWhen(iso: string | null, locale: string): string {
@@ -50,6 +51,10 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
     anonymousClicks: number;
     openers: ProSampleOpener[];
   } | null>(null);
+  const [diagnoseClickers, setDiagnoseClickers] = useState<ProDiagnoseClicker[]>(
+    [],
+  );
+  const [diagnoseOpen, setDiagnoseOpen] = useState(false);
   const [nudgeBusy, setNudgeBusy] = useState(false);
   const [nudgeMsg, setNudgeMsg] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
@@ -78,6 +83,7 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
           anonymousClicks: number;
           openers: ProSampleOpener[];
         };
+        diagnoseClickers?: { clickers?: ProDiagnoseClicker[] };
         tableMissing?: boolean;
         error?: string;
       };
@@ -86,6 +92,7 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
       setProgress(data.progress ?? null);
       setSampleFunnel(data.sampleFunnel ?? null);
       setSampleOpeners(data.sampleOpeners ?? null);
+      setDiagnoseClickers(data.diagnoseClickers?.clickers ?? []);
       setTableMissing(Boolean(data.tableMissing));
       const drafts: Record<string, string> = {};
       for (const r of data.rows ?? []) {
@@ -300,6 +307,8 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
               hint={t("kpiDiagnoseClicksHint", {
                 n: sampleFunnel.diagnoseVisitors ?? 0,
               })}
+              active={diagnoseOpen}
+              onClick={() => setDiagnoseOpen((open) => !open)}
             />
             <Kpi
               label={t("kpiSampleToDiagnose")}
@@ -311,6 +320,57 @@ export function AdminProSubscriptionsPanel({ locale }: { locale: string }) {
               hint={t("kpiSampleToDiagnoseHint")}
             />
           </div>
+          {diagnoseOpen ? (
+            <div className="mt-2 rounded-lg border border-border/80 bg-background/60 p-2.5">
+              <p className="text-[11px] font-medium text-foreground">
+                {t("diagnoseClickersTitle")}
+              </p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
+                {t("diagnoseClickersHint")}
+              </p>
+              {diagnoseClickers.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("diagnoseClickersEmpty")}
+                </p>
+              ) : (
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full min-w-[22rem] text-left text-sm">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        <th className="px-2 py-1 font-medium">{t("diagnoseColEntry")}</th>
+                        <th className="px-2 py-1 font-medium">{t("colEmail")}</th>
+                        <th className="px-2 py-1 font-medium">{t("sampleOpenerClicks")}</th>
+                        <th className="px-2 py-1 font-medium">{t("colWhen")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {diagnoseClickers.map((c) => (
+                        <tr
+                          key={`${c.userId ?? c.visitorId ?? c.lastAt}-${c.entryId ?? "x"}`}
+                          className="border-t border-border/60"
+                        >
+                          <td className="px-2 py-1.5 font-semibold tabular-nums text-foreground">
+                            {c.entryId != null
+                              ? c.entryId
+                              : t("diagnoseNoEntry")}
+                          </td>
+                          <td className="px-2 py-1.5 text-muted-foreground">
+                            {c.email ??
+                              c.displayName ??
+                              t("sampleOpenerGuest")}
+                          </td>
+                          <td className="px-2 py-1.5 tabular-nums">{c.clicks}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted-foreground">
+                            {fmtWhen(c.lastAt, locale)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : null}
           <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
             {sampleFunnel.bySample.map((b) => (
               <div
@@ -845,13 +905,35 @@ function Kpi({
   label,
   value,
   hint,
+  onClick,
+  active,
 }: {
   label: string;
   value: string;
   hint: string;
+  onClick?: () => void;
+  active?: boolean;
 }) {
+  const className = cn(
+    "rounded-xl border bg-card px-3 py-2 text-left",
+    onClick
+      ? "cursor-pointer border-border hover:border-brand-accent/40"
+      : "border-border",
+    active && "border-brand-accent/50 ring-1 ring-brand-accent/20",
+  );
+  if (onClick) {
+    return (
+      <button type="button" className={className} onClick={onClick}>
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-0.5 text-xl font-semibold text-foreground">{value}</p>
+        <p className="text-[11px] text-muted-foreground">{hint}</p>
+      </button>
+    );
+  }
   return (
-    <div className="rounded-xl border border-border bg-card px-3 py-2">
+    <div className={className}>
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
