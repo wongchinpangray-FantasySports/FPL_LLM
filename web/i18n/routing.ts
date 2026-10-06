@@ -8,6 +8,10 @@ export const routing = defineRouting({
   locales: ["zh"],
   defaultLocale: "zh",
   localePrefix: "as-needed",
+  // Chinese-only: a NEXT_LOCALE Set-Cookie on every HTML response makes
+  // Cloudflare refuse to cache the document (x-nextjs-cache: MISS forever).
+  localeCookie: false,
+  localeDetection: false,
 });
 
 /** Legacy + current locale prefixes that may appear in bookmarks or cookies. */

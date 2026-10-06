@@ -52,8 +52,8 @@ export async function middleware(request: NextRequest) {
     url.pathname =
       pathname === "/en" ? "/" : pathname.replace(/^\/en(?=\/|$)/, "") || "/";
     const res = NextResponse.redirect(url, 308);
-    // Drop stale EN locale cookie so next-intl does not keep preferring English.
-    res.cookies.set("NEXT_LOCALE", "zh", { path: "/" });
+    // Drop a leftover EN locale cookie; the site no longer writes NEXT_LOCALE.
+    res.cookies.delete("NEXT_LOCALE");
     return res;
   }
 
@@ -91,6 +91,8 @@ export async function middleware(request: NextRequest) {
   }
 
   let response = intlMiddleware(request);
+  // next-intl localeCookie is off; drop any leftover Set-Cookie so HTML can cache.
+  response.cookies.delete("NEXT_LOCALE");
 
   if (pathNoLocale === "/s" || pathNoLocale.startsWith("/s/")) {
     const existing = request.cookies.get(SHARE_VISITOR_COOKIE)?.value;
@@ -123,6 +125,7 @@ export async function middleware(request: NextRequest) {
               request.cookies.set(name, value);
             }
             response = intlMiddleware(request);
+            response.cookies.delete("NEXT_LOCALE");
             for (const { name, value, options } of cookiesToSet) {
               response.cookies.set(name, value, options);
             }
