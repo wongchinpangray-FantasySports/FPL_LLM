@@ -1,9 +1,9 @@
 import { setRequestLocale } from "next-intl/server";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { LocaleHtmlLang } from "@/components/locale-html-lang";
+import { LocaleMessagesProvider } from "@/components/i18n/locale-messages-provider";
 import { HomeSignupPrompt } from "@/components/auth/signup-prompt-modal";
 import { SignupPromptProvider } from "@/components/auth/signup-prompt-context";
 import { FounderPackFloatingCta } from "@/components/billing/founder-pack-floating-cta";
@@ -36,11 +36,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   setRequestLocale(locale);
-  const messages = await getMessages({ locale });
   const t = await getTranslations({ locale, namespace: "footer" });
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <LocaleMessagesProvider locale={locale}>
       <LocaleHtmlLang locale={locale} />
       <SignupPromptProvider>
         <HomeSignupPrompt />
@@ -57,6 +56,6 @@ export default async function LocaleLayout({ children, params }: Props) {
           </div>
         </footer>
       </SignupPromptProvider>
-    </NextIntlClientProvider>
+    </LocaleMessagesProvider>
   );
 }
