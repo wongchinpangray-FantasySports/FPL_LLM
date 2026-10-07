@@ -108,6 +108,10 @@ Do **not** leave **Build command** empty — that skips `opennextjs-cloudflare b
 
 The **`name`** in `web/wrangler.jsonc` must match your **Workers project name** in Cloudflare (this repo uses **`fplllm`**). The **`services[].service`** self-reference must use that same name, or deploy fails with “Worker … was not found”.
 
+**R2 incremental cache:** create an R2 bucket named **`fplllm-next-inc-cache`** (Dashboard → R2 → Create) **before** the next Worker deploy. The wrangler configs bind that name as `NEXT_INC_CACHE_R2_BUCKET`. Without the bucket, Git deploy fails.
+
+**HTML Cache Rule (dashboard, once):** Caching → Cache Rules → if hostname is `www.faleague-ai.com` and URI Path is `/` or starts with `/pro` → Eligible for cache, Cache eligibility Eligible. Skip if the request has auth cookies. This only works while HTML has no `Set-Cookie`.
+
 #### CLI deploy (no Git)
 
 1. One-time: `cd web && npx wrangler login` (Cloudflare account).

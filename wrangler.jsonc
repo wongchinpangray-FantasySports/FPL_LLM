@@ -18,6 +18,16 @@
 		"directory": "web/.open-next/assets",
 		"binding": "ASSETS"
 	},
+	"r2_buckets": [
+		{
+			// Dashboard → R2 → Create bucket named fplllm-next-inc-cache (Free-plan R2).
+			"binding": "NEXT_INC_CACHE_R2_BUCKET",
+			"bucket_name": "fplllm-next-inc-cache"
+		}
+	],
+	"triggers": {
+		"crons": ["*/3 * * * *"]
+	},
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
