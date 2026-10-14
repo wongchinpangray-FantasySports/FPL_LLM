@@ -27,13 +27,22 @@ function toPoints(xs: number[], ys: number[]): string {
   return xs.map((x, i) => `${x},${ys[i]}`).join(" ");
 }
 
-const AXIS_GWS = 5;
-
+/** Consecutive GW ticks covering every point in the series — no cropped window. */
 function axisWindow(events: number[]): number[] {
-  const last = Math.max(...events);
-  const end = Math.max(last, AXIS_GWS);
-  const start = Math.max(1, end - AXIS_GWS + 1);
-  return Array.from({ length: AXIS_GWS }, (_, i) => start + i);
+  const start = Math.min(...events);
+  const end = Math.max(...events);
+  const from = Math.max(1, start);
+  const to = Math.max(from, end);
+  return Array.from({ length: to - from + 1 }, (_, i) => from + i);
+}
+
+function xTickIndices(count: number): number[] {
+  if (count <= 12) return Array.from({ length: count }, (_, i) => i);
+  const step = Math.ceil(count / 10);
+  const idx: number[] = [];
+  for (let i = 0; i < count; i += step) idx.push(i);
+  if (idx[idx.length - 1] !== count - 1) idx.push(count - 1);
+  return idx;
 }
 
 function xAt(
@@ -71,9 +80,9 @@ export function HomeRankSparkline({
     const lo = Math.log10(Math.max(1, minR / 1.35));
     const hi = Math.log10(Math.max(minR + 1, maxR * 1.55));
 
-    const w = 320;
-    const h = 108;
-    const pad = { l: 38, r: 18, t: 8, b: 22 };
+    const w = 640;
+    const h = 188;
+    const pad = { l: 56, r: 24, t: 16, b: 36 };
     const innerW = w - pad.l - pad.r;
     const innerH = h - pad.t - pad.b;
     const axis = axisWindow(points.map((p) => p.event));
@@ -88,13 +97,17 @@ export function HomeRankSparkline({
     const avgXs = xs.filter((_, i) => avgY[i] != null);
     const avgYs = avgY.filter((y): y is number => y != null);
     const axisXs = axis.map((gw) => xAt(gw, start, axis.length, pad.l, innerW));
+    const labelIdx = xTickIndices(axis.length);
 
     return {
       w,
       h,
       pad,
+      innerW,
+      innerH,
       axis,
       axisXs,
+      labelIdx,
       xs,
       youY,
       avgXs,
@@ -108,9 +121,25 @@ export function HomeRankSparkline({
 
   if (!layout) return null;
 
-  const { w, h, pad, axis, axisXs, xs, youY, avgXs, avgYs, lastYou, lastAvg } =
-    layout;
-  const ticks = [layout.lo, layout.hi].map((logV) => 10 ** logV);
+  const {
+    w,
+    h,
+    pad,
+    innerW,
+    innerH,
+    axis,
+    axisXs,
+    labelIdx,
+    xs,
+    youY,
+    avgXs,
+    avgYs,
+    lastYou,
+    lastAvg,
+  } = layout;
+  const ticks = [layout.lo, (layout.lo + layout.hi) / 2, layout.hi].map(
+    (logV) => 10 ** logV,
+  );
 
   return (
     <div className="rounded-lg border border-border/70 bg-card/40 px-2.5 py-2">
@@ -140,10 +169,20 @@ export function HomeRankSparkline({
       </div>
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="h-[108px] w-full"
+        className="h-auto w-full min-h-[188px]"
+        overflow="visible"
         role="img"
         aria-label={labels.aria}
       >
+        <rect
+          x={pad.l}
+          y={pad.t}
+          width={innerW}
+          height={innerH}
+          fill="none"
+          stroke="rgba(148, 163, 184, 0.28)"
+          strokeWidth={1}
+        />
         {ticks.map((tick) => {
           const y = scaleYLog(tick, layout.lo, layout.hi, pad.t, h - pad.b);
           return (
@@ -157,11 +196,12 @@ export function HomeRankSparkline({
                 strokeWidth={1}
               />
               <text
-                x={pad.l - 4}
-                y={y + 3}
+                x={pad.l - 8}
+                y={y}
                 textAnchor="end"
+                dominantBaseline="middle"
                 fill="rgb(100 116 139)"
-                fontSize={9}
+                fontSize={11}
               >
                 {formatRank(tick)}
               </text>
@@ -202,24 +242,27 @@ export function HomeRankSparkline({
               strokeLinejoin="round"
               strokeLinecap="round"
             />
-            <circle
-              cx={xs[xs.length - 1]}
-              cy={youY[youY.length - 1]}
-              r={3}
-              fill="#00ff87"
-            />
+            {xs.map((x, i) => (
+              <circle
+                key={`pt-${points[i]!.event}`}
+                cx={x}
+                cy={youY[i]}
+                r={i === xs.length - 1 ? 3.5 : 2.5}
+                fill="#00ff87"
+              />
+            ))}
           </>
         )}
-        {axis.map((gw, i) => (
+        {labelIdx.map((i) => (
           <text
-            key={gw}
+            key={axis[i]}
             x={axisXs[i]}
-            y={h - 6}
+            y={h - 8}
             textAnchor="middle"
             fill="rgb(148 163 184)"
-            fontSize={9}
+            fontSize={11}
           >
-            GW{gw}
+            GW{axis[i]}
           </text>
         ))}
       </svg>
